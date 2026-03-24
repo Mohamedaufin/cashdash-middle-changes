@@ -1,0 +1,89 @@
+name: iOS Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    name: Build iOS App
+    runs-on: macos-latest
+
+    defaults:
+      run:
+        working-directory: ./cashdash_flutter
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.24.5'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Force pod generation
+        run: flutter build ios --config-only || true
+
+      - name: Force iOS 14.0 and Fix iOS Pod Issues
+        run: |
+          cat << 'EOF' > fix_podfile.rb
+          podfile = File.read('ios/Podfile')
+          injection = <<-RUBY
+          flutter_additional_ios_build_settings(target)
+                target.build_configurations.each do |config|
+                  config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
+                end
+                if target.name == 'BoringSSL-GRPC'
+                  target.source_build_phase.files.each do |file|
+                    if file.settings && file.settings['COMPILER_FLAGS']
+                      flags = file.settings['COMPILER_FLAGS'].split
+                      flags.reject! { |flag| flag == '-GCC_WARN_INHIBIT_ALL_WARNINGS' }
+                      file.settings['COMPILER_FLAGS'] = flags.join(' ')
+                    end
+                  end
+                end
+                
+                seq_path = 'Pods/gRPC-Core/src/core/lib/promise/detail/basic_seq.h'
+                if File.exist?(seq_path)
+                  content = File.read(seq_path)
+                  if content.include?('CallSeqFactory(')
+                    content.gsub!('CallSeqFactory(', 'CallSeqFactory<>(')
+                    File.write(seq_path, content)
+                  end
+                end
+                
+                join_path = 'Pods/gRPC-Core/src/core/lib/promise/detail/basic_join.h'
+                if File.exist?(join_path)
+                  content = File.read(join_path)
+                  if content.include?('Construct(')
+                    content.gsub!('Construct(', 'Construct<>(')
+                  end
+                  if content.include?('RunFactory(')
+                    content.gsub!('RunFactory(', 'RunFactory<>(')
+                  end
+                  File.write(join_path, content)
+                end
+          RUBY
+          podfile.gsub!('flutter_additional_ios_build_settings(target)', injection)
+          File.write('ios/Podfile', podfile)
+          EOF
+          ruby fix_podfile.rb
+
+      - name: Build iOS App (Unsigned)
+        run: flutter build ios --release --no-codesign
+
+      - name: Compress iOS build
+        run: tar -czf ios-build.tar.gz build/ios/iphoneos
+
+      - name: Upload iOS Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-unsigned
+          path: cashdash_flutter/ios-build.tar.gz

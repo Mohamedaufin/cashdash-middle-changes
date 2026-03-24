@@ -49,6 +49,9 @@ object SecurityManager {
         isTriggering = true
         
         stopListening()
+        
+        // 0. Stop automatic sync BEFORE clearing data
+        FirestoreSyncManager.stopRealTimeSync(context)
 
         // 1. Clear all SharedPreferences
         val prefsToClear = listOf(

@@ -282,19 +282,18 @@ class EntryActivity : AppCompatActivity() {
                 } else if (success && profileData != null) {
                     // Update local prefs with cloud data and mark as NOT first launch
                     prefs.edit()
-                        .putString(KEY_NAME, profileData["name"] as? String ?: "")
+                        .putString(KEY_NAME, profileData["name"] as? String ?: "User")
                         .putString(KEY_PHONE, profileData["phone"] as? String ?: "")
                         .putBoolean(KEY_FIRST, false)
-                        .apply()
+                        .commit() // 🚀 Use commit() to ensure SplashActivity reads it immediately
                         
                     startActivity(Intent(this, SplashActivity::class.java))
                     finish()
-                } else if (success) {
                     // Pull succeeded but no profile data? 
                     // This could be an old user who has Auth but no Firestore profile yet.
                     // Mark as NOT first launch so they can proceed to setup if needed, 
                     // or just start using the app.
-                    prefs.edit().putBoolean(KEY_FIRST, false).apply()
+                    prefs.edit().putBoolean(KEY_FIRST, false).commit()
                     startActivity(Intent(this, SplashActivity::class.java))
                     finish()
                 } else {

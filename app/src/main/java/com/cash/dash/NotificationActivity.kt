@@ -18,6 +18,12 @@ class NotificationActivity : AppCompatActivity() {
     private var filteredNotifications = listOf<NotificationModel>()
     private var currentFilter = "all" // "all", "responded", "pending"
     private lateinit var adapter: NotificationAdapter
+    private var emailListener: com.google.firebase.firestore.ListenerRegistration? = null
+    private var uidListener: com.google.firebase.firestore.ListenerRegistration? = null
+    
+    // Concurrent data storage to handle dual-stream updates
+    private var emailDocs = mutableListOf<com.google.firebase.firestore.DocumentSnapshot>()
+    private var uidDocs = mutableListOf<com.google.firebase.firestore.DocumentSnapshot>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +48,12 @@ class NotificationActivity : AppCompatActivity() {
             onDelete = { model -> showDeleteConfirmDialog(model) }
         )
         rv.adapter = adapter
+    }
+
+    override fun onDestroy() {
+        emailListener?.remove()
+        uidListener?.remove()
+        super.onDestroy()
     }
 
     private fun setupFilters() {
@@ -89,104 +101,123 @@ class NotificationActivity : AppCompatActivity() {
     private fun loadNotifications() {
         val user = FirebaseAuth.getInstance().currentUser ?: return
         val email = user.email ?: return 
+        val uid = user.uid
         val db = FirebaseFirestore.getInstance()
+
+        // 1. Listen to New (Email) Path
+        emailListener?.remove()
+        emailListener = db.collection("users").document(email).collection("notifications")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .addSnapshotListener { docs, e ->
+                if (e == null && docs != null) {
+                    emailDocs = docs.documents.toMutableList()
+                    mergeAndProcessNotifications()
+                }
+            }
+
+        // 2. Listen to Legacy (UID) Path
+        uidListener?.remove()
+        uidListener = db.collection("users").document(uid).collection("notifications")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .addSnapshotListener { docs, e ->
+                if (e == null && docs != null) {
+                    uidDocs = docs.documents.toMutableList()
+                    mergeAndProcessNotifications()
+                }
+            }
+    }
+
+    private fun mergeAndProcessNotifications() {
+        val db = FirebaseFirestore.getInstance()
+        val email = FirebaseAuth.getInstance().currentUser?.email ?: return
         val tvEmpty = findViewById<TextView>(R.id.tvEmptyNotifications)
         val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
 
-        db.collection("users").document(email).collection("notifications")
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .get()
-            .addOnSuccessListener { docs ->
-                if (docs.isEmpty) {
-                    tvEmpty.visibility = View.VISIBLE
-                    rv.visibility = View.GONE
-                    allNotifications = emptyList()
-                    return@addOnSuccessListener
-                }
+        // Combine all raw docs
+        val allRawDocs = (emailDocs + uidDocs)
+        if (allRawDocs.isEmpty()) {
+            tvEmpty.visibility = View.VISIBLE
+            rv.visibility = View.GONE
+            allNotifications = emptyList()
+            applyFilter()
+            return
+        }
 
-                // 1. Silent cleanup for duplicates (improved)
-                val rawDocs = docs.documents
-                val grouped = rawDocs.groupBy { "${it.getString("subject")}|${it.getString("query")}" }
-                val toDelete = mutableListOf<com.google.firebase.firestore.DocumentSnapshot>()
-                
-                for (group in grouped.values) {
-                    if (group.size > 1) {
-                        val keeper = group.find { (it.getString("reply") ?: "Waiting for reply...") != "Waiting for reply..." }
-                            ?: group.maxByOrNull { it.getLong("timestamp") ?: 0L } ?: group.first()
-                        group.forEach { if (it.id != keeper.id) toDelete.add(it) }
-                    }
-                }
-                
-                if (toDelete.isNotEmpty()) {
-                    val batch = db.batch()
-                    toDelete.forEach { batch.delete(it.reference) }
-                    batch.commit()
-                }
+        // 1. Deduplicate across files based on (subject, query) or ID
+        // Priority: Keeper is the one with a non-default reply, OR the newest one.
+        val grouped = allRawDocs.groupBy { "${it.getString("subject")?.trim()}|${it.getString("query")?.trim()}" }
+        val finalDocs = mutableListOf<com.google.firebase.firestore.DocumentSnapshot>()
 
-                // 2. Map to performant models
-                val sdf = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
-                val now = System.currentTimeMillis()
-                val fortyEightHours = 48 * 60 * 60 * 1000L // 48 hours for production
+        for (group in grouped.values) {
+            val keeper = group.find { (it.getString("reply") ?: "Waiting for reply...") != "Waiting for reply..." }
+                ?: group.maxByOrNull { it.getLong("timestamp") ?: 0L } ?: group.first()
+            
+            finalDocs.add(keeper)
+        }
 
-                allNotifications = rawDocs.filter { d -> !toDelete.any { it.id == d.id } }.map { doc ->
-                    val query = doc.getString("query") ?: "No query"
-                    val reply = doc.getString("reply") ?: "Waiting for reply..."
-                    val subject = doc.getString("subject") ?: "General Help"
-                    val ts = doc.getLong("timestamp") ?: 0L
-                    val status = doc.getString("status") ?: (if (reply == "Waiting for reply...") "pending" else "responded")
-                    
-                    var isResolved = status == "resolved" || 
-                                     reply.contains("[RESOLVED]", ignoreCase = true) || 
-                                     reply.contains("[DONE]", ignoreCase = true)
-                    
-                    // Auto-resolve check (Trigger only after team responds if user is silent for 48h)
-                    if (!isResolved && status == "responded" && (now - ts) > fortyEightHours) {
-                        isResolved = true
-                        db.collection("users").document(email).collection("notifications").document(doc.id).update("status", "resolved")
-                    }
+        // 2. Map to performant UI models
+        val sdf = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
+        val now = System.currentTimeMillis()
+        val fortyEightHours = 48 * 60 * 60 * 1000L
 
-                    val isPending = (reply == "Waiting for reply...")
-                    
-                    val queryTitle = when {
-                        isResolved -> "Query resolved"
-                        isPending -> "Waiting for response"
-                        else -> "Query responded"
-                    }
-                    val color = Color.parseColor(when {
-                        isResolved -> "#606880"
-                        isPending -> "#FFD93D"
-                        else -> "#4ADE80"
-                    })
+        val prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
+        val userName = prefs.getString("user_name", "User") ?: "User"
 
-                    val prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
-                    val userName = prefs.getString("user_name", "User") ?: "User"
-
-                    // Clean up extra spaces to make it even and premium
-                    val displayQuery = query
-                        .replace("User Reply \\(\\d+\\):".toRegex(), "<font color='#B0C8FF'><b>$userName:</b></font>")
-                        .replace("User:".toRegex(), "<font color='#B0C8FF'><b>$userName:</b></font>")
-                        .replace("Team Cashdash:".toRegex(), "<font color='#4ADE80'><b>Team Cashdash:</b></font>")
-                        .replace("\n", "<br>")
-
-                    NotificationModel(
-                        id = doc.id,
-                        queryFormatted = android.text.Html.fromHtml("<b>Subject:</b> $subject<br><b>Question:</b> $displayQuery", android.text.Html.FROM_HTML_MODE_LEGACY),
-                        replyFormatted = if (isPending) null else android.text.Html.fromHtml("<font color='#4ADE80'><b>Response</b></font><br><font color='#E0EBF5'>${reply.replace("\n", "<br>")}</font>", android.text.Html.FROM_HTML_MODE_LEGACY),
-                        timestamp = ts,
-                        title = queryTitle,
-                        timeFormatted = if (ts > 0) sdf.format(Date(ts)) else "",
-                        statusColor = color,
-                        isPending = isPending,
-                        isUnread = doc.getBoolean("read") == false,
-                        isResolved = isResolved,
-                        originalSubject = subject,
-                        originalQuery = query,
-                        originalReply = reply
-                    )
-                }
-
-                applyFilter()
+        allNotifications = finalDocs.map { doc ->
+            val query = doc.getString("query") ?: "No query"
+            val reply = doc.getString("reply") ?: "Waiting for reply..."
+            val subject = doc.getString("subject") ?: "General Help"
+            val ts = doc.getLong("timestamp") ?: 0L
+            val status = doc.getString("status") ?: (if (reply == "Waiting for reply...") "pending" else "responded")
+            
+            var isResolved = status == "resolved" || 
+                             reply.contains("[RESOLVED]", ignoreCase = true) || 
+                             reply.contains("[DONE]", ignoreCase = true)
+            
+            // Auto-resolve check (UI-only during listener to prevent Firestore loops)
+            if (!isResolved && status == "responded" && (now - ts) > fortyEightHours) {
+                isResolved = true
             }
+
+            val isPending = (reply == "Waiting for reply...")
+            
+            val queryTitle = when {
+                isResolved -> "Query resolved"
+                isPending && query.contains("$userName:") -> "Replied (Waiting for Team)"
+                isPending -> "Query Sent"
+                else -> "Team Responded"
+            }
+            val color = Color.parseColor(when {
+                isResolved -> "#606880"
+                isPending -> "#FFD93D"
+                else -> "#4ADE80"
+            })
+
+            val displayQuery = query
+                .replace("User Reply \\(\\d+\\):".toRegex(), "<font color='#B0C8FF'><b>$userName:</b></font>")
+                .replace("User:".toRegex(), "<font color='#B0C8FF'><b>$userName:</b></font>")
+                .replace("Team Cashdash:".toRegex(), "<font color='#4ADE80'><b>Team Cashdash:</b></font>")
+                .replace("\n", "<br>")
+
+            NotificationModel(
+                id = doc.id,
+                queryFormatted = android.text.Html.fromHtml("<b>Subject:</b> $subject<br><b>Question:</b> $displayQuery", android.text.Html.FROM_HTML_MODE_LEGACY),
+                replyFormatted = if (isPending) null else android.text.Html.fromHtml("<font color='#4ADE80'><b>Response</b></font><br><font color='#E0EBF5'>${reply.replace("\n", "<br>")}</font>", android.text.Html.FROM_HTML_MODE_LEGACY),
+                timestamp = ts,
+                title = queryTitle,
+                timeFormatted = if (ts > 0) sdf.format(Date(ts)) else "",
+                statusColor = color,
+                isPending = isPending,
+                isUnread = doc.getBoolean("read") == false,
+                isResolved = isResolved,
+                originalSubject = subject,
+                originalQuery = query,
+                originalReply = reply,
+                refPath = doc.reference.path
+            )
+        }.sortedByDescending { it.timestamp }
+
+        applyFilter()
     }
 
     private fun applyFilter() {
@@ -270,9 +301,8 @@ class NotificationActivity : AppCompatActivity() {
             background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
             layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply { setMargins(15, 0, 0, 0) }
             setOnClickListener {
-                val email = user.email ?: return@setOnClickListener
-                FirebaseFirestore.getInstance().collection("users").document(email)
-                    .collection("notifications").document(model.id).delete()
+                val user = FirebaseAuth.getInstance().currentUser ?: return@setOnClickListener
+                FirebaseFirestore.getInstance().document(model.refPath).delete()
                     .addOnSuccessListener {
                         ToastHelper.showToast(this@NotificationActivity, "Query deleted")
                         loadNotifications()
@@ -465,8 +495,7 @@ class NotificationActivity : AppCompatActivity() {
                 "read" to true
             )
 
-            val email = user.email ?: return
-            db.collection("users").document(email).collection("notifications").document(model.id)
+            db.document(model.refPath)
                 .update(updateData as Map<String, Any>)
                 .addOnSuccessListener {
                     triggerPipedreamForReply(user.uid, model.originalSubject, model.originalQuery, model.originalReply, timestamp, replyText, model.id)

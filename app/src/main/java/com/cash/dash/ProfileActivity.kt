@@ -79,6 +79,9 @@ class ProfileActivity : AppCompatActivity() {
                 message = "Are you sure you want to log out of your session on this device?",
                 actionText = "Logout"
             ) {
+                // 0. Stop automatic sync listeners BEFORE clearing data
+                FirestoreSyncManager.stopRealTimeSync(this@ProfileActivity)
+
                 // 1. Clear ALL local data to prevent leak between accounts
                 val prefsToClear = listOf(
                     "AppPrefs", "WalletPrefs", "CategoryPrefs", 
@@ -122,6 +125,9 @@ class ProfileActivity : AppCompatActivity() {
 
         // 1. SHOW FEEDBACK & REDIRECT IMMEDIATELY
         ToastHelper.showToast(this@ProfileActivity, "Your account ha been deleted permanently")
+
+        // 1.5 Stop automatic sync listeners BEFORE clearing data
+        FirestoreSyncManager.stopRealTimeSync(this@ProfileActivity)
 
         // 2. CLEAR ALL LOCAL DATA
         val prefsToClear = listOf(
