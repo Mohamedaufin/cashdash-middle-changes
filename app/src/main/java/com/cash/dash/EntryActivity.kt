@@ -130,10 +130,10 @@ class EntryActivity : AppCompatActivity() {
             btnAction.text = "Login"
             tvForgot.visibility = View.VISIBLE
 
-            // Autofill setup for Login
+            // 🟢 Restore working Login Autofill
             edtEmail.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
             edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
-            edtEmail.setAutofillHints(View.AUTOFILL_HINT_EMAIL_ADDRESS, View.AUTOFILL_HINT_USERNAME)
+            edtEmail.setAutofillHints(View.AUTOFILL_HINT_USERNAME) // Matches original XML
             edtPassword.setAutofillHints(View.AUTOFILL_HINT_PASSWORD)
         } else {
             edtName.visibility = View.VISIBLE
@@ -141,13 +141,11 @@ class EntryActivity : AppCompatActivity() {
             btnAction.text = "Register"
             tvForgot.visibility = View.GONE
 
-            // Only email and password should be saved/suggested in Register
-            edtName.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
-            edtPhone.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
-            edtEmail.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
-            edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
-            edtEmail.setAutofillHints(View.AUTOFILL_HINT_EMAIL_ADDRESS, View.AUTOFILL_HINT_USERNAME)
-            edtPassword.setAutofillHints(View.AUTOFILL_HINT_PASSWORD)
+            // 🔴 Disable for Register
+            edtEmail.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+            edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+            edtEmail.setAutofillHints(null)
+            edtPassword.setAutofillHints(null)
         }
     }
 
@@ -231,7 +229,6 @@ class EntryActivity : AppCompatActivity() {
             auth.signInWithEmailAndPassword(email, pass)
                 .addOnCompleteListener(this) { task ->
                     if (task.isSuccessful) {
-                        // For login, we'll pull details from cloud, so name/phone from form are ignored/optional
                         savePrefsAndContinue(prefs, name, phone, email, pass, isLogin = true, btnAction, tvForgotPassword, progressBar, tvStatus)
                     } else {
                         resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "Login Failed: ${task.exception?.message}", "Login")
@@ -282,32 +279,25 @@ class EntryActivity : AppCompatActivity() {
         editor.apply()
 
         // Tell Android Autofill that the form was submitted successfully
-        window.decorView.clearFocus() // Forces autofill manager to snapshot final values
+        window.decorView.clearFocus()
         val autofillManager = getSystemService(AutofillManager::class.java)
         autofillManager?.commit()
 
         if (isLogin) {
-            FirestoreSyncManager.pullDataFromCloud(this) { success, profileExists, isAdminDeleted, profileData ->
+            FirestoreSyncManager.pullDataFromCloud(this) { success, _, isAdminDeleted, profileData ->
                 if (success && isAdminDeleted) {
                     auth.signOut()
                     prefs.edit().clear().apply()
                     showAdminDeletionDialog()
                     resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "", "Login")
-                } else if (success && profileData != null) {
-                    // Update local prefs with cloud data and mark as NOT first launch
+                } else if (success) {
+                    // Update local prefs with cloud data (if available) and mark as NOT first launch
                     prefs.edit()
-                        .putString(KEY_NAME, profileData["name"] as? String ?: "User")
-                        .putString(KEY_PHONE, profileData["phone"] as? String ?: "")
+                        .putString(KEY_NAME, profileData?.get("name") as? String ?: "User")
+                        .putString(KEY_PHONE, profileData?.get("phone") as? String ?: "")
                         .putBoolean(KEY_FIRST, false)
-                        .commit() // 🚀 Use commit() to ensure SplashActivity reads it immediately
+                        .commit() // 🚀 Mandatory commit for SplashActivity immediate read
                         
-                    startActivity(Intent(this, SplashActivity::class.java))
-                    finish()
-                    // Pull succeeded but no profile data? 
-                    // This could be an old user who has Auth but no Firestore profile yet.
-                    // Mark as NOT first launch so they can proceed to setup if needed, 
-                    // or just start using the app.
-                    prefs.edit().putBoolean(KEY_FIRST, false).commit()
                     startActivity(Intent(this, SplashActivity::class.java))
                     finish()
                 } else {

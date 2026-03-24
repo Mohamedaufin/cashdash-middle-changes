@@ -1,5 +1,6 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -80,8 +81,8 @@
             android:textColorHint="#9EB2FF"
             android:padding="16dp"
             android:inputType="textPersonName"
-            android:autofillHints="name"
-            android:importantForAutofill="yes"
+            android:autofillHints="personName"
+            android:importantForAutofill="no"
             android:layout_marginBottom="16dp"/>
 
         <!-- PHONE NUMBER -->
@@ -95,8 +96,8 @@
             android:textColorHint="#9EB2FF"
             android:padding="16dp"
             android:inputType="phone"
-            android:autofillHints="phoneNumber"
-            android:importantForAutofill="yes"
+            android:autofillHints="phone"
+            android:importantForAutofill="no"
             android:layout_marginBottom="16dp"/>
 
         <!-- EMAIL -->
@@ -110,7 +111,7 @@
             android:textColorHint="#9EB2FF"
             android:padding="16dp"
             android:inputType="textEmailAddress"
-            android:autofillHints="emailAddress|username"
+            android:autofillHints="username"
             android:importantForAutofill="yes"
             android:layout_marginBottom="16dp"/>
 
@@ -185,4 +186,3 @@
         android:textSize="14sp" />
 
 </LinearLayout>
-
