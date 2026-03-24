@@ -80,8 +80,8 @@
             android:textColorHint="#9EB2FF"
             android:padding="16dp"
             android:inputType="textPersonName"
-            android:autofillHints="personName"
-            android:importantForAutofill="no"
+            android:autofillHints="name"
+            android:importantForAutofill="yes"
             android:layout_marginBottom="16dp"/>
 
         <!-- PHONE NUMBER -->
@@ -95,8 +95,8 @@
             android:textColorHint="#9EB2FF"
             android:padding="16dp"
             android:inputType="phone"
-            android:autofillHints="phone"
-            android:importantForAutofill="no"
+            android:autofillHints="phoneNumber"
+            android:importantForAutofill="yes"
             android:layout_marginBottom="16dp"/>
 
         <!-- EMAIL -->
@@ -110,7 +110,7 @@
             android:textColorHint="#9EB2FF"
             android:padding="16dp"
             android:inputType="textEmailAddress"
-            android:autofillHints="username"
+            android:autofillHints="emailAddress|username"
             android:importantForAutofill="yes"
             android:layout_marginBottom="16dp"/>
 

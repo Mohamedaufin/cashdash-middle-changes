@@ -60,6 +60,13 @@ class MenuActivity : AppCompatActivity() {
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         }
 
+        val btnPrivacyPolicy = findViewById<Button>(R.id.btnPrivacyPolicy)
+        btnPrivacyPolicy.setOnClickListener {
+            val url = "https://github.com/Mohamedaufin/cashdash/blob/main/privacy_policy.md" // Replace with your hosted URL
+            val intent = Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+            startActivity(intent)
+        }
+
         val btnNotifications = findViewById<View>(R.id.btnNotifications)
         val notificationBadge = findViewById<View>(R.id.notificationBadge)
 

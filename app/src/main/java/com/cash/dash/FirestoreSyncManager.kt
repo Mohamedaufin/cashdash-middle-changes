@@ -55,7 +55,6 @@ object FirestoreSyncManager {
                     "name" to (userPrefs.getString("user_name", "User") ?: "User"),
                     "email" to email,
                     "phone" to (userPrefs.getString("user_phone", "") ?: ""),
-                    "password" to (userPrefs.getString("user_password", "") ?: ""),
                     "setup_complete" to !userPrefs.getBoolean("isFirstLaunch", true),
                     "wallet_popup_shown" to userPrefs.getBoolean("WalletPopupShown", false),
                     "account_creation_time" to userPrefs.getLong("account_creation_time", 0L),
@@ -213,20 +212,17 @@ object FirestoreSyncManager {
                     val editor = userPrefs.edit()
 
                     // Only clear if we are sure we want a full mirror,
-                    // but keep the current email/pass as they are definitely correct from the successful login.
+                    // but keep the current email as it is definitely correct from the successful login.
                     val currentEmail = userPrefs.getString("user_email", "")
-                    val currentPass = userPrefs.getString("user_password", "")
 
                     isSyncingFromCloud = true
                     editor.clear().apply()
 
                     editor.putString("user_email", currentEmail)
-                    editor.putString("user_password", currentPass)
 
                     profileDoc.getString("name")?.let { editor.putString("user_name", it) }
                     profileDoc.getString("phone")?.let { editor.putString("user_phone", it) }
                     profileDoc.getString("email")?.let { editor.putString("user_email", it) }
-                    profileDoc.getString("password")?.let { editor.putString("user_password", it) }
 
                     val setupComplete = profileDoc.getBoolean("setup_complete") ?: false
                     editor.putBoolean("isFirstLaunch", !setupComplete)
@@ -449,7 +445,6 @@ object FirestoreSyncManager {
             snapshot.getString("name")?.let { editor.putString("user_name", it) }
             snapshot.getString("phone")?.let { editor.putString("user_phone", it) }
             snapshot.getString("email")?.let { editor.putString("user_email", it) }
-            snapshot.getString("password")?.let { editor.putString("user_password", it) }
             snapshot.getBoolean("setup_complete")?.let { editor.putBoolean("isFirstLaunch", !it) }
             editor.apply()
             isSyncingFromCloud = false

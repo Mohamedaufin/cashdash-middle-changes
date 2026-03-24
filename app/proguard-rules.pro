@@ -22,3 +22,11 @@
 
 # 🔒 CashDash Custom Models (Firestore serialization)
 -keep class com.cash.dash.models.** { *; }
+
+# ✂️ Strip Debug Logs from Release Builds
+-assumenosideeffects class android.util.Log {
+    public static int d(...);
+    public static int v(...);
+    public static int i(...);
+    public static int w(...);
+}

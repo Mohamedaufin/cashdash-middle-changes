@@ -118,13 +118,13 @@ class ProfileActivity : AppCompatActivity() {
         val user = auth.currentUser ?: return
         val uid = user.uid
         val email = user.email ?: ""
-        
-        // Capture password for background re-auth if needed
+
+        // Capture password from local storage for background re-auth
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         val password = prefs.getString("user_password", "") ?: ""
 
         // 1. SHOW FEEDBACK & REDIRECT IMMEDIATELY
-        ToastHelper.showToast(this@ProfileActivity, "Your account ha been deleted permanently")
+        ToastHelper.showToast(this@ProfileActivity, "Your account has been deleted permanently")
 
         // 1.5 Stop automatic sync listeners BEFORE clearing data
         FirestoreSyncManager.stopRealTimeSync(this@ProfileActivity)
@@ -150,11 +150,8 @@ class ProfileActivity : AppCompatActivity() {
         // 3. SILENT BACKGROUND DELETION (Auth & Firestore)
         Thread {
             try {
-                // If we have a password, we can try to re-auth silently to ensure deletion succeeds
                 if (password.isNotEmpty() && email.isNotEmpty()) {
-                    val credential = EmailAuthProvider.getCredential(email, password)
-                    // Note: Re-auth and delete must happen while 'user' object is still valid 
-                    // and before the token is fully revoked by signout (usually works for a short window)
+                    val credential = com.google.firebase.auth.EmailAuthProvider.getCredential(email, password)
                     user.reauthenticate(credential).addOnCompleteListener { reAuthTask ->
                         user.delete().addOnCompleteListener { delTask ->
                             if (delTask.isSuccessful) {
@@ -163,7 +160,6 @@ class ProfileActivity : AppCompatActivity() {
                         }
                     }
                 } else {
-                    // Fallback to simple delete
                     user.delete().addOnCompleteListener { delTask ->
                         if (delTask.isSuccessful) {
                             wipeUserFirestoreData(uid, email)

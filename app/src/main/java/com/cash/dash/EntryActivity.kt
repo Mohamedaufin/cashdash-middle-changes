@@ -129,11 +129,25 @@ class EntryActivity : AppCompatActivity() {
             edtPhone.visibility = View.GONE
             btnAction.text = "Login"
             tvForgot.visibility = View.VISIBLE
+
+            // Autofill setup for Login
+            edtEmail.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+            edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+            edtEmail.setAutofillHints(View.AUTOFILL_HINT_EMAIL_ADDRESS, View.AUTOFILL_HINT_USERNAME)
+            edtPassword.setAutofillHints(View.AUTOFILL_HINT_PASSWORD)
         } else {
             edtName.visibility = View.VISIBLE
             edtPhone.visibility = View.VISIBLE
             btnAction.text = "Register"
             tvForgot.visibility = View.GONE
+
+            // Only email and password should be saved/suggested in Register
+            edtName.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+            edtPhone.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+            edtEmail.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+            edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+            edtEmail.setAutofillHints(View.AUTOFILL_HINT_EMAIL_ADDRESS, View.AUTOFILL_HINT_USERNAME)
+            edtPassword.setAutofillHints(View.AUTOFILL_HINT_PASSWORD)
         }
     }
 

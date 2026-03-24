@@ -106,6 +106,17 @@
             android:textColor="#FFFFFF"
             android:background="@drawable/bg_glass_3d"/>
 
+        <View android:layout_height="30dp" android:layout_width="0dp"/>
+
+        <Button
+            android:id="@+id/btnPrivacyPolicy"
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:text="Privacy Policy"
+            android:textSize="22sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_glass_3d"/>
+
     </LinearLayout>
 
 </androidx.drawerlayout.widget.DrawerLayout>
