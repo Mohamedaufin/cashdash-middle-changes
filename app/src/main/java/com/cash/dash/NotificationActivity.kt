@@ -93,14 +93,46 @@ class NotificationActivity : AppCompatActivity() {
         val tvEmpty = findViewById<TextView>(R.id.tvEmptyNotifications)
         val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
 
+        // SHOW LOADING STATE
+        tvEmpty.text = "Loading notifications..."
+        tvEmpty.visibility = View.VISIBLE
+        rv.visibility = View.GONE
+
         db.collection("users").document(email).collection("notifications")
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .get()
             .addOnSuccessListener { docs ->
                 if (docs.isEmpty) {
-                    tvEmpty.visibility = View.VISIBLE
-                    rv.visibility = View.GONE
-                    allNotifications = emptyList()
+                    // 🔄 LEGACY MIGRATION: Check if there are old notifications under UID and copy them over
+                    db.collection("users").document(user.uid).collection("notifications")
+                        .get()
+                        .addOnSuccessListener { legacyDocs ->
+                            if (!legacyDocs.isEmpty) {
+                                val batch = db.batch()
+                                for (legacyDoc in legacyDocs) {
+                                    val newRef = db.collection("users").document(email).collection("notifications").document(legacyDoc.id)
+                                    batch.set(newRef, legacyDoc.data)
+                                    // Optionally delete the old one? Better to leave it for safety right now.
+                                }
+                                batch.commit().addOnSuccessListener {
+                                    // Reload after migration
+                                    loadNotifications()
+                                }
+                            } else {
+                                tvEmpty.text = "No notifications yet.\n\nWe'll notify you when your support\nqueries are resolved!"
+                                tvEmpty.visibility = View.VISIBLE
+                                findViewById<LinearLayout>(R.id.filterBar).visibility = View.VISIBLE
+                                rv.visibility = View.GONE
+                                allNotifications = emptyList()
+                            }
+                        }
+                        .addOnFailureListener {
+                            tvEmpty.text = "Failed to load notifications.\nPlease check your connection."
+                            tvEmpty.visibility = View.VISIBLE
+                            findViewById<LinearLayout>(R.id.filterBar).visibility = View.VISIBLE
+                            rv.visibility = View.GONE
+                            allNotifications = emptyList()
+                        }
                     return@addOnSuccessListener
                 }
 
@@ -187,6 +219,13 @@ class NotificationActivity : AppCompatActivity() {
 
                 applyFilter()
             }
+            .addOnFailureListener {
+                tvEmpty.text = "Failed to load notifications.\nPlease check your connection."
+                tvEmpty.visibility = View.VISIBLE
+                findViewById<LinearLayout>(R.id.filterBar).visibility = View.VISIBLE
+                rv.visibility = View.GONE
+                allNotifications = emptyList()
+            }
     }
 
     private fun applyFilter() {
@@ -194,8 +233,10 @@ class NotificationActivity : AppCompatActivity() {
         val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
         val filterBar = findViewById<LinearLayout>(R.id.filterBar)
 
+        // ALWAYS SHOW FILTER BAR AS PER USER REQUEST
+        filterBar.visibility = View.VISIBLE
+
         if (allNotifications.isEmpty()) {
-            filterBar.visibility = View.GONE
             rv.visibility = View.GONE
             tvEmpty.text = "No notifications yet.\n\nWe'll notify you when your support\nqueries are resolved!"
             tvEmpty.visibility = View.VISIBLE
