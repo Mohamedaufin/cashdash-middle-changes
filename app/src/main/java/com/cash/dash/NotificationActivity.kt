@@ -260,7 +260,7 @@ class NotificationActivity : AppCompatActivity() {
                 .putString("cache_data", jsonArray.toString())
                 .apply()
         } catch (e: Exception) {
-            e.printStackTrace()
+            // e.printStackTrace()
         }
     }
 
@@ -341,7 +341,7 @@ class NotificationActivity : AppCompatActivity() {
             allNotifications = list
             applyFilter()
         } catch (e: Exception) {
-            e.printStackTrace()
+            // e.printStackTrace()
         }
     }
 

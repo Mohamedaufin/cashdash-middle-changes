@@ -341,7 +341,7 @@ class ScannerActivity : AppCompatActivity(), SensorEventListener {
                 toast("⚠ Error scanning image")
             }
         } catch (e: Exception) {
-            toast("Error loading image")
+            // e.printStackTrace()
         }
     }
 
@@ -390,19 +390,19 @@ class ScannerActivity : AppCompatActivity(), SensorEventListener {
 
     // ------------------------------------------------------------------- DIALOG PAYMENT
     private fun showAmountDialog(upi: String) {
-        android.util.Log.d("ScannerActivity", "showAmountDialog called for: $upi")
+        // android.util.Log.d("ScannerActivity", "showAmountDialog called for: $upi")
         try {
             val name = (decode(getParam(upi,"pn")) ?: "Unknown").replace("|", "-")
             val id = (decode(getParam(upi,"pa")) ?: "Unknown").replace("|", "-")
 
             if (upi.contains("upi://pay")) {
-                android.util.Log.d("ScannerActivity", "Saving last_upi and syncing cloud")
+                // android.util.Log.d("ScannerActivity", "Saving last_upi and syncing cloud")
                 getSharedPreferences("LocalScanPrefs", MODE_PRIVATE)
                     .edit().putString("last_upi", upi).apply()
                 FirestoreSyncManager.pushAllDataToCloud(this)
             }
 
-            android.util.Log.d("ScannerActivity", "Inflating payment bottom sheet")
+            // android.util.Log.d("ScannerActivity", "Inflating payment bottom sheet")
             val dialog = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
             val view = layoutInflater.inflate(R.layout.layout_payment_bottom_sheet, null)
             dialog.setContentView(view)
@@ -499,7 +499,7 @@ class ScannerActivity : AppCompatActivity(), SensorEventListener {
         
         dialog.show()
         } catch (e: Exception) {
-            android.util.Log.e("ScannerActivity", "CRASH in showAmountDialog: ${e.message}", e)
+            // android.util.Log.e("ScannerActivity", "CRASH in showAmountDialog: ${e.message}", e)
             ToastHelper.showToast(this, "⚠ Error opening payment dialog")
         }
     }

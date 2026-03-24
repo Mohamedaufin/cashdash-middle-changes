@@ -36,7 +36,7 @@ object FirestoreSyncManager {
         Thread {
             try {
                 val db = FirebaseFirestore.getInstance()
-                Log.d(TAG, "Starting background sync to cloud for $email")
+                // Log.d(TAG, "Starting background sync to cloud for $email")
 
                 val walletPrefs = appContext.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
                 val categoryPrefs = appContext.getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
@@ -145,7 +145,7 @@ object FirestoreSyncManager {
                 // 7. LocalScanPrefs
                 Tasks.await(configColl.document("undo_details").set(hashMapOf("LocalScanPrefs" to localScanPrefs.all)))
 
-                Log.d(TAG, "✅ Background sync to cloud complete for user $email")
+                // Log.d(TAG, "✅ Background sync to cloud complete for user $email")
             } catch (e: Exception) {
                 Log.e(TAG, "❌ FATAL SYNC ERROR: ${e.message}", e)
                 // If it's a permission error, it will be visible in Logcat now.
@@ -191,7 +191,7 @@ object FirestoreSyncManager {
                     if (profileDoc == null || !profileDoc.exists()) {
                         if (!isFallback) {
                             // 🔄 MIGRATION START: Try pulling from old UID path
-                            Log.d(TAG, "Email profile not found for $email, trying legacy UID fallback for $uid")
+                            // Log.d(TAG, "Email profile not found for $email, trying legacy UID fallback for $uid")
                             executePull(uid, true)
                         } else {
                             onComplete(true, false, false, null)
@@ -383,11 +383,11 @@ object FirestoreSyncManager {
                             isSyncingFromCloud = false
                         }
                     }
-                    Log.d(TAG, "Pull complete for $docId. Migration flow: $isFallback")
+                    // Log.d(TAG, "Pull complete for $docId. Migration flow: $isFallback")
                     
                     if (isFallback) {
                         // 🔄 MIGRATION FINAL STEP: Push to new Email path immediately
-                        Log.d(TAG, "Legacy pull successful, migrating data to $email document...")
+                        // Log.d(TAG, "Legacy pull successful, migrating data to $email document...")
                         pushAllDataToCloud(context)
                     }
 
@@ -405,7 +405,7 @@ object FirestoreSyncManager {
         if (now - lastPushTime < syncDebounceMs) return
         lastPushTime = now
 
-        Log.d(TAG, "⚡ Instant Sync Triggered")
+        // Log.d(TAG, "⚡ Instant Sync Triggered")
         pushAllDataToCloud(context)
     }
 
@@ -414,7 +414,7 @@ object FirestoreSyncManager {
         val email = user.email ?: return 
         if (listeners.isNotEmpty()) return // Already listening
 
-        Log.d(TAG, "📡 Starting Real-Time Sync for: $email")
+        // Log.d(TAG, "📡 Starting Real-Time Sync for: $email")
 
         val db = FirebaseFirestore.getInstance()
         val userDoc = db.collection("users").document(email).collection("config")

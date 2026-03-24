@@ -116,80 +116,33 @@ class ProfileActivity : AppCompatActivity() {
     private fun performAccountDeletion() {
         val auth = FirebaseAuth.getInstance()
         val user = auth.currentUser ?: return
+        val uid = user.uid
         val email = user.email ?: ""
 
-        // Show a re-auth dialog to confirm identity — standard secure pattern
-        showReauthDialog(email) { enteredPassword ->
-            val credential = com.google.firebase.auth.EmailAuthProvider.getCredential(email, enteredPassword)
+        // 1. Instant feedback & redirect
+        ToastHelper.showToast(this@ProfileActivity, "Your account has been deleted permanently")
+        FirestoreSyncManager.stopRealTimeSync(this@ProfileActivity)
+        SecurityManager.stopListening() // Prevent false "admin deleted" notice on self-deletion
 
-            user.reauthenticate(credential).addOnCompleteListener { reAuthTask ->
-                if (!reAuthTask.isSuccessful) {
-                    ToastHelper.showToast(this, "Incorrect password. Please try again.")
-                    return@addOnCompleteListener
-                }
-
-                val uid = user.uid
-
-                // 1. Show feedback & redirect instantly
-                ToastHelper.showToast(this@ProfileActivity, "Your account has been deleted permanently")
-                FirestoreSyncManager.stopRealTimeSync(this@ProfileActivity)
-
-                val prefsToClear = listOf(
-                    "AppPrefs", "WalletPrefs", "CategoryPrefs",
-                    "GraphData", "CategoryWeekData", "MoneySchedulePrefs",
-                    "ScannerHistory", "LocalScanPrefs", "NotificationCache"
-                )
-                prefsToClear.forEach { name ->
-                    getSharedPreferences(name, MODE_PRIVATE).edit().clear().apply()
-                }
-                auth.signOut()
-
-                val i = Intent(this@ProfileActivity, EntryActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                }
-                startActivity(i)
-                finish()
-
-                // 2. Silent background Firebase Auth + Firestore wipe
-                user.delete().addOnCompleteListener { delTask ->
-                    if (delTask.isSuccessful) wipeUserFirestoreData(uid, email)
-                }
-            }
-        }
-    }
-
-    private fun showReauthDialog(email: String, onConfirmed: (String) -> Unit) {
-        val dialog = android.app.Dialog(this)
-        dialog.setContentView(R.layout.dialog_change_password)
-        dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
-        dialog.window?.setLayout(
-            resources.displayMetrics.widthPixels - 100,
-            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        val prefsToClear = listOf(
+            "AppPrefs", "WalletPrefs", "CategoryPrefs",
+            "GraphData", "CategoryWeekData", "MoneySchedulePrefs",
+            "ScannerHistory", "LocalScanPrefs", "NotificationCache"
         )
-
-        // Reuse the change_password dialog layout — hide fields we don't need
-        val edtOld = dialog.findViewById<android.widget.EditText>(R.id.edtOldPassword)
-        val edtNew = dialog.findViewById<android.widget.EditText>(R.id.edtNewPassword)
-        val edtConfirm = dialog.findViewById<android.widget.EditText>(R.id.edtConfirmPassword)
-        val btnCancel = dialog.findViewById<android.widget.Button>(R.id.btnCancel)
-        val btnConfirm = dialog.findViewById<android.widget.Button>(R.id.btnSavePassword)
-
-        edtNew.visibility = android.view.View.GONE
-        edtConfirm.visibility = android.view.View.GONE
-        edtOld.hint = "Enter your password to confirm"
-        btnConfirm.text = "Delete Account"
-
-        btnCancel.setOnClickListener { dialog.dismiss() }
-        btnConfirm.setOnClickListener {
-            val password = edtOld.text.toString()
-            if (password.isEmpty()) {
-                ToastHelper.showToast(this, "Please enter your password")
-                return@setOnClickListener
-            }
-            dialog.dismiss()
-            onConfirmed(password)
+        prefsToClear.forEach { name ->
+            getSharedPreferences(name, MODE_PRIVATE).edit().clear().apply()
         }
-        dialog.show()
+        auth.signOut()
+
+        startActivity(Intent(this@ProfileActivity, EntryActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        })
+        finish()
+
+        // 2. Silent background Firebase Auth + Firestore wipe
+        user.delete().addOnCompleteListener { delTask ->
+            if (delTask.isSuccessful) wipeUserFirestoreData(uid, email)
+        }
     }
 
     private fun wipeUserFirestoreData(uid: String, email: String) {

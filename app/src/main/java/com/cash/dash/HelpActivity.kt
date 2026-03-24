@@ -115,10 +115,8 @@ class HelpActivity : AppCompatActivity() {
             .document(timestamp.toString())
             .set(notificationData)
             .addOnSuccessListener {
-                Log.d("HelpActivity", "Query recorded in Firestore")
             }
             .addOnFailureListener { e ->
-                Log.e("HelpActivity", "Error recording query in Firestore", e)
             }
 
         // 🚀 SHOW IMMEDIATE SUCCESS (Don't wait for background webhook)

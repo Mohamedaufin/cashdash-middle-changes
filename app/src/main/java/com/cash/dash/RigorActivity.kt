@@ -318,7 +318,6 @@ class RigorActivity : AppCompatActivity() {
     }
 
     private fun saveExpense(category: String) {
-        android.util.Log.d("RigorActivity", "Starting saveExpense for category: $category")
         try {
             val prefs = getSharedPreferences("GraphData", MODE_PRIVATE)
             val weeklyPrefs = getSharedPreferences("CategoryWeekData", MODE_PRIVATE)
@@ -329,7 +328,6 @@ class RigorActivity : AppCompatActivity() {
 
             // Deduct from main balance
             val currentBal = walletPrefs.getInt("wallet_balance", 0)
-            android.util.Log.d("RigorActivity", "Current balance: $currentBal, deducting: $enteredAmount")
             walletPrefs.edit().putInt("wallet_balance", currentBal - enteredAmount).apply()
 
             val titleText = inputTitle.text.toString().trim().replace("|", "-")
@@ -350,7 +348,6 @@ class RigorActivity : AppCompatActivity() {
             cal.setMinimalDaysInFirstWeek(1)
             val weekIndex = cal.get(Calendar.WEEK_OF_MONTH) - 1
 
-            android.util.Log.d("RigorActivity", "Calculating keys for $timestamp")
             val oldSpent = prefs.getFloat("SPENT_$category", 0f)
             editor.putFloat("SPENT_$category", oldSpent + enteredAmount)
 
@@ -368,7 +365,6 @@ class RigorActivity : AppCompatActivity() {
             val oldWeekValue = weeklyPrefs.getInt(categoryWeekKey, 0)
             weekEditor.putInt(categoryWeekKey, oldWeekValue + enteredAmount)
 
-            android.util.Log.d("RigorActivity", "Updating History List")
             val historySet = (prefs.getStringSet("HISTORY_LIST", emptySet()) ?: emptySet()).toMutableSet()
             historySet.add("EXP|$timestamp|$titleText|$category|$enteredAmount|$weekIndex|$dayIndex|$monthIndex|$year")
             editor.putStringSet("HISTORY_LIST", historySet)
@@ -381,17 +377,13 @@ class RigorActivity : AppCompatActivity() {
             editor.putInt("TRANS_${timestamp}_MONTH", monthIndex)
             editor.putInt("TRANS_${timestamp}_YEAR", year)
 
-            android.util.Log.d("RigorActivity", "Applying changes locally")
             editor.apply()
             weekEditor.apply()
             
-            android.util.Log.d("RigorActivity", "Triggering cloud sync")
             FirestoreSyncManager.pushAllDataToCloud(this)
 
-            android.util.Log.d("RigorActivity", "Finishing activity")
             finish()
         } catch (e: Exception) {
-            android.util.Log.e("RigorActivity", "CRASH in saveExpense: ${e.message}", e)
             ToastHelper.showToast(this, "⚠ Error saving expense")
         }
     }

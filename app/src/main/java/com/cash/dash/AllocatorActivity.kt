@@ -272,7 +272,7 @@ class AllocatorActivity : AppCompatActivity() {
                 graphPrefs.edit().putStringSet("HISTORY_LIST", newHistorySet).apply()
             }
 
-            android.util.Log.d("AllocatorActivity", "Renamed $oldName to $newName. Migrated $updatedCount history entries.")
+            // android.util.Log.d("AllocatorActivity", "Renamed $oldName to $newName. Migrated $updatedCount history entries.")
         }
     }
 

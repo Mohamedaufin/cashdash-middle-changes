@@ -73,7 +73,6 @@ dependencies {
     implementation("androidx.camera:camera-view:1.3.1")
 
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:34.9.0"))

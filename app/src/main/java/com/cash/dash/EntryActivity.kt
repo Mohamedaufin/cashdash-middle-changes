@@ -181,7 +181,7 @@ class EntryActivity : AppCompatActivity() {
                     dialog.show()
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                // e.printStackTrace()
             }
         }
     }
