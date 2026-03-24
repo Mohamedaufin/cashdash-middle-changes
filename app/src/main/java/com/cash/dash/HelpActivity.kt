@@ -138,6 +138,9 @@ class HelpActivity : AppCompatActivity() {
                 Log.e("HelpActivity", "Error recording query in Firestore", e)
             }
 
+        // 🚀 SHOW IMMEDIATE SUCCESS (Don't wait for background webhook)
+        ToastHelper.showToast(this, "Query sent! We'll notify you when we reply.")
+
         Thread {
             try {
                 val url = java.net.URL(pipedreamUrl)
@@ -150,20 +153,13 @@ class HelpActivity : AppCompatActivity() {
                     val input = payload.toByteArray(charset("utf-8"))
                     os.write(input, 0, input.size)
                 }
-
+                
+                // Silent check of response
                 val code = conn.responseCode
-                runOnUiThread {
-                    if (code in 200..299) {
-                        ToastHelper.showToast(this, "Query sent! We'll notify you when we reply.")
-                    } else {
-                        ToastHelper.showToast(this, "Submission failed (Code $code). Check your URL.")
-                    }
-                }
+                Log.d("HelpActivity", "Webhook response: $code")
+                
             } catch (e: Exception) {
-                runOnUiThread {
-                    ToastHelper.showToast(this, "Network error: Make sure to set your Pipedream URL!")
-                    Log.e("HelpActivity", "Pipedream error", e)
-                }
+                Log.e("HelpActivity", "Background webhook error", e)
             }
         }.start()
     }

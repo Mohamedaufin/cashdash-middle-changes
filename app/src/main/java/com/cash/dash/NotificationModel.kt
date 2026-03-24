@@ -15,6 +15,5 @@ data class NotificationModel(
     val isResolved: Boolean = false,
     val originalSubject: String = "",
     val originalQuery: String = "",
-    val originalReply: String = "",
-    val refPath: String = ""
+    val originalReply: String = ""
 )
