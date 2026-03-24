@@ -266,7 +266,6 @@ class EntryActivity : AppCompatActivity() {
     ) {
         val editor = prefs.edit()
             .putString(KEY_EMAIL, email)
-            .putString("user_password", pass)
 
         if (!isLogin) {
             editor.putBoolean(KEY_FIRST, false)

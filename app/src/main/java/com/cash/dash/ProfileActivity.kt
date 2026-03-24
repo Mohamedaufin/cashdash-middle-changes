@@ -116,60 +116,80 @@ class ProfileActivity : AppCompatActivity() {
     private fun performAccountDeletion() {
         val auth = FirebaseAuth.getInstance()
         val user = auth.currentUser ?: return
-        val uid = user.uid
         val email = user.email ?: ""
 
-        // Capture password from local storage for background re-auth
-        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
-        val password = prefs.getString("user_password", "") ?: ""
+        // Show a re-auth dialog to confirm identity — standard secure pattern
+        showReauthDialog(email) { enteredPassword ->
+            val credential = com.google.firebase.auth.EmailAuthProvider.getCredential(email, enteredPassword)
 
-        // 1. SHOW FEEDBACK & REDIRECT IMMEDIATELY
-        ToastHelper.showToast(this@ProfileActivity, "Your account has been deleted permanently")
-
-        // 1.5 Stop automatic sync listeners BEFORE clearing data
-        FirestoreSyncManager.stopRealTimeSync(this@ProfileActivity)
-
-        // 2. CLEAR ALL LOCAL DATA
-        val prefsToClear = listOf(
-            "AppPrefs", "WalletPrefs", "CategoryPrefs", 
-            "GraphData", "CategoryWeekData", "MoneySchedulePrefs", 
-            "ScannerHistory", "LocalScanPrefs", "NotificationCache"
-        )
-        prefsToClear.forEach { name ->
-            getSharedPreferences(name, MODE_PRIVATE).edit().clear().apply()
-        }
-
-        auth.signOut()
-
-        val i = Intent(this@ProfileActivity, EntryActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        startActivity(i)
-        finish()
-
-        // 3. SILENT BACKGROUND DELETION (Auth & Firestore)
-        Thread {
-            try {
-                if (password.isNotEmpty() && email.isNotEmpty()) {
-                    val credential = com.google.firebase.auth.EmailAuthProvider.getCredential(email, password)
-                    user.reauthenticate(credential).addOnCompleteListener { reAuthTask ->
-                        user.delete().addOnCompleteListener { delTask ->
-                            if (delTask.isSuccessful) {
-                                wipeUserFirestoreData(uid, email)
-                            }
-                        }
-                    }
-                } else {
-                    user.delete().addOnCompleteListener { delTask ->
-                        if (delTask.isSuccessful) {
-                            wipeUserFirestoreData(uid, email)
-                        }
-                    }
+            user.reauthenticate(credential).addOnCompleteListener { reAuthTask ->
+                if (!reAuthTask.isSuccessful) {
+                    ToastHelper.showToast(this, "Incorrect password. Please try again.")
+                    return@addOnCompleteListener
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
+
+                val uid = user.uid
+
+                // 1. Show feedback & redirect instantly
+                ToastHelper.showToast(this@ProfileActivity, "Your account has been deleted permanently")
+                FirestoreSyncManager.stopRealTimeSync(this@ProfileActivity)
+
+                val prefsToClear = listOf(
+                    "AppPrefs", "WalletPrefs", "CategoryPrefs",
+                    "GraphData", "CategoryWeekData", "MoneySchedulePrefs",
+                    "ScannerHistory", "LocalScanPrefs", "NotificationCache"
+                )
+                prefsToClear.forEach { name ->
+                    getSharedPreferences(name, MODE_PRIVATE).edit().clear().apply()
+                }
+                auth.signOut()
+
+                val i = Intent(this@ProfileActivity, EntryActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
+                startActivity(i)
+                finish()
+
+                // 2. Silent background Firebase Auth + Firestore wipe
+                user.delete().addOnCompleteListener { delTask ->
+                    if (delTask.isSuccessful) wipeUserFirestoreData(uid, email)
+                }
             }
-        }.start()
+        }
+    }
+
+    private fun showReauthDialog(email: String, onConfirmed: (String) -> Unit) {
+        val dialog = android.app.Dialog(this)
+        dialog.setContentView(R.layout.dialog_change_password)
+        dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+        dialog.window?.setLayout(
+            resources.displayMetrics.widthPixels - 100,
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+
+        // Reuse the change_password dialog layout — hide fields we don't need
+        val edtOld = dialog.findViewById<android.widget.EditText>(R.id.edtOldPassword)
+        val edtNew = dialog.findViewById<android.widget.EditText>(R.id.edtNewPassword)
+        val edtConfirm = dialog.findViewById<android.widget.EditText>(R.id.edtConfirmPassword)
+        val btnCancel = dialog.findViewById<android.widget.Button>(R.id.btnCancel)
+        val btnConfirm = dialog.findViewById<android.widget.Button>(R.id.btnSavePassword)
+
+        edtNew.visibility = android.view.View.GONE
+        edtConfirm.visibility = android.view.View.GONE
+        edtOld.hint = "Enter your password to confirm"
+        btnConfirm.text = "Delete Account"
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
+        btnConfirm.setOnClickListener {
+            val password = edtOld.text.toString()
+            if (password.isEmpty()) {
+                ToastHelper.showToast(this, "Please enter your password")
+                return@setOnClickListener
+            }
+            dialog.dismiss()
+            onConfirmed(password)
+        }
+        dialog.show()
     }
 
     private fun wipeUserFirestoreData(uid: String, email: String) {

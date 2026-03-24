@@ -74,6 +74,8 @@
         <activity android:name=".DetailHistoryActivity" android:exported="false" />
         <activity android:name=".BalanceSetupActivity" android:exported="false" />
         <activity android:name=".HelpActivity" android:exported="false" />
+        <activity android:name=".SuccessActivity" android:exported="false" />
+
         <activity 
             android:name=".NotificationActivity" 
             android:exported="true"
