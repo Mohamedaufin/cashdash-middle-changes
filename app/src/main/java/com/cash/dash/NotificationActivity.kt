@@ -176,7 +176,7 @@ class NotificationActivity : AppCompatActivity() {
                 // 2. Map to performant models
                 val sdf = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
                 val now = System.currentTimeMillis()
-                val fortyEightHours = 48 * 60 * 60 * 1000L // 48 hours for production
+                                val fortyEightHours = 48 * 60 * 60 * 1000L // 48 hours for production
 
                 allNotifications = rawDocs.filter { d -> !toDelete.any { it.id == d.id } }.map { doc ->
                     val query = doc.getString("query") ?: "No query"
@@ -215,6 +215,7 @@ class NotificationActivity : AppCompatActivity() {
                     val displayQuery = query
                         .replace("User Reply \\(\\d+\\):".toRegex(), "<font color='#B0C8FF'><b>$userName:</b></font>")
                         .replace("User:".toRegex(), "<font color='#B0C8FF'><b>$userName:</b></font>")
+                        .replace("$userName:".toRegex(), "<font color='#B0C8FF'><b>$userName:</b></font>")
                         .replace("Team Cashdash:".toRegex(), "<font color='#4ADE80'><b>Team Cashdash:</b></font>")
                         .replace("\n", "<br>")
 
@@ -279,7 +280,7 @@ class NotificationActivity : AppCompatActivity() {
             val array = org.json.JSONArray(jsonStr)
             val sdf = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
             val now = System.currentTimeMillis()
-            val fortyEightHours = 48 * 60 * 60 * 1000L
+            val fortyEightHours = 48 * 60 * 60 * 1000L // 48 hours for production
 
             val userPrefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
             val userName = userPrefs.getString("user_name", "User") ?: "User"
@@ -632,15 +633,14 @@ class NotificationActivity : AppCompatActivity() {
             val prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
             val userName = prefs.getString("user_name", "User") ?: "User"
             
-            // 🔥 PRESERVE HISTORY: Ensure the initial message is labeled if it wasn't already
+            // 🔥 PRESERVE HISTORY: keep original question as-is, only label new follow-up replies
             val lastTeamReply = model.originalReply
             val currentHistory = model.originalQuery
-            val historyWithLabel = if (currentHistory.contains(":\n")) currentHistory else "$userName:\n$currentHistory"
             
             val updatedQuery = if (lastTeamReply.isNotEmpty() && lastTeamReply != "Waiting for reply...") {
-                "$historyWithLabel\n\nTeam Cashdash:\n$lastTeamReply\n\n$userName:\n$replyText"
+                "$currentHistory\n\nTeam Cashdash: $lastTeamReply\n\n$userName: $replyText"
             } else {
-                "$historyWithLabel\n\n$userName:\n$replyText"
+                "$currentHistory\n\n$userName: $replyText"
             }
             
             // 🔥 offline-first queueing: we set needs_admin_email to true so the cloud function catches it when internet returns

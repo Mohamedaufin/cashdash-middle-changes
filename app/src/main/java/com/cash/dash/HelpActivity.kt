@@ -91,26 +91,7 @@ class HelpActivity : AppCompatActivity() {
     private fun submitQueryToFirestore(name: String, time: String, email: String, subject: String, query: String) {
         val user = FirebaseAuth.getInstance().currentUser ?: return
 
-        // 🚀 Firebase Cloud Function Webhook (replaces Pipedream)
-        val pipedreamUrl = "https://us-central1-cashdash-8cd8b.cloudfunctions.net/cashdashWebhook"
-
         val timestamp = System.currentTimeMillis()
-
-        // structuredQuery is ONLY for the admin email body — never stored in Firestore
-        val payload = """
-            {
-              "uid": "${user.uid}",
-              "id": "$timestamp",
-              "name": "${name.replace("\"", "\\\"")}",
-              "email": "${email.replace("\"", "\\\"")}",
-              "time": "${time.replace("\"", "\\\"")}",
-              "subject": "${subject.replace("\"", "\\\"")}",
-              "query": "${query.replace("\n", "\\n").replace("\"", "\\\"")}",
-              "rawQuery": "${query.replace("\n", "\\n").replace("\"", "\\\"")}",
-              "timestamp": $timestamp,
-              "is_reply": false
-            }
-        """.trimIndent()
 
         // Also save to Firestore for persistence and display in NotificationActivity
         // 🔥 offline-first queueing: we set needs_admin_email to true so the cloud function catches it when internet returns
@@ -121,7 +102,7 @@ class HelpActivity : AppCompatActivity() {
             "time" to time,
             "subject" to subject,
             "originalSubject" to subject,
-            "query" to "$name:\n$query",
+            "query" to query,
             "timestamp" to timestamp,
             "read" to false,
             "status" to "pending",
