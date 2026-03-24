@@ -33,6 +33,18 @@
         android:tint="#FFFFFF"
         android:layout_gravity="top|start"/>
 
+    <!-- Flashlight Button -->
+    <ImageButton
+        android:id="@+id/btnFlashlight"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:background="@drawable/bg_glass_3d_round"
+        android:padding="14dp"
+        android:src="@drawable/ic_flashlight_off"
+        android:scaleType="fitCenter"
+        android:tint="#FFFFFF"
+        android:layout_gravity="top|end"/>
+
     <!-- History Button (Top-Right) -->
     <ImageButton
         android:id="@+id/btnHistory"

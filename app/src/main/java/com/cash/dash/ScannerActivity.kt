@@ -30,11 +30,16 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.view.ScaleGestureDetector
 import androidx.core.app.NotificationCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
 
 @OptIn(ExperimentalGetImage::class)
-class ScannerActivity : AppCompatActivity() {
+class ScannerActivity : AppCompatActivity(), SensorEventListener {
 
     private val CAMERA_REQUEST = 101
     private val GALLERY_PICK = 102
@@ -42,8 +47,16 @@ class ScannerActivity : AppCompatActivity() {
 
     private lateinit var previewView: PreviewView
     private lateinit var cameraProvider: ProcessCameraProvider
+    private var camera: Camera? = null
+    private var isFlashOn = false
+    private var userManuallyToggled = false
     private var scannedOnce = false
     private var processing = false
+
+    // Sensors & Gestures
+    private lateinit var sensorManager: SensorManager
+    private var lightSensor: Sensor? = null
+    private lateinit var scaleGestureDetector: ScaleGestureDetector
     
     // Pending transaction state for Result Tracking
     private var pendingAmount: Int = 0
@@ -56,8 +69,14 @@ class ScannerActivity : AppCompatActivity() {
     private lateinit var swipeDetector: android.view.GestureDetector
 
     override fun dispatchTouchEvent(ev: android.view.MotionEvent?): Boolean {
-        if (ev != null && swipeDetector.onTouchEvent(ev)) {
-            return true
+        if (ev != null) {
+            // Pass all events to the zoom detector
+            scaleGestureDetector.onTouchEvent(ev)
+            
+            // Only handle swipe if it's a single finger (prevents conflicts with zoom)
+            if (ev.pointerCount == 1 && swipeDetector.onTouchEvent(ev)) {
+                return true
+            }
         }
         return super.dispatchTouchEvent(ev)
     }
@@ -78,27 +97,60 @@ class ScannerActivity : AppCompatActivity() {
         window.statusBarColor = Color.TRANSPARENT
 
         val btnClose = findViewById<ImageButton>(R.id.btnCloseScanner)
+        val btnFlashlight = findViewById<ImageButton>(R.id.btnFlashlight)
         val btnGallery = findViewById<ImageButton>(R.id.btnGallery)
         val btnHistory = findViewById<ImageButton>(R.id.btnHistory)
         
+        // Manual Flashlight Toggle
+        btnFlashlight.setOnClickListener {
+            isFlashOn = !isFlashOn
+            userManuallyToggled = true
+            camera?.cameraControl?.enableTorch(isFlashOn)
+            updateFlashlightIcon()
+        }
+
         // Dynamic Inset Handling for Icons
         val root = findViewById<View>(android.R.id.content)
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
             val systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
             
-            // Apply top margin to the top buttons specifically
+            // Apply margins to the top icons (all in a row)
             val closeParams = btnClose.layoutParams as FrameLayout.LayoutParams
-            closeParams.topMargin = systemBars.top + 60 // Base margin + status bar height
+            closeParams.topMargin = systemBars.top + 60
             btnClose.layoutParams = closeParams
-            
+
             val historyParams = btnHistory.layoutParams as FrameLayout.LayoutParams
             historyParams.topMargin = systemBars.top + 60
             btnHistory.layoutParams = historyParams
+
+            val flashParams = btnFlashlight.layoutParams as FrameLayout.LayoutParams
+            flashParams.topMargin = systemBars.top + 60 // Same row as others
+            // Position to the left of the history button (which is at top|end)
+            flashParams.marginEnd = historyParams.marginEnd + 220 // Increased offset for clear gap from history button
+            btnFlashlight.layoutParams = flashParams
             
             insets
         }
         
         previewView = findViewById(R.id.previewView)
+
+        // Sensors & Zoom
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+        
+        scaleGestureDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                val state = camera?.cameraInfo?.zoomState?.value ?: return false
+                val currentZoom = state.zoomRatio
+                val delta = detector.scaleFactor
+                
+                // Block Ultrawide (anything < 1.0f) and excessive telephoto (keep it digital on main)
+                // 1.0f is the primary 'normal' camera.
+                val nextZoom = (currentZoom * delta).coerceIn(1.0f, 3.0f) 
+                camera?.cameraControl?.setZoomRatio(nextZoom)
+                return true
+            }
+        })
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
             != PackageManager.PERMISSION_GRANTED) {
@@ -147,6 +199,9 @@ class ScannerActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        lightSensor?.let {
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+        }
         // Dynamically detect if admin deleted the account from Firebase Auth
         com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.reload()?.addOnFailureListener { e ->
             if (e is com.google.firebase.auth.FirebaseAuthInvalidUserException) { // Account deleted or disabled
@@ -168,6 +223,38 @@ class ScannerActivity : AppCompatActivity() {
                 finish()
             }
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(this)
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event?.sensor?.type == Sensor.TYPE_LIGHT) {
+            val lux = event.values[0]
+            if (!userManuallyToggled) {
+                if (lux < 5f && !isFlashOn) {
+                    isFlashOn = true
+                    camera?.cameraControl?.enableTorch(true)
+                    updateFlashlightIcon()
+                } else if (lux > 20f && isFlashOn) {
+                    isFlashOn = false
+                    camera?.cameraControl?.enableTorch(false)
+                    updateFlashlightIcon()
+                }
+            }
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+
+    private fun updateFlashlightIcon() {
+        val btnFlashlight = findViewById<ImageButton>(R.id.btnFlashlight)
+        btnFlashlight.setImageResource(if (isFlashOn) R.drawable.ic_flashlight_on else R.drawable.ic_flashlight_off)
+        btnFlashlight.imageTintList = android.content.res.ColorStateList.valueOf(
+            if (isFlashOn) Color.parseColor("#8BF7E6") else Color.WHITE
+        )
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -273,7 +360,9 @@ class ScannerActivity : AppCompatActivity() {
             analysis.setAnalyzer(ContextCompat.getMainExecutor(this)) { scanQR(it) }
 
             cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis)
+            camera = cameraProvider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis)
+            // Fix: Immediately apply the current intended torch state once camera is ready
+            camera?.cameraControl?.enableTorch(isFlashOn)
         }, ContextCompat.getMainExecutor(this))
     }
 
@@ -547,7 +636,7 @@ class ScannerActivity : AppCompatActivity() {
         // Force the bottom sheet to fully expand so the top button isn't clipped
         val bottomSheet = chooser.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
         if (bottomSheet != null) {
-            val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(bottomSheet)
+            val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(bottomSheet as android.widget.FrameLayout)
             behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
             behavior.skipCollapsed = true
         }
