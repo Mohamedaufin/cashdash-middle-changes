@@ -113,6 +113,7 @@ class HelpActivity : AppCompatActivity() {
         """.trimIndent()
 
         // Also save to Firestore for persistence and display in NotificationActivity
+        // 🔥 offline-first queueing: we set needs_admin_email to true so the cloud function catches it when internet returns
         val db = FirebaseFirestore.getInstance()
         val notificationData = hashMapOf(
             "name" to name,
@@ -120,11 +121,12 @@ class HelpActivity : AppCompatActivity() {
             "time" to time,
             "subject" to subject,
             "originalSubject" to subject,
-            "query" to query,
+            "query" to "$name:\n$query",
             "timestamp" to timestamp,
             "read" to false,
             "status" to "pending",
-            "reply" to "Waiting for reply..."
+            "reply" to "Waiting for reply...",
+            "needs_admin_email" to true
         )
         // Use the explicit timestamp as the document ID so the backend can update it on reply
         val userEmail = user.email ?: return
@@ -140,27 +142,8 @@ class HelpActivity : AppCompatActivity() {
 
         // 🚀 SHOW IMMEDIATE SUCCESS (Don't wait for background webhook)
         ToastHelper.showToast(this, "Query sent! We'll notify you when we reply.")
+        
+        // Remove the HTTP POST webhook entirely. Firestore will trigger the email when online.
 
-        Thread {
-            try {
-                val url = java.net.URL(pipedreamUrl)
-                val conn = url.openConnection() as java.net.HttpURLConnection
-                conn.requestMethod = "POST"
-                conn.setRequestProperty("Content-Type", "application/json")
-                conn.doOutput = true
-                
-                conn.outputStream.use { os ->
-                    val input = payload.toByteArray(charset("utf-8"))
-                    os.write(input, 0, input.size)
-                }
-                
-                // Silent check of response
-                val code = conn.responseCode
-                Log.d("HelpActivity", "Webhook response: $code")
-                
-            } catch (e: Exception) {
-                Log.e("HelpActivity", "Background webhook error", e)
-            }
-        }.start()
     }
 }

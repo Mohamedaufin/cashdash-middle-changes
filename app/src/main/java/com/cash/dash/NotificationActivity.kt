@@ -18,6 +18,12 @@ class NotificationActivity : AppCompatActivity() {
     private var filteredNotifications = listOf<NotificationModel>()
     private var currentFilter = "all" // "all", "responded", "pending"
     private lateinit var adapter: NotificationAdapter
+    private var notificationListener: com.google.firebase.firestore.ListenerRegistration? = null
+
+    override fun onDestroy() {
+        super.onDestroy()
+        notificationListener?.remove()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -93,47 +99,59 @@ class NotificationActivity : AppCompatActivity() {
         val tvEmpty = findViewById<TextView>(R.id.tvEmptyNotifications)
         val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
 
-        // SHOW LOADING STATE
-        tvEmpty.text = "Loading notifications..."
-        tvEmpty.visibility = View.VISIBLE
-        rv.visibility = View.GONE
+        loadFromCacheAndRender()
 
-        db.collection("users").document(email).collection("notifications")
+        notificationListener?.remove()
+        notificationListener = db.collection("users").document(email).collection("notifications")
             .orderBy("timestamp", Query.Direction.DESCENDING)
-            .get()
-            .addOnSuccessListener { docs ->
-                if (docs.isEmpty) {
-                    // 🔄 LEGACY MIGRATION: Check if there are old notifications under UID and copy them over
-                    db.collection("users").document(user.uid).collection("notifications")
-                        .get()
-                        .addOnSuccessListener { legacyDocs ->
-                            if (!legacyDocs.isEmpty) {
-                                val batch = db.batch()
-                                for (legacyDoc in legacyDocs) {
-                                    val newRef = db.collection("users").document(email).collection("notifications").document(legacyDoc.id)
-                                    batch.set(newRef, legacyDoc.data)
-                                    // Optionally delete the old one? Better to leave it for safety right now.
+            .addSnapshotListener { docs, e ->
+                if (e != null) {
+                    tvEmpty.text = "Failed to load notifications.\nPlease check your connection."
+                    tvEmpty.visibility = View.VISIBLE
+                    findViewById<LinearLayout>(R.id.filterBar).visibility = View.VISIBLE
+                    rv.visibility = View.GONE
+                    allNotifications = emptyList()
+                    return@addSnapshotListener
+                }
+
+                if (docs == null || docs.isEmpty) {
+                    val prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
+                    if (!prefs.getBoolean("migrated_notifications_uid", false)) {
+                        // 🔄 LEGACY MIGRATION: Check if there are old notifications under UID and copy them over
+                        db.collection("users").document(user.uid).collection("notifications")
+                            .get()
+                            .addOnSuccessListener { legacyDocs ->
+                                if (!legacyDocs.isEmpty) {
+                                    val batch = db.batch()
+                                    for (legacyDoc in legacyDocs) {
+                                        val newRef = db.collection("users").document(email).collection("notifications").document(legacyDoc.id)
+                                        batch.set(newRef, legacyDoc.data)
+                                        batch.delete(legacyDoc.reference) // Permanently remove old ones to prevent resurrection
+                                    }
+                                    batch.commit().addOnSuccessListener {
+                                        prefs.edit().putBoolean("migrated_notifications_uid", true).apply()
+                                        // The addSnapshotListener will automatically trigger when the batch commit pushes the new docs
+                                    }
+                                } else {
+                                    prefs.edit().putBoolean("migrated_notifications_uid", true).apply()
+                                    tvEmpty.text = "No notifications yet.\n\nWe'll notify you when your support\nqueries are resolved!"
+                                    tvEmpty.visibility = View.VISIBLE
+                                    findViewById<LinearLayout>(R.id.filterBar).visibility = View.VISIBLE
+                                    rv.visibility = View.GONE
+                                    allNotifications = emptyList()
+                                    cacheNotifications(emptyList())
                                 }
-                                batch.commit().addOnSuccessListener {
-                                    // Reload after migration
-                                    loadNotifications()
-                                }
-                            } else {
-                                tvEmpty.text = "No notifications yet.\n\nWe'll notify you when your support\nqueries are resolved!"
-                                tvEmpty.visibility = View.VISIBLE
-                                findViewById<LinearLayout>(R.id.filterBar).visibility = View.VISIBLE
-                                rv.visibility = View.GONE
-                                allNotifications = emptyList()
                             }
-                        }
-                        .addOnFailureListener {
-                            tvEmpty.text = "Failed to load notifications.\nPlease check your connection."
-                            tvEmpty.visibility = View.VISIBLE
-                            findViewById<LinearLayout>(R.id.filterBar).visibility = View.VISIBLE
-                            rv.visibility = View.GONE
-                            allNotifications = emptyList()
-                        }
-                    return@addOnSuccessListener
+                        return@addSnapshotListener
+                    } else {
+                        tvEmpty.text = "No notifications yet.\n\nWe'll notify you when your support\nqueries are resolved!"
+                        tvEmpty.visibility = View.VISIBLE
+                        findViewById<LinearLayout>(R.id.filterBar).visibility = View.VISIBLE
+                        rv.visibility = View.GONE
+                        allNotifications = emptyList()
+                        cacheNotifications(emptyList())
+                        return@addSnapshotListener
+                    }
                 }
 
                 // 1. Silent cleanup for duplicates (improved)
@@ -217,15 +235,113 @@ class NotificationActivity : AppCompatActivity() {
                     )
                 }
 
+                val keepers = rawDocs.filter { d -> !toDelete.any { it.id == d.id } }
+                cacheNotifications(keepers)
                 applyFilter()
             }
-            .addOnFailureListener {
-                tvEmpty.text = "Failed to load notifications.\nPlease check your connection."
-                tvEmpty.visibility = View.VISIBLE
-                findViewById<LinearLayout>(R.id.filterBar).visibility = View.VISIBLE
-                rv.visibility = View.GONE
-                allNotifications = emptyList()
+    }
+
+    private fun cacheNotifications(docs: List<com.google.firebase.firestore.DocumentSnapshot>) {
+        try {
+            val jsonArray = org.json.JSONArray()
+            for (doc in docs) {
+                val obj = org.json.JSONObject()
+                obj.put("id", doc.id)
+                obj.put("query", doc.getString("query") ?: "")
+                obj.put("reply", doc.getString("reply") ?: "")
+                obj.put("subject", doc.getString("subject") ?: "")
+                obj.put("timestamp", doc.getLong("timestamp") ?: 0L)
+                obj.put("status", doc.getString("status") ?: "")
+                obj.put("read", doc.getBoolean("read") ?: true)
+                jsonArray.put(obj)
             }
+            getSharedPreferences("NotificationCache", MODE_PRIVATE).edit()
+                .putString("cache_data", jsonArray.toString())
+                .apply()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun loadFromCacheAndRender() {
+        val prefs = getSharedPreferences("NotificationCache", MODE_PRIVATE)
+        val jsonStr = prefs.getString("cache_data", null)
+        if (jsonStr == null) {
+            val tvEmpty = findViewById<TextView>(R.id.tvEmptyNotifications)
+            val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
+            tvEmpty.text = "Loading notifications..."
+            tvEmpty.visibility = View.VISIBLE
+            rv.visibility = View.GONE
+            findViewById<LinearLayout>(R.id.filterBar).visibility = View.GONE
+            return
+        }
+        try {
+            val array = org.json.JSONArray(jsonStr)
+            val sdf = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
+            val now = System.currentTimeMillis()
+            val fortyEightHours = 48 * 60 * 60 * 1000L
+
+            val userPrefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
+            val userName = userPrefs.getString("user_name", "User") ?: "User"
+
+            val list = mutableListOf<NotificationModel>()
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                val id = obj.getString("id")
+                val query = obj.optString("query", "No query")
+                val reply = obj.optString("reply", "Waiting for reply...")
+                val subject = obj.optString("subject", "General Help")
+                val ts = obj.optLong("timestamp", 0L)
+                val status = obj.optString("status", if (reply == "Waiting for reply...") "pending" else "responded")
+                val read = obj.optBoolean("read", true)
+
+                var isResolved = status == "resolved" || 
+                                 reply.contains("[RESOLVED]", ignoreCase = true) || 
+                                 reply.contains("[DONE]", ignoreCase = true)
+                
+                if (!isResolved && status == "responded" && (now - ts) > fortyEightHours) {
+                    isResolved = true
+                }
+
+                val isPending = (reply == "Waiting for reply...")
+                val queryTitle = when {
+                    isResolved -> "Query resolved"
+                    isPending -> "Waiting for response"
+                    else -> "Query responded"
+                }
+                val color = Color.parseColor(when {
+                    isResolved -> "#606880"
+                    isPending -> "#FFD93D"
+                    else -> "#4ADE80"
+                })
+
+                val displayQuery = query
+                    .replace("User Reply \\(\\d+\\):".toRegex(), "<font color='#B0C8FF'><b>$userName:</b></font>")
+                    .replace("User:".toRegex(), "<font color='#B0C8FF'><b>$userName:</b></font>")
+                    .replace("Team Cashdash:".toRegex(), "<font color='#4ADE80'><b>Team Cashdash:</b></font>")
+                    .replace("\n", "<br>")
+
+                list.add(NotificationModel(
+                    id = id,
+                    queryFormatted = android.text.Html.fromHtml("<b>Subject:</b> $subject<br><b>Question:</b> $displayQuery", android.text.Html.FROM_HTML_MODE_LEGACY),
+                    replyFormatted = if (isPending) null else android.text.Html.fromHtml("<font color='#4ADE80'><b>Response</b></font><br><font color='#E0EBF5'>${reply.replace("\n", "<br>")}</font>", android.text.Html.FROM_HTML_MODE_LEGACY),
+                    timestamp = ts,
+                    title = queryTitle,
+                    timeFormatted = if (ts > 0) sdf.format(Date(ts)) else "",
+                    statusColor = color,
+                    isPending = isPending,
+                    isUnread = !read,
+                    isResolved = isResolved,
+                    originalSubject = subject,
+                    originalQuery = query,
+                    originalReply = reply
+                ))
+            }
+            allNotifications = list
+            applyFilter()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun applyFilter() {
@@ -313,13 +429,40 @@ class NotificationActivity : AppCompatActivity() {
             setOnClickListener {
                 val user = FirebaseAuth.getInstance().currentUser ?: return@setOnClickListener
                 val email = user.email ?: return@setOnClickListener
+                
+                dialog.dismiss()
+                ToastHelper.showToast(this@NotificationActivity, "Query deleted")
+                
+                // Explicit Optimistic UI Update from RAM (Instant Execution)
+                val mutList = allNotifications.toMutableList()
+                mutList.removeAll { it.id == model.id }
+                allNotifications = mutList
+                
+                // Force sync the offline storage JSON instantly
+                val prefs = getSharedPreferences("NotificationCache", MODE_PRIVATE)
+                val jsonStr = prefs.getString("cache_data", null)
+                if (jsonStr != null) {
+                    try {
+                        val arr = org.json.JSONArray(jsonStr)
+                        val newArr = org.json.JSONArray()
+                        for (i in 0 until arr.length()) {
+                            val obj = arr.getJSONObject(i)
+                            if (obj.getString("id") != model.id) {
+                                newArr.put(obj)
+                            }
+                        }
+                        prefs.edit().putString("cache_data", newArr.toString()).apply()
+                    } catch (e: Exception) {}
+                }
+
+                if (allNotifications.isEmpty()) {
+                    cacheNotifications(emptyList()) // Ensures the empty state sticks
+                }
+                applyFilter() // Redraws RecyclerView instantaneously
+                
+                // Process the deletion with Firestore sequentially
                 FirebaseFirestore.getInstance().collection("users").document(email)
                     .collection("notifications").document(model.id).delete()
-                    .addOnSuccessListener {
-                        ToastHelper.showToast(this@NotificationActivity, "Query deleted")
-                        loadNotifications()
-                        dialog.dismiss()
-                    }
             }
             btnContainer.addView(this)
         }
@@ -489,22 +632,26 @@ class NotificationActivity : AppCompatActivity() {
             val prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
             val userName = prefs.getString("user_name", "User") ?: "User"
             
-            // 🔥 PRESERVE HISTORY: Append previous team response to query field before adding new user follow-up
+            // 🔥 PRESERVE HISTORY: Ensure the initial message is labeled if it wasn't already
             val lastTeamReply = model.originalReply
             val currentHistory = model.originalQuery
+            val historyWithLabel = if (currentHistory.contains(":\n")) currentHistory else "$userName:\n$currentHistory"
             
             val updatedQuery = if (lastTeamReply.isNotEmpty() && lastTeamReply != "Waiting for reply...") {
-                "$currentHistory\n\nTeam Cashdash:\n$lastTeamReply\n\n$userName:\n$replyText"
+                "$historyWithLabel\n\nTeam Cashdash:\n$lastTeamReply\n\n$userName:\n$replyText"
             } else {
-                "$currentHistory\n\n$userName:\n$replyText"
+                "$historyWithLabel\n\n$userName:\n$replyText"
             }
             
+            // 🔥 offline-first queueing: we set needs_admin_email to true so the cloud function catches it when internet returns
             val updateData = hashMapOf(
                 "query" to updatedQuery,
                 "reply" to "Waiting for reply...",
                 "status" to "pending",
                 "timestamp" to timestamp,
-                "read" to true
+                "read" to true,
+                "needs_admin_email" to true,
+                "is_reply" to true
             )
 
             val email = user.email ?: return
@@ -514,54 +661,14 @@ class NotificationActivity : AppCompatActivity() {
                     // 🚀 IMMEDIATE SUCCESS FEEDBACK
                     ToastHelper.showToast(this@NotificationActivity, "Reply sent!")
                     loadNotifications()
-                    
-                    triggerPipedreamForReply(user.uid, model.originalSubject, model.originalQuery, model.originalReply, timestamp, replyText, model.id)
+                    // Removed HTTP webhook trigger - Firestore handles it silently now
                 }
                 .addOnFailureListener {
                     ToastHelper.showToast(this@NotificationActivity, "Failed to send reply")
                 }
         }
 
-        private fun triggerPipedreamForReply(uid: String, subject: String, originalQuery: String, teamReply: String, timestamp: Long, userFollowup: String, id: String) {
-            val pipedreamUrl = "https://us-central1-cashdash-8cd8b.cloudfunctions.net/cashdashWebhook"
-            val prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
-            val name = prefs.getString("user_name", "User") ?: "User"
-            val email = prefs.getString("user_email", "No Email") ?: "No Email"
-            
-            val sdf = java.text.SimpleDateFormat("MMM dd, yyyy HH:mm", java.util.Locale.getDefault())
-            val dateStr = sdf.format(java.util.Date(timestamp))
 
-            val payload = """
-                {
-                  "uid": "$uid",
-                  "id": "$id",
-                  "name": "${name.replace("\"", "\\\"")}",
-                  "email": "${email.replace("\"", "\\\"")}",
-                  "time": "$dateStr",
-                  "subject": "${subject.replace("\"", "\\\"")}",
-                  "originalQuery": "${originalQuery.replace("\n", "\\n").replace("\"", "\\\"")}",
-                  "teamReply": "${teamReply.replace("\n", "\\n").replace("\"", "\\\"")}",
-                  "userFollowup": "${userFollowup.replace("\n", "\\n").replace("\"", "\\\"")}",
-                  "timestamp": $timestamp,
-                  "is_reply": true
-                }
-            """.trimIndent()
-
-            Thread {
-                try {
-                    val url = java.net.URL(pipedreamUrl)
-                    val conn = url.openConnection() as java.net.HttpURLConnection
-                    conn.requestMethod = "POST"
-                    conn.setRequestProperty("Content-Type", "application/json")
-                    conn.doOutput = true
-                    conn.outputStream.use { it.write(payload.toByteArray(charset("utf-8"))) }
-                    val code = conn.responseCode
-                    android.util.Log.d("NotificationActivity", "Webhook reply response: $code")
-                } catch (e: Exception) {
-                    android.util.Log.e("NotificationActivity", "Webhook error", e)
-                }
-            }.start()
-        }
 
         private fun applySwipeRecursively(view: View, listener: View.OnTouchListener) {
             view.setOnTouchListener(listener)

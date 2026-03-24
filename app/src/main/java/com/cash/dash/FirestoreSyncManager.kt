@@ -8,6 +8,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Query
 import android.content.Intent
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 
@@ -386,7 +387,6 @@ object FirestoreSyncManager {
                             isSyncingFromCloud = false
                         }
                     }
-
                     Log.d(TAG, "Pull complete for $docId. Migration flow: $isFallback")
                     
                     if (isFallback) {
@@ -424,7 +424,6 @@ object FirestoreSyncManager {
         val userDoc = db.collection("users").document(email).collection("config")
         val appContext = context.applicationContext
 
-        // ⚡ Attach Instant Sync Listeners to Local Prefs
         val prefsToWatch = listOf(
             "AppPrefs", "WalletPrefs", "CategoryPrefs", "GraphData",
             "CategoryWeekData", "MoneySchedulePrefs", "ScannerHistory", "LocalScanPrefs"
@@ -626,6 +625,12 @@ object FirestoreSyncManager {
             xmlMapToPrefs(appContext, "LocalScanPrefs", snapshot.get("LocalScanPrefs") as? Map<String, Any>)
             notifyUI(appContext)
         })
+
+        // 7. Notifications Global Cache Listener (Keeps it instantly available for NotificationActivity)
+        listeners.add(db.collection("users").document(email).collection("notifications")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .addSnapshotListener { _, _ -> /* Keeps offline cache warm silently */ }
+        )
     }
 
     private fun xmlMapToPrefs(context: Context, prefName: String, map: Map<String, Any>?) {

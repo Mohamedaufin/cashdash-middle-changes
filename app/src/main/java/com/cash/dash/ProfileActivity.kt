@@ -86,7 +86,7 @@ class ProfileActivity : AppCompatActivity() {
                 val prefsToClear = listOf(
                     "AppPrefs", "WalletPrefs", "CategoryPrefs", 
                     "GraphData", "CategoryWeekData", "MoneySchedulePrefs", 
-                    "ScannerHistory", "LocalScanPrefs"
+                    "ScannerHistory", "LocalScanPrefs", "NotificationCache"
                 )
                 prefsToClear.forEach { name ->
                     getSharedPreferences(name, MODE_PRIVATE).edit().clear().apply()
@@ -133,7 +133,7 @@ class ProfileActivity : AppCompatActivity() {
         val prefsToClear = listOf(
             "AppPrefs", "WalletPrefs", "CategoryPrefs", 
             "GraphData", "CategoryWeekData", "MoneySchedulePrefs", 
-            "ScannerHistory", "LocalScanPrefs"
+            "ScannerHistory", "LocalScanPrefs", "NotificationCache"
         )
         prefsToClear.forEach { name ->
             getSharedPreferences(name, MODE_PRIVATE).edit().clear().apply()

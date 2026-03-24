@@ -57,7 +57,7 @@ object SecurityManager {
         val prefsToClear = listOf(
             "AppPrefs", "WalletPrefs", "CategoryPrefs", 
             "GraphData", "CategoryWeekData", "MoneySchedulePrefs", 
-            "ScannerHistory", "LocalScanPrefs"
+            "ScannerHistory", "LocalScanPrefs", "NotificationCache"
         )
         prefsToClear.forEach { name ->
             context.getSharedPreferences(name, Context.MODE_PRIVATE).edit().clear().apply()
