@@ -96,25 +96,19 @@ class MoneyScheduleActivity : AppCompatActivity() {
         // Initial preview
         updateCyclePreview(rgFrequency)
 
-        // -------------------------------------------
-        // 3️⃣ SAVE BUTTON
-        // -------------------------------------------
-        btnSave.setOnClickListener {
+        val btnResetNow = findViewById<Button>(R.id.btnResetNow)
 
-            // Validate frequency selection
+        btnSave.setOnClickListener {
             val freqId = rgFrequency.checkedRadioButtonId
             if (freqId == -1) {
                 ToastHelper.showToast(this, "Select a frequency")
                 return@setOnClickListener
             }
-
-            // Validate date selection
             if (selectedDateMillis == -1L) {
                 ToastHelper.showToast(this, "Select next receiving date")
                 return@setOnClickListener
             }
 
-            // Convert selected radio to days
             val frequencyDays = when (freqId) {
                 R.id.rbMonthly -> 30
                 R.id.rbWeekly -> 7
@@ -129,19 +123,12 @@ class MoneyScheduleActivity : AppCompatActivity() {
                 else -> 30
             }
 
-            // AUTO-ROLL FORWARD IF DATE HAS PASSED
             val today = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
+                set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
             }
             val next = Calendar.getInstance().apply {
                 timeInMillis = selectedDateMillis
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
+                set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
             }
 
             if (next.before(today)) {
@@ -151,36 +138,59 @@ class MoneyScheduleActivity : AppCompatActivity() {
                 selectedDateMillis = next.timeInMillis
             }
 
-            // SAVE NEW VALUES
             prefs.edit()
                 .putInt(KEY_FREQUENCY, frequencyDays)
                 .putLong(KEY_NEXT_DATE, selectedDateMillis)
-                .putBoolean("cycle_initialized", true) // Ensure immediate rollover logic is active
+                .putBoolean("cycle_initialized", true)
                 .apply()
 
-            // Reset ALL category spent amounts for the new cycle (Fresh Start)
-            val categoryPrefs = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)
-            val categories = categoryPrefs.getStringSet("categories", emptySet()) ?: emptySet()
-            val graphPrefs = getSharedPreferences("GraphData", MODE_PRIVATE)
-            val graphEditor = graphPrefs.edit()
-            for (cat in categories) {
-                graphEditor.putFloat("SPENT_$cat", 0f)
-            }
-            graphEditor.putFloat("SPENT_no choice", 0f)
-            graphEditor.apply()
-
-            // Replenish wallet balance to initial limit
-            val wPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
-            val initialBal = wPrefs.getInt("initial_balance", 0)
-            wPrefs.edit().putInt("wallet_balance", initialBal).apply()
-
-            // Sync to Firestore
-            FirestoreSyncManager.pushAllDataToCloud(this)
-
+            executeManualReset()
             ToastHelper.showToast(this, "Schedule updated & Cycle Reset!")
-
             finish()
         }
+
+        btnResetNow.setOnClickListener {
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Reset Cycle Now?")
+                .setMessage("This will clear all allocation spending and refill your wallet to its starting amount immediately.")
+                .setPositiveButton("Reset") { _, _ ->
+                    val frequencyDays = prefs.getInt(KEY_FREQUENCY, 30)
+                    val next = Calendar.getInstance()
+                    next.add(Calendar.DAY_OF_YEAR, frequencyDays)
+                    
+                    prefs.edit()
+                        .putLong(KEY_NEXT_DATE, next.timeInMillis)
+                        .putBoolean("cycle_initialized", true)
+                        .apply()
+
+                    executeManualReset()
+                    ToastHelper.showToast(this, "Cycle reset successfully!")
+                    finish()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+    }
+
+    private fun executeManualReset() {
+        // Reset ALL category spent amounts for the new cycle (Fresh Start)
+        val categoryPrefs = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)
+        val categories = categoryPrefs.getStringSet("categories", emptySet()) ?: emptySet()
+        val graphPrefs = getSharedPreferences("GraphData", MODE_PRIVATE)
+        val graphEditor = graphPrefs.edit()
+        for (cat in categories) {
+            graphEditor.putFloat("SPENT_$cat", 0f)
+        }
+        graphEditor.putFloat("SPENT_no choice", 0f)
+        graphEditor.apply()
+
+        // Replenish wallet balance to initial limit
+        val wPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
+        val initialBal = wPrefs.getInt("initial_balance", 0)
+        wPrefs.edit().putInt("wallet_balance", initialBal).apply()
+
+        // Sync to Firestore
+        FirestoreSyncManager.pushAllDataToCloud(this)
     }
 
     private fun updateCyclePreview(rg: RadioGroup) {

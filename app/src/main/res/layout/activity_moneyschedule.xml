@@ -140,6 +140,18 @@
             android:background="@drawable/bg_glass_3d"
             app:backgroundTint="@null"
             android:layout_marginTop="10dp"/>
+
+        <!-- RESET NOW BUTTON -->
+        <Button
+            android:id="@+id/btnResetNow"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="Reset Cycle Now"
+            android:textSize="18sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_glass_input"
+            android:layout_marginTop="15dp"
+            android:textAllCaps="false"/>
     </LinearLayout>
 
 </ScrollView>

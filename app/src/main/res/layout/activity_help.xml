@@ -109,7 +109,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: Yes! Your data is privately locked to your Google account using Firebase Authentication. There is no bank-linking or raw transaction scraping."
+                    android:text="A: Yes! Your data is privately locked to your account using Firebase Authentication. There is no bank-linking or raw transaction scraping."
                     android:textColor="#D1E1FF"
                     android:textSize="14sp"
                     android:layout_marginBottom="12dp"/>
@@ -300,7 +300,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: Add a category (like 'Food'). Then click the 'Limit: ₹0' text on the category card. You can set an exact cap, like ₹5000."
+                    android:text="A: Add a category (like 'Food'). Then click the 'Set Limit' button on the allocation card."
                     android:textColor="#D1E1FF"
                     android:textSize="14sp"
                     android:layout_marginBottom="12dp"/>
@@ -308,14 +308,14 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Q: My category bar turned red, what does it mean?"
+                    android:text="Q: My allocation spent bar turned red, what does it mean?"
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
                     android:textSize="15sp"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: Red means danger! You have spent more than the limit you set for this specific category. Time to cut back on that expense."
+                    android:text="A: It means you have spent more than the limit you set for this specific allocation."
                     android:textColor="#D1E1FF"
                     android:textSize="14sp"
                     android:layout_marginBottom="12dp"/>
@@ -341,7 +341,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="To DELETE: Swipe the category card left-to-right off the screen."
+                        android:text="To Delete: Swipe the allocation card right-to-left off the screen."
                         android:textColor="#D1E1FF"
                         android:textSize="14sp"
                         android:textStyle="bold" />
@@ -362,7 +362,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="To RENAME: Press and hold your finger on the category card for a second."
+                        android:text="To Rename: Press and hold the allocation card for a second."
                         android:textColor="#D1E1FF"
                         android:textSize="14sp"
                         android:textStyle="bold" />
@@ -371,14 +371,14 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Q: What is the 'Overall' category?"
+                    android:text="Q: What is the 'Overall' category in history?"
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
                     android:textSize="15sp"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: 'Overall' is a permanent, master category that tracks the sum of ALL your expenses combined. You cannot delete or rename it. If you don't pick a specific category when logging an expense, it defaults to Overall."
+                    android:text="A: Overall is a master category that tracks the sum of all the allocation expenses combined."
                     android:textColor="#D1E1FF"
                     android:textSize="14sp"/>
             </LinearLayout>
@@ -411,7 +411,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: TAP on any green bar in the graph! It will open a detailed screen showing every individual transaction made that day (or week/month)."
+                    android:text="A: Tap on a graph! It will open a detailed screen showing every individual transaction made that day"
                     android:textColor="#D1E1FF"
                     android:textSize="14sp"
                     android:layout_marginBottom="12dp"/>
@@ -426,7 +426,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: Yes! Look for the 'Overall' button at the top right of the history screen. Tap it to filter the graph to a specific category."
+                    android:text="A: Yes! Look for the 'Overall' button at the top right of the history screen. Tap it to filter the graph to a specific allocation."
                     android:textColor="#D1E1FF"
                     android:textSize="14sp"
                     android:layout_marginBottom="12dp"/>
@@ -434,14 +434,14 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Q: How do I jump back to an old month?"
+                    android:text="Q: How do I jump back to an old month expense?"
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
                     android:textSize="15sp"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: Tap the button displaying the current date (e.g., '14/10/2026'). A calendar will pop up allowing you to warp to any past week or year."
+                    android:text="A: Tap the 'Monthly' button in history."
                     android:textColor="#D1E1FF"
                     android:textSize="14sp"
                     android:layout_marginBottom="12dp"/>
@@ -489,7 +489,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: Use this to set your 'Payday' or Allowance frequency (e.g., every 30 days). When that day arrives, CashDash will automatically 'Roll Over' by resetting your Wallet to full and clearing your category spent amounts for the new cycle!"
+                    android:text="A: Use this to set your 'Payday' or Allowance frequency (e.g., every 30 days). When that day arrives, CashDash will automatically 'Roll Over' by resetting your Wallet to full and clearing your allocation spent amounts for the new cycle!"
                     android:textColor="#D1E1FF"
                     android:textSize="14sp"
                     android:layout_marginBottom="12dp"/>
@@ -497,29 +497,37 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Q: How do I change my starting budget?"
+                    android:text="Q: How do I change my budget?"
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
                     android:textSize="15sp"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: Go to the Menu and tap 'Wallet Update'. This lets you inject more cash or reset your baseline starting amount."
+                    android:text="A: Go to the Menu and tap 'Balance Bar'. This lets you add more cash or reset your existing amount over new amount."
                     android:textColor="#D1E1FF"
                     android:textSize="14sp"
                     android:layout_marginBottom="12dp"/>
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Q: Where do I see support replies?"
-                    android:textColor="#FFFFFF"
-                    android:textStyle="bold"
-                    android:textSize="15sp"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: You'll receive a Push Notification when we reply. Alternatively, tap the Bell icon in the Menu to view your full support history."
+                    android:textColor="#D1E1FF"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="12dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Q: How do I reset my budget cycle right now?"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:textSize="15sp"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="A: Go to 'Money Schedule' in the Menu and tap the 'Reset Cycle Now' button at the bottom. This will instantly replenish your wallet and clear your allocation spent amounts."
                     android:textColor="#D1E1FF"
                     android:textSize="14sp"/>
             </LinearLayout>
