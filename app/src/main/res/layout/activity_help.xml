@@ -195,14 +195,14 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Q: How do I undo a mistake transaction?"
+                    android:text="Q: How do I delete a mistake transaction?"
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
                     android:textSize="15sp"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: Open the history. At the top left, there is an 'Daily/Weekly/Monthly' button, change over to daily menu and click the particular date graph, click and hold the particular transaction for menu options."
+                    android:text="A: Step -1: Open the history. \n     Step -2: At the top left, there is an 'Daily/Weekly/Monthly' button, change it to daily button and click the particular date graph. \n     Step -3: click and hold the particular transaction for menu options."
                     android:textColor="#D1E1FF"
                     android:textSize="14sp"
                     android:layout_marginBottom="12dp"/>
@@ -217,7 +217,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: No, the Undo button ONLY protects you against accidental double-scans or fat-finger typos on your absolute most recent transaction. This restriction guarantees accounting rigor so you can't erase your real spending habits!"
+                    android:text="A: Yes, you can delete any transaction by pressing and holding the transaction."
                     android:textColor="#D1E1FF"
                     android:textSize="14sp"/>
             </LinearLayout>
