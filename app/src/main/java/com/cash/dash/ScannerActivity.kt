@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.cash.dash
 
 import android.Manifest
@@ -38,7 +39,7 @@ import android.view.ScaleGestureDetector
 import androidx.core.app.NotificationCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
 
-@OptIn(ExperimentalGetImage::class)
+
 class ScannerActivity : AppCompatActivity(), SensorEventListener {
 
     private val CAMERA_REQUEST = 101
