@@ -95,6 +95,7 @@ class RigorActivity : AppCompatActivity() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(syncReceiver)
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if (isPage2) {
             showPage1()
