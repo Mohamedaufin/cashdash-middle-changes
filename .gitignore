@@ -16,7 +16,7 @@ replay_pid*
 /cashdash_flutter/
 /test_build/
 /Cashdash1111/
-/functions/
+# /functions/ (Removed from ignore to track backend changes)
 
 # Android app artifacts
 /app/build/

@@ -440,7 +440,7 @@ class HistoryActivity : AppCompatActivity() {
                     val sdf = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
                     btn.text = sdf.format(calPicked.time)
 
-                    forcedHighlightDay = (day - 1) % 7
+                    forcedHighlightDay = (calPicked.get(Calendar.DAY_OF_WEEK) + 5) % 7
 
                     loadGraphValues(graph)
                     animateGraph(graph)

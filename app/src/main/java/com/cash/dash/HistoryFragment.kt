@@ -401,7 +401,7 @@ class HistoryFragment : Fragment() {
                     
                     val cp = Calendar.getInstance().apply { set(y, m, d) }
                     btn.text = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(cp.time)
-                    forcedHighlightDay = (d - 1) % 7
+                    forcedHighlightDay = (cp.get(Calendar.DAY_OF_WEEK) + 5) % 7
                     
                     loadGraphValues(graph); animateGraph(graph)
                 }, selectedYear, selectedMonth, 1).show()
