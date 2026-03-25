@@ -101,4 +101,4 @@ We may update our Privacy Policy from time to time. We will notify you of any ch
 
 If you have any questions, concerns, or requests regarding this Privacy Policy or your data, please contact us:
 - **Through the App:** Visit the **Help / Support** section in the CashDash app.
-- **Email:** (Team CashDash) -> mohamedaufin@gmail.com (or via the developer contact listed on our Google Play Store page).
+- **Email:** (Team CashDash) -> cashdash.query@gmail.com (or via the developer contact listed on our Google Play Store page).
