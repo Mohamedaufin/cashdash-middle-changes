@@ -202,10 +202,48 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: Step -1: Open the history. \n     Step -2: At the top left, there is an 'Daily/Weekly/Monthly' button, change it to daily button and click the particular date graph. \n     Step -3: click and hold the particular transaction for menu options."
+                    android:text="A: Step -1: Open the history."
                     android:textColor="#D1E1FF"
-                    android:textSize="14sp"
-                    android:layout_marginBottom="12dp"/>
+                    android:textSize="14sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="     Step -2: "
+                        android:textColor="#D1E1FF"
+                        android:textSize="14sp" />
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="At the top left, there is an 'Daily/Weekly/Monthly' button, change it to daily button and click the particular date graph."
+                        android:textColor="#D1E1FF"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="     Step -3: "
+                        android:textColor="#D1E1FF"
+                        android:textSize="14sp" />
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="click and hold the particular transaction for menu options."
+                        android:textColor="#D1E1FF"
+                        android:textSize="14sp" />
+                </LinearLayout>
 
                 <TextView
                     android:layout_width="match_parent"
@@ -277,13 +315,46 @@
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
                     android:textSize="15sp"/>
-                <TextView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: To DELETE: Swipe the category card left-to-right off the screen.\nTo RENAME: Press and hold your finger on the category card for a second."
-                    android:textColor="#D1E1FF"
-                    android:textSize="14sp"
-                    android:layout_marginBottom="12dp"/>
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="A: To DELETE: "
+                        android:textColor="#D1E1FF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Swipe the category card left-to-right off the screen."
+                        android:textColor="#D1E1FF"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="     To RENAME: "
+                        android:textColor="#D1E1FF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Press and hold your finger on the category card for a second."
+                        android:textColor="#D1E1FF"
+                        android:textSize="14sp" />
+                </LinearLayout>
 
                 <TextView
                     android:layout_width="match_parent"
