@@ -147,6 +147,7 @@ class BalanceSetupActivity : AppCompatActivity() {
         finish()
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val isFirstTime = prefs.getInt("initial_balance", -1) <= 0
