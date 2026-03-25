@@ -124,7 +124,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: No! Everything is silently backed up to the cloud. Just log back in with the exact same Google account and all your money, history, and categories will reappear instantly."
+                    android:text="A: No! Everything is backed up to the cloud. Just log back in with the exact account and all data will reappear instantly."
                     android:textColor="#D1E1FF"
                     android:textSize="14sp"/>
             </LinearLayout>
@@ -172,7 +172,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: Tap the green QR icon at the bottom of the home screen. After capturing a merchant's QR, enter the amount, and CashDash will transfer you to Cred UPI to finish the payment. The amount is auto-logged!"
+                    android:text="A: Tap the QR icon at the bottom of the home screen. After capturing a QR, enter the amount, and CashDash will transfer you to Cred UPI to finish the payment. The amount is auto-logged!"
                     android:textColor="#D1E1FF"
                     android:textSize="14sp"
                     android:layout_marginBottom="12dp"/>
@@ -180,7 +180,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Q: What is the Rigor Tracker (Hand Icon)?"
+                    android:text="Q: What is the Rigor Tracker (Search Icon)?"
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
                     android:textSize="15sp"/>
@@ -202,7 +202,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: Open the Rigor Tracker (Hand Icon). At the top right, there is an 'Undo' button that will delete your most recently scanned or logged transaction and refund your wallet."
+                    android:text="A: Open the history. At the top left, there is an 'Daily/Weekly/Monthly' button, change over to daily menu and click the particular date graph, click and hold the particular transaction for menu options."
                     android:textColor="#D1E1FF"
                     android:textSize="14sp"
                     android:layout_marginBottom="12dp"/>

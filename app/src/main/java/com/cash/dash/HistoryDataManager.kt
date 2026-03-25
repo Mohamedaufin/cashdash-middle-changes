@@ -69,17 +69,22 @@ object HistoryDataManager {
             val hWeek: Int
             val hDay: Int
 
-            if (timestampLong != null) {
-                cal.timeInMillis = timestampLong
-                hYear = cal.get(java.util.Calendar.YEAR)
-                hMonth = cal.get(java.util.Calendar.MONTH)
-                hWeek = cal.get(java.util.Calendar.WEEK_OF_MONTH) - 1
-                hDay = (cal.get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7
+            if (parts.size >= 9) {
+                hWeek = parts[5].toIntOrNull() ?: 0
+                hDay = parts[6].toIntOrNull() ?: 0
+                hMonth = parts[7].toIntOrNull() ?: 0
+                hYear = parts[8].toIntOrNull() ?: 0
             } else if (parts.size == 7) {
                 hWeek = parts[3].toIntOrNull() ?: 0
                 hDay = parts[4].toIntOrNull() ?: 0
                 hMonth = parts[5].toIntOrNull() ?: 0
                 hYear = parts[6].toIntOrNull() ?: 0
+            } else if (timestampLong != null) {
+                cal.timeInMillis = timestampLong
+                hYear = cal.get(java.util.Calendar.YEAR)
+                hMonth = cal.get(java.util.Calendar.MONTH)
+                hWeek = cal.get(java.util.Calendar.WEEK_OF_MONTH) - 1
+                hDay = (cal.get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7
             } else continue
 
             val match = when (mode) {

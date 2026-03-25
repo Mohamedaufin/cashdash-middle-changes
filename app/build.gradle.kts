@@ -15,14 +15,14 @@ val localProperties = Properties().apply {
 
 android {
     namespace = "com.cash.dash"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.cash.dash"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 2
-        versionName = "1.1"
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

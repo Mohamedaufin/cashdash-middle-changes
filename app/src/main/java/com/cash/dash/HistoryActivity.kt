@@ -118,7 +118,8 @@ class HistoryActivity : AppCompatActivity() {
 
                     title.text = "Weekly Spending"
                     btnDaily.text = "Weekly"
-                    btnDate.text = "Week ${selectedWeek + 1}"
+                    val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }
+                    btnDate.text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
 
                     graph.setWeekMode()
                     animateGraph(graph)
@@ -243,17 +244,22 @@ class HistoryActivity : AppCompatActivity() {
             val hWeek: Int
             val hDay: Int
 
-            if (timestampLong != null && timestampLong > 1000000000000L) {
-                cal.timeInMillis = timestampLong
-                hYear = cal.get(Calendar.YEAR)
-                hMonth = cal.get(Calendar.MONTH)
-                hWeek = cal.get(Calendar.WEEK_OF_MONTH) - 1
-                hDay = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7
+            if (p.size >= 9) {
+                hWeek = p[5].toIntOrNull() ?: 0
+                hDay = p[6].toIntOrNull() ?: 0
+                hMonth = p[7].toIntOrNull() ?: 0
+                hYear = p[8].toIntOrNull() ?: 0
             } else if (p.size == 7) {
                 hWeek = p[3].toIntOrNull() ?: 0
                 hDay = p[4].toIntOrNull() ?: 0
                 hMonth = p[5].toIntOrNull() ?: 0
                 hYear = p[6].toIntOrNull() ?: 0
+            } else if (timestampLong != null && timestampLong > 1000000000000L) {
+                cal.timeInMillis = timestampLong
+                hYear = cal.get(Calendar.YEAR)
+                hMonth = cal.get(Calendar.MONTH)
+                hWeek = cal.get(Calendar.WEEK_OF_MONTH) - 1
+                hDay = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7
             } else continue
 
             if (hYear == selectedYear) {
@@ -396,8 +402,26 @@ class HistoryActivity : AppCompatActivity() {
                     true
                 }
                 popup.show()
+            } else if (currentMode == "WEEKLY") {
+                // Show Month Picker (Jan - Dec)
+                val wrapper = androidx.appcompat.view.ContextThemeWrapper(this, R.style.PopupMenuTheme)
+                val popup = PopupMenu(wrapper, btn)
+                val months = arrayOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+                for (i in 0..11) {
+                    popup.menu.add(0, i, 0, "${months[i]} $selectedYear")
+                }
+                popup.setOnMenuItemClickListener { item ->
+                    selectedMonth = item.itemId
+                    selectedWeek = 0 // Default to first week
+                    val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }
+                    btn.text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
+                    loadGraphValues(graph)
+                    animateGraph(graph)
+                    true
+                }
+                popup.show()
             } else {
-                // Standard Date Picker
+                // Standard Date Picker (for DAILY mode)
                 val picker = android.app.DatePickerDialog(this, { _, year, month, day ->
                     selectedYear = year
                     selectedMonth = month
@@ -407,21 +431,16 @@ class HistoryActivity : AppCompatActivity() {
                         set(year, month, day)
                     }.get(Calendar.WEEK_OF_MONTH) - 1
 
-                    if (currentMode == "WEEKLY") {
-                        btn.text = "Week ${selectedWeek + 1}"
-                        forcedHighlightDay = -1
-                    } else {
-                        val calPicked = Calendar.getInstance().apply { set(year, month, day) }
-                        val realC = Calendar.getInstance()
-                        val isToday = calPicked.get(Calendar.YEAR) == realC.get(Calendar.YEAR) &&
-                                calPicked.get(Calendar.MONTH) == realC.get(Calendar.MONTH) &&
-                                calPicked.get(Calendar.DAY_OF_MONTH) == realC.get(Calendar.DAY_OF_MONTH)
+                    val calPicked = Calendar.getInstance().apply { set(year, month, day) }
+                    val realC = Calendar.getInstance()
+                    val isToday = calPicked.get(Calendar.YEAR) == realC.get(Calendar.YEAR) &&
+                            calPicked.get(Calendar.MONTH) == realC.get(Calendar.MONTH) &&
+                            calPicked.get(Calendar.DAY_OF_MONTH) == realC.get(Calendar.DAY_OF_MONTH)
 
-                        val sdf = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
-                        btn.text = sdf.format(calPicked.time)
+                    val sdf = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
+                    btn.text = sdf.format(calPicked.time)
 
-                        forcedHighlightDay = (day - 1) % 7
-                    }
+                    forcedHighlightDay = (day - 1) % 7
 
                     loadGraphValues(graph)
                     animateGraph(graph)
@@ -466,17 +485,22 @@ class HistoryActivity : AppCompatActivity() {
             val hWeek: Int
             val hDay: Int
 
-            if (timestampLong != null && timestampLong > 1000000000000L) {
-                cal.timeInMillis = timestampLong
-                hYear = cal.get(Calendar.YEAR)
-                hMonth = cal.get(Calendar.MONTH)
-                hWeek = cal.get(Calendar.WEEK_OF_MONTH) - 1
-                hDay = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7
+            if (p.size >= 9) {
+                hWeek = p[5].toIntOrNull() ?: 0
+                hDay = p[6].toIntOrNull() ?: 0
+                hMonth = p[7].toIntOrNull() ?: 0
+                hYear = p[8].toIntOrNull() ?: 0
             } else if (p.size == 7) {
                 hWeek = p[3].toIntOrNull() ?: 0
                 hDay = p[4].toIntOrNull() ?: 0
                 hMonth = p[5].toIntOrNull() ?: 0
                 hYear = p[6].toIntOrNull() ?: 0
+            } else if (timestampLong != null && timestampLong > 1000000000000L) {
+                cal.timeInMillis = timestampLong
+                hYear = cal.get(Calendar.YEAR)
+                hMonth = cal.get(Calendar.MONTH)
+                hWeek = cal.get(Calendar.WEEK_OF_MONTH) - 1
+                hDay = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7
             } else continue
 
             if (hYear == selectedYear && hMonth == selectedMonth && hWeek == selectedWeek) {
@@ -568,9 +592,8 @@ class HistoryActivity : AppCompatActivity() {
                     selectedWeek = realC.get(Calendar.WEEK_OF_MONTH) - 1
                 }
 
-                loadGraphValues(graph)
-
-                btnDate.text = "Week ${selectedWeek + 1}"
+                val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }
+                btnDate.text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
                 graph.setWeekMode()
             }
 

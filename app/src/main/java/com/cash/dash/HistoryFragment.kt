@@ -181,7 +181,8 @@ class HistoryFragment : Fragment() {
                 loadGraphValues(graph)
                 title.text = "Weekly Spending"
                 btnDaily.text = "Weekly"
-                btnDate.text = "Week ${selectedWeek + 1}"
+                val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }
+                btnDate.text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
                 graph.setWeekMode()
                 animateGraph(graph)
             }
@@ -351,8 +352,8 @@ class HistoryFragment : Fragment() {
                 btnDaily.text = "Weekly"
                 val realC = Calendar.getInstance().apply { firstDayOfWeek = Calendar.MONDAY; minimalDaysInFirstWeek = 1 }
                 if (selectedYear == realC.get(Calendar.YEAR) && selectedMonth == realC.get(Calendar.MONTH)) selectedWeek = realC.get(Calendar.WEEK_OF_MONTH) - 1
-                loadGraphValues(graph)
-                btnDate.text = "Week ${selectedWeek + 1}"
+                val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }
+                btnDate.text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
                 graph.setWeekMode()
             }
             "MONTHLY" -> {
@@ -375,12 +376,33 @@ class HistoryFragment : Fragment() {
                 for (i in -2..2) popup.menu.add(0, cy + i, 0, (cy + i).toString())
                 popup.setOnMenuItemClickListener { item -> selectedYear = item.itemId; btn.text = selectedYear.toString(); loadGraphValues(graph); animateGraph(graph); true }
                 popup.show()
+            } else if (currentMode == "WEEKLY") {
+                // Show Month Picker (Jan - Dec)
+                val wrapper = androidx.appcompat.view.ContextThemeWrapper(requireContext(), R.style.PopupMenuTheme)
+                val popup = PopupMenu(wrapper, btn)
+                val months = arrayOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+                for (i in 0..11) {
+                    popup.menu.add(0, i, 0, "${months[i]} $selectedYear")
+                }
+                popup.setOnMenuItemClickListener { item ->
+                    selectedMonth = item.itemId
+                    selectedWeek = 0 // Default to first week
+                    val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }
+                    btn.text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
+                    loadGraphValues(graph)
+                    animateGraph(graph)
+                    true
+                }
+                popup.show()
             } else {
                 android.app.DatePickerDialog(requireContext(), { _, y, m, d ->
                     selectedYear = y; selectedMonth = m
                     selectedWeek = Calendar.getInstance().apply { firstDayOfWeek = Calendar.MONDAY; minimalDaysInFirstWeek = 1; set(y, m, d) }.get(Calendar.WEEK_OF_MONTH) - 1
-                    if (currentMode == "WEEKLY") { btn.text = "Week ${selectedWeek + 1}"; forcedHighlightDay = -1 }
-                    else { val cp = Calendar.getInstance().apply { set(y, m, d) }; btn.text = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(cp.time); forcedHighlightDay = (d - 1) % 7 }
+                    
+                    val cp = Calendar.getInstance().apply { set(y, m, d) }
+                    btn.text = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(cp.time)
+                    forcedHighlightDay = (d - 1) % 7
+                    
                     loadGraphValues(graph); animateGraph(graph)
                 }, selectedYear, selectedMonth, 1).show()
             }
