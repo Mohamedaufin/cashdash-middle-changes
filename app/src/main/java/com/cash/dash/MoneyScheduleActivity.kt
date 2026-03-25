@@ -194,7 +194,7 @@ class MoneyScheduleActivity : AppCompatActivity() {
             return
         }
 
-        val sdf = java.text.SimpleDateFormat("MMMM d", Locale.getDefault())
+        val sdf = java.text.SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
         val sdfYear = java.text.SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
         
         val startCal = Calendar.getInstance().apply { 
@@ -245,7 +245,7 @@ class MoneyScheduleActivity : AppCompatActivity() {
             text = "Reset Now"
             isAllCaps = false
             setTextColor(Color.WHITE)
-            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_3d)
+            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 150)
         }
         box.addView(btnReset)
@@ -254,7 +254,7 @@ class MoneyScheduleActivity : AppCompatActivity() {
         box.addView(spacer)
 
         val btnCancel = android.widget.Button(this).apply {
-            text = "Not Now"
+            text = "Cancel"
             isAllCaps = false
             setTextColor(Color.WHITE)
             background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
