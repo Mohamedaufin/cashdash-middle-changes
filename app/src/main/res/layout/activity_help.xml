@@ -199,12 +199,24 @@
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
                     android:textSize="15sp"/>
-                <TextView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: Step -1: Open the history."
-                    android:textColor="#D1E1FF"
-                    android:textSize="14sp" />
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="A: "
+                        android:textColor="#D1E1FF"
+                        android:textSize="14sp" />
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Step -1: Open the history."
+                        android:textColor="#D1E1FF"
+                        android:textSize="14sp" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -213,14 +225,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="     Step -2: "
+                        android:text="     "
                         android:textColor="#D1E1FF"
                         android:textSize="14sp" />
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="At the top left, there is an 'Daily/Weekly/Monthly' button, change it to daily button and click the particular date graph."
+                        android:text="Step -2: At the top left, there is an 'Daily/Weekly/Monthly' button, change it to daily button and click the particular date graph."
                         android:textColor="#D1E1FF"
                         android:textSize="14sp" />
                 </LinearLayout>
@@ -233,14 +245,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="     Step -3: "
+                        android:text="     "
                         android:textColor="#D1E1FF"
                         android:textSize="14sp" />
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="click and hold the particular transaction for menu options."
+                        android:text="Step -3: click and hold the particular transaction for menu options."
                         android:textColor="#D1E1FF"
                         android:textSize="14sp" />
                 </LinearLayout>
@@ -322,17 +334,17 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="A: To DELETE: "
+                        android:text="A: "
                         android:textColor="#D1E1FF"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
+                        android:textSize="14sp" />
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Swipe the category card left-to-right off the screen."
+                        android:text="To DELETE: Swipe the category card left-to-right off the screen."
                         android:textColor="#D1E1FF"
-                        android:textSize="14sp" />
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -343,17 +355,17 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="     To RENAME: "
+                        android:text="     "
                         android:textColor="#D1E1FF"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
+                        android:textSize="14sp" />
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Press and hold your finger on the category card for a second."
+                        android:text="To RENAME: Press and hold your finger on the category card for a second."
                         android:textColor="#D1E1FF"
-                        android:textSize="14sp" />
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
 
                 <TextView
