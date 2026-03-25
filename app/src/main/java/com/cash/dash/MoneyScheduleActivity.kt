@@ -150,25 +150,7 @@ class MoneyScheduleActivity : AppCompatActivity() {
         }
 
         btnResetNow.setOnClickListener {
-            androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Reset Cycle Now?")
-                .setMessage("This will clear all allocation spending and refill your wallet to its starting amount immediately.")
-                .setPositiveButton("Reset") { _, _ ->
-                    val frequencyDays = prefs.getInt(KEY_FREQUENCY, 30)
-                    val next = Calendar.getInstance()
-                    next.add(Calendar.DAY_OF_YEAR, frequencyDays)
-                    
-                    prefs.edit()
-                        .putLong(KEY_NEXT_DATE, next.timeInMillis)
-                        .putBoolean("cycle_initialized", true)
-                        .apply()
-
-                    executeManualReset()
-                    ToastHelper.showToast(this, "Cycle reset successfully!")
-                    finish()
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
+            showResetConfirmationDialog()
         }
     }
 
@@ -212,15 +194,96 @@ class MoneyScheduleActivity : AppCompatActivity() {
             return
         }
 
-        val cal = Calendar.getInstance()
-        cal.timeInMillis = selectedDateMillis
-        cal.add(Calendar.DAY_OF_YEAR, days)
-
-        val sdf = java.text.SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
-        val dateStr = sdf.format(cal.time)
+        val sdf = java.text.SimpleDateFormat("MMMM d", Locale.getDefault())
+        val sdfYear = java.text.SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
         
-        tvCyclePreview.text = "Your cycle renews on $dateStr"
+        val startCal = Calendar.getInstance().apply { 
+            timeInMillis = selectedDateMillis
+            add(Calendar.DAY_OF_YEAR, 1) 
+        }
+        val endCal = Calendar.getInstance().apply {
+            timeInMillis = startCal.timeInMillis
+            add(Calendar.DAY_OF_YEAR, days - 1)
+        }
+
+        val startStr = sdf.format(startCal.time)
+        val endStr = sdfYear.format(endCal.time)
+        
+        tvCyclePreview.text = "Next cycle: $startStr — $endStr"
         tvCyclePreview.visibility = View.VISIBLE
+    }
+
+    private fun showResetConfirmationDialog() {
+        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(60, 60, 60, 50)
+            setBackgroundResource(R.drawable.bg_transaction)
+        }
+
+        val titleView = TextView(this).apply {
+            text = "Reset Cycle Now?"
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
+            setTextColor(Color.WHITE)
+            setTypeface(null, Typeface.BOLD)
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, 0, 0, 40)
+        }
+        box.addView(titleView)
+
+        val content = TextView(this).apply {
+            text = "This will instantly refill your wallet and set all allocation spending bars to ₹0."
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+            setTextColor(Color.WHITE)
+            setLineSpacing(10f, 1f)
+            setPadding(0, 0, 0, 60)
+            gravity = android.view.Gravity.CENTER
+        }
+        box.addView(content)
+
+        val btnReset = android.widget.Button(this).apply {
+            text = "Reset Now"
+            isAllCaps = false
+            setTextColor(Color.WHITE)
+            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_3d)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 150)
+        }
+        box.addView(btnReset)
+
+        val spacer = View(this).apply { layoutParams = LinearLayout.LayoutParams(1, 30) }
+        box.addView(spacer)
+
+        val btnCancel = android.widget.Button(this).apply {
+            text = "Not Now"
+            isAllCaps = false
+            setTextColor(Color.WHITE)
+            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 140)
+        }
+        box.addView(btnCancel)
+
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setView(box)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        
+        btnReset.setOnClickListener {
+            val frequencyDays = prefs.getInt(KEY_FREQUENCY, 30)
+            val next = Calendar.getInstance()
+            next.add(Calendar.DAY_OF_YEAR, frequencyDays)
+            
+            prefs.edit()
+                .putLong(KEY_NEXT_DATE, next.timeInMillis)
+                .putBoolean("cycle_initialized", true)
+                .apply()
+
+            executeManualReset()
+            ToastHelper.showToast(this, "Cycle reset successfully!")
+            dialog.dismiss()
+            finish()
+        }
+        btnCancel.setOnClickListener { dialog.dismiss() }
+        dialog.show()
     }
 
     private fun showResetInfoDialog() {
