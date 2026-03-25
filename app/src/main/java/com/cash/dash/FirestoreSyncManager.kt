@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION", "UNCHECKED_CAST")
 package com.cash.dash
 
 import android.content.Context
