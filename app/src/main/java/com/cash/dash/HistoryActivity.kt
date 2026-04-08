@@ -415,11 +415,16 @@ class HistoryActivity : AppCompatActivity() {
                 listPopupWindow.anchorView = btn
                 listPopupWindow.setBackgroundDrawable(androidx.core.content.ContextCompat.getDrawable(this, R.drawable.bg_3d_dropdown))
 
-                // Calculate exact height to show ~5 items (approx 260dp) to force a scrollbar
+                // Set height to ~5 items to force a scrollbar (approx 260dp)
                 val density = resources.displayMetrics.density
                 listPopupWindow.height = (260 * density).toInt()
 
-                listPopupWindow.isModal = true
+                // Align with left edge of button (horizontalOffset = 0) and expand right
+                listPopupWindow.width = (250 * density).toInt()
+                listPopupWindow.horizontalOffset = 0
+                
+                // 8dp vertical offset for the gap
+                listPopupWindow.verticalOffset = (8 * density).toInt()
                 listPopupWindow.setOnItemClickListener { _, _, position, _ ->
                     selectedMonth = position
                     selectedWeek = 0 // Default to first week
