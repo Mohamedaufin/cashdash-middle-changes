@@ -54,6 +54,7 @@
         <!-- 🚀 Launcher Activity -->
         <activity
             android:name=".SplashActivity"
+            android:theme="@style/Theme.Cashdash.Splash"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

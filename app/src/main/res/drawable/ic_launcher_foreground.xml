@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="oval">
-    <solid android:color="#FFFFFF" />
-</shape>
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_launcher1"
+    android:insetLeft="7dp"
+    android:insetRight="7dp"
+    android:insetTop="7dp"
+    android:insetBottom="1dp" />
