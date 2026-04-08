@@ -3,5 +3,5 @@
     android:drawable="@drawable/ic_launcher1"
     android:insetLeft="7dp"
     android:insetRight="7dp"
-    android:insetTop="10dp"
-    android:insetBottom="2dp" />
+    android:insetTop="7dp"
+    android:insetBottom="1dp" />
