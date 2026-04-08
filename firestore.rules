@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if the user is signed in and their email matches the document ID
+    function isOwner(emailId) {
+      return request.auth != null && request.auth.token.email == emailId;
+    }
+
+    // Match the users collection and the specific user's document
+    match /users/{userEmail} {
+      // Allow read and write only if the user is authenticated and their email matches {userEmail}
+      allow read, write: if isOwner(userEmail);
+
+      // Match all subcollections under the user's document (config, notifications, etc.)
+      match /{subcollection=**} {
+        allow read, write: if isOwner(userEmail);
+      }
+    }
+
+    // Match the deleted_accounts collection
+    match /deleted_accounts/{userEmail} {
+      // Users can only write their own deletion log
+      allow read, write: if isOwner(userEmail);
+    }
+  }
+}

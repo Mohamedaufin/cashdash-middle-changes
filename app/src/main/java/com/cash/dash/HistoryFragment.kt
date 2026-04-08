@@ -389,9 +389,9 @@ class HistoryFragment : Fragment() {
                 listPopupWindow.anchorView = btn
                 listPopupWindow.setBackgroundDrawable(androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.bg_3d_dropdown))
 
-                // Set height to ~5 items to force a scrollbar (approx 260dp)
+                // Set height to ~5 items to force a scrollbar (approx 250dp)
                 val density = resources.displayMetrics.density
-                listPopupWindow.height = (260 * density).toInt()
+                listPopupWindow.height = (250 * density).toInt()
 
                 // Align with left edge of button (horizontalOffset = 0) and expand right
                 listPopupWindow.width = (200 * density).toInt()
@@ -411,6 +411,14 @@ class HistoryFragment : Fragment() {
                     listPopupWindow.dismiss()
                 }
                 listPopupWindow.show()
+                
+                // Nuclear fix for text bleeding: force the internal ListView to clip to its padding
+                // and add extra internal buffer so text disappears before hitting the bottom edge.
+                listPopupWindow.listView?.let { lv ->
+                    lv.clipToPadding = true
+                    lv.setPadding(0, (4 * density).toInt(), 0, (12 * density).toInt())
+                    lv.scrollBarStyle = android.view.View.SCROLLBARS_INSIDE_OVERLAY
+                }
             } else {
                 android.app.DatePickerDialog(requireContext(), { _, y, m, d ->
                     selectedYear = y; selectedMonth = m
