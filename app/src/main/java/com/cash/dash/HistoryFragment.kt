@@ -393,14 +393,9 @@ class HistoryFragment : Fragment() {
                 val density = resources.displayMetrics.density
                 listPopupWindow.height = (260 * density).toInt()
 
-                // Set exact width to match the sleek wide look in the screenshot (~55% of screen width)
-                listPopupWindow.width = (resources.displayMetrics.widthPixels * 0.55f).toInt()
-                
-                // Center the wider dropdown perfectly under the button
-                val widthDiff = listPopupWindow.width - btn.width
-                if (widthDiff > 0) {
-                    listPopupWindow.horizontalOffset = -(widthDiff / 2)
-                }
+                // Align with left edge of button (horizontalOffset = 0) and expand right
+                listPopupWindow.width = (200 * density).toInt()
+                listPopupWindow.horizontalOffset = 0
                 
                 // 8dp vertical offset for the gap
                 listPopupWindow.verticalOffset = (8 * density).toInt()

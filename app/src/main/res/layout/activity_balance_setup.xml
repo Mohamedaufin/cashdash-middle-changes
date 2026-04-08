@@ -164,9 +164,9 @@
             <Button style="@style/keyBtn" android:text="8"/>
             <Button style="@style/keyBtn" android:text="9"/>
 
-            <Button style="@style/keyBtn" android:id="@+id/btnBackspace" android:text="⌫" android:textSize="28sp"/>
+            <Button style="@style/keyBtn" android:text="00" />
             <Button style="@style/keyBtn" android:text="0"/>
-            <Button style="@style/keyBtn" android:id="@+id/btnCancel" android:text="✖" android:textSize="22sp"/>
+            <Button style="@style/keyBtn" android:id="@+id/btnBackspace" android:text="✖" android:textSize="22sp"/>
 
         </GridLayout>
 
