@@ -379,22 +379,43 @@ class HistoryFragment : Fragment() {
                 popup.show()
             } else if (currentMode == "WEEKLY") {
                 // Show Month Picker (Jan - Dec)
-                val wrapper = androidx.appcompat.view.ContextThemeWrapper(requireContext(), R.style.PopupMenuTheme)
-                val popup = PopupMenu(wrapper, btn)
+                val listPopupWindow = android.widget.ListPopupWindow(requireContext())
                 val months = arrayOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
-                for (i in 0..11) {
-                    popup.menu.add(0, i, 0, "${months[i]} $selectedYear")
+                val displayList = months.map { "$it $selectedYear" }.toTypedArray()
+
+                // Use custom list item for proper white color styling matching dark theme
+                val adapter = android.widget.ArrayAdapter(requireContext(), R.layout.item_dropdown, displayList)
+                listPopupWindow.setAdapter(adapter)
+                listPopupWindow.anchorView = btn
+                listPopupWindow.setBackgroundDrawable(androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.bg_3d_dropdown))
+
+                // Set height to ~5 items to force a scrollbar (approx 260dp)
+                val density = resources.displayMetrics.density
+                listPopupWindow.height = (260 * density).toInt()
+
+                // Set exact width to match the sleek wide look in the screenshot (~55% of screen width)
+                listPopupWindow.width = (resources.displayMetrics.widthPixels * 0.55f).toInt()
+                
+                // Center the wider dropdown perfectly under the button
+                val widthDiff = listPopupWindow.width - btn.width
+                if (widthDiff > 0) {
+                    listPopupWindow.horizontalOffset = -(widthDiff / 2)
                 }
-                popup.setOnMenuItemClickListener { item ->
-                    selectedMonth = item.itemId
+                
+                // 8dp vertical offset for the gap
+                listPopupWindow.verticalOffset = (8 * density).toInt()
+
+                listPopupWindow.isModal = true
+                listPopupWindow.setOnItemClickListener { _, _, position, _ ->
+                    selectedMonth = position
                     selectedWeek = 0 // Default to first week
                     val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }
-                    btn.text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
+                    btn.text = java.text.SimpleDateFormat("MMMM yyyy", java.util.Locale.getDefault()).format(cal.time)
                     loadGraphValues(graph)
                     animateGraph(graph)
-                    true
+                    listPopupWindow.dismiss()
                 }
-                popup.show()
+                listPopupWindow.show()
             } else {
                 android.app.DatePickerDialog(requireContext(), { _, y, m, d ->
                     selectedYear = y; selectedMonth = m

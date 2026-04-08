@@ -405,22 +405,31 @@ class HistoryActivity : AppCompatActivity() {
                 popup.show()
             } else if (currentMode == "WEEKLY") {
                 // Show Month Picker (Jan - Dec)
-                val wrapper = androidx.appcompat.view.ContextThemeWrapper(this, R.style.PopupMenuTheme)
-                val popup = PopupMenu(wrapper, btn)
+                val listPopupWindow = android.widget.ListPopupWindow(this)
                 val months = arrayOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
-                for (i in 0..11) {
-                    popup.menu.add(0, i, 0, "${months[i]} $selectedYear")
-                }
-                popup.setOnMenuItemClickListener { item ->
-                    selectedMonth = item.itemId
+                val displayList = months.map { "$it $selectedYear" }.toTypedArray()
+
+                // Use custom list item for proper white color styling matching dark theme
+                val adapter = android.widget.ArrayAdapter(this, R.layout.item_dropdown, displayList)
+                listPopupWindow.setAdapter(adapter)
+                listPopupWindow.anchorView = btn
+                listPopupWindow.setBackgroundDrawable(androidx.core.content.ContextCompat.getDrawable(this, R.drawable.bg_3d_dropdown))
+
+                // Calculate exact height to show ~5 items (approx 260dp) to force a scrollbar
+                val density = resources.displayMetrics.density
+                listPopupWindow.height = (260 * density).toInt()
+
+                listPopupWindow.isModal = true
+                listPopupWindow.setOnItemClickListener { _, _, position, _ ->
+                    selectedMonth = position
                     selectedWeek = 0 // Default to first week
                     val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }
-                    btn.text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
+                    btn.text = java.text.SimpleDateFormat("MMMM yyyy", java.util.Locale.getDefault()).format(cal.time)
                     loadGraphValues(graph)
                     animateGraph(graph)
-                    true
+                    listPopupWindow.dismiss()
                 }
-                popup.show()
+                listPopupWindow.show()
             } else {
                 // Standard Date Picker (for DAILY mode)
                 val picker = android.app.DatePickerDialog(this, { _, year, month, day ->
