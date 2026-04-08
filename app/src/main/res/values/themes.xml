@@ -2,6 +2,7 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.Cashdash" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
+        <item name="android:autofilledHighlight">@android:color/transparent</item>
     </style>
 
 
@@ -21,6 +22,7 @@
 
 
     <style name="Theme.Cashdash" parent="Base.Theme.Cashdash">
+        <item name="android:autofilledHighlight">@android:color/transparent</item>
     </style>
 
 
@@ -37,7 +39,7 @@
     </style>
 
     <!-- BOTTOM SHEET STYLE (Transparent background so we can use bg_main_gradient) -->
-    <style name="BottomSheetDialogTheme" parent="Theme.Design.Light.BottomSheetDialog">
+    <style name="BottomSheetDialogTheme" parent="Theme.Design.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/BottomSheetStyle</item>
     </style>
 
