@@ -2,6 +2,10 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.Cashdash" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="android:autofilledHighlight">@android:color/transparent</item>
+    </style>
+
+    <style name="Theme.Cashdash" parent="Base.Theme.Cashdash">
+        <item name="android:autofilledHighlight">@android:color/transparent</item>
     </style>
 </resources>

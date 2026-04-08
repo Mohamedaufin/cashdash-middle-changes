@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_main_gradient"
+    android:theme="@style/ThemeOverlay.AppCompat.Dark"
     android:fillViewport="true">
 
     <LinearLayout
@@ -43,7 +44,8 @@
             <CalendarView
                 android:id="@+id/calendarView"
                 android:layout_width="match_parent"
-                android:layout_height="350dp" />
+                android:layout_height="350dp"
+                android:theme="@style/ThemeOverlay.AppCompat.Dark" />
         </FrameLayout>
 
         <!-- TITLE 2 -->

@@ -508,7 +508,13 @@
                     android:textColor="#D1E1FF"
                     android:textSize="14sp"
                     android:layout_marginBottom="12dp"/>
-
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Q: Where do I see support replies?"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:textSize="15sp"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
