@@ -25,6 +25,12 @@
         <item name="android:autofilledHighlight">@android:color/transparent</item>
     </style>
 
+    <!-- Splash Screen Theme: dark bg + custom icon (Android 12+) -->
+    <style name="Theme.Cashdash.Splash" parent="Theme.Cashdash">
+        <item name="android:windowSplashScreenBackground">#0D1129</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher1</item>
+    </style>
+
 
     <!-- 3D POPUP MENU STYLES -->
     <style name="PopupMenu3D" parent="Widget.AppCompat.PopupMenu">
