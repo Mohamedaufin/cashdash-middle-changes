@@ -120,7 +120,7 @@ class AllocatorActivity : AppCompatActivity() {
         val titleView = TextView(this).apply {
             text = "Add Category"
             textSize = 22f
-            setTextColor(Color.WHITE)
+            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
             setPadding(0, 0, 0, 40)
@@ -129,9 +129,8 @@ class AllocatorActivity : AppCompatActivity() {
 
         val input = EditText(this).apply {
             hint = "Enter category name"
-            setHintTextColor(Color.GRAY)
-            setTextColor(Color.WHITE)
-            backgroundTintList = android.content.res.ColorStateList.valueOf(Color.CYAN)
+            setHintTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_dim))
+            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                 setMargins(0, 0, 0, 50)
             }
@@ -151,7 +150,7 @@ class AllocatorActivity : AppCompatActivity() {
         val btnCancel = Button(this).apply {
             text = "Cancel"
             isAllCaps = false
-            setTextColor(Color.WHITE)
+            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
             background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
             layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                 setMargins(0, 0, 15, 0)
@@ -163,7 +162,7 @@ class AllocatorActivity : AppCompatActivity() {
         val btnAdd = Button(this).apply {
             text = "Add"
             isAllCaps = false
-            setTextColor(Color.WHITE)
+            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
             background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
             layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                 setMargins(15, 0, 0, 0)
@@ -337,7 +336,7 @@ class AllocatorActivity : AppCompatActivity() {
             val titleView = TextView(this).apply {
                 text = "Rename Category"
                 textSize = 22f
-                setTextColor(Color.WHITE)
+                setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
                 setTypeface(null, android.graphics.Typeface.BOLD)
                 gravity = android.view.Gravity.CENTER
                 setPadding(0, 0, 0, 40)
@@ -346,7 +345,7 @@ class AllocatorActivity : AppCompatActivity() {
 
             val input = EditText(this).apply {
                 setText(name)
-                setTextColor(Color.WHITE)
+                setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
                 setHintTextColor(Color.GRAY)
                 backgroundTintList = android.content.res.ColorStateList.valueOf(Color.CYAN)
                 layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
@@ -368,7 +367,7 @@ class AllocatorActivity : AppCompatActivity() {
             val btnCancel = android.widget.Button(this).apply {
                 text = "Cancel"
                 isAllCaps = false
-                setTextColor(Color.WHITE)
+                setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
                 background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
                 layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                     setMargins(0, 0, 15, 0)
@@ -380,7 +379,7 @@ class AllocatorActivity : AppCompatActivity() {
             val btnSave = android.widget.Button(this).apply {
                 text = "Save"
                 isAllCaps = false
-                setTextColor(Color.WHITE)
+                setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
                 background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
                 layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                     setMargins(15, 0, 0, 0)
@@ -424,7 +423,7 @@ class AllocatorActivity : AppCompatActivity() {
                                 val titleView = TextView(this@AllocatorActivity).apply {
                                     text = "Delete Allocation - $name?"
                                     textSize = 22f
-                                    setTextColor(Color.WHITE)
+                                    setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
                                     setTypeface(null, android.graphics.Typeface.BOLD)
                                     gravity = android.view.Gravity.CENTER
                                     setPadding(0, 0, 0, 120) // Increased gap
@@ -445,7 +444,7 @@ class AllocatorActivity : AppCompatActivity() {
                                 val btnCancel = android.widget.Button(this@AllocatorActivity).apply {
                                     text = "Cancel"
                                     isAllCaps = false
-                                    setTextColor(Color.WHITE)
+                                    setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
                                     background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
                                     layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                                         setMargins(0, 0, 15, 0)

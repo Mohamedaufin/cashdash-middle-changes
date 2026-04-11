@@ -188,9 +188,9 @@ class RigorActivity : AppCompatActivity() {
                 spentBar.requestLayout()
 
                 if (limit > 0 && spent >= limit) {
-                    spentBar.setBackgroundColor(Color.RED)
+                    spentBar.setBackgroundResource(R.drawable.bg_glass_progress_fill_red)
                 } else {
-                    spentBar.setBackgroundColor(Color.parseColor("#8BF7E6"))
+                    spentBar.setBackgroundResource(R.drawable.bg_glass_progress_fill)
                 }
             }
 
@@ -208,7 +208,7 @@ class RigorActivity : AppCompatActivity() {
         val titleView = TextView(this).apply {
             text = "New Allocation"
             textSize = 22f
-            setTextColor(Color.WHITE)
+            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
             setPadding(0, 0, 0, 40)
@@ -218,9 +218,8 @@ class RigorActivity : AppCompatActivity() {
         val inputName = EditText(this).apply {
             hint = "Category Name (e.g. Travel)"
             inputType = android.text.InputType.TYPE_CLASS_TEXT
-            setTextColor(Color.WHITE)
-            setHintTextColor(Color.parseColor("#A0A0A0"))
-            backgroundTintList = android.content.res.ColorStateList.valueOf(Color.CYAN)
+            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
+            setHintTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_dim))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                 setMargins(0, 0, 0, 30)
             }
@@ -230,9 +229,8 @@ class RigorActivity : AppCompatActivity() {
         val inputLimit = EditText(this).apply {
             hint = "Monthly Limit (Optional)"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setTextColor(Color.WHITE)
-            setHintTextColor(Color.parseColor("#A0A0A0"))
-            backgroundTintList = android.content.res.ColorStateList.valueOf(Color.CYAN)
+            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
+            setHintTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_dim))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                 setMargins(0, 0, 0, 50)
             }
@@ -252,7 +250,7 @@ class RigorActivity : AppCompatActivity() {
         val btnCancel = android.widget.Button(this).apply {
             text = "Cancel"
             isAllCaps = false
-            setTextColor(Color.WHITE)
+            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
             background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
             layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                 setMargins(0, 0, 15, 0)
@@ -264,7 +262,7 @@ class RigorActivity : AppCompatActivity() {
         val btnSave = android.widget.Button(this).apply {
             text = "Create"
             isAllCaps = false
-            setTextColor(Color.WHITE)
+            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
             background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
             layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                 setMargins(15, 0, 0, 0)

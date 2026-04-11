@@ -2,6 +2,7 @@ package com.cash.dash
 
 import android.content.Context
 import android.graphics.*
+import androidx.core.content.ContextCompat
 import android.util.AttributeSet
 import android.view.View
 
@@ -13,17 +14,15 @@ class WeeklyBarGraphView(context: Context, attrs: AttributeSet?) : View(context,
     private var limitValue: Float = -1f
 
     private val barPaint = Paint().apply {
-        color = Color.parseColor("#D9D9D9")
         isAntiAlias = true
     }
 
     private val highlightPaint = Paint().apply {
-        color = Color.parseColor("#8BF7E6")
         isAntiAlias = true
     }
 
     private val textPaint = Paint().apply {
-        color = Color.WHITE
+        color = ContextCompat.getColor(context, R.color.text_primary)
         textSize = 32f
         textAlign = Paint.Align.CENTER
         isAntiAlias = true
@@ -36,7 +35,7 @@ class WeeklyBarGraphView(context: Context, attrs: AttributeSet?) : View(context,
     }
 
     private val limitTextPaint = Paint().apply {
-        color = Color.WHITE
+        color = ContextCompat.getColor(context, R.color.text_primary)
         textSize = 28f
         textAlign = Paint.Align.LEFT
         typeface = Typeface.DEFAULT_BOLD
@@ -107,21 +106,18 @@ class WeeklyBarGraphView(context: Context, attrs: AttributeSet?) : View(context,
             val right = center + barWidth / 2
             val top = bottom - barHeight
 
-            val baseColor = if (limitValue > 0 && value >= limitValue) "#8BF7E6" else "#D9D9D9"
-            val darkColor = if (limitValue > 0 && value >= limitValue) "#4A9F91" else "#A0A0A0"
-            
-            val gradient = LinearGradient(
-                left, top, right, top,
-                Color.parseColor(baseColor), Color.parseColor(darkColor),
-                Shader.TileMode.CLAMP
-            )
-            barPaint.shader = gradient
-
-            canvas.drawRoundRect(
-                RectF(left, top, right, bottom),
-                barRadius, barRadius,
-                barPaint
-            )
+            val isOverLimit = limitValue > 0 && value >= limitValue
+            if (isOverLimit) {
+                val shader = LinearGradient(0f, top, 0f, bottom,
+                    intArrayOf(Color.parseColor("#FF6B6B"), Color.parseColor("#D32F2F")),
+                    null, Shader.TileMode.CLAMP)
+                highlightPaint.shader = shader
+                canvas.drawRoundRect(RectF(left, top, right, bottom), barRadius, barRadius, highlightPaint)
+            } else {
+                barPaint.shader = null
+                barPaint.color = Color.parseColor("#D9D9D9")
+                canvas.drawRoundRect(RectF(left, top, right, bottom), barRadius, barRadius, barPaint)
+            }
             barPaint.shader = null
 
             val glossPaint = Paint().apply {
@@ -141,12 +137,14 @@ class WeeklyBarGraphView(context: Context, attrs: AttributeSet?) : View(context,
             // Value Text (Amount)
             textPaint.textSize = 42f 
             textPaint.typeface = Typeface.DEFAULT_BOLD
+            textPaint.color = ContextCompat.getColor(context, R.color.text_primary)
             canvas.drawText("₹${value.toInt()}", center, top - 25f, textPaint)
 
             // Label Text (Date)
             val label = if (i < weekLabels.size) weekLabels[i] else "W${i+1}"
             textPaint.textSize = if (label.length > 8) 24f else 32f
             textPaint.typeface = Typeface.DEFAULT
+            textPaint.color = ContextCompat.getColor(context, R.color.text_primary)
             canvas.drawText(label, center, height - 30f, textPaint)
         }
     }

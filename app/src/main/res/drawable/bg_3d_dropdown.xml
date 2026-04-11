@@ -17,32 +17,28 @@
         </shape>
     </item>
 
-    <!-- 2. Main Background Gradient (Deep Navy matching page background) -->
+    <!-- 2. Main Background Body -->
     <item
         android:bottom="4dp"
         android:right="4dp">
         <shape android:shape="rectangle">
-            <gradient
-                android:startColor="#1A2D8A"
-                android:endColor="#07103D"
-                android:angle="135"
-                android:type="linear"/>
+            <solid android:color="@color/surface"/>
             <corners android:radius="16dp"/>
             <stroke
-                android:width="1.5dp"
-                android:color="#4A5FA1"/>
+                android:width="1.2dp"
+                android:color="@color/border"/>
         </shape>
     </item>
 
-    <!-- 3. Top Bevel Highlight (Glass/Gloss effect) -->
+    <!-- 3. Subdued Top Bevel Highlight (Gloss effect) -->
     <item
-        android:bottom="20dp"
+        android:bottom="24dp"
         android:right="4dp"
         android:left="4dp"
         android:top="0dp">
         <shape android:shape="rectangle">
             <gradient
-                android:startColor="#50FFFFFF"
+                android:startColor="#15FFFFFF"
                 android:endColor="#00FFFFFF"
                 android:angle="270"
                 android:type="linear"/>

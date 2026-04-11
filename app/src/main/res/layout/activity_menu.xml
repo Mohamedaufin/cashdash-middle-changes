@@ -81,7 +81,7 @@
             android:layout_height="70dp"
             android:text="Balance bar"
             android:textSize="22sp"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/text_primary"
             android:background="@drawable/bg_glass_3d"/>
 
         <View android:layout_height="30dp" android:layout_width="0dp"/>
@@ -91,7 +91,7 @@
             android:layout_height="70dp"
             android:text="Update money schedule"
             android:textSize="22sp"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/text_primary"
             android:background="@drawable/bg_glass_3d"/>
 
 
@@ -103,7 +103,7 @@
             android:layout_height="70dp"
             android:text="Help"
             android:textSize="22sp"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/text_primary"
             android:background="@drawable/bg_glass_3d"/>
 
         <View android:layout_height="30dp" android:layout_width="0dp"/>
@@ -114,7 +114,7 @@
             android:layout_height="70dp"
             android:text="Privacy Policy"
             android:textSize="22sp"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/text_primary"
             android:background="@drawable/bg_glass_3d"/>
 
     </LinearLayout>

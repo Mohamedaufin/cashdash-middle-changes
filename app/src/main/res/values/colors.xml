@@ -2,4 +2,27 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- NEW DESIGN SYSTEM: Purple & Slate -->
+    <!-- Background & Surface -->
+    <color name="app_bg">#0C0C0F</color>
+    <color name="surface">#131318</color>
+    <color name="surface_2">#1C1C24</color>
+    <color name="border">#2A2A36</color>
+
+    <!-- Primary Purple -->
+    <color name="primary_purple">#7C5CFC</color>
+    <color name="primary_light">#A48AFD</color>
+    <color name="primary_dark">#5B3FCC</color>
+
+    <!-- Typography -->
+    <color name="text_primary">#F0EFF8</color>
+    <color name="text_muted">#7E7D96</color>
+    <color name="text_dim">#4A495E</color>
+
+    <!-- Semantic Aliases (to minimize layout changes) -->
+    <color name="bg_main">@color/app_bg</color>
+    <color name="bg_main_light">@color/surface</color>
+    <color name="accent_primary">@color/primary_purple</color>
+    <color name="text_secondary">@color/text_muted</color>
 </resources>

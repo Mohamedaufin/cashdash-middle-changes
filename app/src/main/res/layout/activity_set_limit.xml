@@ -43,7 +43,7 @@
             android:gravity="center"
             android:layout_marginBottom="25dp"
             android:text="Setting limit"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/text_primary"
             android:textSize="24sp"
             android:paddingTop="35dp" />
 
@@ -62,7 +62,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="₹"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/white"
                 android:textSize="36sp"
                 android:textStyle="bold"
                 android:layout_marginEnd="10dp"/>
@@ -73,10 +73,10 @@
                 android:layout_height="wrap_content"
                 android:background="@android:color/transparent"
                 android:hint="0"
-                android:textColorHint="#B0B0B0"
+                android:textColorHint="@color/text_dim"
                 android:text="0"
                 android:gravity="center"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/text_primary"
                 android:textSize="44sp"
                 android:textStyle="bold"
                 android:focusable="false"

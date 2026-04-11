@@ -22,7 +22,7 @@
             android:text="Current Cycle End Date"
             android:textSize="22sp"
             android:textStyle="bold"
-            android:textColor="@android:color/white"
+            android:textColor="@color/text_primary"
             android:layout_marginBottom="5dp"/>
 
         <TextView
@@ -63,7 +63,7 @@
                 android:text="Budget Reset Frequency"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/white"/>
+                android:textColor="@color/text_primary"/>
 
             <ImageButton
                 android:id="@+id/btnInfoReset"
@@ -92,17 +92,17 @@
             <RadioButton
                 android:id="@+id/rbMonthly"
                 android:text="Monthly (30 days)"
-                android:textColor="@android:color/white"/>
+                android:textColor="@color/text_primary"/>
 
             <RadioButton
                 android:id="@+id/rbWeekly"
                 android:text="Weekly (7 days)"
-                android:textColor="@android:color/white"/>
+                android:textColor="@color/text_primary"/>
 
             <RadioButton
                 android:id="@+id/rbCustom"
                 android:text="Custom (Days)"
-                android:textColor="@android:color/white"/>
+                android:textColor="@color/text_primary"/>
         </RadioGroup>
 
         <TextView
@@ -123,7 +123,7 @@
             android:layout_height="wrap_content"
             android:hint="Enter numbers of days"
             android:textColorHint="#B0B0B0"
-            android:textColor="@android:color/white"
+            android:textColor="@color/text_primary"
             android:inputType="number"
             android:padding="15dp"
             android:layout_marginTop="10dp"
@@ -138,7 +138,7 @@
             android:layout_height="65dp"
             android:text="Save Schedule"
             android:textSize="22sp"
-            android:textColor="@android:color/white"
+            android:textColor="@color/text_primary"
             android:background="@drawable/bg_glass_3d"
             app:backgroundTint="@null"
             android:layout_marginTop="10dp"/>
@@ -150,7 +150,7 @@
             android:layout_height="65dp"
             android:text="Reset Cycle Now"
             android:textSize="20sp"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/text_primary"
             android:background="@drawable/bg_glass_3d"
             app:backgroundTint="@null"
             android:layout_marginTop="15dp"

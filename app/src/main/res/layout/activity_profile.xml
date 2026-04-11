@@ -16,7 +16,7 @@
         <TextView
             android:text="Edit Profile"
             android:textSize="26sp"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/text_primary"
             android:textStyle="bold"
             android:layout_marginBottom="35dp"
             android:layout_width="wrap_content"
@@ -28,8 +28,8 @@
             android:layout_height="60dp"
             android:background="@drawable/bg_glass_input"
             android:hint="Name"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#9EB2FF"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_muted"
             android:padding="16dp"
             android:layout_marginBottom="20dp"/>
 
@@ -39,8 +39,8 @@
             android:layout_height="60dp"
             android:background="@drawable/bg_glass_input"
             android:hint="Phone Number"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#9EB2FF"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_muted"
             android:padding="16dp"
             android:inputType="phone"
             android:layout_marginBottom="20dp"/>
@@ -51,8 +51,8 @@
             android:layout_height="60dp"
             android:background="@drawable/bg_glass_input"
             android:hint="Email"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#9EB2FF"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_muted"
             android:padding="16dp"
             android:inputType="textEmailAddress"
             android:layout_marginBottom="20dp"/>
@@ -66,7 +66,7 @@
             android:textSize="18sp"
             android:background="@drawable/bg_glass_3d"
             app:backgroundTint="@null"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/text_primary"
             android:foreground="?attr/selectableItemBackgroundBorderless"
             android:layout_marginBottom="25dp"/>
 
@@ -80,7 +80,7 @@
             android:textAllCaps="false"
             android:textStyle="bold"
             android:textSize="18sp"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/text_primary"
             android:foreground="?attr/selectableItemBackgroundBorderless"
             android:layout_marginBottom="25dp"/>
 
@@ -102,7 +102,7 @@
                 android:layout_marginEnd="8dp"
                 android:background="@drawable/bg_glass_3d_red"
                 app:backgroundTint="@null"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/text_primary"
                 android:foreground="?attr/selectableItemBackgroundBorderless" />
 
             <Button
@@ -117,7 +117,7 @@
                 android:layout_marginStart="8dp"
                 android:background="@drawable/bg_glass_3d_red"
                 app:backgroundTint="@null"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/text_primary"
                 android:foreground="?attr/selectableItemBackgroundBorderless" />
         </LinearLayout>
     </LinearLayout>
