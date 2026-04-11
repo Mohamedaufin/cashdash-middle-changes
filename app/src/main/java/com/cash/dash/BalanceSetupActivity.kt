@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
@@ -39,6 +40,11 @@ class BalanceSetupActivity : AppCompatActivity() {
         // Check if this is the first time setting up
         val initialBalRaw = prefs.getInt("initial_balance", -1)
         val isFirstTime = initialBalRaw <= 0
+
+        val ivEdit = findViewById<View>(R.id.ivEditBalance)
+        ivEdit.setOnClickListener {
+            showEditBalanceDialog(tvCurrentBalance)
+        }
 
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener { onBackPressed() }
 
@@ -145,6 +151,39 @@ class BalanceSetupActivity : AppCompatActivity() {
             startActivity(intent)
         }
         finish()
+    }
+
+    private fun showEditBalanceDialog(tvDisplay: TextView) {
+        val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val current = prefs.getInt(KEY_BALANCE, 0)
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_edit_balance, null)
+        val edt = dialogView.findViewById<EditText>(R.id.edtNewBalance)
+        edt.setText(current.toString())
+        edt.setSelection(edt.text.length)
+
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this, R.style.GlassDialogTheme)
+            .setView(dialogView)
+            .create()
+
+        dialogView.findViewById<Button>(R.id.btnCancel).setOnClickListener { dialog.dismiss() }
+        dialogView.findViewById<Button>(R.id.btnSave).setOnClickListener {
+            val newVal = edt.text.toString().toIntOrNull() ?: current
+            
+            prefs.edit()
+                .putInt(KEY_BALANCE, newVal)
+                .apply()
+            
+            tvDisplay.text = "Current balance: ₹$newVal"
+            FirestoreSyncManager.pushAllDataToCloud(this)
+            androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this)
+                .sendBroadcast(android.content.Intent(FirestoreSyncManager.ACTION_SYNC_UPDATE))
+            
+            ToastHelper.showToast(this, "Balance updated ✓")
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     @Deprecated("Deprecated in Java")

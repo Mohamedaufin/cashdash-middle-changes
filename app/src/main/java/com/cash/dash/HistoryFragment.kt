@@ -116,19 +116,12 @@ class HistoryFragment : Fragment() {
     private fun setupCategoryDropdown(btn: Button, graph: DayBarGraphView) {
         btn.setOnClickListener {
             fetchCategories()
-            val wrapper = androidx.appcompat.view.ContextThemeWrapper(requireContext(), R.style.PopupMenuTheme)
-            val popup = PopupMenu(wrapper, btn)
-            for ((index, cat) in categoriesList.withIndex()) {
-                popup.menu.add(0, index, 0, cat)
-            }
-            popup.setOnMenuItemClickListener { item ->
-                currentCategoryFilter = categoriesList[item.itemId]
+            DropdownHelper.showBlinkingDropdown(requireContext(), btn, categoriesList, 200) { index, cat ->
+                currentCategoryFilter = cat
                 btn.text = if (currentCategoryFilter == "no choice") "No Choice" else currentCategoryFilter
                 loadGraphValues(graph)
                 animateGraph(graph)
-                true
             }
-            popup.show()
         }
     }
 
@@ -318,20 +311,13 @@ class HistoryFragment : Fragment() {
 
     private fun setupModeDropdown(btn: Button, graph: DayBarGraphView, title: TextView, btnDate: Button) {
         btn.setOnClickListener {
-            val wrapper = androidx.appcompat.view.ContextThemeWrapper(requireContext(), R.style.PopupMenuTheme)
-            val popup = PopupMenu(wrapper, btn)
-            popup.menu.add(0, 0, 0, "Daily")
-            popup.menu.add(0, 1, 1, "Weekly")
-            popup.menu.add(0, 2, 2, "Monthly")
-            popup.setOnMenuItemClickListener { item ->
-                when (item.itemId) {
+            DropdownHelper.showBlinkingDropdown(requireContext(), btn, listOf("Daily", "Weekly", "Monthly"), 200) { index, _ ->
+                when (index) {
                     0 -> switchMode("DAILY", graph, title, btn, btnDate)
                     1 -> switchMode("WEEKLY", graph, title, btn, btnDate)
                     2 -> switchMode("MONTHLY", graph, title, btn, btnDate)
                 }
-                true
             }
-            popup.show()
         }
     }
 
@@ -371,53 +357,26 @@ class HistoryFragment : Fragment() {
     private fun setupDatePicker(btn: Button, graph: DayBarGraphView) {
         btn.setOnClickListener {
             if (currentMode == "MONTHLY") {
-                val wrapper = androidx.appcompat.view.ContextThemeWrapper(requireContext(), R.style.PopupMenuTheme)
-                val popup = PopupMenu(wrapper, btn)
                 val cy = Calendar.getInstance().get(Calendar.YEAR)
-                for (i in -2..2) popup.menu.add(0, cy + i, 0, (cy + i).toString())
-                popup.setOnMenuItemClickListener { item -> selectedYear = item.itemId; btn.text = selectedYear.toString(); loadGraphValues(graph); animateGraph(graph); true }
-                popup.show()
-            } else if (currentMode == "WEEKLY") {
-                // Show Month Picker (Jan - Dec)
-                val listPopupWindow = android.widget.ListPopupWindow(requireContext())
-                val months = arrayOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
-                val displayList = months.map { "$it $selectedYear" }.toTypedArray()
-
-                // Use custom list item for proper white color styling matching dark theme
-                val adapter = android.widget.ArrayAdapter(requireContext(), R.layout.item_dropdown, displayList)
-                listPopupWindow.setAdapter(adapter)
-                listPopupWindow.anchorView = btn
-                listPopupWindow.setBackgroundDrawable(androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.bg_3d_dropdown))
-
-                // Set height to ~5 items to force a scrollbar (approx 250dp)
-                val density = resources.displayMetrics.density
-                listPopupWindow.height = (250 * density).toInt()
-
-                // Align with left edge of button (horizontalOffset = 0) and expand right
-                listPopupWindow.width = (200 * density).toInt()
-                listPopupWindow.horizontalOffset = 0
-                
-                // 8dp vertical offset for the gap
-                listPopupWindow.verticalOffset = (8 * density).toInt()
-
-                listPopupWindow.isModal = true
-                listPopupWindow.setOnItemClickListener { _, _, position, _ ->
-                    selectedMonth = position
-                    selectedWeek = 0 // Default to first week
-                    val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }
-                    btn.text = java.text.SimpleDateFormat("MMMM yyyy", java.util.Locale.getDefault()).format(cal.time)
+                val years = (-2..2).map { (cy + it).toString() }
+                DropdownHelper.showBlinkingDropdown(requireContext(), btn, years, 200) { _, yearStr ->
+                    selectedYear = yearStr.toInt()
+                    btn.text = yearStr
                     loadGraphValues(graph)
                     animateGraph(graph)
-                    listPopupWindow.dismiss()
                 }
-                listPopupWindow.show()
-                
-                // Nuclear fix for text bleeding: force the internal ListView to clip to its padding
-                // and add extra internal buffer so text disappears before hitting the bottom edge.
-                listPopupWindow.listView?.let { lv ->
-                    lv.clipToPadding = true
-                    lv.setPadding(0, (4 * density).toInt(), 0, (12 * density).toInt())
-                    lv.scrollBarStyle = android.view.View.SCROLLBARS_INSIDE_OVERLAY
+            } else if (currentMode == "WEEKLY") {
+                // Show Month Picker (Jan - Dec)
+                val months = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+                val displayList = months.map { "$it $selectedYear" }
+
+                DropdownHelper.showBlinkingDropdown(requireContext(), btn, displayList, 200) { position, _ ->
+                    selectedMonth = position
+                    selectedWeek = 0
+                    val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }
+                    btn.text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
+                    loadGraphValues(graph)
+                    animateGraph(graph)
                 }
             } else {
                 android.app.DatePickerDialog(requireContext(), { _, y, m, d ->

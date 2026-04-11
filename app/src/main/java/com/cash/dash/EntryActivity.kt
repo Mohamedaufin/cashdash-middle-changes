@@ -4,6 +4,7 @@ import android.graphics.Color            // <-- added
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.view.View
@@ -58,6 +59,21 @@ class EntryActivity : AppCompatActivity() {
         val tvForgotPassword = findViewById<TextView>(R.id.tvForgotPassword)
         val progressBar = findViewById<ProgressBar>(R.id.progressBar)
         val tvStatus = findViewById<TextView>(R.id.tvStatus)
+        val ivTogglePassword = findViewById<ImageView>(R.id.ivTogglePassword)
+
+        var isPasswordVisible = false
+        ivTogglePassword.setOnClickListener {
+            isPasswordVisible = !isPasswordVisible
+            if (isPasswordVisible) {
+                ivTogglePassword.setImageResource(R.drawable.ic_eye)
+                edtPassword.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            } else {
+                ivTogglePassword.setImageResource(R.drawable.ic_eye_off)
+                edtPassword.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            }
+            edtPassword.typeface = android.graphics.Typeface.DEFAULT
+            edtPassword.setSelection(edtPassword.text.length)
+        }
 
         btnSelectLogin.setOnClickListener {
             isLoginFlow = true
@@ -86,6 +102,18 @@ class EntryActivity : AppCompatActivity() {
 
         btnAction.setOnClickListener {
             handleAuth(isLoginFlow, edtName, edtPhone, edtEmail, edtPassword, btnAction, tvForgotPassword, progressBar, tvStatus, prefs)
+        }
+
+        tvForgotPassword.setOnTouchListener { view, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    view.animate().alpha(0.5f).setDuration(100).start()
+                }
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    view.animate().alpha(1.0f).setDuration(100).start()
+                }
+            }
+            false
         }
 
         tvForgotPassword.setOnClickListener {

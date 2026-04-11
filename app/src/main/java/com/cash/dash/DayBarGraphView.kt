@@ -101,7 +101,7 @@ class DayBarGraphView(context: Context, attrs: AttributeSet?) : View(context, at
 
             if (isHighlighted) {
                 val shader = LinearGradient(0f, top, 0f, bottom,
-                    intArrayOf(ContextCompat.getColor(context, R.color.primary_light), ContextCompat.getColor(context, R.color.primary_purple)),
+                    intArrayOf(Color.parseColor("#8BF7E6"), Color.parseColor("#4DE1C1")),
                     null, Shader.TileMode.CLAMP)
                 highlightBarPaint.shader = shader
                 canvas.drawRoundRect(RectF(left, top, right, bottom), 40f, 40f, highlightBarPaint)
