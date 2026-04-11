@@ -82,6 +82,13 @@ class MainActivity : AppCompatActivity() {
         initNavbar()
         initViewPager()
 
+        val bottomNav = findViewById<View>(R.id.bottomNav)
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(bottomNav) { view, insets ->
+            val systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            view.setPadding(0, 0, 0, systemBars.bottom)
+            insets
+        }
+
         ensureAccountCreationTime()
 
         if (intent.extras?.containsKey("google.message_id") == true) {

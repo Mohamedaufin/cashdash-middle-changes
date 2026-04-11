@@ -5,6 +5,7 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.content.ContextCompat
 import java.util.*
 
 class DayBarGraphView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
@@ -29,12 +30,15 @@ class DayBarGraphView(context: Context, attrs: AttributeSet?) : View(context, at
     var onBarClickListener: ((index: Int, mode: String) -> Unit)? = null
 
     private val barPaint = Paint().apply {
-        color = Color.parseColor("#D9D9D9")
+        isAntiAlias = true
+    }
+
+    private val highlightBarPaint = Paint().apply {
         isAntiAlias = true
     }
 
     private val textPaint = Paint().apply {
-        color = Color.WHITE
+        color = ContextCompat.getColor(context, R.color.text_primary)
         textSize = 32f
         textAlign = Paint.Align.CENTER
         isAntiAlias = true
@@ -79,12 +83,12 @@ class DayBarGraphView(context: Context, attrs: AttributeSet?) : View(context, at
                 val label = labels[i]
                 
                 textPaint.typeface = Typeface.DEFAULT_BOLD
-                textPaint.color = Color.WHITE
+                textPaint.color = ContextCompat.getColor(context, R.color.text_dim)
                 textPaint.textSize = 38f
                 canvas.drawText("₹0", center, bottom - 30f, textPaint)
                 
                 textPaint.typeface = Typeface.DEFAULT
-                textPaint.color = Color.WHITE
+                textPaint.color = ContextCompat.getColor(context, R.color.text_muted)
                 textPaint.textSize = if (label.length > 5) 24f else 32f
                 canvas.drawText(label, center, height - 30f, textPaint)
                 continue
@@ -95,20 +99,26 @@ class DayBarGraphView(context: Context, attrs: AttributeSet?) : View(context, at
             val right = center + barWidth / 2
             val top = bottom - barHeight
 
-            // Solid Color Highlighting (Amber/Orange for selection)
-            barPaint.shader = null
-            barPaint.color = if (isHighlighted) Color.parseColor("#FFC107") else Color.parseColor("#D9D9D9")
-
-            canvas.drawRoundRect(RectF(left, top, right, bottom), 40f, 40f, barPaint)
+            if (isHighlighted) {
+                val shader = LinearGradient(0f, top, 0f, bottom,
+                    intArrayOf(ContextCompat.getColor(context, R.color.primary_light), ContextCompat.getColor(context, R.color.primary_purple)),
+                    null, Shader.TileMode.CLAMP)
+                highlightBarPaint.shader = shader
+                canvas.drawRoundRect(RectF(left, top, right, bottom), 40f, 40f, highlightBarPaint)
+            } else {
+                barPaint.shader = null
+                barPaint.color = Color.parseColor("#D9D9D9")
+                canvas.drawRoundRect(RectF(left, top, right, bottom), 40f, 40f, barPaint)
+            }
 
             textPaint.typeface = Typeface.DEFAULT_BOLD
-            textPaint.color = Color.WHITE
+            textPaint.color = ContextCompat.getColor(context, R.color.text_primary)
             textPaint.textSize = 42f
             canvas.drawText("₹${value.toInt()}", center, top - 25f, textPaint)
             
             val label = labels[i]
             textPaint.typeface = Typeface.DEFAULT
-            textPaint.color = Color.WHITE
+            textPaint.color = ContextCompat.getColor(context, R.color.text_primary)
             textPaint.textSize = if (label.length > 5) 24f else 32f
             canvas.drawText(label, center, height - 30f, textPaint)
         }

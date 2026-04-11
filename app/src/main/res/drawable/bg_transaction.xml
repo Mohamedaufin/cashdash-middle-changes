@@ -11,20 +11,15 @@
         </shape>
     </item>
 
-    <!-- 2. Main Background Gradient (Deep Navy matching page background) -->
     <item
         android:bottom="4dp"
         android:right="4dp">
         <shape android:shape="rectangle">
-            <gradient
-                android:startColor="#1A2D8A"
-                android:endColor="#07103D"
-                android:angle="135"
-                android:type="linear"/>
+            <solid android:color="@color/surface"/>
             <corners android:radius="16dp"/>
             <stroke
-                android:width="1.5dp"
-                android:color="#4A5FA1"/>
+                android:width="1.2dp"
+                android:color="@color/border"/>
         </shape>
     </item>
 </layer-list>

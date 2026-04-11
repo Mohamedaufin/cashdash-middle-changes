@@ -1,26 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- 1. Inner Glow / Glass Tint -->
+    <!-- 1. Base Fill (Elegant Red/Rose Gradient) -->
     <item>
         <shape android:shape="rectangle">
             <gradient
-                android:startColor="#1AFFFFFF"
-                android:endColor="#08FFFFFF"
-                android:angle="135"
+                android:startColor="#FF6B6B"
+                android:endColor="#D32F2F"
+                android:angle="0"
                 android:type="linear"/>
-            <corners android:radius="14dp"/>
-            <stroke
-                android:width="1.2dp"
-                android:color="#30FFFFFF"/>
+            <corners android:radius="28dp"/>
         </shape>
     </item>
 
-    <!-- 2. Top-edge Gloss Highlight -->
+    <!-- 2. Subdued gloss -->
     <item
-        android:bottom="24dp"
-        android:left="2dp"
-        android:right="2dp"
+        android:bottom="10dp"
+        android:left="4dp"
+        android:right="4dp"
         android:top="0dp">
         <shape android:shape="rectangle">
             <gradient
@@ -29,8 +26,8 @@
                 android:angle="270"
                 android:type="linear"/>
             <corners
-                android:topLeftRadius="14dp"
-                android:topRightRadius="14dp"
+                android:topLeftRadius="28dp"
+                android:topRightRadius="28dp"
                 android:bottomLeftRadius="0dp"
                 android:bottomRightRadius="0dp"/>
         </shape>

@@ -123,7 +123,8 @@ class AllocatorFragment : Fragment() {
             hint = "Enter category name"
             setHintTextColor(Color.GRAY)
             setTextColor(Color.WHITE)
-            backgroundTintList = android.content.res.ColorStateList.valueOf(Color.CYAN)
+            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            setPadding(40, 40, 40, 40)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                 setMargins(0, 0, 0, 50)
             }
@@ -322,7 +323,8 @@ class AllocatorFragment : Fragment() {
             setText(name)
             setTextColor(Color.WHITE)
             setHintTextColor(Color.GRAY)
-            backgroundTintList = android.content.res.ColorStateList.valueOf(Color.CYAN)
+            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            setPadding(40, 40, 40, 40)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                 setMargins(0, 0, 0, 50)
             }

@@ -2,6 +2,7 @@ package com.cash.dash
 
 import android.content.Context
 import android.graphics.*
+import androidx.core.content.ContextCompat
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -16,17 +17,15 @@ class MonthlyBarGraphView(context: Context, attrs: AttributeSet?) : View(context
     )
 
     private val barPaint = Paint().apply {
-        color = Color.parseColor("#D9D9D9")
         isAntiAlias = true
     }
 
     private val highlightPaint = Paint().apply {
-        color = Color.parseColor("#8BF7E6")
         isAntiAlias = true
     }
 
     private val textPaint = Paint().apply {
-        color = Color.WHITE
+        color = ContextCompat.getColor(context, R.color.text_primary)
         textSize = 28f
         textAlign = Paint.Align.CENTER
         isAntiAlias = true
@@ -60,7 +59,9 @@ class MonthlyBarGraphView(context: Context, attrs: AttributeSet?) : View(context
             val center = spacing * (i + 1)
 
             if (value == 0f) {
-                canvas.drawText("₹0", center, bottom - 20f, textPaint)
+                // Only draw month label, skip ₹0 to avoid crowding
+                textPaint.color = ContextCompat.getColor(context, R.color.text_muted)
+                textPaint.textSize = 24f
                 canvas.drawText(monthLabels[i], center, height - 70f, textPaint)
                 continue
             }
@@ -72,15 +73,47 @@ class MonthlyBarGraphView(context: Context, attrs: AttributeSet?) : View(context
             val right = center + barWidth / 2
             val top = bottom - barHeight
 
-            val paint = if (i == selectedMonthIndex) highlightPaint else barPaint
+            val isHighlighted = (i == selectedMonthIndex)
+            if (isHighlighted) {
+                val shader = LinearGradient(0f, top, 0f, bottom,
+                    intArrayOf(ContextCompat.getColor(context, R.color.primary_light), ContextCompat.getColor(context, R.color.primary_purple)),
+                    null, Shader.TileMode.CLAMP)
+                highlightPaint.shader = shader
+                canvas.drawRoundRect(RectF(left, top, right, bottom), barRadius, barRadius, highlightPaint)
+            } else {
+                barPaint.shader = null
+                barPaint.color = Color.parseColor("#D9D9D9")
+                canvas.drawRoundRect(RectF(left, top, right, bottom), barRadius, barRadius, barPaint)
+            }
 
-            canvas.drawRoundRect(
-                RectF(left, top, right, bottom),
-                barRadius, barRadius, paint
-            )
+            textPaint.color = ContextCompat.getColor(context, R.color.text_primary)
+            val amountStr = "₹${value.toInt()}"
+            var amountSize = 26f
+            textPaint.textSize = amountSize
+            while (textPaint.measureText(amountStr) > spacing - 8f && amountSize > 14f) {
+                amountSize -= 1f
+                textPaint.textSize = amountSize
+            }
+            // Calculate safe label Y: push up if it would overlap a neighbour bar
+            var labelY = top - 20f
+            listOf(i - 1, i + 1).forEach { ni ->
+                if (ni in 0 until 12 && monthlyTotals[ni] > 0f) {
+                    val nBarHeight = ((monthlyTotals[ni] / maxVal) * graphHeight).coerceAtLeast(8f)
+                    val nTop = bottom - nBarHeight
+                    if (labelY > nTop) labelY = nTop - 20f
+                }
+            }
+            canvas.drawText(amountStr, center, labelY, textPaint)
 
-            canvas.drawText("₹${value.toInt()}", center, top - 20f, textPaint)
-            canvas.drawText(monthLabels[i], center, height - 70f, textPaint)
+            textPaint.color = ContextCompat.getColor(context, R.color.text_primary)
+            val labelStr = monthLabels[i]
+            var labelSize = 24f
+            textPaint.textSize = labelSize
+            while (textPaint.measureText(labelStr) > spacing - 8f && labelSize > 14f) {
+                labelSize -= 1f
+                textPaint.textSize = labelSize
+            }
+            canvas.drawText(labelStr, center, height - 70f, textPaint)
         }
     }
 

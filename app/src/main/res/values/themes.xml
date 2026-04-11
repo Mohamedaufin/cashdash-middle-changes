@@ -3,6 +3,10 @@
     <style name="Base.Theme.Cashdash" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <item name="android:autofilledHighlight">@android:color/transparent</item>
+        <item name="colorPrimary">@color/primary_purple</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="android:windowBackground">@color/app_bg</item>
     </style>
 
 
@@ -14,7 +18,7 @@
         <item name="backgroundTint">@null</item>
         <item name="android:background">@drawable/bg_glass_3d_keypad</item>
         <item name="android:textSize">22sp</item>
-        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textColor">@color/text_primary</item>
         <item name="android:gravity">center</item>
         <item name="android:layout_rowWeight">1</item>
     </style>
@@ -27,7 +31,7 @@
 
     <!-- Splash Screen Theme: dark bg + custom icon (Android 12+) -->
     <style name="Theme.Cashdash.Splash" parent="Theme.Cashdash">
-        <item name="android:windowSplashScreenBackground">#0D1129</item>
+        <item name="android:windowSplashScreenBackground">@color/app_bg</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
     </style>
 
@@ -40,7 +44,7 @@
 
     <style name="PopupMenuTheme" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="popupMenuStyle">@style/PopupMenu3D</item>
-        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textColor">@color/text_primary</item>
         <item name="android:textSize">16sp</item>
     </style>
 

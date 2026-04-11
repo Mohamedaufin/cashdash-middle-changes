@@ -246,6 +246,11 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [gm
                         queryText = "Question: " + queryText;
                     }
                 }
+
+                const currentReply = data.reply || "";
+                if (currentReply && currentReply !== "Waiting for reply...") {
+                    queryText = queryText + "\n\nTeam Cashdash: " + currentReply;
+                }
             }
         } catch (e) {
             queryText = "Could not load query.";

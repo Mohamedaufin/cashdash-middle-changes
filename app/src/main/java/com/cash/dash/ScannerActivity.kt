@@ -603,7 +603,7 @@ class ScannerActivity : AppCompatActivity(), SensorEventListener {
                     spentBar.startAnimation(anim)
                     spentBar.layoutParams.width = targetWidth
                     spentBar.requestLayout()
-                    spentBar.setBackgroundColor(if (limit > 0 && spent >= limit) Color.RED else Color.parseColor("#8BF7E6"))
+                    spentBar.setBackgroundResource(if (limit > 0 && spent >= limit) R.drawable.bg_glass_progress_fill_red else R.drawable.bg_glass_progress_fill)
                 }
 
                 row.setOnClickListener {

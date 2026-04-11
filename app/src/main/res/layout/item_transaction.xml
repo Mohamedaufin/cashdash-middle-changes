@@ -15,7 +15,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/text_primary"
         android:textSize="18sp"
         android:textStyle="bold"
         android:text="Title" />
@@ -25,7 +25,7 @@
         android:id="@+id/txtTransCategory"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="#B0C8FF"
+        android:textColor="@color/text_secondary"
         android:textSize="14sp"
         android:text="(CATEGORY)"
         android:layout_marginRight="15dp" />
