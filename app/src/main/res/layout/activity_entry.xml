@@ -116,19 +116,38 @@
             android:layout_marginBottom="16dp"/>
 
         <!-- PASSWORD -->
-        <EditText
-            android:id="@+id/edtPassword"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:background="@drawable/bg_glass_input"
-            android:hint="Password"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_dim"
-            android:padding="16dp"
-            android:inputType="textPassword"
-            android:autofillHints="password"
-            android:importantForAutofill="yes"
-            android:layout_marginBottom="24dp"/>
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp">
+            
+            <EditText
+                android:id="@+id/edtPassword"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:background="@drawable/bg_glass_input"
+                android:hint="Password"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_dim"
+                android:paddingLeft="16dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp"
+                android:paddingRight="48dp"
+                android:inputType="textPassword"
+                android:autofillHints="password"
+                android:importantForAutofill="yes" />
+
+            <ImageView
+                android:id="@+id/ivTogglePassword"
+                android:layout_width="48dp"
+                android:layout_height="60dp"
+                android:layout_gravity="end|center_vertical"
+                android:padding="14dp"
+                android:src="@drawable/ic_eye_off"
+                app:tint="@color/text_dim"
+                android:clickable="true"
+                android:focusable="true"/>
+        </FrameLayout>
 
         <Button
             android:id="@+id/btnAction"
@@ -164,8 +183,7 @@
         android:textSize="14sp"
         android:textStyle="bold"
         android:padding="8dp"
-        android:visibility="gone"
-        android:background="?attr/selectableItemBackground" />
+        android:visibility="gone" />
 
     <ProgressBar
         android:id="@+id/progressBar"

@@ -251,6 +251,15 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [gm
                 if (currentReply && currentReply !== "Waiting for reply...") {
                     queryText = queryText + "\n\nTeam Cashdash: " + currentReply;
                 }
+
+                // Add dynamic context tags for the admin web panel ONLY
+                if (data.status === "resolved") {
+                    if (!currentReply || currentReply === "This query has been marked as resolved by the admin.") {
+                        queryText += "\n\n(Marked resolved without reply)";
+                    } else {
+                        queryText += "\n\n(Marked resolved with reply)";
+                    }
+                }
             }
         } catch (e) {
             queryText = "Could not load query.";
@@ -348,9 +357,11 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [gm
 
         if (actionStr === "resolve_only") {
             finalStatus = "resolved";
-            finalReply = finalReply || "This query has been marked as resolved by the admin.";
+            // Ignore any typed text entirely to prevent accidental internal note leakage
+            finalReply = "This query has been marked as resolved by the admin.";
         } else if (actionStr === "reply_and_resolve") {
             finalStatus = "resolved";
+            // Leaves finalReply as exactly what the admin typed, with NO appended bracket metadata.
         }
 
         try {

@@ -189,19 +189,12 @@ class HistoryActivity : AppCompatActivity() {
     private fun setupCategoryDropdown(btn: Button, graph: DayBarGraphView) {
         btn.setOnClickListener {
             fetchCategories() // Refresh before showing menu
-            val wrapper = androidx.appcompat.view.ContextThemeWrapper(this, R.style.PopupMenuTheme)
-            val popup = PopupMenu(wrapper, btn)
-            for ((index, cat) in categoriesList.withIndex()) {
-                popup.menu.add(0, index, 0, cat)
-            }
-            popup.setOnMenuItemClickListener { item ->
-                currentCategoryFilter = categoriesList[item.itemId]
+            DropdownHelper.showBlinkingDropdown(this, btn, categoriesList, 200) { index, cat ->
+                currentCategoryFilter = cat
                 btn.text = if (currentCategoryFilter == "no choice") "No Choice" else currentCategoryFilter
                 loadGraphValues(graph)
                 animateGraph(graph)
-                true
             }
-            popup.show()
         }
     }
 
@@ -388,60 +381,26 @@ class HistoryActivity : AppCompatActivity() {
         btn.setOnClickListener {
             if (currentMode == "MONTHLY") {
                 // Show Year Picker
-                val wrapper = androidx.appcompat.view.ContextThemeWrapper(this, R.style.PopupMenuTheme)
-                val popup = PopupMenu(wrapper, btn)
                 val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-                for (i in -2..2) {
-                    val year = currentYear + i
-                    popup.menu.add(0, year, 0, year.toString())
-                }
-                popup.setOnMenuItemClickListener { item ->
-                    selectedYear = item.itemId
+                val yearsRange = (-2..2).map { (currentYear + it).toString() }
+                DropdownHelper.showBlinkingDropdown(this, btn, yearsRange, 250) { _, yearStr ->
+                    selectedYear = yearStr.toInt()
                     btn.text = selectedYear.toString()
                     loadGraphValues(graph)
                     animateGraph(graph)
-                    true
                 }
-                popup.show()
             } else if (currentMode == "WEEKLY") {
                 // Show Month Picker (Jan - Dec)
-                val listPopupWindow = android.widget.ListPopupWindow(this)
-                val months = arrayOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
-                val displayList = months.map { "$it $selectedYear" }.toTypedArray()
+                val months = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+                val displayList = months.map { "$it $selectedYear" }
 
-                // Use custom list item for proper white color styling matching dark theme
-                val adapter = android.widget.ArrayAdapter(this, R.layout.item_dropdown, displayList)
-                listPopupWindow.setAdapter(adapter)
-                listPopupWindow.anchorView = btn
-                listPopupWindow.setBackgroundDrawable(androidx.core.content.ContextCompat.getDrawable(this, R.drawable.bg_3d_dropdown))
-
-                // Set height to ~5 items to force a scrollbar (approx 250dp)
-                val density = resources.displayMetrics.density
-                listPopupWindow.height = (250 * density).toInt()
-
-                // Align with left edge of button (horizontalOffset = 0) and expand right
-                listPopupWindow.width = (250 * density).toInt()
-                listPopupWindow.horizontalOffset = 0
-                
-                // 8dp vertical offset for the gap
-                listPopupWindow.verticalOffset = (8 * density).toInt()
-                listPopupWindow.setOnItemClickListener { _, _, position, _ ->
+                DropdownHelper.showBlinkingDropdown(this, btn, displayList, 250) { position, _ ->
                     selectedMonth = position
                     selectedWeek = 0 // Default to first week
                     val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }
-                    btn.text = java.text.SimpleDateFormat("MMMM yyyy", java.util.Locale.getDefault()).format(cal.time)
+                    btn.text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
                     loadGraphValues(graph)
                     animateGraph(graph)
-                    listPopupWindow.dismiss()
-                }
-                listPopupWindow.show()
-
-                // Nuclear fix for text bleeding: force the internal ListView to clip to its padding
-                // and add extra internal buffer so text disappears before hitting the bottom edge.
-                listPopupWindow.listView?.let { lv ->
-                    lv.clipToPadding = true
-                    lv.setPadding(0, (4 * density).toInt(), 0, (12 * density).toInt())
-                    lv.scrollBarStyle = android.view.View.SCROLLBARS_INSIDE_OVERLAY
                 }
             } else {
                 // Standard Date Picker (for DAILY mode)
@@ -557,22 +516,13 @@ class HistoryActivity : AppCompatActivity() {
         val btnDaily = findViewById<Button>(R.id.btnDaily)
 
         btnDaily.setOnClickListener {
-            val wrapper = androidx.appcompat.view.ContextThemeWrapper(this, R.style.PopupMenuTheme)
-            val popup = PopupMenu(wrapper, btnDaily)
-
-            popup.menu.add(0, 0, 0, "Daily")
-            popup.menu.add(0, 1, 1, "Weekly")
-            popup.menu.add(0, 2, 2, "Monthly")
-
-            popup.setOnMenuItemClickListener { item ->
-                when (item.itemId) {
+            DropdownHelper.showBlinkingDropdown(this, btnDaily, listOf("Daily", "Weekly", "Monthly"), 200) { index, _ ->
+                when (index) {
                     0 -> switchMode("DAILY")
                     1 -> switchMode("WEEKLY")
                     2 -> switchMode("MONTHLY")
                 }
-                true
             }
-            popup.show()
         }
     }
 

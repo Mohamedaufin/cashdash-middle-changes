@@ -411,8 +411,8 @@ class AllocatorActivity : AppCompatActivity() {
                     val deltaX = e1.x - e2.x
                     val deltaY = e1.y - e2.y
 
-                    // Lenient Right-to-Left check: horizontal, moving left, moderate velocity
-                    if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 80 && Math.abs(vx) > 50) {
+                    // Highly intentional left-swipe: deltaX positive (swipe left), velocity negative, and strict horizontal thresholds
+                    if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 50 && vx < -150) {
                         view.animate().translationX(-view.width.toFloat()).alpha(0f).setDuration(250)
                             .withEndAction {
                                 val box = LinearLayout(this@AllocatorActivity)
@@ -497,9 +497,10 @@ class AllocatorActivity : AppCompatActivity() {
                 MotionEvent.ACTION_MOVE -> {
                     val dX = Math.abs(event.x - startX)
                     val dY = Math.abs(event.y - startY)
-                    // If horizontal movement is detected, immediately block ANY parent ScrollView or ViewPager
-                    if (dX > 10) {
+                    // If intentional horizontal gesture is detected: block parent scrolls, cancel long click! 
+                    if (dX > 15 && dX > dY * 1.5) {
                         isSwiping = true
+                        v.cancelLongPress() // Prevents "Rename" dialog from popping up mid-swipe
                         v.parent?.requestDisallowInterceptTouchEvent(true)
                     }
                 }

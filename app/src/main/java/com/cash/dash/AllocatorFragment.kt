@@ -379,8 +379,8 @@ class AllocatorFragment : Fragment() {
                 if (e1 != null) {
                     val deltaX = e1.x - e2.x
                     val deltaY = e1.y - e2.y
-                    // More sensitive threshold (30px distance, 20px/s velocity)
-                    if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 30 && Math.abs(vx) > 20) {
+                    // Highly intentional left-swipe: deltaX positive, velocity negative
+                    if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 50 && vx < -150) {
                         // "Add New" shouldn't actually be deletable
                         if (name != "ADD_NEW_PLACEHOLDER_NO_DELETE") {
                             view.animate().translationX(-view.width.toFloat()).alpha(0f).setDuration(250)
@@ -412,8 +412,10 @@ class AllocatorFragment : Fragment() {
                     val dX = Math.abs(event.x - startX)
                     val dY = Math.abs(event.y - startY)
                     
-                    if (dX > 10 && dX > dY) {
+                    // Enhanced 200% touch detection: detect horizontal intent almost immediately
+                    if (dX > 5 && dX > dY * 1.5) {
                         isSwiping = true
+                        view.cancelLongPress() 
                         view.parent?.requestDisallowInterceptTouchEvent(true) 
                         vp?.isUserInputEnabled = false 
                     }
@@ -424,6 +426,7 @@ class AllocatorFragment : Fragment() {
             }
             
             val handled = swipeDetector.onTouchEvent(event)
+            // If we detected swiping intent, consume the event cleanly so clicks don't fire
             handled || isSwiping
         }
 
@@ -454,9 +457,18 @@ class AllocatorFragment : Fragment() {
             setTextColor(Color.WHITE)
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
-            setPadding(0, 0, 0, 120)
+            setPadding(0, 0, 0, 30)
         }
         box.addView(titleView)
+
+        val messageView = TextView(requireContext()).apply {
+            text = "Deleting this allocation will also delete all associated expenses of $name. Continue?"
+            textSize = 16f
+            setTextColor(Color.parseColor("#A8B5D1"))
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, 0, 0, 80)
+        }
+        box.addView(messageView)
 
         val buttonContainer = LinearLayout(requireContext()).apply { orientation = LinearLayout.HORIZONTAL }
 
