@@ -152,6 +152,14 @@ class MoneyScheduleActivity : AppCompatActivity() {
         btnResetNow.setOnClickListener {
             showResetConfirmationDialog()
         }
+
+        // Apply WindowInsets for edge-to-edge support
+        val root = (findViewById<View>(android.R.id.content) as android.view.ViewGroup).getChildAt(0)
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
+            val systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            view.setPadding(view.paddingLeft, view.paddingTop, view.paddingRight, systemBars.bottom)
+            insets
+        }
     }
 
     private fun executeManualReset() {

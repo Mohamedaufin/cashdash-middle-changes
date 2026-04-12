@@ -2,6 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:scrollbars="none"
     android:background="@drawable/bg_main_gradient">
 
     <LinearLayout
@@ -33,17 +34,34 @@
             android:layout_gravity="center" />
 
         <!-- Category Title -->
-        <TextView
-            android:id="@+id/tvCategoryName"
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="FOOD"
-            android:textSize="42sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            android:gravity="center"
             android:layout_marginTop="10dp"
-            android:layout_marginBottom="5dp" />
+            android:layout_marginBottom="5dp">
+
+            <TextView
+                android:id="@+id/tvCategoryName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="FOOD"
+                android:textSize="42sp"
+                android:textStyle="bold"
+                android:layout_centerInParent="true"
+                android:textColor="#FFFFFF" />
+
+            <ImageView
+                android:id="@+id/btnEditIcon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_edit"
+                android:tint="#B0C8FF"
+                android:padding="2dp"
+                android:layout_marginStart="12dp"
+                android:layout_centerVertical="true"
+                android:layout_toEndOf="@id/tvCategoryName"
+                android:background="@null" />
+        </RelativeLayout>
 
         <TextView
             android:id="@+id/tvLimitValue"

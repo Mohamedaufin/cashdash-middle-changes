@@ -271,7 +271,7 @@ class AllocatorFragment : Fragment() {
 
         view.findViewById<TextView>(R.id.categoryName).text = name
         val iconView = view.findViewById<ImageView>(R.id.iconEdit)
-        iconView.setImageResource(CategoryIconHelper.getIconForCategory(name))
+        iconView.setImageResource(CategoryIconHelper.getIconForCategory(requireContext(), name))
 
         view.setOnClickListener {
             val intent = Intent(requireContext(), CategoryAnalysisActivity::class.java)

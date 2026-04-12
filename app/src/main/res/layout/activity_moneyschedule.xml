@@ -4,6 +4,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_main_gradient"
     android:theme="@style/ThemeOverlay.AppCompat.Dark"
+    android:scrollbars="none"
     android:fillViewport="true">
 
     <LinearLayout

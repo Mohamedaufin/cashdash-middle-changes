@@ -54,6 +54,20 @@ class CategoryAnalysisActivity : AppCompatActivity() {
             startActivity(i)
         }
 
+        val btnEditIcon = findViewById<ImageView>(R.id.btnEditIcon)
+        btnEditIcon.setImageResource(CategoryIconHelper.getIconForCategory(this, categoryName))
+        btnEditIcon.setOnClickListener {
+            showIconPickerDialog()
+        }
+
+        // Apply WindowInsets for edge-to-edge support
+        val scrollView = findViewById<View>(android.R.id.content).rootView.findViewById<android.view.View>(R.id.tvTitle).parent.parent as android.widget.ScrollView
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(scrollView) { view, insets ->
+            val systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            view.setPadding(view.paddingLeft, view.paddingTop, view.paddingRight, systemBars.bottom + 20)
+            insets
+        }
+
         refreshUI()
     }
 
@@ -205,5 +219,95 @@ class CategoryAnalysisActivity : AppCompatActivity() {
             labels.add("$startDate-$endDate")
         }
         return labels
+    }
+
+    private fun showIconPickerDialog() {
+        val box = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 60, 60, 50)
+            setBackgroundResource(R.drawable.bg_transaction)
+        }
+
+        val titleView = TextView(this).apply {
+            text = "Select Category Icon"
+            textSize = 22f
+            setTextColor(Color.WHITE)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, 0, 0, 40)
+        }
+        box.addView(titleView)
+
+        // Define icons
+        val icons = listOf(
+            Pair("Food", R.drawable.ic_category_food),
+            Pair("Shopping", R.drawable.ic_category_shopping),
+            Pair("Fuel", R.drawable.ic_category_fuel),
+            Pair("Transport", R.drawable.ic_category_transport),
+            Pair("Others", R.drawable.ic_edit)
+        )
+
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setView(box)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        icons.forEach { (name, resId) ->
+            val btn = Button(this).apply {
+                text = name
+                isAllCaps = false
+                setTextColor(Color.WHITE)
+                
+                // Only aggressively bound the raw PNG (ic_edit), keep others natural
+                if (resId == R.drawable.ic_edit) {
+                    val drw = androidx.core.content.ContextCompat.getDrawable(this@CategoryAnalysisActivity, resId)
+                    drw?.let {
+                        val iconSize = 75 // Safe size for PNG
+                        val height = if (it.intrinsicWidth > 0) (iconSize * it.intrinsicHeight) / it.intrinsicWidth else iconSize
+                        it.setBounds(0, 0, iconSize, height)
+                    }
+                    setCompoundDrawables(drw, null, null, null)
+                } else {
+                    setCompoundDrawablesWithIntrinsicBounds(resId, 0, 0, 0)
+                }
+                
+                compoundDrawablePadding = 20
+                setPadding(50, 0, 0, 0)
+                gravity = android.view.Gravity.CENTER_VERTICAL or android.view.Gravity.START
+                background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 150
+                ).apply { setMargins(0, 0, 0, 25) }
+
+                setOnClickListener {
+                    saveCustomIcon(resId)
+                    dialog.dismiss()
+                }
+            }
+            box.addView(btn)
+        }
+
+        val btnCancel = Button(this).apply {
+            text = "Cancel"
+            isAllCaps = false
+            setTextColor(Color.WHITE)
+            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 140
+            )
+            setOnClickListener { dialog.dismiss() }
+        }
+        box.addView(btnCancel)
+
+        dialog.show()
+    }
+
+    private fun saveCustomIcon(resId: Int) {
+        val prefs = getSharedPreferences(LIMIT_PREF, Context.MODE_PRIVATE)
+        prefs.edit().putInt("ICON_$categoryName", resId).apply()
+        FirestoreSyncManager.pushAllDataToCloud(this)
+        findViewById<ImageView>(R.id.btnEditIcon).setImageResource(CategoryIconHelper.getIconForCategory(this, categoryName))
+        val initialIntent = Intent(FirestoreSyncManager.ACTION_SYNC_UPDATE)
+        LocalBroadcastManager.getInstance(this).sendBroadcast(initialIntent)
     }
 }

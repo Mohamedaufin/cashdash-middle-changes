@@ -299,7 +299,7 @@ class AllocatorActivity : AppCompatActivity() {
 
         // 🔮 AI Keyword Custom Icons
         val iconView = view.findViewById<ImageView>(R.id.iconEdit)
-        val iconRes = CategoryIconHelper.getIconForCategory(name)
+        val iconRes = CategoryIconHelper.getIconForCategory(this, name)
         iconView.setImageResource(iconRes)
 
         // 👉 TAP CARD → OPEN CATEGORY ANALYSIS ACTIVITY

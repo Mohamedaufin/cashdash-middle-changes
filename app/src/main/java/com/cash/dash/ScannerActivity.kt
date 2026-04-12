@@ -131,6 +131,7 @@ class ScannerActivity : AppCompatActivity(), SensorEventListener {
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
             val systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
             
+            // Top buttons
             val closeParams = btnClose.layoutParams as FrameLayout.LayoutParams
             closeParams.topMargin = systemBars.top + 60
             btnClose.layoutParams = closeParams
@@ -143,6 +144,11 @@ class ScannerActivity : AppCompatActivity(), SensorEventListener {
             flashParams.topMargin = systemBars.top + 60
             flashParams.marginEnd = historyParams.marginEnd + 220
             btnFlashlight.layoutParams = flashParams
+
+            // Bottom Gallery button
+            val galleryParams = btnGallery.layoutParams as FrameLayout.LayoutParams
+            galleryParams.bottomMargin = systemBars.bottom + 60
+            btnGallery.layoutParams = galleryParams
             
             insets
         }
@@ -585,7 +591,7 @@ class ScannerActivity : AppCompatActivity(), SensorEventListener {
                 val txtLimit = row.findViewById<TextView>(R.id.txtLimit)
                 val iconView = row.findViewById<ImageView>(R.id.categoryIcon)
 
-                iconView.setImageResource(CategoryIconHelper.getIconForCategory(cat))
+                iconView.setImageResource(CategoryIconHelper.getIconForCategory(this, cat))
                 txtName.text = cat
 
                 val limit = prefs.getInt("LIMIT_$cat", 0)

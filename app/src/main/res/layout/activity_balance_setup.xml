@@ -58,7 +58,7 @@
         android:layout_marginStart="8dp"
         android:src="@drawable/ic_pencil"
         app:tint="#B0C8FF"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:background="@null"
         android:clickable="true"
         android:focusable="true"
         app:layout_constraintStart_toEndOf="@id/tvCurrentBalance"
