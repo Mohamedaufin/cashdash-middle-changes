@@ -32,6 +32,17 @@ class HelpActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.btnContactUs).setOnClickListener {
             showContactDialog()
         }
+
+        val root = findViewById<android.view.View>(android.R.id.content)
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
+            val systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            val btnContactUs = findViewById<android.view.View>(R.id.btnContactUs)
+            val params = btnContactUs.layoutParams as ViewGroup.MarginLayoutParams
+            // User requested ~0.5-1 cm of blank space (approx 40dp extra)
+            params.bottomMargin = systemBars.bottom + 60
+            btnContactUs.layoutParams = params
+            insets
+        }
     }
 
     private fun showContactDialog() {

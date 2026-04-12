@@ -89,9 +89,11 @@ object FirestoreSyncManager {
                 categoriesSet.forEach { catName ->
                     val limit = categoryPrefs.getInt("LIMIT_$catName", 0)
                     val spent = graphPrefs.getFloat("SPENT_$catName", 0f)
+                    val icon = categoryPrefs.getInt("ICON_$catName", 0)
                     catMap[catName] = hashMapOf(
                         "limit" to limit,
-                        "spent" to spent
+                        "spent" to spent,
+                        "icon" to icon
                     )
                 }
                 Tasks.await(configColl.document("categories").set(hashMapOf(
@@ -272,7 +274,9 @@ object FirestoreSyncManager {
                             for ((catName, valuesMap) in dataMap) {
                                 val limit = (valuesMap["limit"] as? Number)?.toInt() ?: 0
                                 val spent = (valuesMap["spent"] as? Number)?.toFloat() ?: 0f
+                                val icon = (valuesMap["icon"] as? Number)?.toInt() ?: 0
                                 cEdit.putInt("LIMIT_$catName", limit)
+                                cEdit.putInt("ICON_$catName", icon)
                                 gEdit.putFloat("SPENT_$catName", spent)
                             }
                         }
@@ -491,6 +495,7 @@ object FirestoreSyncManager {
                 cEdit.putStringSet("categories", dataMap.keys)
                 for ((catName, valuesMap) in dataMap) {
                     cEdit.putInt("LIMIT_$catName", (valuesMap["limit"] as? Number)?.toInt() ?: 0)
+                    cEdit.putInt("ICON_$catName", (valuesMap["icon"] as? Number)?.toInt() ?: 0)
                     gEdit.putFloat("SPENT_$catName", (valuesMap["spent"] as? Number)?.toFloat() ?: 0f)
                 }
             }

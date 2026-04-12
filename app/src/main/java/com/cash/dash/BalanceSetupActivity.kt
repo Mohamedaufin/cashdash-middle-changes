@@ -71,6 +71,15 @@ class BalanceSetupActivity : AppCompatActivity() {
         btnReplace.setOnClickListener {
             handleBalanceUpdate(isReplace = true, isFirstTime = false)
         }
+
+        // Apply WindowInsets for edge-to-edge support
+        val root = findViewById<View>(android.R.id.content)
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
+            val systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            val numpadContainer = findViewById<View>(R.id.numpadContainer)
+            numpadContainer.setPadding(numpadContainer.paddingLeft, numpadContainer.paddingTop, numpadContainer.paddingRight, systemBars.bottom)
+            insets
+        }
     }
 
     private fun setupNumpad() {
@@ -184,6 +193,11 @@ class BalanceSetupActivity : AppCompatActivity() {
         }
 
         dialog.show()
+        
+        dialog.window?.setLayout(
+            resources.displayMetrics.widthPixels - 100,
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        )
     }
 
     @Deprecated("Deprecated in Java")

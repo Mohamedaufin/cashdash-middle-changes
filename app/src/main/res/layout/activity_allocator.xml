@@ -59,7 +59,7 @@
             android:paddingBottom="10dp"
             android:clickable="true"
             android:focusable="true"
-            android:background="?attr/selectableItemBackground">
+            android:background="@null">
 
             <ImageView
                 android:id="@+id/iconAllocator"
@@ -94,7 +94,7 @@
             android:paddingBottom="10dp"
             android:clickable="true"
             android:focusable="true"
-            android:background="?attr/selectableItemBackground">
+            android:background="@null">
 
             <ImageView
                 android:id="@+id/iconHome"
@@ -130,7 +130,7 @@
             android:paddingBottom="10dp"
             android:clickable="true"
             android:focusable="true"
-            android:background="?attr/selectableItemBackground">
+            android:background="@null">
 
             <ImageView
                 android:id="@+id/iconHistory"

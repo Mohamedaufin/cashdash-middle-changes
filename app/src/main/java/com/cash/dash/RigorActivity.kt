@@ -155,7 +155,7 @@ class RigorActivity : AppCompatActivity() {
 
             // 🔮 AI Keyword Custom Icons
             val iconView = row.findViewById<ImageView>(R.id.categoryIcon)
-            val iconRes = CategoryIconHelper.getIconForCategory(name)
+            val iconRes = CategoryIconHelper.getIconForCategory(this, name)
             iconView.setImageResource(iconRes)
 
             txtName.text = name

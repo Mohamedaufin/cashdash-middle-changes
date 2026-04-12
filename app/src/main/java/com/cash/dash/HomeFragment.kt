@@ -49,8 +49,10 @@ class HomeFragment : Fragment() {
         loadBalance(view)
         updateNextMoneyDays(view)
 
-        view.findViewById<ImageView>(R.id.iconScanner).setOnClickListener {
-            startActivity(Intent(requireContext(), ScannerActivity::class.java))
+        view.findViewById<ImageView>(R.id.iconScanner).setOnClickListener { v ->
+            animateAndStart(v) {
+                startActivity(Intent(requireContext(), ScannerActivity::class.java))
+            }
         }
 
         view.findViewById<ImageView>(R.id.btnMenu).setOnClickListener {
@@ -61,8 +63,10 @@ class HomeFragment : Fragment() {
             startActivity(Intent(requireContext(), ProfileActivity::class.java))
         }
 
-        view.findViewById<ImageView>(R.id.iconRigorTracker).setOnClickListener {
-            startActivity(Intent(requireContext(), RigorActivity::class.java))
+        view.findViewById<ImageView>(R.id.iconRigorTracker).setOnClickListener { v ->
+            animateAndStart(v) {
+                startActivity(Intent(requireContext(), RigorActivity::class.java))
+            }
         }
 
         // Start the postponed transition from MainActivity once this view is ready
@@ -240,5 +244,21 @@ class HomeFragment : Fragment() {
                 lastLoadedDateStr = nextDateStr
             }
         }
+    }
+
+    private fun animateAndStart(view: View, action: () -> Unit) {
+        view.animate()
+            .scaleX(0.85f).scaleY(0.85f)
+            .setDuration(20)
+            .withEndAction {
+                view.animate()
+                    .scaleX(1f).scaleY(1f)
+                    .setDuration(20)
+                    .withEndAction {
+                        action()
+                    }
+                    .start()
+            }
+            .start()
     }
 }

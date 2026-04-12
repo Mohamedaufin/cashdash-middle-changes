@@ -1,5 +1,6 @@
 package com.cash.dash
 
+import android.content.Context
 import java.util.Locale
 
 object CategoryIconHelper {
@@ -14,7 +15,13 @@ object CategoryIconHelper {
      * Predictable accuracy is high due to root-word containment checking.
      * Returns the pencil icon (ic_edit) as a fallback if no confidence match is met.
      */
-    fun getIconForCategory(categoryName: String): Int {
+    fun getIconForCategory(context: Context, categoryName: String): Int {
+        val prefs = context.getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
+        val customIcon = prefs.getInt("ICON_$categoryName", 0)
+        if (customIcon != 0) {
+            return customIcon
+        }
+
         val normalized = categoryName.lowercase(Locale.getDefault()).trim()
         
         // Exact or partial containment matching
