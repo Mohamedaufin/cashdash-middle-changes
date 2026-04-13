@@ -4,44 +4,30 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/bg_main_gradient"
-    android:fitsSystemWindows="true">
+    android:background="@drawable/bg_main_gradient">
 
     <!-- Header -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="35dp"
+        android:paddingTop="28dp"
         android:paddingStart="25dp"
         android:paddingEnd="25dp"
-        android:layout_marginBottom="30dp">
+        android:layout_marginBottom="15dp">
 
-        <ImageButton
-            android:id="@+id/btnBack"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/bg_glass_3d_round"
-            android:padding="12dp"
-            android:src="@drawable/ic_back_arrow1"
-            android:scaleType="fitCenter"
-            android:tint="#FFFFFF"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
 
         <TextView
             android:id="@+id/tvHeader"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="60dp"
             android:text="Notifications"
             android:textColor="#FFFFFF"
             android:textSize="22sp"
             android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="@id/btnBack"
+            android:gravity="center"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@id/btnBack"
-            app:layout_constraintVertical_bias="0.55"/>
+            app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

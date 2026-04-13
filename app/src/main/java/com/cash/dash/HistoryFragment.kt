@@ -68,6 +68,11 @@ class HistoryFragment : Fragment() {
         graph.onBarClickListener = { index, mode ->
             handleBarClick(index, mode, graph, title, btnDaily, btnDate)
         }
+
+        view.findViewById<View>(R.id.searchBar).setOnClickListener {
+            val intent = Intent(requireContext(), SearchActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     override fun onStart() {

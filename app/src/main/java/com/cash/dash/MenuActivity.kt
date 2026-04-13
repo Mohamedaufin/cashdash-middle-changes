@@ -11,6 +11,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -34,15 +35,24 @@ class MenuActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_menu)
 
-        // Fullscreen like MainActivity
+        // Fullscreen
         androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = Color.TRANSPARENT
 
-        // Buttons
-        val btnClose = findViewById<ImageButton>(R.id.btnCloseMenu)
-        val btnBalance = findViewById<Button>(R.id.btnBalanceBar)
-        val btnHelp = findViewById<Button>(R.id.btnHelp)
-        val btnUpdateSchedule = findViewById<Button>(R.id.btnUpdateSchedule)   // NEW BUTTON
+        // Load User Profile
+        val appPrefs = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+        val userName = appPrefs.getString("user_name", "User")
+        findViewById<TextView>(R.id.tvUserName).text = userName
+
+        // Buttons / Items
+        val btnClose = findViewById<View>(R.id.btnCloseMenu)
+        val btnBalance = findViewById<View>(R.id.btnBalanceBar)
+        val btnUpdateSchedule = findViewById<View>(R.id.btnUpdateSchedule)
+        val btnTheme = findViewById<View>(R.id.btnTheme)
+        val btnHelp = findViewById<View>(R.id.btnHelp)
+        val btnPrivacyPolicy = findViewById<View>(R.id.btnPrivacyPolicy)
+        val btnNotifications = findViewById<View>(R.id.btnNotifications)
+        val notificationBadge = findViewById<View>(R.id.notificationBadge)
 
         btnClose.setOnClickListener { finish() }
 
@@ -51,25 +61,26 @@ class MenuActivity : AppCompatActivity() {
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         }
 
-        btnHelp.setOnClickListener {
-            startActivity(Intent(this, HelpActivity::class.java))
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-        }
-
         btnUpdateSchedule.setOnClickListener {
             startActivity(Intent(this, MoneyScheduleActivity::class.java))
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         }
 
-        val btnPrivacyPolicy = findViewById<Button>(R.id.btnPrivacyPolicy)
+        btnTheme.setOnClickListener {
+            startActivity(Intent(this, ThemeActivity::class.java))
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        }
+
+        btnHelp.setOnClickListener {
+            startActivity(Intent(this, HelpActivity::class.java))
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        }
+
         btnPrivacyPolicy.setOnClickListener {
-            val url = "https://github.com/Mohamedaufin/cashdash/blob/main/privacy_policy.md" // Replace with your hosted URL
+            val url = "https://github.com/Mohamedaufin/cashdash/blob/main/privacy_policy.md"
             val intent = Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
             startActivity(intent)
         }
-
-        val btnNotifications = findViewById<View>(R.id.btnNotifications)
-        val notificationBadge = findViewById<View>(R.id.notificationBadge)
 
         btnNotifications.setOnClickListener {
             notificationBadge.visibility = View.GONE
