@@ -138,6 +138,11 @@ class HistoryActivity : AppCompatActivity() {
                 }
             }
         }
+
+        findViewById<View>(R.id.searchBar).setOnClickListener {
+            val intent = Intent(this, SearchActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     override fun onStart() {

@@ -32,7 +32,6 @@ class NotificationActivity : AppCompatActivity() {
         androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = Color.TRANSPARENT
 
-        findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
 
         setupRecyclerView()
         setupFilters()
