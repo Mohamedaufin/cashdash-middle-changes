@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 3D card background (White Theme): light base + top-edge highlight bevel -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Main Body -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#FFFFFF"
+                android:endColor="#F5F7FA"
+                android:angle="135"
+                android:type="linear"/>
+            <corners android:radius="20dp"/>
+            <stroke
+                android:width="1.2dp"
+                android:color="@color/border"/>
+        </shape>
+    </item>
+
+    <!-- Top-edge highlight (gloss bevel) -->
+    <item
+        android:bottom="16dp"
+        android:right="4dp"
+        android:left="4dp"
+        android:top="0dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#60FFFFFF"
+                android:endColor="#00FFFFFF"
+                android:angle="270"
+                android:type="linear"/>
+            <corners
+                android:topLeftRadius="20dp"
+                android:topRightRadius="20dp"
+                android:bottomLeftRadius="0dp"
+                android:bottomRightRadius="0dp"/>
+        </shape>
+    </item>
+
+</layer-list>

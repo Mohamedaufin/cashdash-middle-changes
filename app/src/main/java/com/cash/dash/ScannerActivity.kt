@@ -43,7 +43,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-class ScannerActivity : AppCompatActivity(), SensorEventListener {
+class ScannerActivity : ThemedActivity(), SensorEventListener {
 
     private val CAMERA_REQUEST = 101
     private val GALLERY_PICK = 102
@@ -543,7 +543,7 @@ class ScannerActivity : AppCompatActivity(), SensorEventListener {
 
         val btnCreateNew = Button(this).apply {
             text = "+ Create New Allocation"
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
             isAllCaps = false
             textSize = 16f
             background = ContextCompat.getDrawable(context, R.drawable.bg_glass_3d)
@@ -554,10 +554,10 @@ class ScannerActivity : AppCompatActivity(), SensorEventListener {
 
         val btnSkip = Button(this).apply {
             text = "Skip allocation"
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
             isAllCaps = false
             textSize = 16f
-            background = ContextCompat.getDrawable(context, R.drawable.bg_glass_3d_red)
+            background = ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_3d_red))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 150).apply { setMargins(0, 0, 0, 30) }
             setOnClickListener {
                 pendingCategory = null
@@ -577,7 +577,7 @@ class ScannerActivity : AppCompatActivity(), SensorEventListener {
         if (categories.isEmpty()) {
             container.addView(TextView(this).apply {
                 text = "No allocated categories found. Set limits in Rigor Tracker first."
-                setTextColor(Color.WHITE)
+                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
                 textSize = 16f
                 setPadding(20, 20, 20, 20)
             })
@@ -639,13 +639,13 @@ class ScannerActivity : AppCompatActivity(), SensorEventListener {
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(60, 60, 60, 50)
-            setBackgroundResource(R.drawable.bg_transaction)
+            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
         }
 
         box.addView(TextView(this).apply {
             text = "New Allocation"
             textSize = 22f
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
             setPadding(0, 0, 0, 40)
@@ -653,9 +653,9 @@ class ScannerActivity : AppCompatActivity(), SensorEventListener {
 
         val inputName = EditText(this).apply {
             hint = "Category Name"
-            setTextColor(Color.WHITE)
-            setHintTextColor(Color.parseColor("#A8B5D1"))
-            background = ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
+            setHintTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textMutedColor))
+            background = ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             setPadding(30, 30, 30, 30)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 140).apply { setMargins(0, 0, 0, 30) }
         }
@@ -664,9 +664,9 @@ class ScannerActivity : AppCompatActivity(), SensorEventListener {
         val inputLimit = EditText(this).apply {
             hint = "Monthly Limit (Optional)"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setHintTextColor(Color.parseColor("#A8B5D1"))
-            background = ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            background = ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             setPadding(30, 30, 30, 30)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 140).apply { setMargins(0, 0, 0, 50) }
         }
@@ -683,8 +683,8 @@ class ScannerActivity : AppCompatActivity(), SensorEventListener {
         buttonContainer.addView(Button(this).apply {
             text = "Cancel"
             isAllCaps = false
-            setTextColor(Color.WHITE)
-            background = ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            background = ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             layoutParams = LinearLayout.LayoutParams(0, 130, 1f).apply { setMargins(0, 0, 15, 0) }
             setOnClickListener { dialog.dismiss() }
         })
@@ -692,8 +692,8 @@ class ScannerActivity : AppCompatActivity(), SensorEventListener {
         buttonContainer.addView(Button(this).apply {
             text = "Create"
             isAllCaps = false
-            setTextColor(Color.WHITE)
-            background = ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            background = ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             layoutParams = LinearLayout.LayoutParams(0, 130, 1f).apply { setMargins(15, 0, 0, 0) }
             setOnClickListener {
                 val catName = inputName.text.toString().trim().replace("|", "-")

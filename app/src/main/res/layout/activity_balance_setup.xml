@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/app_bg"
+    android:background="?attr/mainBackground"
     android:paddingTop="35dp">
 
     <!-- TOP BAR -->
@@ -13,11 +13,11 @@
         android:layout_height="50dp"
         android:layout_marginStart="25dp"
         android:layout_marginTop="25dp"
-        android:background="@drawable/bg_glass_3d_round"
+        android:background="?attr/roundBackground"
         android:padding="10dp"
         android:scaleType="fitCenter"
         android:src="@drawable/ic_back_arrow1"
-        android:tint="@color/text_primary"
+        android:tint="?attr/textPrimaryColor"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -26,13 +26,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Wallet balance"
-        android:textColor="@color/text_primary"
+        android:textColor="?attr/textPrimaryColor"
         android:textSize="22sp"
         android:textStyle="bold"
-        android:shadowColor="@color/border"
-        android:shadowDx="0"
-        android:shadowDy="2"
-        android:shadowRadius="6"
         app:layout_constraintBottom_toBottomOf="@id/btnBack"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -44,7 +40,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Current balance: ₹0"
-        android:textColor="#FFFFFF"
+        android:textColor="?attr/textMutedColor"
         android:textSize="16sp"
         android:layout_marginTop="15dp"
         app:layout_constraintTop_toBottomOf="@id/tvHeader"
@@ -72,7 +68,7 @@
         android:layout_height="100dp"
         android:layout_marginHorizontal="25dp"
         android:layout_marginTop="40dp"
-        android:background="@drawable/bg_glass_input"
+        android:background="?attr/inputBackground"
         android:gravity="center"
         android:orientation="horizontal"
         app:layout_constraintTop_toBottomOf="@id/tvCurrentBalance">
@@ -81,7 +77,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="₹"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/textPrimaryColor"
             android:textSize="36sp"
             android:textStyle="bold"
             android:layout_marginEnd="10dp"/>
@@ -91,7 +87,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="0"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/textPrimaryColor"
             android:textSize="48sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -115,7 +111,7 @@
             android:layout_marginEnd="8dp"
             android:background="@drawable/bg_glass_3d"
             android:text="Add to current balance"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/textPrimaryColor"
             android:textSize="14sp"
             android:textStyle="bold" />
 
@@ -127,7 +123,7 @@
             android:layout_marginStart="8dp"
             android:background="@drawable/bg_glass_3d"
             android:text="Replace total balance"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/textPrimaryColor"
             android:textSize="14sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -137,8 +133,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Choose how to update your wallet balance"
-        android:textColor="#B0C8FF"
-
+        android:textColor="?attr/textMutedColor"
         android:gravity="center"
         android:textSize="14sp"
         android:layout_marginTop="12dp"
@@ -149,7 +144,7 @@
         android:id="@+id/numpadContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:background="@drawable/bg_glass_panel"
+        android:background="?attr/panelBackground"
         android:layout_marginTop="80dp"
         android:paddingTop="20dp"
         android:paddingBottom="10dp"

@@ -20,7 +20,7 @@ import android.content.BroadcastReceiver
 import android.content.Intent
 import android.content.IntentFilter
 
-class DetailHistoryActivity : AppCompatActivity() {
+class DetailHistoryActivity : ThemedActivity() {
     
     private var mode: String = "DAILY"
     private var week: Int = 0
@@ -122,12 +122,12 @@ class DetailHistoryActivity : AppCompatActivity() {
         val container = LinearLayout(this)
         container.orientation = LinearLayout.VERTICAL
         container.setPadding(40, 50, 40, 80)
-        container.setBackgroundResource(R.drawable.bg_transaction)
+        container.setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(container.context, R.drawable.bg_transaction))
 
         val title = TextView(this).apply {
             text = "Transaction Options"
             textSize = 22f
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
             setPadding(0, 0, 0, 60)
             gravity = android.view.Gravity.CENTER
@@ -138,7 +138,7 @@ class DetailHistoryActivity : AppCompatActivity() {
         val btnEdit = android.widget.Button(this).apply {
             text = "Edit Title"
             isAllCaps = false
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_3d)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 150).apply {
                 setMargins(0, 0, 0, 30)
@@ -154,7 +154,7 @@ class DetailHistoryActivity : AppCompatActivity() {
         val btnAmount = android.widget.Button(this).apply {
             text = "Edit Amount"
             isAllCaps = false
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_3d)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 150).apply {
                 setMargins(0, 0, 0, 30)
@@ -170,7 +170,7 @@ class DetailHistoryActivity : AppCompatActivity() {
         val btnReallocate = android.widget.Button(this).apply {
             text = "Reallocate Category"
             isAllCaps = false
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_3d)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 150).apply {
                 setMargins(0, 0, 0, 30)
@@ -186,8 +186,8 @@ class DetailHistoryActivity : AppCompatActivity() {
         val btnDelete = android.widget.Button(this).apply {
             text = "Delete Transaction"
             isAllCaps = false
-            setTextColor(Color.WHITE)
-            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_3d_red)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_3d_red))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 150)
             setOnClickListener {
                 bottomSheet.dismiss()
@@ -204,12 +204,12 @@ class DetailHistoryActivity : AppCompatActivity() {
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
         box.setPadding(60, 60, 60, 50)
-        box.setBackgroundResource(R.drawable.bg_transaction)
+        box.setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(box.context, R.drawable.bg_transaction))
 
         val titleView = TextView(this).apply {
             text = "Edit Title"
             textSize = 22f
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
             setPadding(0, 0, 0, 40)
@@ -218,7 +218,7 @@ class DetailHistoryActivity : AppCompatActivity() {
 
         val input = android.widget.EditText(this).apply {
             setText(item.title)
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setHintTextColor(Color.GRAY)
             backgroundTintList = android.content.res.ColorStateList.valueOf(Color.CYAN)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
@@ -240,8 +240,8 @@ class DetailHistoryActivity : AppCompatActivity() {
         val btnCancel = android.widget.Button(this).apply {
             text = "Cancel"
             isAllCaps = false
-            setTextColor(Color.WHITE)
-            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                 setMargins(0, 0, 15, 0)
             }
@@ -254,8 +254,8 @@ class DetailHistoryActivity : AppCompatActivity() {
         val btnSave = android.widget.Button(this).apply {
             text = "Save"
             isAllCaps = false
-            setTextColor(Color.WHITE)
-            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                 setMargins(15, 0, 0, 0)
             }
@@ -395,12 +395,12 @@ class DetailHistoryActivity : AppCompatActivity() {
         val container = LinearLayout(this)
         container.orientation = LinearLayout.VERTICAL
         container.setPadding(40, 50, 40, 50)
-        container.setBackgroundResource(R.drawable.bg_transaction)
+        container.setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(container.context, R.drawable.bg_transaction))
 
         val title = TextView(this).apply {
             text = "Reallocate ₹${item.amount}"
             textSize = 20f
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
             setPadding(0, 0, 0, 40)
         }
@@ -415,7 +415,7 @@ class DetailHistoryActivity : AppCompatActivity() {
         if (categories.isEmpty()) {
             val empty = TextView(this).apply {
                 text = "No categories available."
-                setTextColor(Color.WHITE)
+                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             }
             container.addView(empty)
         } else {
@@ -424,7 +424,7 @@ class DetailHistoryActivity : AppCompatActivity() {
                 
                 val btn = android.widget.Button(this).apply {
                     text = cat
-                    setTextColor(Color.WHITE)
+                    setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
                     isAllCaps = false
                     setBackgroundResource(R.drawable.bg_glass_3d)
                     layoutParams = LinearLayout.LayoutParams(
@@ -512,12 +512,12 @@ class DetailHistoryActivity : AppCompatActivity() {
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
         box.setPadding(60, 60, 60, 50)
-        box.setBackgroundResource(R.drawable.bg_transaction)
+        box.setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(box.context, R.drawable.bg_transaction))
 
         val titleView = TextView(this).apply {
             text = "Edit Amount"
             textSize = 22f
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
             setPadding(0, 0, 0, 40)
@@ -526,7 +526,7 @@ class DetailHistoryActivity : AppCompatActivity() {
 
         val input = android.widget.EditText(this).apply {
             setText(item.amount.toString())
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setHintTextColor(Color.GRAY)
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
             backgroundTintList = android.content.res.ColorStateList.valueOf(Color.CYAN)
@@ -549,7 +549,7 @@ class DetailHistoryActivity : AppCompatActivity() {
         val btnCancel = android.widget.Button(this).apply {
             text = "Cancel"
             isAllCaps = false
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             background = androidx.core.content.ContextCompat.getDrawable(context,
                 R.drawable.bg_glass_input
             )
@@ -565,7 +565,7 @@ class DetailHistoryActivity : AppCompatActivity() {
         val btnSave = android.widget.Button(this).apply {
             text = "Save"
             isAllCaps = false
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             background = androidx.core.content.ContextCompat.getDrawable(context,
                 R.drawable.bg_glass_input
             )

@@ -25,9 +25,9 @@
                     android:id="@+id/btnDaily"
                     android:layout_width="104dp"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_glass_3d"
+                    android:background="?attr/glass3dBackground"
                     android:text="Daily"
-                    android:textColor="@color/text_primary"
+                    android:textColor="?attr/textPrimaryColor"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
@@ -37,18 +37,18 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
                     android:layout_marginEnd="12dp"
-                    android:background="@drawable/bg_glass_3d"
+                    android:background="?attr/glass3dBackground"
                     android:text="--/--/----"
-                    android:textColor="@color/text_primary"
+                    android:textColor="?attr/textPrimaryColor"
                     android:textSize="16sp" />
 
                 <Button
                     android:id="@+id/btnOverall"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_glass_3d"
+                    android:background="?attr/glass3dBackground"
                     android:text="Overall"
-                    android:textColor="@color/text_primary"
+                    android:textColor="?attr/textPrimaryColor"
                     android:textSize="18sp" />
             </LinearLayout>
 
@@ -59,7 +59,7 @@
                 android:layout_height="55dp"
                 android:layout_marginHorizontal="20dp"
                 android:layout_marginTop="5dp"
-                android:background="@drawable/bg_glass_black"
+                android:background="?attr/searchBackground"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center_vertical"
@@ -94,7 +94,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Daily Spending"
-                android:textColor="@color/text_primary"
+                android:textColor="?attr/textPrimaryColor"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_gravity="center"

@@ -14,7 +14,7 @@ import android.widget.Toast
 import android.widget.GridLayout
 import androidx.appcompat.app.AppCompatActivity
 
-class BalanceSetupActivity : AppCompatActivity() {
+class BalanceSetupActivity : ThemedActivity() {
 
     private val PREFS = "WalletPrefs"
     private val KEY_BALANCE = "wallet_balance"

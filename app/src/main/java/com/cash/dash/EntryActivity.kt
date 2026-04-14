@@ -17,7 +17,7 @@ import android.graphics.drawable.ColorDrawable
 import android.view.ViewGroup
 import android.view.autofill.AutofillManager
 
-class EntryActivity : AppCompatActivity() {
+class EntryActivity : ThemedActivity() {
     private lateinit var auth: FirebaseAuth
     private val PREFS = "AppPrefs"
     private val KEY_FIRST = "isFirstLaunch"
@@ -161,7 +161,7 @@ class EntryActivity : AppCompatActivity() {
             // 🟢 Restore working Login Autofill
             edtEmail.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
             edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
-            edtEmail.setAutofillHints(View.AUTOFILL_HINT_USERNAME) // Matches original XML
+            edtEmail.setAutofillHints(View.AUTOFILL_HINT_EMAIL_ADDRESS) // Standard for inline suggest
             edtPassword.setAutofillHints(View.AUTOFILL_HINT_PASSWORD)
         } else {
             edtName.visibility = View.VISIBLE

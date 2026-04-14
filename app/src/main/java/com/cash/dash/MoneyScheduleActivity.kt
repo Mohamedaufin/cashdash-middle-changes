@@ -12,7 +12,7 @@ import androidx.core.view.WindowCompat
 import android.util.TypedValue
 import java.text.SimpleDateFormat
 
-class MoneyScheduleActivity : AppCompatActivity() {
+class MoneyScheduleActivity : ThemedActivity() {
 
     private val PREFS = "MoneySchedulePrefs"
     private val KEY_FREQUENCY = "frequency"
@@ -64,6 +64,9 @@ class MoneyScheduleActivity : AppCompatActivity() {
         } else {
             selectedDateMillis = Calendar.getInstance().timeInMillis
         }
+
+        // The CalendarView is styled via calendarTheme in themes.xml
+
 
         // Handle custom radio
         rgFrequency.setOnCheckedChangeListener { _, checkedId ->
@@ -226,13 +229,13 @@ class MoneyScheduleActivity : AppCompatActivity() {
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(60, 60, 60, 50)
-            setBackgroundResource(R.drawable.bg_transaction)
+            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
         }
 
         val titleView = TextView(this).apply {
             text = "Reset Cycle Now?"
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTypeface(null, Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
             setPadding(0, 0, 0, 40)
@@ -242,7 +245,7 @@ class MoneyScheduleActivity : AppCompatActivity() {
         val content = TextView(this).apply {
             text = "This will instantly refill your wallet and set all allocation spending bars to ₹0."
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setLineSpacing(10f, 1f)
             setPadding(0, 0, 0, 60)
             gravity = android.view.Gravity.CENTER
@@ -252,8 +255,8 @@ class MoneyScheduleActivity : AppCompatActivity() {
         val btnReset = android.widget.Button(this).apply {
             text = "Reset Now"
             isAllCaps = false
-            setTextColor(Color.WHITE)
-            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 150)
         }
         box.addView(btnReset)
@@ -264,8 +267,8 @@ class MoneyScheduleActivity : AppCompatActivity() {
         val btnCancel = android.widget.Button(this).apply {
             text = "Cancel"
             isAllCaps = false
-            setTextColor(Color.WHITE)
-            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 140)
         }
         box.addView(btnCancel)
@@ -301,12 +304,12 @@ class MoneyScheduleActivity : AppCompatActivity() {
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
         box.setPadding(60, 60, 60, 50)
-        box.setBackgroundResource(R.drawable.bg_transaction)
+        box.setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(box.context, R.drawable.bg_transaction))
 
         val titleView = TextView(this).apply {
             text = "Cycle Reset Info"
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTypeface(null, Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
             setPadding(0, 0, 0, 40)
@@ -318,7 +321,7 @@ class MoneyScheduleActivity : AppCompatActivity() {
                    "• All allocation spent bar are turned to ₹0\n" +
                    "• Wallet balance will be reset to ₹$initialBal/$initialBal"
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setLineSpacing(10f, 1f)
             setPadding(0, 0, 0, 60)
         }
@@ -327,8 +330,8 @@ class MoneyScheduleActivity : AppCompatActivity() {
         val btnOk = android.widget.Button(this).apply {
             text = "Got it"
             isAllCaps = false
-            setTextColor(Color.WHITE)
-            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 140)
             setOnClickListener { } // Dismissed by builder
         }
@@ -342,4 +345,5 @@ class MoneyScheduleActivity : AppCompatActivity() {
         btnOk.setOnClickListener { dialog.dismiss() }
         dialog.show()
     }
+
 }

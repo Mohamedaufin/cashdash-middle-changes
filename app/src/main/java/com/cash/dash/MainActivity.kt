@@ -21,7 +21,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.snackbar.Snackbar
 import java.util.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ThemedActivity() {
 
     private val PREFS = "AppPrefs"
     private val KEY_NAME = "user_name"
@@ -47,8 +47,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tabHistory: View
 
     private val inactiveScale = 0.5f
-    private val colorActive = Color.WHITE
-    private val colorInactive = Color.parseColor("#D0E0FF")
+    private var colorActive = Color.WHITE
+    private var colorInactive = Color.parseColor("#D0E0FF")
     private val argbEvaluator = android.animation.ArgbEvaluator()
 
     private var isNavigating = false
@@ -78,6 +78,9 @@ class MainActivity : AppCompatActivity() {
 
         density = resources.displayMetrics.density
         iconHeightPx = 84 * density
+
+        colorActive = ThemeHelper.resolveColorAttr(this, R.attr.navActiveColor)
+        colorInactive = ThemeHelper.resolveColorAttr(this, R.attr.navInactiveColor)
 
         initNavbar()
         initViewPager()
@@ -116,6 +119,10 @@ class MainActivity : AppCompatActivity() {
         iconHistory = findViewById(R.id.iconHistory)
         tvHistory = findViewById(R.id.tvHistory)
         tabHistory = findViewById(R.id.tabHistory)
+
+        iconHome.setImageResource(ThemeHelper.getDrawable(this, R.drawable.ic_home))
+        iconAllocator.setImageResource(ThemeHelper.getDrawable(this, R.drawable.ic_allocator))
+        iconHistory.setImageResource(ThemeHelper.getDrawable(this, R.drawable.ic_history))
 
         tabAllocator.setOnClickListener { navigateTo(0) }
         tabHome.setOnClickListener { navigateTo(1) }
@@ -273,16 +280,6 @@ class MainActivity : AppCompatActivity() {
 
         text.setTextColor(color)
         text.alpha = alpha
-
-        // Only update shadow if state changed to save on redraws
-        val radius = if (alpha > 0.8f) 6f else 4f
-        val shadowColor = if (color == Color.WHITE) Color.parseColor("#3A6AFF") else Color.parseColor("#000C40")
-        
-        if (radius != lastShadowRadius || shadowColor != lastShadowColor) {
-            text.setShadowLayer(radius, 0f, 2f, shadowColor)
-            lastShadowRadius = radius
-            lastShadowColor = shadowColor
-        }
     }
 
     private inner class MainPagerAdapter(fa: FragmentActivity) : FragmentStateAdapter(fa) {

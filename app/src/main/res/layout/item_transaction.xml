@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="horizontal"
     android:padding="16dp"
-    android:background="@drawable/bg_glass_transaction"
+    android:background="?attr/transactionBackground"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="16dp"
@@ -15,7 +15,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:textColor="@color/text_primary"
+        android:textColor="?attr/textPrimaryColor"
         android:textSize="18sp"
         android:textStyle="bold"
         android:text="Title" />

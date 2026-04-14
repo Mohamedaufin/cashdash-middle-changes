@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 1. Deep Shadow for elevation -->
+    <item
+        android:left="4dp"
+        android:top="4dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#40000000"/>
+            <corners android:radius="16dp"/>
+        </shape>
+    </item>
+
+    <item
+        android:bottom="4dp"
+        android:right="4dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#1A2D8A"
+                android:endColor="#07103D"
+                android:angle="135"
+                android:type="linear"/>
+            <corners android:radius="16dp"/>
+            <stroke
+                android:width="1.2dp"
+                android:color="#4A5FA1"/>        </shape>
+    </item>
+</layer-list>

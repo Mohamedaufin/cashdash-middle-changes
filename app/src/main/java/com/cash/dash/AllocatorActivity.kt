@@ -15,7 +15,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import android.content.BroadcastReceiver
 import android.content.IntentFilter
 
-class AllocatorActivity : AppCompatActivity() {
+class AllocatorActivity : ThemedActivity() {
 
     private lateinit var categoryContainer: LinearLayout
     private val PREFS = "CategoryPrefs"
@@ -114,13 +114,13 @@ class AllocatorActivity : AppCompatActivity() {
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(60, 60, 60, 50)
-            setBackgroundResource(R.drawable.bg_transaction)
+            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
         }
 
         val titleView = TextView(this).apply {
             text = "Add Category"
             textSize = 22f
-            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
             setPadding(0, 0, 0, 40)
@@ -130,7 +130,7 @@ class AllocatorActivity : AppCompatActivity() {
         val input = EditText(this).apply {
             hint = "Enter category name"
             setHintTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_dim))
-            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                 setMargins(0, 0, 0, 50)
             }
@@ -150,8 +150,8 @@ class AllocatorActivity : AppCompatActivity() {
         val btnCancel = Button(this).apply {
             text = "Cancel"
             isAllCaps = false
-            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
-            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                 setMargins(0, 0, 15, 0)
             }
@@ -162,8 +162,8 @@ class AllocatorActivity : AppCompatActivity() {
         val btnAdd = Button(this).apply {
             text = "Add"
             isAllCaps = false
-            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
-            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                 setMargins(15, 0, 0, 0)
             }
@@ -300,7 +300,8 @@ class AllocatorActivity : AppCompatActivity() {
         // 🔮 AI Keyword Custom Icons
         val iconView = view.findViewById<ImageView>(R.id.iconEdit)
         val iconRes = CategoryIconHelper.getIconForCategory(this, name)
-        iconView.setImageResource(iconRes)
+        val drw = androidx.core.content.ContextCompat.getDrawable(this, iconRes)
+        iconView.setImageDrawable(com.cash.dash.ThemeHelper.tintDrawableIfWhiteTheme(this, drw))
 
         // 👉 TAP CARD → OPEN CATEGORY ANALYSIS ACTIVITY
         view.setOnClickListener {
@@ -331,12 +332,12 @@ class AllocatorActivity : AppCompatActivity() {
             val box = LinearLayout(this)
             box.orientation = LinearLayout.VERTICAL
             box.setPadding(60, 60, 60, 50)
-            box.setBackgroundResource(R.drawable.bg_transaction)
+            box.setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(box.context, R.drawable.bg_transaction))
 
             val titleView = TextView(this).apply {
                 text = "Rename Category"
                 textSize = 22f
-                setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
+                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
                 setTypeface(null, android.graphics.Typeface.BOLD)
                 gravity = android.view.Gravity.CENTER
                 setPadding(0, 0, 0, 40)
@@ -345,7 +346,7 @@ class AllocatorActivity : AppCompatActivity() {
 
             val input = EditText(this).apply {
                 setText(name)
-                setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
+                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
                 setHintTextColor(Color.GRAY)
                 backgroundTintList = android.content.res.ColorStateList.valueOf(Color.CYAN)
                 layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
@@ -367,8 +368,8 @@ class AllocatorActivity : AppCompatActivity() {
             val btnCancel = android.widget.Button(this).apply {
                 text = "Cancel"
                 isAllCaps = false
-                setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
-                background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
                 layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                     setMargins(0, 0, 15, 0)
                 }
@@ -379,8 +380,8 @@ class AllocatorActivity : AppCompatActivity() {
             val btnSave = android.widget.Button(this).apply {
                 text = "Save"
                 isAllCaps = false
-                setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
-                background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
                 layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                     setMargins(15, 0, 0, 0)
                 }
@@ -418,12 +419,12 @@ class AllocatorActivity : AppCompatActivity() {
                                 val box = LinearLayout(this@AllocatorActivity)
                                 box.orientation = LinearLayout.VERTICAL
                                 box.setPadding(60, 60, 60, 50)
-                                box.setBackgroundResource(R.drawable.bg_transaction)
+                                box.setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(box.context, R.drawable.bg_transaction))
 
                                 val titleView = TextView(this@AllocatorActivity).apply {
                                     text = "Delete Allocation - $name?"
                                     textSize = 22f
-                                    setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
+                                    setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
                                     setTypeface(null, android.graphics.Typeface.BOLD)
                                     gravity = android.view.Gravity.CENTER
                                     setPadding(0, 0, 0, 120) // Increased gap
@@ -444,8 +445,8 @@ class AllocatorActivity : AppCompatActivity() {
                                 val btnCancel = android.widget.Button(this@AllocatorActivity).apply {
                                     text = "Cancel"
                                     isAllCaps = false
-                                    setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
-                                    background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+                                    setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                                    background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
                                     layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                                         setMargins(0, 0, 15, 0)
                                     }
@@ -459,8 +460,8 @@ class AllocatorActivity : AppCompatActivity() {
                                 val btnDelete = android.widget.Button(this@AllocatorActivity).apply {
                                     text = "Delete"
                                     isAllCaps = false
-                                    setTextColor(Color.WHITE)
-                                    background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+                                    setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                                    background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
                                     layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                                         setMargins(15, 0, 0, 0)
                                     }

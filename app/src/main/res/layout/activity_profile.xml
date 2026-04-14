@@ -2,7 +2,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_main_gradient"
+    android:background="?attr/mainBackground"
     android:scrollbars="none"
     android:paddingTop="40dp"
     android:paddingLeft="24dp"
@@ -17,7 +17,7 @@
         <TextView
             android:text="Edit Profile"
             android:textSize="26sp"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/textPrimaryColor"
             android:textStyle="bold"
             android:layout_marginBottom="35dp"
             android:layout_width="wrap_content"
@@ -27,10 +27,10 @@
             android:id="@+id/edtName"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:background="@drawable/bg_glass_input"
+            android:background="?attr/inputBackground"
             android:hint="Name"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_muted"
+            android:textColor="?attr/textPrimaryColor"
+            android:textColorHint="?attr/textMutedColor"
             android:padding="16dp"
             android:layout_marginBottom="20dp"/>
 
@@ -38,10 +38,10 @@
             android:id="@+id/edtPhone"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:background="@drawable/bg_glass_input"
+            android:background="?attr/inputBackground"
             android:hint="Phone Number"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_muted"
+            android:textColor="?attr/textPrimaryColor"
+            android:textColorHint="?attr/textMutedColor"
             android:padding="16dp"
             android:inputType="phone"
             android:layout_marginBottom="20dp"/>
@@ -50,10 +50,10 @@
             android:id="@+id/edtEmail"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:background="@drawable/bg_glass_input"
+            android:background="?attr/inputBackground"
             android:hint="Email"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_muted"
+            android:textColor="?attr/textPrimaryColor"
+            android:textColorHint="?attr/textMutedColor"
             android:padding="16dp"
             android:inputType="textEmailAddress"
             android:layout_marginBottom="20dp"/>
@@ -65,9 +65,9 @@
             android:text="Save"
             android:textStyle="bold"
             android:textSize="18sp"
-            android:background="@drawable/bg_glass_3d"
+            android:background="?attr/glass3dBackground"
             app:backgroundTint="@null"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/textPrimaryColor"
             android:foreground="@null"
             android:layout_marginBottom="25dp"/>
 
@@ -75,13 +75,13 @@
             android:id="@+id/btnChangePassword"
             android:layout_width="match_parent"
             android:layout_height="65dp"
-            android:background="@drawable/bg_glass_3d"
+            android:background="?attr/glass3dBackground"
             app:backgroundTint="@null"
             android:text="Change Password"
             android:textAllCaps="false"
             android:textStyle="bold"
             android:textSize="18sp"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/textPrimaryColor"
             android:foreground="@null"
             android:layout_marginBottom="25dp"/>
 
@@ -101,9 +101,9 @@
                 android:textStyle="bold"
                 android:textSize="15sp"
                 android:layout_marginEnd="8dp"
-                android:background="@drawable/bg_glass_3d_red"
+                android:background="?attr/glass3dRedBackground"
                 app:backgroundTint="@null"
-                android:textColor="@color/text_primary"
+                android:textColor="?attr/textPrimaryColor"
                 android:foreground="@null" />
 
             <Button
@@ -116,9 +116,9 @@
                 android:textStyle="bold"
                 android:textSize="15sp"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/bg_glass_3d_red"
+                android:background="?attr/glass3dRedBackground"
                 app:backgroundTint="@null"
-                android:textColor="@color/text_primary"
+                android:textColor="?attr/textPrimaryColor"
                 android:foreground="@null" />
         </LinearLayout>
     </LinearLayout>

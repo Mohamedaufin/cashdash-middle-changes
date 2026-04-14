@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="bottomNavBackground" format="reference" />
+    <attr name="mainBackground" format="reference" />
+    <attr name="cardBackground" format="reference" />
+    <attr name="glass3dBackground" format="reference" />
+    <attr name="keypadBackground" format="reference" />
+    <attr name="inputBackground" format="reference" />
+    <attr name="panelBackground" format="reference" />
+    <attr name="transactionBackground" format="reference" />
+    <attr name="iconBackground" format="reference" />
+    <attr name="transactionItemBackground" format="reference" />
+    <attr name="keypadRoundedBackground" format="reference" />
+    <attr name="dropdownBackground" format="reference" />
+    <attr name="cardDarkBackground" format="reference" />
+    <attr name="searchBackground" format="reference" />
+    <attr name="roundBackground" format="reference" />
+    <attr name="rigorCalendarBackground" format="reference|color" />
+    <attr name="glass3dRedBackground" format="reference" />
+    <attr name="borderedRoundBackground" format="reference" />
+    <attr name="calendarTheme" format="reference" />
+
+    <attr name="textPrimaryColor" format="color" />
+    <attr name="textMutedColor" format="color" />
+    <attr name="navActiveColor" format="color" />
+    <attr name="navInactiveColor" format="color" />
+</resources>

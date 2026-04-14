@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import android.view.animation.OvershootInterpolator
@@ -49,8 +50,14 @@ class HomeFragment : Fragment() {
         loadBalance(view)
         updateNextMoneyDays(view)
 
-        view.findViewById<ImageView>(R.id.iconScanner).setOnClickListener { v ->
-            animateAndStart(v) {
+        // Set theme-aware icons
+        view.findViewById<ImageView>(R.id.btnMenu)?.setImageResource(ThemeHelper.getDrawable(requireContext(), R.drawable.ic_glass_menu_vector))
+        view.findViewById<ImageView>(R.id.iconScanner)?.setImageResource(ThemeHelper.getDrawable(requireContext(), R.drawable.ic_scanner))
+        view.findViewById<ImageView>(R.id.iconRigorTracker)?.setImageResource(ThemeHelper.getDrawable(requireContext(), R.drawable.ic_rigor_tracker))
+        view.findViewById<ImageView>(R.id.btnProfile)?.setImageResource(ThemeHelper.getDrawable(requireContext(), R.drawable.ic_profile))
+
+        view.findViewById<LinearLayout>(R.id.cardScanner).setOnClickListener {
+            animateAndStart(view.findViewById<ImageView>(R.id.iconScanner)) {
                 startActivity(Intent(requireContext(), ScannerActivity::class.java))
             }
         }
@@ -63,8 +70,8 @@ class HomeFragment : Fragment() {
             startActivity(Intent(requireContext(), ProfileActivity::class.java))
         }
 
-        view.findViewById<ImageView>(R.id.iconRigorTracker).setOnClickListener { v ->
-            animateAndStart(v) {
+        view.findViewById<LinearLayout>(R.id.cardRigor).setOnClickListener {
+            animateAndStart(view.findViewById<ImageView>(R.id.iconRigorTracker)) {
                 startActivity(Intent(requireContext(), RigorActivity::class.java))
             }
         }
@@ -97,12 +104,12 @@ class HomeFragment : Fragment() {
             val box = android.widget.LinearLayout(requireContext())
             box.orientation = android.widget.LinearLayout.VERTICAL
             box.setPadding(60, 60, 60, 50)
-            box.setBackgroundResource(R.drawable.bg_transaction)
+            box.setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(box.context, R.drawable.bg_transaction))
 
             val titleView = TextView(requireContext()).apply {
                 text = "Welcome to CashDash! ⚡"
                 textSize = 22f
-                setTextColor(android.graphics.Color.WHITE)
+                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
                 setTypeface(null, android.graphics.Typeface.BOLD)
                 gravity = android.view.Gravity.CENTER
                 setPadding(0, 0, 0, 40)
@@ -127,8 +134,8 @@ class HomeFragment : Fragment() {
             val btnSetup = android.widget.Button(requireContext()).apply {
                 text = "Set Up Wallet"
                 isAllCaps = false
-                setTextColor(android.graphics.Color.WHITE)
-                background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
                 layoutParams = android.widget.LinearLayout.LayoutParams(android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 150)
                 setOnClickListener {
                     startActivity(Intent(requireContext(), BalanceSetupActivity::class.java))
@@ -249,11 +256,11 @@ class HomeFragment : Fragment() {
     private fun animateAndStart(view: View, action: () -> Unit) {
         view.animate()
             .scaleX(0.85f).scaleY(0.85f)
-            .setDuration(20)
+            .setDuration(7)
             .withEndAction {
                 view.animate()
                     .scaleX(1f).scaleY(1f)
-                    .setDuration(20)
+                    .setDuration(8)
                     .withEndAction {
                         action()
                     }

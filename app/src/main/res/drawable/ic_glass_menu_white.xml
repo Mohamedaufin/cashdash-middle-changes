@@ -1,0 +1,33 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Deep Black Hamburger Menu (for white theme) -->
+
+    <!-- Bar 1 -->
+    <path
+        android:pathData="M3,6h18v2.5h-18z"
+        android:fillColor="#FF000000"/> <!-- Solid black -->
+    <path
+        android:pathData="M3,6h18v0.5h-18z"
+        android:fillColor="#FF000000"/>
+
+    <!-- Bar 2 -->
+    <path
+        android:pathData="M3,11h18v2.5h-18z"
+        android:fillColor="#FF000000"/>
+    <path
+        android:pathData="M3,11h18v0.5h-18z"
+        android:fillColor="#FF000000"/>
+
+    <!-- Bar 3 -->
+    <path
+        android:pathData="M3,16h18v2.5h-18z"
+        android:fillColor="#FF000000"/>
+    <path
+        android:pathData="M3,16h18v0.5h-18z"
+        android:fillColor="#FF000000"/>
+
+</vector>

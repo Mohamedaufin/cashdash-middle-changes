@@ -10,7 +10,7 @@ import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
-class SplashActivity : AppCompatActivity() {
+class SplashActivity : ThemedActivity() {
 
     private val PREFS = "AppPrefs"
     private val KEY_FIRST = "isFirstLaunch"

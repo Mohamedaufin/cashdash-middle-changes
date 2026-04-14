@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
-    android:background="@drawable/bg_main_gradient"
+    android:background="?attr/mainBackground"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:paddingStart="20dp"
@@ -12,16 +12,16 @@
     <ImageView
         android:id="@+id/btnBack"
         android:src="@drawable/ic_back_arrow1"
-        android:background="@drawable/bg_glass_3d_round"
+        android:background="?attr/roundBackground"
         android:padding="12dp"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:tint="#FFFFFF" />
+        android:tint="?attr/textPrimaryColor" />
 
     <TextView
         android:id="@+id/tvDetailTitle"
         android:text="Breakdown"
-        android:textColor="#FFFFFF"
+        android:textColor="?attr/textPrimaryColor"
         android:textSize="22sp"
         android:layout_marginTop="10dp"
         android:layout_width="wrap_content"
@@ -35,7 +35,7 @@
 
     <TextView
         android:text="History"
-        android:textColor="#FFFFFF"
+        android:textColor="?attr/textPrimaryColor"
         android:textSize="20sp"
         android:layout_marginTop="15dp"
         android:layout_marginBottom="25dp"

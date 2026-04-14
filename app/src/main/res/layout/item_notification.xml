@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:layout_marginBottom="16dp"
-    android:background="@drawable/bg_glass_3d">
+    android:background="?attr/glass3dBackground">
 
     <!-- Top accent bar + title row -->
     <LinearLayout
@@ -48,7 +48,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="08 Mar, 05:18 PM"
-                android:textColor="#607DA5"
+                android:textColor="?attr/textMutedColor"
                 android:textSize="11sp"/>
         </LinearLayout>
 
@@ -58,7 +58,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#18FFFFFF"
+        android:background="#15808080"
         android:layout_marginStart="18dp"
         android:layout_marginEnd="18dp"/>
 
@@ -68,7 +68,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Subject: — \n\nQuestion: —"
-        android:textColor="#B0C8FF"
+        android:textColor="?attr/textPrimaryColor"
         android:textSize="13sp"
         android:lineSpacingMultiplier="1.4"
         android:padding="18dp"
@@ -78,7 +78,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#18FFFFFF"
+        android:background="#15808080"
         android:layout_marginStart="18dp"
         android:layout_marginEnd="18dp"/>
 
@@ -88,7 +88,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Response: —"
-        android:textColor="#E0EBF5"
+        android:textColor="?attr/textPrimaryColor"
         android:textSize="13sp"
         android:lineSpacingMultiplier="1.5"
         android:padding="18dp"
@@ -108,7 +108,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#10FFFFFF"
+            android:background="#10808080"
             android:layout_marginBottom="14dp"/>
 
         <LinearLayout
@@ -116,7 +116,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="bottom"
-            android:background="@drawable/bg_glass_input"
+            android:background="?attr/inputBackground"
             android:padding="4dp">
 
             <EditText
@@ -125,8 +125,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:hint="Type your reply..."
-                android:textColor="#FFFFFF"
-                android:textColorHint="#80A0C0"
+                android:textColor="?attr/textPrimaryColor"
+                android:textColorHint="?attr/textMutedColor"
                 android:background="@android:color/transparent"
                 android:textSize="13sp"
                 android:minHeight="48dp"
@@ -144,7 +144,7 @@
                 android:src="@android:drawable/ic_menu_send"
                 android:padding="10dp"
                 android:scaleType="fitCenter"
-                android:tint="#FFFFFF"
+                android:tint="?attr/textPrimaryColor"
                 android:layout_margin="2dp"/>
         </LinearLayout>
     </LinearLayout>
@@ -157,7 +157,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="✔ QUERY RESOLVED"
-        android:textColor="#607DA5"
+        android:textColor="?attr/textMutedColor"
         android:textSize="10sp"
         android:textStyle="bold"
         android:gravity="center"

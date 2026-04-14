@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 3D bottom navigation (White Theme): light base + subtle gloss top liner -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Top gloss highlight line (Outer) -->
+    <item
+        android:bottom="0dp"
+        android:left="0dp"
+        android:right="0dp"
+        android:top="0dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#CBD5E1"
+                android:endColor="#94A3B8"
+                android:angle="270"
+                android:type="linear"/>
+        </shape>
+    </item>
+
+    <!-- Inner gradient body -->
+    <item android:top="2dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#FFFFFF"
+                android:endColor="#F1F5F9"
+                android:angle="270"
+                android:type="linear"/>
+        </shape>
+    </item>
+
+</layer-list>

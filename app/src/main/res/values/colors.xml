@@ -9,6 +9,8 @@
     <color name="surface">#131318</color>
     <color name="surface_2">#1C1C24</color>
     <color name="border">#2A2A36</color>
+    <color name="border_white">#CBD5E1</color>
+    <color name="surface_white">#F8FAFC</color>
 
     <!-- Primary Purple -->
     <color name="primary_purple">#7C5CFC</color>

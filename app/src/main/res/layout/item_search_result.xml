@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="horizontal"
     android:padding="16dp"
-    android:background="@drawable/bg_glass_transaction"
+    android:background="?attr/transactionBackground"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="16dp"
@@ -20,7 +20,7 @@
             android:id="@+id/txtTransTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/textPrimaryColor"
             android:textSize="18sp"
             android:textStyle="bold"
             android:text="Title" />
@@ -30,7 +30,7 @@
             android:id="@+id/txtTransDate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/text_muted"
+            android:textColor="?attr/textMutedColor"
             android:textSize="12sp"
             android:text="May 1, 2024"
             android:layout_marginTop="2dp" />
