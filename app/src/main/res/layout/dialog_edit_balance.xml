@@ -8,7 +8,7 @@
     android:paddingTop="24dp"
     android:paddingEnd="24dp"
     android:paddingBottom="20dp"
-    android:background="@drawable/bg_transaction">
+    android:background="?attr/transactionItemBackground">
 
     <TextView
         android:id="@+id/tvTitle"
@@ -16,7 +16,7 @@
         android:layout_height="wrap_content"
         android:text="Edit Current Balance"
         android:textSize="22sp"
-        android:textColor="#FFFFFF"
+        android:textColor="?attr/textPrimaryColor"
         android:gravity="center"
         android:textStyle="bold"
         android:paddingBottom="16dp" />
@@ -26,9 +26,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="₹ Enter new amount"
-        android:textColorHint="#808080"
-        android:textColor="#FFFFFF"
-        android:background="@drawable/bg_glass_input"
+        android:textColorHint="?attr/textMutedColor"
+        android:textColor="?attr/textPrimaryColor"
+        android:background="?attr/inputBackground"
         android:padding="16dp"
         android:inputType="number"
         android:textSize="18sp"
@@ -46,8 +46,8 @@
             android:layout_weight="1"
             android:text="Cancel"
             android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:background="@drawable/bg_glass_input"
+            android:textColor="?attr/textPrimaryColor"
+            android:background="?attr/inputBackground"
             app:backgroundTint="@null"
             android:layout_marginEnd="6dp" />
 
@@ -58,9 +58,9 @@
             android:layout_weight="1"
             android:text="Save"
             android:textAllCaps="false"
-            android:textColor="#FFFFFF"
+            android:textColor="?attr/textPrimaryColor"
             android:textStyle="bold"
-            android:background="@drawable/bg_glass_input"
+            android:background="?attr/inputBackground"
             app:backgroundTint="@null"
             android:layout_marginStart="6dp" />
     </LinearLayout>

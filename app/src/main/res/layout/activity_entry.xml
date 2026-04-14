@@ -6,8 +6,8 @@
     android:orientation="vertical"
     android:padding="28dp"
     android:gravity="center"
-    android:background="@drawable/bg_main_gradient"
-    android:importantForAutofill="yes">
+    android:background="?attr/mainBackground"
+    android:importantForAutofill="no">
 
     <!-- Header Section -->
     <TextView
@@ -15,7 +15,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="CashDash"
-        android:textColor="@color/text_primary"
+        android:textColor="?attr/textPrimaryColor"
         android:textSize="32sp"
         android:textStyle="bold"
         android:layout_marginBottom="8dp" />
@@ -25,7 +25,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Manage your wealth wisely"
-        android:textColor="@color/text_muted"
+        android:textColor="?attr/textMutedColor"
         android:textSize="16sp"
         android:layout_marginBottom="40dp" />
 
@@ -44,9 +44,9 @@
             android:text="Login"
             android:textStyle="bold"
             android:textSize="18sp"
-            android:background="@drawable/bg_glass_3d"
+            android:background="?attr/glass3dBackground"
             app:backgroundTint="@null"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/textPrimaryColor"
             android:layout_marginBottom="16dp" />
 
         <Button
@@ -56,7 +56,7 @@
             android:text="Register"
             android:textStyle="bold"
             android:textSize="18sp"
-            android:background="@drawable/bg_glass_3d"
+            android:background="?attr/glass3dBackground"
             app:backgroundTint="@null"
             android:textColor="#FFFFFF" />
     </LinearLayout>
@@ -68,16 +68,16 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:visibility="gone"
-        android:importantForAutofill="yes">
+        android:importantForAutofill="no">
 
         <!-- FULL NAME -->
         <EditText
             android:id="@+id/edtName"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:background="@drawable/bg_glass_input"
+            android:background="?attr/inputBackground"
             android:hint="Name"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/textPrimaryColor"
             android:textColorHint="@color/text_dim"
             android:padding="16dp"
             android:inputType="textPersonName"
@@ -90,9 +90,9 @@
             android:id="@+id/edtPhone"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:background="@drawable/bg_glass_input"
+            android:background="?attr/inputBackground"
             android:hint="Phone Number"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/textPrimaryColor"
             android:textColorHint="@color/text_dim"
             android:padding="16dp"
             android:inputType="phone"
@@ -105,13 +105,13 @@
             android:id="@+id/edtEmail"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:background="@drawable/bg_glass_input"
+            android:background="?attr/inputBackground"
             android:hint="Email"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/textPrimaryColor"
             android:textColorHint="@color/text_dim"
             android:padding="16dp"
             android:inputType="textEmailAddress"
-            android:autofillHints="username"
+            android:autofillHints="emailAddress"
             android:importantForAutofill="yes"
             android:layout_marginBottom="16dp"/>
 
@@ -125,9 +125,9 @@
                 android:id="@+id/edtPassword"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:background="@drawable/bg_glass_input"
+                android:background="?attr/inputBackground"
                 android:hint="Password"
-                android:textColor="@color/text_primary"
+                android:textColor="?attr/textPrimaryColor"
                 android:textColorHint="@color/text_dim"
                 android:paddingLeft="16dp"
                 android:paddingTop="16dp"
@@ -156,7 +156,7 @@
             android:text="Continue"
             android:textStyle="bold"
             android:textSize="18sp"
-            android:background="@drawable/bg_glass_3d"
+            android:background="?attr/glass3dBackground"
             app:backgroundTint="@null"
             android:textColor="#FFFFFF" />
 
@@ -167,7 +167,7 @@
             android:layout_gravity="center"
             android:layout_marginTop="16dp"
             android:text="Back"
-            android:textColor="@color/text_muted"
+            android:textColor="?attr/textMutedColor"
             android:textSize="14sp"
             android:textStyle="bold"
             android:padding="8dp" />
@@ -179,7 +179,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:text="Forgot Password?"
-        android:textColor="@color/text_muted"
+        android:textColor="?attr/textMutedColor"
         android:textSize="14sp"
         android:textStyle="bold"
         android:padding="8dp"

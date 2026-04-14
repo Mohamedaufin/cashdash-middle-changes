@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/bg_main_gradient">
+    android:background="?attr/mainBackground">
 
     <!-- Header -->
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -21,7 +21,7 @@
             android:layout_width="wrap_content"
             android:layout_height="60dp"
             android:text="Notifications"
-            android:textColor="#FFFFFF"
+            android:textColor="?attr/textPrimaryColor"
             android:textSize="22sp"
             android:textStyle="bold"
             android:gravity="center"
@@ -50,10 +50,10 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="All"
-            android:textColor="#FFFFFF"
+            android:textColor="?attr/textPrimaryColor"
             android:textSize="13sp"
             android:textStyle="bold"
-            android:background="@drawable/bg_glass_input"
+            android:background="?attr/inputBackground"
             android:layout_marginEnd="8dp"/>
 
         <TextView
@@ -66,7 +66,7 @@
             android:textColor="#A0A0A0"
             android:textSize="13sp"
             android:textStyle="bold"
-            android:background="@drawable/bg_glass_input"
+            android:background="?attr/inputBackground"
             android:layout_marginEnd="8dp"/>
 
         <TextView
@@ -79,7 +79,7 @@
             android:textColor="#A0A0A0"
             android:textSize="13sp"
             android:textStyle="bold"
-            android:background="@drawable/bg_glass_input"/>
+            android:background="?attr/inputBackground"/>
     </LinearLayout>
 
     <FrameLayout
@@ -103,7 +103,7 @@
             android:gravity="center"
             android:padding="40dp"
             android:text="No notifications yet.\n\nWe'll notify you when your support\nqueries are resolved!"
-            android:textColor="#607DA5"
+            android:textColor="?attr/textMutedColor"
             android:textSize="16sp"
             android:visibility="gone"/>
 

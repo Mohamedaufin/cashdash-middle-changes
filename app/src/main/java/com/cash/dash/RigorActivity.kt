@@ -16,7 +16,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import java.util.*
 
-class RigorActivity : AppCompatActivity() {
+class RigorActivity : ThemedActivity() {
 
     private lateinit var categoryList: LinearLayout
     private val PREFS = "CategoryPrefs"
@@ -43,11 +43,13 @@ class RigorActivity : AppCompatActivity() {
         inputTitle = findViewById(R.id.Title)
         val inputAmount = findViewById<EditText>(R.id.inputAmount)
         val btnNext = findViewById<Button>(R.id.btnNext)
-        val calendarExpense = findViewById<CalendarView>(R.id.calendarExpense)
 
         categoryList = findViewById(R.id.categoryListContainer)
 
         showPage1()
+
+        // The CalendarView is styled via calendarTheme in themes.xml
+        val calendarExpense = findViewById<android.widget.CalendarView>(R.id.calendarExpense)
 
         calendarExpense.setOnDateChangeListener { _, year, month, day ->
             val cal = Calendar.getInstance()
@@ -127,10 +129,10 @@ class RigorActivity : AppCompatActivity() {
         // Add "Create New Allocation" button at the very top of Rigor category list
         val btnCreateNew = Button(this).apply {
             text = "+ Create New Allocation"
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textPrimaryColor))
             isAllCaps = false
             textSize = 16f
-            background = ContextCompat.getDrawable(context, R.drawable.bg_glass_3d)
+            background = ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_3d))
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 150
             ).apply { setMargins(0, 20, 0, 30) }
@@ -203,12 +205,12 @@ class RigorActivity : AppCompatActivity() {
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
         box.setPadding(60, 60, 60, 50)
-        box.setBackgroundResource(R.drawable.bg_transaction)
+        box.setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(box.context, R.drawable.bg_transaction))
 
         val titleView = TextView(this).apply {
             text = "New Allocation"
             textSize = 22f
-            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
             setPadding(0, 0, 0, 40)
@@ -218,8 +220,8 @@ class RigorActivity : AppCompatActivity() {
         val inputName = EditText(this).apply {
             hint = "Category Name (e.g. Travel)"
             inputType = android.text.InputType.TYPE_CLASS_TEXT
-            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
-            setHintTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_dim))
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textPrimaryColor))
+            setHintTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textMutedColor))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                 setMargins(0, 0, 0, 30)
             }
@@ -229,8 +231,8 @@ class RigorActivity : AppCompatActivity() {
         val inputLimit = EditText(this).apply {
             hint = "Monthly Limit (Optional)"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
-            setHintTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_dim))
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textPrimaryColor))
+            setHintTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textMutedColor))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                 setMargins(0, 0, 0, 50)
             }
@@ -250,8 +252,8 @@ class RigorActivity : AppCompatActivity() {
         val btnCancel = android.widget.Button(this).apply {
             text = "Cancel"
             isAllCaps = false
-            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
-            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                 setMargins(0, 0, 15, 0)
             }
@@ -262,8 +264,8 @@ class RigorActivity : AppCompatActivity() {
         val btnSave = android.widget.Button(this).apply {
             text = "Create"
             isAllCaps = false
-            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
-            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                 setMargins(15, 0, 0, 0)
             }
@@ -387,4 +389,5 @@ class RigorActivity : AppCompatActivity() {
             ToastHelper.showToast(this, "⚠ Error saving expense")
         }
     }
+
 }

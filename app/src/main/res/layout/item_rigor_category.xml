@@ -6,8 +6,7 @@
     android:padding="20dp"
     android:layout_marginBottom="25dp"
     android:layout_marginTop="25dp"
-    android:background="@drawable/bg_card_dark"
-    android:elevation="10dp">
+    android:background="?attr/glass3dBackground">
 
     <!-- CATEGORY HEADER -->
     <LinearLayout
@@ -19,7 +18,7 @@
         <LinearLayout
             android:layout_width="45dp"
             android:layout_height="45dp"
-            android:background="@drawable/bg_icon_dark"
+            android:background="?attr/iconBackground"
             android:gravity="center"
             android:layout_marginEnd="15dp">
 
@@ -28,7 +27,7 @@
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 android:src="@drawable/ic_edit"
-                android:tint="@color/text_primary" />
+                android:tint="?attr/textPrimaryColor" />
         </LinearLayout>
 
         <TextView
@@ -36,7 +35,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Category Name"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/textPrimaryColor"
             android:textSize="22sp"
             android:textStyle="bold"/>
     </LinearLayout>
@@ -72,7 +71,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Spent: ₹0"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/textPrimaryColor"
             android:textSize="14sp" />
 
         <View
@@ -85,7 +84,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Limit: ₹0"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/textPrimaryColor"
             android:textSize="14sp" />
     </LinearLayout>
 

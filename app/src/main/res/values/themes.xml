@@ -7,6 +7,10 @@
         <item name="colorOnPrimary">@color/white</item>
         <item name="colorSurface">@color/surface</item>
         <item name="android:windowBackground">@color/app_bg</item>
+        <item name="textPrimaryColor">@color/text_primary</item>
+        <item name="textMutedColor">@color/text_muted</item>
+        <item name="navActiveColor">#FFFFFF</item>
+        <item name="navInactiveColor">#D0E0FF</item>
     </style>
 
 
@@ -16,18 +20,118 @@
         <item name="android:layout_columnWeight">1</item>    <!-- forces equal width -->
         <item name="android:layout_margin">10dp</item>
         <item name="backgroundTint">@null</item>
-        <item name="android:background">@drawable/bg_glass_3d_keypad</item>
+        <item name="android:background">?attr/keypadBackground</item>
         <item name="android:textSize">22sp</item>
-        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textColor">?attr/textPrimaryColor</item>
         <item name="android:gravity">center</item>
         <item name="android:layout_rowWeight">1</item>
+    </style>
+
+    <!-- CALENDAR STYLING -->
+    <style name="CalendarDateText">
+        <item name="android:textColor">#000000</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <style name="CalendarWeekText">
+        <item name="android:textColor">#333333</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
     </style>
 
 
 
     <style name="Theme.Cashdash" parent="Base.Theme.Cashdash">
         <item name="android:autofilledHighlight">@android:color/transparent</item>
+        <item name="mainBackground">@drawable/bg_main_gradient</item>
+        <item name="bottomNavBackground">@drawable/bg_3d_bottom_nav</item>
+        <item name="cardBackground">@drawable/bg_3d_card</item>
+        <item name="glass3dBackground">@drawable/bg_glass_3d</item>
+        <item name="keypadBackground">@drawable/bg_glass_3d_keypad</item>
+        <item name="inputBackground">@drawable/bg_glass_input</item>
+        <item name="panelBackground">@drawable/bg_glass_panel</item>
+        <item name="transactionBackground">@drawable/bg_glass_transaction</item>
+        <item name="iconBackground">@drawable/bg_icon_dark</item>
+        <item name="transactionItemBackground">@drawable/bg_transaction</item>
+        <item name="keypadRoundedBackground">@drawable/keypad_white_rounded</item>
+        <item name="dropdownBackground">@drawable/bg_3d_dropdown</item>
+        <item name="cardDarkBackground">@drawable/bg_card_dark</item>
+        <item name="searchBackground">@drawable/bg_glass_black</item>
+        <item name="roundBackground">@drawable/bg_glass_3d_round</item>
+        <item name="borderedRoundBackground">@drawable/bg_glass_3d_round</item>
+        <item name="glass3dRedBackground">@drawable/bg_glass_3d_red</item>
+        <item name="rigorCalendarBackground">@drawable/bg_glass_panel</item>
+        <item name="calendarTheme">@style/CalendarThemeDark</item>
+        <item name="textPrimaryColor">@color/text_primary</item>
+        <item name="textMutedColor">@color/text_muted</item>
+        <item name="navActiveColor">#FFFFFF</item>
+        <item name="navInactiveColor">#D0E0FF</item>
     </style>
+
+
+
+
+
+    <style name="Theme.Cashdash.Blue" parent="Base.Theme.Cashdash">
+        <item name="android:autofilledHighlight">@android:color/transparent</item>
+        <item name="mainBackground">@drawable/bg_main_gradient_blue</item>
+        <item name="bottomNavBackground">@drawable/bg_3d_bottom_nav_blue</item>
+        <item name="cardBackground">@drawable/bg_3d_card_blue</item>
+        <item name="glass3dBackground">@drawable/bg_glass_3d_blue</item>
+        <item name="keypadBackground">@drawable/bg_glass_3d_keypad_blue</item>
+        <item name="inputBackground">@drawable/bg_glass_input_blue</item>
+        <item name="panelBackground">@drawable/bg_glass_panel_blue</item>
+        <item name="transactionBackground">@drawable/bg_glass_transaction_blue</item>
+        <item name="iconBackground">@drawable/bg_icon_dark_blue</item>
+        <item name="transactionItemBackground">@drawable/bg_transaction_blue</item>
+        <item name="keypadRoundedBackground">@drawable/keypad_white_rounded_blue</item>
+        <item name="dropdownBackground">@drawable/bg_3d_dropdown_blue</item>
+        <item name="cardDarkBackground">@drawable/bg_card_dark_blue</item>
+        <item name="searchBackground">@drawable/bg_glass_search_blue</item>
+        <item name="roundBackground">@drawable/bg_glass_3d_round</item>
+        <item name="borderedRoundBackground">@drawable/bg_glass_3d_round</item>
+        <item name="glass3dRedBackground">@drawable/bg_glass_3d_red</item>
+        <item name="rigorCalendarBackground">@drawable/bg_glass_panel_blue</item>
+        <item name="calendarTheme">@style/CalendarThemeDark</item>
+        <item name="textPrimaryColor">@color/text_primary</item>
+        <item name="textMutedColor">@color/text_muted</item>
+        <item name="navActiveColor">#FFFFFF</item>
+        <item name="navInactiveColor">#D0E0FF</item>
+    </style>
+
+
+    <style name="Theme.Cashdash.White" parent="Base.Theme.Cashdash">
+        <item name="android:autofilledHighlight">@android:color/transparent</item>
+        <item name="mainBackground">@drawable/bg_main_gradient_white</item>
+        <item name="bottomNavBackground">@drawable/bg_3d_bottom_nav_white</item>
+        <item name="cardBackground">@drawable/bg_3d_card_white</item>
+        <item name="glass3dBackground">@drawable/bg_glass_3d_white</item>
+        <item name="keypadBackground">@drawable/bg_glass_3d_keypad_white</item>
+        <item name="inputBackground">@drawable/bg_glass_input_white</item>
+        <item name="panelBackground">@drawable/bg_glass_panel_white</item>
+        <item name="transactionBackground">@drawable/bg_glass_transaction_white</item>
+        <item name="iconBackground">@drawable/bg_icon_dark_white</item>
+        <item name="transactionItemBackground">@drawable/bg_transaction_white</item>
+        <item name="keypadRoundedBackground">@drawable/keypad_white_rounded_white</item>
+        <item name="dropdownBackground">@drawable/bg_3d_dropdown_white</item>
+        <item name="cardDarkBackground">@drawable/bg_card_dark_white</item>
+        <item name="searchBackground">@drawable/bg_glass_search_white</item>
+        <item name="roundBackground">@drawable/bg_glass_3d_round_white</item>
+        <item name="glass3dRedBackground">@drawable/bg_glass_3d_red_white</item>
+        <item name="borderedRoundBackground">@drawable/bg_glass_3d_round_black_border_white</item>
+        <item name="rigorCalendarBackground">@drawable/bg_glass_panel_white</item>
+        <item name="calendarTheme">@style/CalendarTheme</item>
+        <item name="colorSurface">@color/surface_white</item>
+        <item name="android:windowBackground">#F8FAFC</item>
+        <item name="textPrimaryColor">#1A1A1A</item> <!-- Dark charcoal for primary text -->
+        <item name="textMutedColor">#5F6D7E</item>   <!-- Muted gray for secondary text -->
+        <item name="navActiveColor">#1A1A1A</item>
+        <item name="navInactiveColor">#5F6D7E</item>
+    </style>
+
+
+
+
 
     <!-- Splash Screen Theme: dark bg + custom icon (Android 12+) -->
     <style name="Theme.Cashdash.Splash" parent="Theme.Cashdash">
@@ -35,9 +139,14 @@
         <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_round</item>
     </style>
 
+    <style name="Theme.Cashdash.Blue.Splash" parent="Theme.Cashdash.Blue">
+        <item name="android:windowSplashScreenBackground">@color/app_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_round</item>
+    </style>
+
     <!-- 3D POPUP MENU STYLES -->
     <style name="PopupMenu3D" parent="Widget.AppCompat.PopupMenu">
-        <item name="android:popupBackground">@drawable/bg_3d_dropdown</item>
+        <item name="android:popupBackground">?attr/dropdownBackground</item>
         <item name="android:dropDownVerticalOffset">8dp</item>
     </style>
 
@@ -54,6 +163,42 @@
 
     <style name="BottomSheetStyle" parent="Widget.Design.BottomSheet.Modal">
         <item name="android:background">@android:color/transparent</item>
+    </style>
+
+    <!-- CalendarTheme: used for White Theme CalendarView (dark text on light bg) -->
+    <style name="CalendarTheme" parent="ThemeOverlay.AppCompat.Light">
+        <item name="android:textColorPrimary">#1A1A1A</item>
+        <item name="android:textColorSecondary">#1A1A1A</item>
+        <item name="android:colorControlNormal">#1A1A1A</item>
+        <item name="android:colorControlActivated">#475569</item>
+        <item name="android:colorPrimary">@android:color/transparent</item>
+        <item name="android:colorAccent">#1A1A1A</item>
+        <item name="colorPrimary">@android:color/transparent</item>
+        <item name="colorAccent">#1A1A1A</item>
+        <item name="android:dateTextAppearance">@style/CalendarDateTextAppearanceWhite</item>
+        <item name="android:focusedMonthDateColor">#1A1A1A</item>
+    </style>
+    
+    <style name="CalendarDateTextAppearanceWhite" parent="android:TextAppearance.DeviceDefault.Small">
+        <item name="android:textColor">#1A1A1A</item>
+    </style>
+
+    <!-- CalendarThemeDark: used for Black/Blue Theme CalendarView (white text on dark bg) -->
+    <style name="CalendarThemeDark" parent="ThemeOverlay.AppCompat.Light">
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#FFFFFF</item>
+        <item name="android:colorControlNormal">#FFFFFF</item>
+        <item name="android:colorControlActivated">#90CAF9</item>
+        <item name="android:colorPrimary">@android:color/transparent</item>
+        <item name="android:colorAccent">#FFFFFF</item>
+        <item name="colorPrimary">@android:color/transparent</item>
+        <item name="colorAccent">#FFFFFF</item>
+        <item name="android:dateTextAppearance">@style/CalendarDateTextAppearanceDark</item>
+        <item name="android:focusedMonthDateColor">#FFFFFF</item>
+    </style>
+
+    <style name="CalendarDateTextAppearanceDark" parent="android:TextAppearance.DeviceDefault.Small">
+        <item name="android:textColor">#FFFFFF</item>
     </style>
 
     <style name="GlassDialogTheme" parent="Theme.Material3.DayNight.Dialog">

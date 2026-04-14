@@ -17,7 +17,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 
-class ProfileActivity : AppCompatActivity() {
+class ProfileActivity : ThemedActivity() {
 
     private val PREFS = "AppPrefs"
     private val KEY_NAME = "user_name"

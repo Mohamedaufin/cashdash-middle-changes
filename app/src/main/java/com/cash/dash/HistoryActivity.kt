@@ -15,7 +15,7 @@ import android.content.IntentFilter
 import java.text.SimpleDateFormat
 import java.util.*
 
-class HistoryActivity : AppCompatActivity() {
+class HistoryActivity : ThemedActivity() {
 
     private var currentMode = "DAILY"
     private var currentCategoryFilter = "Overall"

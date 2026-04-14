@@ -26,7 +26,7 @@ import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.FirebaseFirestore
 
 
-class MenuActivity : AppCompatActivity() {
+class MenuActivity : ThemedActivity() {
 
     private val PREFS = "WalletPrefs"
     private val KEY_BALANCE = "wallet_balance"
@@ -58,22 +58,22 @@ class MenuActivity : AppCompatActivity() {
 
         btnBalance.setOnClickListener {
             startActivity(Intent(this, BalanceSetupActivity::class.java))
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
 
         btnUpdateSchedule.setOnClickListener {
             startActivity(Intent(this, MoneyScheduleActivity::class.java))
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
 
         btnTheme.setOnClickListener {
             startActivity(Intent(this, ThemeActivity::class.java))
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
 
         btnHelp.setOnClickListener {
             startActivity(Intent(this, HelpActivity::class.java))
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
 
         btnPrivacyPolicy.setOnClickListener {
@@ -85,10 +85,15 @@ class MenuActivity : AppCompatActivity() {
         btnNotifications.setOnClickListener {
             notificationBadge.visibility = View.GONE
             startActivity(Intent(this, NotificationActivity::class.java))
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
 
         setupNotificationListener(notificationBadge)
+    }
+
+    override fun finish() {
+        super.finish()
+        overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
     }
 
     private fun setupNotificationListener(badge: View) {

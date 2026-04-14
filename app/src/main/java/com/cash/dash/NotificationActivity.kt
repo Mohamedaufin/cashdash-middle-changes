@@ -12,7 +12,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.*
 
-class NotificationActivity : AppCompatActivity() {
+class NotificationActivity : ThemedActivity() {
 
     private var allNotifications = listOf<NotificationModel>()
     private var filteredNotifications = listOf<NotificationModel>()
@@ -381,13 +381,13 @@ class NotificationActivity : AppCompatActivity() {
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(60, 60, 60, 50)
-            setBackgroundResource(R.drawable.bg_transaction)
+            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
         }
         
         TextView(this).apply {
             text = "Delete query?"
             textSize = 22f
-            setTextColor(Color.WHITE)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
             setPadding(0, 0, 0, 20)
@@ -410,8 +410,8 @@ class NotificationActivity : AppCompatActivity() {
         Button(this).apply {
             text = "Cancel"
             isAllCaps = false
-            setTextColor(Color.WHITE)
-            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply { setMargins(0, 0, 15, 0) }
             setOnClickListener { 
                 adapter.notifyDataSetChanged() // Reset swipe state
@@ -423,8 +423,8 @@ class NotificationActivity : AppCompatActivity() {
         Button(this).apply {
             text = "Delete"
             isAllCaps = false
-            setTextColor(Color.WHITE)
-            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply { setMargins(15, 0, 0, 0) }
             setOnClickListener {
                 val user = FirebaseAuth.getInstance().currentUser ?: return@setOnClickListener

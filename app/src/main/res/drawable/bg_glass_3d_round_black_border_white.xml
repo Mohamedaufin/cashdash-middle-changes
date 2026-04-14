@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 1. Silky Base Gradient -->
+    <item>
+        <shape android:shape="oval">
+            <gradient
+                android:startColor="#F1F5F9"
+                android:endColor="#E2E8F0"
+                android:angle="270"
+                android:type="linear"/>
+            <stroke
+                android:width="1.2dp"
+                android:color="@color/border"/> 
+        </shape>
+    </item>
+
+    <!-- 2. Subtle shadow overlay for depth -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#05000000" />
+        </shape>
+    </item>
+
+    <!-- 3. Final Top Gloss -->
+    <item
+        android:bottom="14dp"
+        android:left="2dp"
+        android:right="2dp"
+        android:top="0dp">
+        <shape android:shape="oval">
+            <gradient
+                android:startColor="#15FFFFFF" 
+                android:endColor="#00FFFFFF"
+                android:angle="270"
+                android:type="linear"/>
+        </shape>
+    </item>
+
+</layer-list>

@@ -17,7 +17,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import android.content.BroadcastReceiver
 import android.content.IntentFilter
 
-class CategoryAnalysisActivity : AppCompatActivity() {
+class CategoryAnalysisActivity : ThemedActivity() {
 
     private lateinit var tvCategoryName: TextView
     private lateinit var tvAverage: TextView
@@ -225,13 +225,13 @@ class CategoryAnalysisActivity : AppCompatActivity() {
         val box = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
             setPadding(60, 60, 60, 50)
-            setBackgroundResource(R.drawable.bg_transaction)
+            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
         }
 
         val titleView = TextView(this).apply {
             text = "Select Category Icon"
             textSize = 22f
-            setTextColor(Color.WHITE)
+            setTextColor(androidx.core.content.ContextCompat.getColor(context, if (ThemeHelper.isWhiteTheme(context)) R.color.black else R.color.white))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
             setPadding(0, 0, 0, 40)
@@ -256,7 +256,7 @@ class CategoryAnalysisActivity : AppCompatActivity() {
             val btn = Button(this).apply {
                 text = name
                 isAllCaps = false
-                setTextColor(Color.WHITE)
+                setTextColor(androidx.core.content.ContextCompat.getColor(context, if (ThemeHelper.isWhiteTheme(context)) R.color.black else R.color.white))
                 
                 // Only aggressively bound the raw PNG (ic_edit), keep others natural
                 if (resId == R.drawable.ic_edit) {
@@ -266,15 +266,18 @@ class CategoryAnalysisActivity : AppCompatActivity() {
                         val height = if (it.intrinsicWidth > 0) (iconSize * it.intrinsicHeight) / it.intrinsicWidth else iconSize
                         it.setBounds(0, 0, iconSize, height)
                     }
-                    setCompoundDrawables(drw, null, null, null)
+                    val tinted = com.cash.dash.ThemeHelper.tintDrawableIfWhiteTheme(this@CategoryAnalysisActivity, drw)
+                    setCompoundDrawables(tinted, null, null, null)
                 } else {
-                    setCompoundDrawablesWithIntrinsicBounds(resId, 0, 0, 0)
+                    val drw = androidx.core.content.ContextCompat.getDrawable(this@CategoryAnalysisActivity, resId)
+                    val tinted = com.cash.dash.ThemeHelper.tintDrawableIfWhiteTheme(this@CategoryAnalysisActivity, drw)
+                    setCompoundDrawablesWithIntrinsicBounds(tinted, null, null, null)
                 }
                 
                 compoundDrawablePadding = 20
                 setPadding(50, 0, 0, 0)
                 gravity = android.view.Gravity.CENTER_VERTICAL or android.view.Gravity.START
-                background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+                background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
                 layoutParams = android.widget.LinearLayout.LayoutParams(
                     android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 150
                 ).apply { setMargins(0, 0, 0, 25) }
@@ -290,8 +293,8 @@ class CategoryAnalysisActivity : AppCompatActivity() {
         val btnCancel = Button(this).apply {
             text = "Cancel"
             isAllCaps = false
-            setTextColor(Color.WHITE)
-            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.bg_glass_input)
+            setTextColor(androidx.core.content.ContextCompat.getColor(context, if (ThemeHelper.isWhiteTheme(context)) R.color.black else R.color.white))
+            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             layoutParams = android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 140
             )

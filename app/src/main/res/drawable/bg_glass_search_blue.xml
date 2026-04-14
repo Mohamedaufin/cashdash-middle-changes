@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 1. Deep Dark Blue Glass Tint -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#E00D1B4C"
+                android:endColor="#D007103D"
+                android:angle="135"
+                android:type="linear"/>
+            <corners android:radius="14dp"/>
+            <stroke
+                android:width="1.2dp"
+                android:color="#30FFFFFF"/>
+        </shape>
+    </item>
+
+    <!-- 2. Subtle Top Gloss -->
+    <item
+        android:bottom="24dp"
+        android:left="2dp"
+        android:right="2dp"
+        android:top="0dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#15FFFFFF"
+                android:endColor="#00FFFFFF"
+                android:angle="270"
+                android:type="linear"/>
+            <corners
+                android:topLeftRadius="14dp"
+                android:topRightRadius="14dp"
+                android:bottomLeftRadius="0dp"
+                android:bottomRightRadius="0dp"/>
+        </shape>
+    </item>
+
+</layer-list>

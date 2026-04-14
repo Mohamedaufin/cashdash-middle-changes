@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 3D dropdown background (White Theme): light base + top-edge highlight bevel -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 2. Main Background Body -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#FFFFFF"
+                android:endColor="#F1F5F9"
+                android:angle="135"
+                android:type="linear"/>
+            <corners android:radius="16dp"/>
+            <stroke
+                android:width="1.2dp"
+                android:color="@color/border"/>
+            <padding android:left="3dp" android:top="3dp" android:right="3dp" android:bottom="3dp"/>
+        </shape>
+    </item>
+
+    <!-- 3. Subdued Top Bevel Highlight (Gloss effect) -->
+    <item
+        android:bottom="20dp"
+        android:right="0dp"
+        android:left="0dp"
+        android:top="0dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#50FFFFFF"
+                android:endColor="#00FFFFFF"
+                android:angle="270"
+                android:type="linear"/>
+            <corners
+                android:topLeftRadius="16dp"
+                android:topRightRadius="16dp"
+                android:bottomLeftRadius="0dp"
+                android:bottomRightRadius="0dp"/>
+        </shape>
+    </item>
+
+</layer-list>

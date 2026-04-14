@@ -2,8 +2,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_main_gradient"
-    android:theme="@style/ThemeOverlay.AppCompat.Dark"
+    android:background="?attr/mainBackground"
     android:scrollbars="none"
     android:fillViewport="true">
 
@@ -23,7 +22,7 @@
             android:text="Current Cycle End Date"
             android:textSize="22sp"
             android:textStyle="bold"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/textPrimaryColor"
             android:layout_marginBottom="5dp"/>
 
         <TextView
@@ -31,14 +30,14 @@
             android:layout_height="wrap_content"
             android:text="Select when your current budget should expire"
             android:textSize="14sp"
-            android:textColor="#B0C8FF"
+            android:textColor="?attr/textMutedColor"
             android:layout_marginBottom="15dp"/>
 
         <!-- CALENDAR VIEW WRAPPER -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_glass_panel"
+            android:background="?attr/panelBackground"
             android:padding="10dp"
             android:layout_marginBottom="25dp">
 
@@ -46,7 +45,7 @@
                 android:id="@+id/calendarView"
                 android:layout_width="match_parent"
                 android:layout_height="350dp"
-                android:theme="@style/ThemeOverlay.AppCompat.Dark" />
+                android:theme="?attr/calendarTheme" />
         </FrameLayout>
 
         <!-- TITLE 2 -->
@@ -64,7 +63,7 @@
                 android:text="Budget Reset Frequency"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="@color/text_primary"/>
+                android:textColor="?attr/textPrimaryColor"/>
 
             <ImageButton
                 android:id="@+id/btnInfoReset"
@@ -82,7 +81,7 @@
             android:layout_height="wrap_content"
             android:text="How often should your wallet automatically renew?"
             android:textSize="14sp"
-            android:textColor="#B0C8FF"
+            android:textColor="?attr/textMutedColor"
             android:layout_marginBottom="15dp"/>
 
         <RadioGroup
@@ -93,17 +92,17 @@
             <RadioButton
                 android:id="@+id/rbMonthly"
                 android:text="Monthly (30 days)"
-                android:textColor="@color/text_primary"/>
+                android:textColor="?attr/textPrimaryColor"/>
 
             <RadioButton
                 android:id="@+id/rbWeekly"
                 android:text="Weekly (7 days)"
-                android:textColor="@color/text_primary"/>
+                android:textColor="?attr/textPrimaryColor"/>
 
             <RadioButton
                 android:id="@+id/rbCustom"
                 android:text="Custom (Days)"
-                android:textColor="@color/text_primary"/>
+                android:textColor="?attr/textPrimaryColor"/>
         </RadioGroup>
 
         <TextView
@@ -111,7 +110,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Your cycle renews on..."
-            android:textColor="#00E6FF"
+            android:textColor="?attr/textPrimaryColor"
             android:textSize="15sp"
             android:textStyle="italic"
             android:visibility="gone"
@@ -124,12 +123,12 @@
             android:layout_height="wrap_content"
             android:hint="Enter numbers of days"
             android:textColorHint="#B0B0B0"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/textPrimaryColor"
             android:inputType="number"
             android:padding="15dp"
             android:layout_marginTop="10dp"
             android:layout_marginBottom="25dp"
-            android:background="@drawable/bg_glass_input"
+            android:background="?attr/inputBackground"
             android:visibility="gone" />
 
         <!-- SAVE BUTTON -->
@@ -139,8 +138,8 @@
             android:layout_height="65dp"
             android:text="Save Schedule"
             android:textSize="22sp"
-            android:textColor="@color/text_primary"
-            android:background="@drawable/bg_glass_3d"
+            android:textColor="?attr/textPrimaryColor"
+            android:background="?attr/glass3dBackground"
             app:backgroundTint="@null"
             android:layout_marginTop="10dp"/>
 
@@ -151,8 +150,8 @@
             android:layout_height="65dp"
             android:text="Reset Cycle Now"
             android:textSize="20sp"
-            android:textColor="@color/text_primary"
-            android:background="@drawable/bg_glass_3d"
+            android:textColor="?attr/textPrimaryColor"
+            android:background="?attr/glass3dBackground"
             app:backgroundTint="@null"
             android:layout_marginTop="15dp"
             android:textAllCaps="false"/>

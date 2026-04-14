@@ -23,7 +23,8 @@ object DropdownHelper {
         val adapter = object : ArrayAdapter<String>(context, android.R.layout.simple_list_item_1, items) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val v = super.getView(position, convertView, parent) as TextView
-                v.setTextColor(ContextCompat.getColor(context, R.color.text_primary))
+                val textColor = com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor)
+                v.setTextColor(textColor)
                 v.setBackgroundColor(Color.TRANSPARENT)
                 v.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
                 
@@ -70,7 +71,7 @@ object DropdownHelper {
         
         listPopupWindow.setAdapter(adapter)
         listPopupWindow.anchorView = anchor
-        listPopupWindow.setBackgroundDrawable(ContextCompat.getDrawable(context, R.drawable.bg_3d_dropdown))
+        listPopupWindow.setBackgroundDrawable(ContextCompat.getDrawable(context, ThemeHelper.getDrawable(context, R.drawable.bg_3d_dropdown)))
         
         val density = context.resources.displayMetrics.density
         

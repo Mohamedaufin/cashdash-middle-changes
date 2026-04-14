@@ -8,7 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 
-class SetLimitActivity : AppCompatActivity() {
+class SetLimitActivity : ThemedActivity() {
 
     private lateinit var input: EditText
 

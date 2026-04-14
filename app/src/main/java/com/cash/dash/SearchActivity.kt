@@ -13,7 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
 import java.util.*
 
-class SearchActivity : AppCompatActivity() {
+class SearchActivity : ThemedActivity() {
 
     private lateinit var rvSearchResults: RecyclerView
     private lateinit var edtSearch: EditText

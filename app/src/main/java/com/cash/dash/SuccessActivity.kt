@@ -6,7 +6,7 @@ import android.graphics.Color
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
-class SuccessActivity : AppCompatActivity(){
+class SuccessActivity : ThemedActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
