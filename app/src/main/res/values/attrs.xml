@@ -24,4 +24,9 @@
     <attr name="textMutedColor" format="color" />
     <attr name="navActiveColor" format="color" />
     <attr name="navInactiveColor" format="color" />
+    <attr name="infoIconBackground" format="reference" />
+    <attr name="healthGreen" format="color" />
+    <attr name="healthYellow" format="color" />
+    <attr name="healthRed" format="color" />
+    <attr name="progressTrackColor" format="color" />
 </resources>

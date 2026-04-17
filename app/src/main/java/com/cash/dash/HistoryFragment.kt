@@ -121,7 +121,7 @@ class HistoryFragment : Fragment() {
     private fun setupCategoryDropdown(btn: Button, graph: DayBarGraphView) {
         btn.setOnClickListener {
             fetchCategories()
-            DropdownHelper.showBlinkingDropdown(requireContext(), btn, categoriesList, 200) { index, cat ->
+            DropdownHelper.showBlinkingDropdown(requireContext(), btn, categoriesList, 200, null, android.view.Gravity.END) { index, cat ->
                 currentCategoryFilter = cat
                 btn.text = if (currentCategoryFilter == "no choice") "No Choice" else currentCategoryFilter
                 loadGraphValues(graph)
@@ -374,7 +374,6 @@ class HistoryFragment : Fragment() {
                 // Show Month Picker (Jan - Dec)
                 val months = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
                 val displayList = months.map { "$it $selectedYear" }
-
                 DropdownHelper.showBlinkingDropdown(requireContext(), btn, displayList, 200) { position, _ ->
                     selectedMonth = position
                     selectedWeek = 0

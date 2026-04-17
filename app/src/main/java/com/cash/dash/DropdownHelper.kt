@@ -1,5 +1,7 @@
 package com.cash.dash
 
+import android.view.ContextThemeWrapper
+
 import android.content.Context
 import android.graphics.Color
 import android.util.TypedValue
@@ -9,6 +11,7 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.appcompat.widget.ListPopupWindow
 
 object DropdownHelper {
 
@@ -17,16 +20,19 @@ object DropdownHelper {
         anchor: View,
         items: List<String>,
         fixedWidthDp: Int? = null,
+        horizontalOffsetDp: Int? = null,
+        gravity: Int? = null,
         onItemSelected: (Int, String) -> Unit
     ) {
-        val listPopupWindow = android.widget.ListPopupWindow(context)
+        val themedContext = ContextThemeWrapper(context, R.style.FlatListPopup)
+        val listPopupWindow = ListPopupWindow(themedContext, null, 0, R.style.FlatListPopup)
         val adapter = object : ArrayAdapter<String>(context, android.R.layout.simple_list_item_1, items) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val v = super.getView(position, convertView, parent) as TextView
                 val textColor = com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor)
                 v.setTextColor(textColor)
                 v.setBackgroundColor(Color.TRANSPARENT)
-                v.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+                v.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_subhead))
                 
                 val dp12 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, context.resources.displayMetrics).toInt()
                 val dp16 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16f, context.resources.displayMetrics).toInt()
@@ -85,7 +91,18 @@ object DropdownHelper {
             listPopupWindow.width = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
         }
         
+        if (horizontalOffsetDp != null) {
+            listPopupWindow.horizontalOffset = (horizontalOffsetDp * density).toInt()
+        }
+
+        if (gravity != null) {
+            listPopupWindow.setDropDownGravity(gravity)
+        }
+        
         listPopupWindow.verticalOffset = (8 * density).toInt()
+        
+        // Remove system shadows for a flat UI
+        // Shadow is removed via style R.style.FlatListPopup
         
         // If there's many items, limit height so it doesn't take the full screen
         if (items.size > 5) {

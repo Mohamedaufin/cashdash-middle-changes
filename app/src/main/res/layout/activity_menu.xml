@@ -18,7 +18,7 @@
             android:orientation="vertical"
             android:paddingHorizontal="25dp"
             android:paddingTop="30dp"
-            android:paddingBottom="40dp">
+            android:paddingBottom="75dp">
 
             <!-- TOP NAV BAR -->
             <RelativeLayout
@@ -72,7 +72,7 @@
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:padding="20dp"
-                android:background="?attr/glass3dBackground"
+                android:background="?attr/cardBackground"
                 android:layout_marginBottom="35dp">
 
                 <ImageView
@@ -96,7 +96,7 @@
                         android:layout_height="wrap_content"
                         android:text="Hello,"
                         android:textColor="@color/text_secondary"
-                        android:textSize="14sp" />
+                        android:textSize="@dimen/text_body" />
 
                     <TextView
                         android:id="@+id/tvUserName"
@@ -104,7 +104,7 @@
                         android:layout_height="wrap_content"
                         android:text="User"
                         android:textColor="?attr/textPrimaryColor"
-                        android:textSize="22sp"
+                        android:textSize="@dimen/text_title"
                         android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>
@@ -115,7 +115,10 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- Balance Bar -->
+
+
+
+                <!-- Wallet Bar (formerly Balance Bar) -->
                 <LinearLayout
                     android:id="@+id/btnBalanceBar"
                     android:layout_width="match_parent"
@@ -138,9 +141,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="20dp"
-                        android:text="Balance Bar"
+                        android:text="Wallet Balance"
                         android:textColor="?attr/textPrimaryColor"
-                        android:textSize="18sp"
+                        android:textSize="@dimen/text_subhead"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -169,7 +172,7 @@
                         android:layout_marginStart="20dp"
                         android:text="Money Schedule"
                         android:textColor="?attr/textPrimaryColor"
-                        android:textSize="18sp"
+                        android:textSize="@dimen/text_subhead"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -196,9 +199,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="20dp"
-                        android:text="Select Theme"
+                        android:text="Appearance"
                         android:textColor="?attr/textPrimaryColor"
-                        android:textSize="18sp"
+                        android:textSize="@dimen/text_subhead"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -227,7 +230,7 @@
                         android:layout_marginStart="20dp"
                         android:text="Help &amp; Support"
                         android:textColor="?attr/textPrimaryColor"
-                        android:textSize="18sp"
+                        android:textSize="@dimen/text_subhead"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -256,7 +259,7 @@
                         android:layout_marginStart="20dp"
                         android:text="Privacy Policy"
                         android:textColor="?attr/textPrimaryColor"
-                        android:textSize="18sp"
+                        android:textSize="@dimen/text_subhead"
                         android:textStyle="bold" />
                 </LinearLayout>
 

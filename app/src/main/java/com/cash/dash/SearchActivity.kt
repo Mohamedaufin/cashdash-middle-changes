@@ -26,10 +26,6 @@ class SearchActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_search)
 
-        // Fullscreen
-        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
-
         rvSearchResults = findViewById(R.id.rvSearchResults)
         edtSearch = findViewById(R.id.edtSearch)
         tvNoResults = findViewById(R.id.tvNoResults)
@@ -115,9 +111,9 @@ class SearchActivity : ThemedActivity() {
 
         for (item in transactions) {
             val headerTitle = if (item.timestamp > 0) {
-                headerSdf.format(Date(item.timestamp)).uppercase()
+                headerSdf.format(Date(item.timestamp))
             } else {
-                "UNKNOWN DATE"
+                "Unknown Date"
             }
 
             if (headerTitle != currentHeader) {

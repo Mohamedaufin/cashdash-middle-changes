@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:text="Contact Support"
         android:textColor="?attr/textPrimaryColor"
-        android:textSize="22sp"
+        android:textSize="@dimen/text_title"
         android:textStyle="bold"
         android:layout_marginBottom="25dp"/>
 
@@ -27,7 +27,7 @@
         android:paddingStart="15dp"
         android:paddingEnd="15dp"
         android:textColor="?attr/textMutedColor"
-        android:textSize="15sp"
+        android:textSize="@dimen/text_body"
         android:layout_marginBottom="12dp"
         android:text="Name: —"/>
 
@@ -41,7 +41,7 @@
         android:paddingStart="15dp"
         android:paddingEnd="15dp"
         android:textColor="?attr/textMutedColor"
-        android:textSize="15sp"
+        android:textSize="@dimen/text_body"
         android:layout_marginBottom="12dp"
         android:text="Time: —"/>
 
@@ -55,7 +55,7 @@
         android:paddingStart="15dp"
         android:paddingEnd="15dp"
         android:textColor="?attr/textMutedColor"
-        android:textSize="15sp"
+        android:textSize="@dimen/text_body"
         android:layout_marginBottom="12dp"
         android:text="Email: —"/>
 
@@ -72,7 +72,7 @@
         android:paddingStart="15dp"
         android:paddingEnd="15dp"
         android:inputType="textCapSentences"
-        android:textSize="15sp"
+        android:textSize="@dimen/text_body"
         android:layout_marginBottom="12dp"/>
 
     <!-- Query Input -->
@@ -87,19 +87,21 @@
         android:gravity="top"
         android:padding="15dp"
         android:inputType="textMultiLine|textCapSentences"
-        android:textSize="15sp"
+        android:textSize="@dimen/text_body"
         android:layout_marginBottom="25dp"/>
 
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnContactSubmit"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:background="?attr/transactionItemBackground"
-        app:backgroundTint="@null"
+        android:background="?attr/cardBackground"
+        android:backgroundTint="@null"
         android:text="Submit"
         android:textColor="?attr/textPrimaryColor"
         android:textStyle="bold"
-        android:textSize="16sp"
-        android:textAllCaps="false"/>
+        android:textSize="@dimen/text_subhead"
+        android:textAllCaps="false"
+        android:stateListAnimator="@null"
+        android:elevation="0dp"/>
 
 </LinearLayout>

@@ -1,134 +1,330 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/mainBackground">
 
-    <LinearLayout
+    <!-- Header -->
+    <RelativeLayout
         android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingTop="60dp"
-        android:paddingBottom="20dp"
-        android:paddingHorizontal="20dp"
+        android:paddingHorizontal="25dp"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
+        <ImageButton
             android:id="@+id/btnBack"
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:background="?attr/roundBackground"
             android:padding="12dp"
             android:src="@drawable/ic_back_arrow1"
-            app:tint="?attr/textPrimaryColor" />
+            android:scaleType="fitCenter"
+            app:tint="?attr/textPrimaryColor"
+            android:layout_alignParentStart="true"/>
 
         <TextView
+            android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="15dp"
-            android:text="Select Theme"
+            android:layout_centerInParent="true"
+            android:text="Appearance"
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="22sp"
+            android:textSize="20sp"
             android:textStyle="bold" />
-    </LinearLayout>
+    </RelativeLayout>
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp"
-        app:layout_constraintTop_toBottomOf="@id/header">
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toBottomOf="@id/header"
+        app:layout_constraintBottom_toBottomOf="parent">
 
-        <!-- Black Theme -->
         <LinearLayout
-            android:id="@+id/themeBlack"
             android:layout_width="match_parent"
-            android:layout_height="80dp"
-            android:layout_marginBottom="15dp"
-            android:background="?attr/glass3dBackground"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="20dp">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="25dp"
+            android:paddingBottom="100dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
 
-            <View
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:background="@drawable/bg_solid_circle"
-                android:backgroundTint="#000000" />
-
+            <!-- App Theme Selection -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:text="Black"
+                android:text="App Theme"
                 android:textColor="?attr/textPrimaryColor"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-        </LinearLayout>
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="15dp" />
 
-        <!-- Blue Theme -->
-        <LinearLayout
-            android:id="@+id/themeBlue"
-            android:layout_width="match_parent"
-            android:layout_height="80dp"
-            android:layout_marginBottom="15dp"
-            android:background="?attr/glass3dBackground"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="20dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="30dp">
+
+                <!-- Black Card -->
+                <LinearLayout
+                    android:id="@+id/themeBlack"
+                    android:layout_width="0dp"
+                    android:layout_height="100dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:background="?attr/cardBackground"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <View
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:background="@drawable/bg_solid_circle"
+                        android:backgroundTint="#121212"
+                        android:layout_marginBottom="8dp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Black"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Blue Card -->
+                <LinearLayout
+                    android:id="@+id/themeBlue"
+                    android:layout_width="0dp"
+                    android:layout_height="100dp"
+                    android:layout_weight="1"
+                    android:layout_marginHorizontal="4dp"
+                    android:background="?attr/cardBackground"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <View
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:background="@drawable/bg_solid_circle"
+                        android:backgroundTint="#0D1B6E"
+                        android:layout_marginBottom="8dp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Blue"
+                        android:textColor="?attr/textMutedColor"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <!-- White Card -->
+                <LinearLayout
+                    android:id="@+id/themeWhite"
+                    android:layout_width="0dp"
+                    android:layout_height="100dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:background="?attr/cardBackground"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <View
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:background="@drawable/bg_solid_circle"
+                        android:backgroundTint="#F8FAFC"
+                        android:layout_marginBottom="8dp"
+                        android:elevation="1dp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="White"
+                        android:textColor="?attr/textMutedColor"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </LinearLayout>
 
             <View
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:background="@drawable/bg_solid_circle"
-                android:backgroundTint="#0000FF" />
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?attr/textMutedColor"
+                android:alpha="0.2"
+                android:layout_marginBottom="30dp" />
 
+            <!-- Balance Bar Customization -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:text="Blue"
+                android:text="Balance Bar Style"
                 android:textColor="?attr/textPrimaryColor"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-        </LinearLayout>
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="15dp" />
 
-        <!-- White Theme -->
-        <LinearLayout
-            android:id="@+id/themeWhite"
-            android:layout_width="match_parent"
-            android:layout_height="80dp"
-            android:layout_marginBottom="15dp"
-            android:background="?attr/glass3dBackground"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="20dp">
-
-            <View
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:background="@drawable/bg_solid_circle"
-                android:backgroundTint="#FFFFFF" />
-
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Preview Container -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:text="White"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="?attr/panelBackground"
+                android:padding="10dp"
+                android:layout_marginBottom="25dp">
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Live Preview"
+                    android:textColor="?attr/textMutedColor"
+                    android:textSize="12sp"
+                    android:layout_marginBottom="20dp" />
+
+                <com.cash.dash.GradientCircularProgressView
+                    android:id="@+id/previewProgress"
+                    android:layout_width="320dp"
+                    android:layout_height="320dp" />
+            </LinearLayout>
+
+            <!-- Mode Selection -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="25dp">
+
+                <TextView
+                    android:id="@+id/btnModeGradient"
+                    android:layout_width="0dp"
+                    android:layout_height="50dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:background="?attr/cardBackground"
+                    android:gravity="center"
+                    android:text="Gradient"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnModeSingle"
+                    android:layout_width="0dp"
+                    android:layout_height="50dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:background="?attr/cardBackground"
+                    android:gravity="center"
+                    android:text="Single Colour"
+                    android:textColor="?attr/textMutedColor"
+                    android:textSize="15sp" />
+            </LinearLayout>
+
+            <!-- Gradient Options -->
+            <LinearLayout
+                android:id="@+id/layoutGradientOptions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="30dp">
+
+                <TextView
+                    android:id="@+id/btnGradient1"
+                    android:layout_width="0dp"
+                    android:layout_height="55dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:background="?attr/cardBackground"
+                    android:gravity="center"
+                    android:text="Gradient 1"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnGradient2"
+                    android:layout_width="0dp"
+                    android:layout_height="55dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:background="?attr/cardBackground"
+                    android:gravity="center"
+                    android:text="Gradient 2"
+                    android:textColor="?attr/textMutedColor"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- Single Colour Options -->
+            <GridLayout
+                android:id="@+id/layoutSingleOptions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="3"
+                android:alignmentMode="alignMargins"
+                android:layout_marginBottom="30dp"
+                android:visibility="gone">
+
+                <!-- Item 1: Purple -->
+                <LinearLayout
+                    android:id="@+id/colorPurple"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:layout_margin="8dp">
+                    <View android:layout_width="45dp" android:layout_height="45dp" android:background="@drawable/bg_color_purple" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Purple" android:textColor="?attr/textMutedColor" android:textSize="11sp" android:layout_marginTop="6dp" />
+                </LinearLayout>
+
+                <!-- Item 2: Yellow -->
+                <LinearLayout android:id="@+id/colorYellow" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:orientation="vertical" android:gravity="center" android:layout_margin="8dp">
+                    <View android:layout_width="45dp" android:layout_height="45dp" android:background="@drawable/bg_color_yellow" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Yellow" android:textColor="?attr/textMutedColor" android:textSize="11sp" android:layout_marginTop="6dp" />
+                </LinearLayout>
+
+                <!-- Item 3: Red -->
+                <LinearLayout android:id="@+id/colorRed" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:orientation="vertical" android:gravity="center" android:layout_margin="8dp">
+                    <View android:layout_width="45dp" android:layout_height="45dp" android:background="@drawable/bg_color_red" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Red" android:textColor="?attr/textMutedColor" android:textSize="11sp" android:layout_marginTop="6dp" />
+                </LinearLayout>
+
+                <!-- Item 4: Green -->
+                <LinearLayout android:id="@+id/colorGreen" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:orientation="vertical" android:gravity="center" android:layout_margin="8dp">
+                    <View android:layout_width="45dp" android:layout_height="45dp" android:background="@drawable/bg_color_green" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Green" android:textColor="?attr/textMutedColor" android:textSize="11sp" android:layout_marginTop="6dp" />
+                </LinearLayout>
+
+                <!-- Item 5: Black -->
+                <LinearLayout android:id="@+id/colorBlack" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:orientation="vertical" android:gravity="center" android:layout_margin="8dp">
+                    <View android:layout_width="45dp" android:layout_height="45dp" android:background="@drawable/bg_color_black" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Black" android:textColor="?attr/textMutedColor" android:textSize="11sp" android:layout_marginTop="6dp" />
+                </LinearLayout>
+
+                <!-- Item 6: White -->
+                <LinearLayout android:id="@+id/colorWhite" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:orientation="vertical" android:gravity="center" android:layout_margin="8dp">
+                    <View android:layout_width="45dp" android:layout_height="45dp" android:background="@drawable/bg_color_white" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="White" android:textColor="?attr/textMutedColor" android:textSize="11sp" android:layout_marginTop="6dp" />
+                </LinearLayout>
+            </GridLayout>
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnApply"
+                android:layout_width="match_parent"
+                android:layout_height="65dp"
+                android:text="Apply Appearance"
+                android:textAllCaps="false"
+                android:textSize="18sp"
+                android:textStyle="bold"
                 android:textColor="?attr/textPrimaryColor"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:background="?attr/cardBackground"
+                android:backgroundTint="@null"
+                android:stateListAnimator="@null"
+                android:elevation="0dp" />
+
         </LinearLayout>
-
-    </LinearLayout>
-
+    </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

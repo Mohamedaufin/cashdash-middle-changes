@@ -12,9 +12,6 @@ class SuccessActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.success_popup)
 
-        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
-
         findViewById<TextView>(R.id.paymentMessage).text =
             intent.getStringExtra("info") ?: "Payment Detected!"
 

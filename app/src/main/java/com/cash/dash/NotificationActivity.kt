@@ -29,9 +29,6 @@ class NotificationActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_notification)
 
-        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
-
 
         setupRecyclerView()
         setupFilters()
@@ -211,17 +208,23 @@ class NotificationActivity : ThemedActivity() {
                     val userName = prefs.getString("user_name", "User") ?: "User"
 
                     // Clean up extra spaces to make it even and premium
+                    // --- THEME AWARE HTML COLORING ---
+                    val isWhite = ThemeHelper.isWhiteTheme(this@NotificationActivity)
+                    val colorUser = if (isWhite) "#0047AB" else "#B0C8FF"
+                    val colorTeam = if (isWhite) "#008000" else "#4ADE80"
+                    val colorContent = if (isWhite) "#333333" else "#E0EBF5"
+
                     val displayQuery = query
-                        .replace("User Reply \\(\\d+\\):".toRegex(), "<font color='#B0C8FF'><b>$userName:</b></font>")
-                        .replace("User:".toRegex(), "<font color='#B0C8FF'><b>$userName:</b></font>")
-                        .replace("$userName:".toRegex(), "<font color='#B0C8FF'><b>$userName:</b></font>")
-                        .replace("Team Cashdash:".toRegex(), "<font color='#4ADE80'><b>Team Cashdash:</b></font>")
+                        .replace("User Reply \\(\\d+\\):".toRegex(), "<font color='$colorUser'><b>$userName:</b></font>")
+                        .replace("User:".toRegex(), "<font color='$colorUser'><b>$userName:</b></font>")
+                        .replace("$userName:".toRegex(), "<font color='$colorUser'><b>$userName:</b></font>")
+                        .replace("Team Cashdash:".toRegex(), "<font color='$colorTeam'><b>Team Cashdash:</b></font>")
                         .replace("\n", "<br>")
 
                     NotificationModel(
                         id = doc.id,
                         queryFormatted = android.text.Html.fromHtml("<b>Subject:</b> $subject<br><b>Question:</b> $displayQuery", android.text.Html.FROM_HTML_MODE_LEGACY),
-                        replyFormatted = if (isPending) null else android.text.Html.fromHtml("<font color='#4ADE80'><b>Response</b></font><br><font color='#E0EBF5'>${reply.replace("\n", "<br>")}</font>", android.text.Html.FROM_HTML_MODE_LEGACY),
+                        replyFormatted = if (isPending) null else android.text.Html.fromHtml("<font color='$colorTeam'><b>Response</b></font><br><font color='$colorContent'>${reply.replace("\n", "<br>")}</font>", android.text.Html.FROM_HTML_MODE_LEGACY),
                         timestamp = ts,
                         title = queryTitle,
                         timeFormatted = if (ts > 0) sdf.format(Date(ts)) else "",
@@ -315,16 +318,22 @@ class NotificationActivity : ThemedActivity() {
                     else -> "#4ADE80"
                 })
 
+                // --- THEME AWARE HTML COLORING ---
+                val isWhite = ThemeHelper.isWhiteTheme(this@NotificationActivity)
+                val colorUser = if (isWhite) "#0047AB" else "#B0C8FF"
+                val colorTeam = if (isWhite) "#008000" else "#4ADE80"
+                val colorContent = if (isWhite) "#333333" else "#E0EBF5"
+
                 val displayQuery = query
-                    .replace("User Reply \\(\\d+\\):".toRegex(), "<font color='#B0C8FF'><b>$userName:</b></font>")
-                    .replace("User:".toRegex(), "<font color='#B0C8FF'><b>$userName:</b></font>")
-                    .replace("Team Cashdash:".toRegex(), "<font color='#4ADE80'><b>Team Cashdash:</b></font>")
+                    .replace("User Reply \\(\\d+\\):".toRegex(), "<font color='$colorUser'><b>$userName:</b></font>")
+                    .replace("User:".toRegex(), "<font color='$colorUser'><b>$userName:</b></font>")
+                    .replace("Team Cashdash:".toRegex(), "<font color='$colorTeam'><b>Team Cashdash:</b></font>")
                     .replace("\n", "<br>")
 
                 list.add(NotificationModel(
                     id = id,
                     queryFormatted = android.text.Html.fromHtml("<b>Subject:</b> $subject<br><b>Question:</b> $displayQuery", android.text.Html.FROM_HTML_MODE_LEGACY),
-                    replyFormatted = if (isPending) null else android.text.Html.fromHtml("<font color='#4ADE80'><b>Response</b></font><br><font color='#E0EBF5'>${reply.replace("\n", "<br>")}</font>", android.text.Html.FROM_HTML_MODE_LEGACY),
+                    replyFormatted = if (isPending) null else android.text.Html.fromHtml("<font color='$colorTeam'><b>Response</b></font><br><font color='$colorContent'>${reply.replace("\n", "<br>")}</font>", android.text.Html.FROM_HTML_MODE_LEGACY),
                     timestamp = ts,
                     title = queryTitle,
                     timeFormatted = if (ts > 0) sdf.format(Date(ts)) else "",
@@ -378,32 +387,39 @@ class NotificationActivity : ThemedActivity() {
     }
 
     private fun showDeleteConfirmDialog(model: NotificationModel) {
+        val density = resources.displayMetrics.density
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(60, 60, 60, 50)
+            val p = (28 * density).toInt()
+            setPadding(p, p, p, (24 * density).toInt())
             setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
         }
         
         TextView(this).apply {
             text = "Delete query?"
-            textSize = 22f
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_title))
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
-            setPadding(0, 0, 0, 20)
+            setPadding(0, 0, 0, (20 * density).toInt())
             box.addView(this)
         }
 
         TextView(this).apply {
             text = "Remove this query from your history?"
-            textSize = 16f
-            setTextColor(Color.parseColor("#A0A0A0"))
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_body))
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor))
             gravity = android.view.Gravity.CENTER
-            setPadding(0, 0, 0, 50)
+            setLineSpacing(8f, 1f)
+            setPadding(0, 0, 0, (28 * density).toInt())
             box.addView(this)
         }
 
-        val btnContainer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        val btnContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            clipChildren = false
+            clipToPadding = false
+        }
         val dialog = androidx.appcompat.app.AlertDialog.Builder(this).setView(box).setCancelable(false).create()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
@@ -411,8 +427,11 @@ class NotificationActivity : ThemedActivity() {
             text = "Cancel"
             isAllCaps = false
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
-            layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply { setMargins(0, 0, 15, 0) }
+            background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                setMargins(0, 0, (8 * density).toInt(), 0)
+            }
+            minHeight = (54 * density).toInt()
             setOnClickListener { 
                 adapter.notifyDataSetChanged() // Reset swipe state
                 dialog.dismiss() 
@@ -424,8 +443,11 @@ class NotificationActivity : ThemedActivity() {
             text = "Delete"
             isAllCaps = false
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
-            layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply { setMargins(15, 0, 0, 0) }
+            background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                setMargins((8 * density).toInt(), 0, 0, 0)
+            }
+            minHeight = (54 * density).toInt()
             setOnClickListener {
                 val user = FirebaseAuth.getInstance().currentUser ?: return@setOnClickListener
                 val email = user.email ?: return@setOnClickListener

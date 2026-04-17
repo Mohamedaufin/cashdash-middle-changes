@@ -16,9 +16,6 @@ class SetLimitActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_set_limit)
 
-        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
-
         input = findViewById(R.id.txtInput)
 
         val numberPad: GridLayout = findViewById(R.id.numberPad)

@@ -21,7 +21,7 @@
         android:layout_height="wrap_content"
         android:text="Choose Expense Allocation"
         android:textColor="?attr/textPrimaryColor"
-        android:textSize="20sp"
+        android:textSize="@dimen/text_title"
         android:textStyle="bold"
         android:layout_marginBottom="15dp" />
 

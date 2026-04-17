@@ -109,8 +109,6 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_scanner)
-        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
 
         previewView = findViewById(R.id.previewView)
         cameraExecutor = Executors.newSingleThreadExecutor()
@@ -478,6 +476,16 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             val btnPayInitiate = view.findViewById<Button>(R.id.btnPayInitiate)
             val tvWalletBalance = view.findViewById<TextView>(R.id.tvWalletBalance)
 
+            // Auto-Fill Amount from QR
+            val qrAmount = getParam(upi, "am")
+            if (!qrAmount.isNullOrEmpty()) {
+                val parsed = qrAmount.toDoubleOrNull()?.toInt() ?: 0
+                if (parsed > 0) {
+                    etAmount.setText(parsed.toString())
+                    btnPayInitiate.text = "Pay ₹$parsed"
+                }
+            }
+
             val balance = getSharedPreferences("WalletPrefs", MODE_PRIVATE).getInt("wallet_balance", 0)
             tvWalletBalance.text = "Wallet Balance: ₹$balance"
 
@@ -533,6 +541,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     }
 
     private fun showAllocationChooser(parentDialog: BottomSheetDialog, label: TextView, btn: Button, paymentContainer: LinearLayout, btnPayInit: Button) {
+        val density = resources.displayMetrics.density
         val chooser = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
         val view = layoutInflater.inflate(R.layout.layout_allocation_chooser_bottom_sheet, null)
         chooser.setContentView(view)
@@ -545,9 +554,11 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             text = "+ Create New Allocation"
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
             isAllCaps = false
-            textSize = 16f
-            background = ContextCompat.getDrawable(context, R.drawable.bg_glass_3d)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 150).apply { setMargins(0, 0, 0, 30) }
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_subhead))
+            background = ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_3d))
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt()).apply { setMargins(0, 0, 0, 30) }
             setOnClickListener { showCreateCategoryDialog(chooser, label, btn, paymentContainer, btnPayInit) }
         }
         container.addView(btnCreateNew)
@@ -556,9 +567,11 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             text = "Skip allocation"
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
             isAllCaps = false
-            textSize = 16f
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_subhead))
             background = ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_3d_red))
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 150).apply { setMargins(0, 0, 0, 30) }
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt()).apply { setMargins(0, 0, 0, 30) }
             setOnClickListener {
                 pendingCategory = null
                 allocationHandled = true
@@ -578,7 +591,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             container.addView(TextView(this).apply {
                 text = "No allocated categories found. Set limits in Rigor Tracker first."
                 setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
-                textSize = 16f
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_subhead))
                 setPadding(20, 20, 20, 20)
             })
         } else {
@@ -603,12 +616,18 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 val progress = if (limit > 0) (spent / limit).coerceIn(0f, 1f) else 0f
 
                 row.post {
-                    val targetWidth = (progressOuter.width * progress).toInt()
-                    val anim = android.view.animation.ScaleAnimation(0f, 1f, 1f, 1f, android.view.animation.Animation.RELATIVE_TO_SELF, 0f, android.view.animation.Animation.RELATIVE_TO_SELF, 0f)
-                    anim.duration = 500; anim.fillAfter = true
-                    spentBar.startAnimation(anim)
-                    spentBar.layoutParams.width = targetWidth
-                    spentBar.requestLayout()
+                    val maxWidth = progressOuter.width
+                    val targetWidth = (maxWidth * progress).toInt()
+
+                    val anim = android.animation.ValueAnimator.ofInt(0, targetWidth)
+                    anim.addUpdateListener { valueAnimator ->
+                        val value = valueAnimator.animatedValue as Int
+                        spentBar.layoutParams.width = value
+                        spentBar.requestLayout()
+                    }
+                    anim.duration = 500
+                    anim.start()
+
                     spentBar.setBackgroundResource(if (limit > 0 && spent >= limit) R.drawable.bg_glass_progress_fill_red else R.drawable.bg_glass_progress_fill)
                 }
 
@@ -636,99 +655,137 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     }
 
     private fun showCreateCategoryDialog(parentDialog: BottomSheetDialog, label: TextView, btn: Button, paymentContainer: LinearLayout, btnPayInit: Button) {
+        val density = resources.displayMetrics.density
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(60, 60, 60, 50)
+            val p = (28 * density).toInt()
+            setPadding(p, p, p, (24 * density).toInt())
             setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
         }
 
-        box.addView(TextView(this).apply {
+        val titleView = TextView(this).apply {
             text = "New Allocation"
-            textSize = 22f
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_title))
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
-            setPadding(0, 0, 0, 40)
-        })
+            setPadding(0, 0, 0, (20 * density).toInt())
+        }
+        box.addView(titleView)
 
         val inputName = EditText(this).apply {
-            hint = "Category Name"
+            hint = "Category Name (e.g. Travel)"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
             setHintTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textMutedColor))
-            background = ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
-            setPadding(30, 30, 30, 30)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 140).apply { setMargins(0, 0, 0, 30) }
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                setMargins(0, 0, 0, (16 * density).toInt())
+            }
         }
         box.addView(inputName)
 
         val inputLimit = EditText(this).apply {
             hint = "Monthly Limit (Optional)"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            setHintTextColor(Color.parseColor("#A8B5D1"))
-            background = ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
-            setPadding(30, 30, 30, 30)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 140).apply { setMargins(0, 0, 0, 50) }
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
+            setHintTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textMutedColor))
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                setMargins(0, 0, 0, (28 * density).toInt())
+            }
         }
         box.addView(inputLimit)
 
         val buttonContainer = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            clipChildren = false
+            clipToPadding = false
         }
 
-        val dialog = AlertDialog.Builder(this).setView(box).create()
+        val dialog = AlertDialog.Builder(this)
+            .setView(box)
+            .create()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
-        buttonContainer.addView(Button(this).apply {
+        val btnCancel = android.widget.Button(this).apply {
             text = "Cancel"
             isAllCaps = false
-            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            background = ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
-            layoutParams = LinearLayout.LayoutParams(0, 130, 1f).apply { setMargins(0, 0, 15, 0) }
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
+            val tv = android.util.TypedValue()
+            context.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                setMargins(0, 0, (8 * density).toInt(), 0)
+            }
+            minHeight = (54 * density).toInt()
             setOnClickListener { dialog.dismiss() }
-        })
+        }
+        buttonContainer.addView(btnCancel)
 
-        buttonContainer.addView(Button(this).apply {
+        val btnSave = android.widget.Button(this).apply {
             text = "Create"
             isAllCaps = false
-            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            background = ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
-            layoutParams = LinearLayout.LayoutParams(0, 130, 1f).apply { setMargins(15, 0, 0, 0) }
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
+            val tv = android.util.TypedValue()
+            context.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                setMargins((8 * density).toInt(), 0, 0, 0)
+            }
+            minHeight = (54 * density).toInt()
+
             setOnClickListener {
                 val catName = inputName.text.toString().trim().replace("|", "-")
-                if (catName.isNotEmpty() && !catName.equals("Overall", true)) {
-                    val limitStr = inputLimit.text.toString().trim()
+                if (catName.equals("Overall", ignoreCase = true)) {
+                    toast("'Overall' is a reserved name")
+                    return@setOnClickListener
+                }
+                if (catName.isNotEmpty()) {
+                    val prefs = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)
+                    val editor = prefs.edit()
+                    
+                    val existing = prefs.getStringSet("categories", emptySet())?.toMutableSet() ?: mutableSetOf()
+                    
+                    val limitStr = inputLimit.text.toString()
                     val newLimit = if (limitStr.isNotEmpty()) limitStr.toIntOrNull() ?: 0 else 0
-
-                    val totalBalance = getSharedPreferences("WalletPrefs", MODE_PRIVATE).getInt("initial_balance", 0).coerceAtLeast(0)
-                    val prefsCat = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)
-                    val set = HashSet(prefsCat.getStringSet("categories", emptySet()) ?: emptySet())
-
+                    
+                    val walletPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
+                    val totalBalance = walletPrefs.getInt("initial_balance", 0).coerceAtLeast(0)
+                    
                     var currentSumOfLimits = 0
-                    for (cat in set) currentSumOfLimits += prefsCat.getInt("LIMIT_$cat", 0)
+                    for (cat in existing) {
+                        currentSumOfLimits += prefs.getInt("LIMIT_$cat", 0)
+                    }
                     val maxAllowed = totalBalance - currentSumOfLimits
-
+                    
                     if (newLimit > maxAllowed) {
-                        toast("Exceeds balance! Max: ₹$maxAllowed")
+                        toast("Exceeds total balance! Max allowed: ₹$maxAllowed")
                         return@setOnClickListener
                     }
 
-                    val editor = prefsCat.edit()
-                    set.add(catName)
-                    editor.putStringSet("categories", set)
-                    if (newLimit > 0) editor.putInt("LIMIT_$catName", newLimit)
+                    existing.add(catName)
+                    editor.putStringSet("categories", existing)
+                    
+                    if (newLimit > 0) {
+                        editor.putInt("LIMIT_$catName", newLimit)
+                    }
                     editor.apply()
+                    
                     FirestoreSyncManager.pushAllDataToCloud(this@ScannerActivity)
-
                     parentDialog.dismiss()
                     showAllocationChooser(parentDialog, label, btn, paymentContainer, btnPayInit)
                     toast("Created $catName")
                     dialog.dismiss()
                 }
             }
-        })
+        }
+        buttonContainer.addView(btnSave)
         box.addView(buttonContainer)
+
         dialog.show()
     }
 

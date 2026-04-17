@@ -32,7 +32,7 @@
             android:layout_height="wrap_content"
             android:text="Help Center"
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="24sp"
+            android:textSize="@dimen/text_title"
             android:textStyle="bold"
             android:layout_gravity="center_vertical"
             android:layout_marginStart="20dp"/>
@@ -57,7 +57,7 @@
                 android:layout_height="wrap_content"
                 android:text="General FAQs"
                 android:textColor="?attr/textMutedColor"
-                android:textSize="18sp"
+                android:textSize="@dimen/text_subhead"
                 android:textStyle="bold"
                 android:layout_marginBottom="10dp"/>
 
@@ -65,7 +65,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="?attr/glass3dBackground"
+                android:background="?attr/cardBackground"
                 android:padding="15dp"
                 android:layout_marginBottom="25dp">
 
@@ -75,13 +75,13 @@
                     android:text="Q: What exactly does CashDash do?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: CashDash helps you visualize how fast you run out of money in your current lifestyle. You scan QR codes to pay, and the app instantly logs it to deduct your 'Wallet' and tracks it in 'History'."
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body"
                     android:layout_marginBottom="12dp"/>
 
                 <TextView
@@ -90,13 +90,13 @@
                     android:text="Q: Do I need an internet connection to use the app?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: To use the automatic QR scanner smoothly, yes. However, you can use the 'Rigor Tracker' to log manual expenses completely offline, and they'll sync to the cloud later."
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body"
                     android:layout_marginBottom="12dp"/>
 
                 <TextView
@@ -105,13 +105,13 @@
                     android:text="Q: Is my financial data secure?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: Yes! Your data is privately locked to your account using Firebase Authentication. There is no bank-linking or raw transaction scraping."
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body"
                     android:layout_marginBottom="12dp"/>
 
                 <TextView
@@ -120,13 +120,13 @@
                     android:text="Q: If I get a new phone or reinstall, do I lose my data?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: No! Everything is backed up to the cloud. Just log back in with the exact account and all data will reappear instantly."
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"/>
+                    android:textSize="@dimen/text_body"/>
             </LinearLayout>
 
             <!-- HOME START -->
@@ -135,7 +135,7 @@
                 android:layout_height="wrap_content"
                 android:text="Home Dashboard"
                 android:textColor="?attr/textMutedColor"
-                android:textSize="18sp"
+                android:textSize="@dimen/text_subhead"
                 android:textStyle="bold"
                 android:layout_marginBottom="10dp"/>
 
@@ -143,7 +143,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="?attr/glass3dBackground"
+                android:background="?attr/cardBackground"
                 android:padding="15dp"
                 android:layout_marginBottom="25dp">
 
@@ -153,13 +153,13 @@
                     android:text="Q: What is the big Wallet Circle for?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: It's your fuel gauge. It shows how much money you have left vs what you started with. If it's completely empty, you have spent your planned budget!"
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body"
                     android:layout_marginBottom="12dp"/>
 
                 <TextView
@@ -168,13 +168,13 @@
                     android:text="Q: How do I scan and pay?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: Tap the QR icon at the bottom of the home screen. After capturing a QR, enter the amount, and CashDash will transfer you to Cred UPI to finish the payment. The amount is auto-logged!"
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body"
                     android:layout_marginBottom="12dp"/>
 
                 <TextView
@@ -183,13 +183,13 @@
                     android:text="Q: What is the Rigor Tracker (Search Icon)?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: The Rigor Tracker allows you to manually add expenses that weren't paid via QR scanning (like handing over physical cash, or an online subscription)."
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body"
                     android:layout_marginBottom="12dp"/>
 
                 <TextView
@@ -198,7 +198,7 @@
                     android:text="Q: How do I delete a mistake transaction?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -208,14 +208,14 @@
                         android:layout_height="wrap_content"
                         android:text="A: "
                         android:textColor="?attr/textMutedColor"
-                        android:textSize="14sp" />
+                        android:textSize="@dimen/text_body" />
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Step -1: Open the history."
+                        android:text="Step 1: Open History."
                         android:textColor="?attr/textMutedColor"
-                        android:textSize="14sp" />
+                        android:textSize="@dimen/text_body" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -227,14 +227,14 @@
                         android:layout_height="wrap_content"
                         android:text="     "
                         android:textColor="?attr/textMutedColor"
-                        android:textSize="14sp" />
+                        android:textSize="@dimen/text_body" />
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Step -2: At the top left, there is an 'Daily/Weekly/Monthly' button, change it to daily button and click the particular date graph."
+                        android:text="Step 2: At the top-left, tap the 'Daily/Weekly/Monthly' button, change it to Daily, then click the relevant date on the graph."
                         android:textColor="?attr/textMutedColor"
-                        android:textSize="14sp" />
+                        android:textSize="@dimen/text_body" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -247,14 +247,14 @@
                         android:layout_height="wrap_content"
                         android:text="     "
                         android:textColor="?attr/textMutedColor"
-                        android:textSize="14sp" />
+                        android:textSize="@dimen/text_body" />
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Step -3: click and hold the particular transaction for menu options."
+                        android:text="Step 3: Click and hold the specific transaction for menu options."
                         android:textColor="?attr/textMutedColor"
-                        android:textSize="14sp" />
+                        android:textSize="@dimen/text_body" />
                 </LinearLayout>
 
                 <TextView
@@ -263,13 +263,13 @@
                     android:text="Q: Can I delete an old transaction from last week?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: Yes, you can delete any transaction by pressing and holding the transaction."
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"/>
+                    android:textSize="@dimen/text_body"/>
             </LinearLayout>
 
             <!-- ALLOCATOR START -->
@@ -278,7 +278,7 @@
                 android:layout_height="wrap_content"
                 android:text="Allocator (Categories)"
                 android:textColor="?attr/textMutedColor"
-                android:textSize="18sp"
+                android:textSize="@dimen/text_subhead"
                 android:textStyle="bold"
                 android:layout_marginBottom="10dp"/>
 
@@ -286,7 +286,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="?attr/glass3dBackground"
+                android:background="?attr/cardBackground"
                 android:padding="15dp"
                 android:layout_marginBottom="25dp">
 
@@ -296,13 +296,13 @@
                     android:text="Q: How do I set a sub-budget?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: Add a category (like 'Food'). Then click the 'Set Limit' button on the allocation card."
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body"
                     android:layout_marginBottom="12dp"/>
 
                 <TextView
@@ -311,13 +311,13 @@
                     android:text="Q: My allocation spent bar turned red, what does it mean?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: It means you have spent more than the limit you set for this specific allocation."
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body"
                     android:layout_marginBottom="12dp"/>
 
                 <TextView
@@ -326,7 +326,7 @@
                     android:text="Q: How do I delete or rename a category?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -336,14 +336,14 @@
                         android:layout_height="wrap_content"
                         android:text="A: "
                         android:textColor="?attr/textMutedColor"
-                        android:textSize="14sp" />
+                        android:textSize="@dimen/text_body" />
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="To Delete: Swipe the allocation card right-to-left off the screen."
                         android:textColor="?attr/textMutedColor"
-                        android:textSize="14sp"
+                        android:textSize="@dimen/text_body"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -357,14 +357,14 @@
                         android:layout_height="wrap_content"
                         android:text="     "
                         android:textColor="?attr/textMutedColor"
-                        android:textSize="14sp" />
+                        android:textSize="@dimen/text_body" />
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="To Rename: Press and hold the allocation card for a second."
                         android:textColor="?attr/textMutedColor"
-                        android:textSize="14sp"
+                        android:textSize="@dimen/text_body"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -374,13 +374,13 @@
                     android:text="Q: What is the 'Overall' category in history?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: Overall is a master category that tracks the sum of all the allocation expenses combined."
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"/>
+                    android:textSize="@dimen/text_body"/>
             </LinearLayout>
 
             <!-- HISTORY START -->
@@ -389,7 +389,7 @@
                 android:layout_height="wrap_content"
                 android:text="History &amp; Graphing"
                 android:textColor="?attr/textMutedColor"
-                android:textSize="18sp"
+                android:textSize="@dimen/text_subhead"
                 android:textStyle="bold"
                 android:layout_marginBottom="10dp"/>
 
@@ -397,7 +397,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="?attr/glass3dBackground"
+                android:background="?attr/cardBackground"
                 android:padding="15dp"
                 android:layout_marginBottom="25dp">
 
@@ -407,13 +407,13 @@
                     android:text="Q: How do I see a breakdown of a specific day?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: Tap on a graph! It will open a detailed screen showing every individual transaction made that day"
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body"
                     android:layout_marginBottom="12dp"/>
 
                 <TextView
@@ -422,13 +422,13 @@
                     android:text="Q: Can I see a graph for only 'Travel'?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: Yes! Look for the 'Overall' button at the top right of the history screen. Tap it to filter the graph to a specific allocation."
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body"
                     android:layout_marginBottom="12dp"/>
 
                 <TextView
@@ -437,13 +437,13 @@
                     android:text="Q: How do I jump back to an old month expense?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: Tap the 'Monthly' button in history."
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body"
                     android:layout_marginBottom="12dp"/>
 
                 <TextView
@@ -452,13 +452,13 @@
                     android:text="Q: My graph is completely empty, is my data lost?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: No! You are likely viewing a month/week where you didn't log anything, or you have a specific category filter applied at the top right (like 'Food') that has no expenses for that period. Switch the top-right filter back to 'Overall' to see all data."
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"/>
+                    android:textSize="@dimen/text_body"/>
             </LinearLayout>
 
             <!-- MENU START -->
@@ -467,7 +467,7 @@
                 android:layout_height="wrap_content"
                 android:text="Menu &amp; Profile"
                 android:textColor="?attr/textMutedColor"
-                android:textSize="18sp"
+                android:textSize="@dimen/text_subhead"
                 android:textStyle="bold"
                 android:layout_marginBottom="10dp"/>
 
@@ -475,7 +475,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="?attr/glass3dBackground"
+                android:background="?attr/cardBackground"
                 android:padding="15dp"
                 android:layout_marginBottom="40dp">
 
@@ -485,13 +485,13 @@
                     android:text="Q: What does 'Money Schedule' do?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: Use this to set your 'Payday' or Allowance frequency (e.g., every 30 days). When that day arrives, CashDash will automatically 'Roll Over' by resetting your Wallet to full and clearing your allocation spent amounts for the new cycle!"
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body"
                     android:layout_marginBottom="12dp"/>
 
                 <TextView
@@ -500,13 +500,13 @@
                     android:text="Q: How do I change my budget?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: Go to the Menu and tap 'Balance Bar'. This lets you add more cash or reset your existing amount over new amount."
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body"
                     android:layout_marginBottom="12dp"/>
                 <TextView
                     android:layout_width="match_parent"
@@ -514,13 +514,13 @@
                     android:text="Q: Where do I see support replies?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: You'll receive a Push Notification when we reply. Alternatively, tap the Bell icon in the Menu to view your full support history."
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body"
                     android:layout_marginBottom="12dp"/>
 
                 <TextView
@@ -529,13 +529,13 @@
                     android:text="Q: How do I reset my budget cycle right now?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
-                    android:textSize="15sp"/>
+                    android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="A: Go to 'Money Schedule' in the Menu and tap the 'Reset Cycle Now' button at the bottom. This will instantly replenish your wallet and clear your allocation spent amounts."
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp"/>
+                    android:textSize="@dimen/text_body"/>
             </LinearLayout>
 
             <!-- CONTACT US PROMPT -->
@@ -545,10 +545,10 @@
                 android:layout_height="wrap_content"
                 android:text="Still stuck? Contact Support"
                 android:textColor="?attr/textPrimaryColor"
-                android:textSize="16sp"
+                android:textSize="@dimen/text_subhead"
                 android:gravity="center"
                 android:padding="20dp"
-                android:background="?attr/glass3dBackground"
+                android:background="?attr/cardBackground"
                 android:layout_marginBottom="30dp"
                 android:textStyle="bold"/>
 

@@ -20,7 +20,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Current Cycle End Date"
-            android:textSize="22sp"
+            android:textSize="@dimen/text_title"
             android:textStyle="bold"
             android:textColor="?attr/textPrimaryColor"
             android:layout_marginBottom="5dp"/>
@@ -29,7 +29,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Select when your current budget should expire"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_body"
             android:textColor="?attr/textMutedColor"
             android:layout_marginBottom="15dp"/>
 
@@ -61,26 +61,26 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Budget Reset Frequency"
-                android:textSize="20sp"
+                android:textSize="@dimen/text_title"
                 android:textStyle="bold"
                 android:textColor="?attr/textPrimaryColor"/>
 
-            <ImageButton
+            <ImageView
                 android:id="@+id/btnInfoReset"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:background="@drawable/bg_white_circle"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:padding="2dp"
                 android:src="@drawable/ic_i_symbol"
-                android:tint="#0D1B6E"
-                android:padding="1dp"
-                android:scaleType="fitCenter"/>
+                android:scaleType="fitCenter"
+                android:clickable="true"
+                android:focusable="true"/>
         </LinearLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="How often should your wallet automatically renew?"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_body"
             android:textColor="?attr/textMutedColor"
             android:layout_marginBottom="15dp"/>
 
@@ -94,15 +94,18 @@
                 android:text="Monthly (30 days)"
                 android:textColor="?attr/textPrimaryColor"/>
 
+
             <RadioButton
                 android:id="@+id/rbWeekly"
                 android:text="Weekly (7 days)"
                 android:textColor="?attr/textPrimaryColor"/>
 
+
             <RadioButton
                 android:id="@+id/rbCustom"
                 android:text="Custom (Days)"
                 android:textColor="?attr/textPrimaryColor"/>
+
         </RadioGroup>
 
         <TextView
@@ -111,8 +114,8 @@
             android:layout_height="wrap_content"
             android:text="Your cycle renews on..."
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="15sp"
-            android:textStyle="italic"
+            android:textSize="@dimen/text_body"
+        
             android:visibility="gone"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="15dp"/>
@@ -132,27 +135,32 @@
             android:visibility="gone" />
 
         <!-- SAVE BUTTON -->
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnSaveSchedule"
             android:layout_width="match_parent"
             android:layout_height="65dp"
             android:text="Save Schedule"
-            android:textSize="22sp"
+            android:textAllCaps="false"
+            android:textSize="@dimen/text_title"
             android:textColor="?attr/textPrimaryColor"
-            android:background="?attr/glass3dBackground"
-            app:backgroundTint="@null"
+            android:background="?attr/cardBackground"
+            android:backgroundTint="@null"
+            android:stateListAnimator="@null"
+            android:elevation="0dp"
             android:layout_marginTop="10dp"/>
 
         <!-- RESET NOW BUTTON -->
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnResetNow"
             android:layout_width="match_parent"
             android:layout_height="65dp"
             android:text="Reset Cycle Now"
-            android:textSize="20sp"
+            android:textSize="@dimen/text_title"
             android:textColor="?attr/textPrimaryColor"
-            android:background="?attr/glass3dBackground"
-            app:backgroundTint="@null"
+            android:background="?attr/cardBackground"
+            android:backgroundTint="@null"
+            android:stateListAnimator="@null"
+            android:elevation="0dp"
             android:layout_marginTop="15dp"
             android:textAllCaps="false"/>
     </LinearLayout>

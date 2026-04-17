@@ -103,30 +103,32 @@ class AllocatorFragment : Fragment() {
             return
         }
 
+        val density = requireContext().resources.displayMetrics.density
         val box = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(60, 60, 60, 50)
-            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
+            val p = (28 * density).toInt()
+            setPadding(p, p, p, (24 * density).toInt())
+            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(requireContext(), R.drawable.bg_transaction))
         }
 
         val titleView = TextView(requireContext()).apply {
             text = "Add Category"
-            textSize = 22f
-            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, requireContext().resources.getDimension(R.dimen.text_subhead)) 
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
-            setPadding(0, 0, 0, 40)
+            setPadding(0, 0, 0, (20 * density).toInt())
         }
         box.addView(titleView)
 
         val input = EditText(requireContext()).apply {
             hint = "Enter category name"
-            setHintTextColor(Color.GRAY)
-            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
+            setHintTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(requireContext(), com.cash.dash.ThemeHelper.getDrawable(requireContext(), R.drawable.bg_glass_input))
             setPadding(40, 40, 40, 40)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(0, 0, 0, 50)
+                setMargins(0, 0, 0, (28 * density).toInt())
             }
         }
         box.addView(input)
@@ -134,6 +136,8 @@ class AllocatorFragment : Fragment() {
         val buttonContainer = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            clipChildren = false
+            clipToPadding = false
         }
 
         val dialog = AlertDialog.Builder(requireContext())
@@ -144,10 +148,14 @@ class AllocatorFragment : Fragment() {
         val btnCancel = Button(requireContext()).apply {
             text = "Cancel"
             isAllCaps = false
-            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
-            layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
-                setMargins(0, 0, 15, 0)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
+            val tv = android.util.TypedValue()
+            requireContext().theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(requireContext(), tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(0, (54 * density).toInt(), 1f).apply {
+                setMargins(0, 0, (8 * density).toInt(), 0)
             }
             setOnClickListener { dialog.dismiss() }
         }
@@ -156,10 +164,14 @@ class AllocatorFragment : Fragment() {
         val btnAdd = Button(requireContext()).apply {
             text = "Add"
             isAllCaps = false
-            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
-            layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
-                setMargins(15, 0, 0, 0)
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
+            val tv = android.util.TypedValue()
+            requireContext().theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(requireContext(), tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(0, (54 * density).toInt(), 1f).apply {
+                setMargins((8 * density).toInt(), 0, 0, 0)
             }
             setOnClickListener {
                 val name = input.text.toString().trim().replace("|", "-")
@@ -304,25 +316,28 @@ class AllocatorFragment : Fragment() {
     }
 
     private fun showRenameDialog(name: String) {
-        val box = LinearLayout(requireContext())
-        box.orientation = LinearLayout.VERTICAL
-        box.setPadding(60, 60, 60, 50)
-        box.setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(box.context, R.drawable.bg_transaction))
+        val density = requireContext().resources.displayMetrics.density
+        val box = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            val p = (28 * density).toInt()
+            setPadding(p, p, p, p)
+            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(this.context, R.drawable.bg_transaction))
+        }
 
         val titleView = TextView(requireContext()).apply {
             text = "Rename Category"
-            textSize = 22f
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_title))
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
-            setPadding(0, 0, 0, 40)
+            setPadding(0, 0, 0, (20 * density).toInt())
         }
         box.addView(titleView)
 
         val input = EditText(requireContext()).apply {
             setText(name)
-            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            setHintTextColor(Color.GRAY)
+            setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            setHintTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             setPadding(40, 40, 40, 40)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
@@ -333,6 +348,8 @@ class AllocatorFragment : Fragment() {
 
         val buttonContainer = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
+            clipChildren = false
+            clipToPadding = false
         }
 
         val dialog = AlertDialog.Builder(requireContext()).setView(box).create()
@@ -342,8 +359,13 @@ class AllocatorFragment : Fragment() {
             text = "Cancel"
             isAllCaps = false
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
-            layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply { setMargins(0, 0, 15, 0) }
+            val tv = android.util.TypedValue(); context.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(0, 0, 15, 0) }
+            minHeight = 150
+            setPadding(30,30,30,30)
             setOnClickListener { dialog.dismiss() }
         }
         buttonContainer.addView(btnCancel)
@@ -352,8 +374,13 @@ class AllocatorFragment : Fragment() {
             text = "Save"
             isAllCaps = false
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
-            layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply { setMargins(15, 0, 0, 0) }
+            val tv = android.util.TypedValue(); context.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(15, 0, 0, 0) }
+            minHeight = 150
+            setPadding(30,30,30,30)
             setOnClickListener {
                 val newName = input.text.toString().trim().replace("|", "-")
                 if (newName.equals("Overall", ignoreCase = true)) {
@@ -446,31 +473,39 @@ class AllocatorFragment : Fragment() {
     }
 
     private fun showDeleteConfirmDialog(view: View, name: String) {
-        val box = LinearLayout(requireContext())
-        box.orientation = LinearLayout.VERTICAL
-        box.setPadding(60, 60, 60, 50)
-        box.setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(box.context, R.drawable.bg_transaction))
+        val density = requireContext().resources.displayMetrics.density
+        val box = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            val p = (28 * density).toInt()
+            setPadding(p, p, p, (24 * density).toInt())
+            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(this.context, R.drawable.bg_transaction))
+        }
 
         val titleView = TextView(requireContext()).apply {
             text = "Delete Allocation - $name?"
-            textSize = 22f
-            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, requireContext().resources.getDimension(R.dimen.text_subhead))
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
-            setPadding(0, 0, 0, 30)
+            setPadding(0, 0, 0, (16 * density).toInt())
         }
         box.addView(titleView)
 
         val messageView = TextView(requireContext()).apply {
             text = "Deleting this allocation will also delete all associated expenses of $name. Continue?"
-            textSize = 16f
-            setTextColor(Color.parseColor("#A8B5D1"))
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, requireContext().resources.getDimension(R.dimen.text_body))
+            setTextColor(ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
             gravity = android.view.Gravity.CENTER
-            setPadding(0, 0, 0, 80)
+            setPadding(0, 0, 0, (32 * density).toInt())
+            setLineSpacing(8f, 1f)
         }
         box.addView(messageView)
 
-        val buttonContainer = LinearLayout(requireContext()).apply { orientation = LinearLayout.HORIZONTAL }
+        val buttonContainer = LinearLayout(requireContext()).apply { 
+            orientation = LinearLayout.HORIZONTAL 
+            clipChildren = false
+            clipToPadding = false
+        }
 
         val dialog = AlertDialog.Builder(requireContext()).setView(box).setCancelable(false).create()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
@@ -479,8 +514,13 @@ class AllocatorFragment : Fragment() {
             text = "Cancel"
             isAllCaps = false
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
-            layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply { setMargins(0, 0, 15, 0) }
+            val tv = android.util.TypedValue(); context.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(0, 0, 15, 0) }
+            minHeight = 150
+            setPadding(30,30,30,30)
             setOnClickListener {
                 view.animate().translationX(0f).alpha(1f).setDuration(200).start()
                 dialog.dismiss()
@@ -491,9 +531,14 @@ class AllocatorFragment : Fragment() {
         val btnDelete = Button(requireContext()).apply {
             text = "Delete"
             isAllCaps = false
-            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
-            layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply { setMargins(15, 0, 0, 0) }
+            setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
+            val tv = android.util.TypedValue(); context.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(15, 0, 0, 0) }
+            minHeight = 150
+            setPadding(30,30,30,30)
             setOnClickListener {
                 deleteCategory(name)
                 FirestoreSyncManager.pushAllDataToCloud(requireContext())

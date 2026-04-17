@@ -26,10 +26,6 @@ class BalanceSetupActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_balance_setup)
 
-        // Fullscreen setup
-        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
-
         tvAmount = findViewById(R.id.tvAmount)
         val tvCurrentBalance = findViewById<TextView>(R.id.tvCurrentBalance)
 
@@ -54,6 +50,8 @@ class BalanceSetupActivity : ThemedActivity() {
         val btnReplace = findViewById<Button>(R.id.btnReplace)
 
         if (isFirstTime) {
+            tvCurrentBalance.visibility = View.GONE
+            ivEdit.visibility = View.GONE
             btnReplace.visibility = View.GONE
             findViewById<TextView>(R.id.tvChooseLabel).visibility = View.GONE
             

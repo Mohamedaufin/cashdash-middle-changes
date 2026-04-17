@@ -21,9 +21,11 @@ object FirestoreSyncManager {
     // ⚡ INSTANT SYNC STATE
     private var isSyncingFromCloud = false
     private val prefListeners = mutableMapOf<String, android.content.SharedPreferences.OnSharedPreferenceChangeListener>()
-    private var lastSyncJob: Thread? = null
-    private val syncDebounceMs = 0L
-    private var lastPushTime = 0L
+    
+    private val syncExecutor = java.util.concurrent.Executors.newSingleThreadExecutor()
+    private val syncHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var pendingSyncRunnable: Runnable? = null
+    private val syncDebounceMs = 500L
 
     private const val TAG = "FirestoreSyncManager"
 
@@ -34,10 +36,10 @@ object FirestoreSyncManager {
         val user = FirebaseAuth.getInstance().currentUser ?: return
         val email = user.email ?: return 
 
-        Thread {
+        syncExecutor.execute {
             try {
                 val db = FirebaseFirestore.getInstance()
-                // Log.d(TAG, "Starting background sync to cloud for $email")
+                Log.d(TAG, "Starting sequential background sync to cloud for $email")
 
                 val walletPrefs = appContext.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
                 val categoryPrefs = appContext.getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
@@ -79,7 +81,9 @@ object FirestoreSyncManager {
                     "next_date" to formattedDate,
                     "next_date_ms" to nextDateRaw,
                     "frequency" to schedulePrefs.getInt("frequency", 30),
-                    "cycle_initialized" to schedulePrefs.getBoolean("cycle_initialized", false)
+                    "cycle_initialized" to schedulePrefs.getBoolean("cycle_initialized", false),
+                    "balance_bar_mode" to walletPrefs.getString("balance_bar_mode", "gradient"),
+                    "balance_bar_type" to walletPrefs.getString("balance_bar_type", "gradient1")
                 )
                 Tasks.await(configColl.document("wallet").set(walletData))
 
@@ -148,12 +152,11 @@ object FirestoreSyncManager {
                 // 7. LocalScanPrefs
                 Tasks.await(configColl.document("undo_details").set(hashMapOf("LocalScanPrefs" to localScanPrefs.all)))
 
-                // Log.d(TAG, "✅ Background sync to cloud complete for user $email")
+                Log.d(TAG, "✅ Sequential background sync to cloud complete")
             } catch (e: Exception) {
                 Log.e(TAG, "❌ FATAL SYNC ERROR: ${e.message}", e)
-                // If it's a permission error, it will be visible in Logcat now.
             }
-        }.start()
+        }
     }
 
     // Pull from Cloud -> Overwrite Local (Parallelized for Performance)
@@ -248,6 +251,8 @@ object FirestoreSyncManager {
                         walletPrefs.edit()
                             .putInt("initial_balance", walletDoc.getLong("initial_balance")?.toInt() ?: 0)
                             .putInt("wallet_balance", walletDoc.getLong("current_balance")?.toInt() ?: 0)
+                            .putString("balance_bar_mode", walletDoc.getString("balance_bar_mode") ?: "gradient")
+                            .putString("balance_bar_type", walletDoc.getString("balance_bar_type") ?: "gradient1")
                             .apply()
                         schedulePrefs.edit()
                             .putLong("next_date", walletDoc.getLong("next_date_ms") ?: 0L)
@@ -406,12 +411,10 @@ object FirestoreSyncManager {
     private fun triggerInstantPush(context: Context) {
         if (isSyncingFromCloud) return
         
-        val now = System.currentTimeMillis()
-        if (now - lastPushTime < syncDebounceMs) return
-        lastPushTime = now
-
-        // Log.d(TAG, "⚡ Instant Sync Triggered")
-        pushAllDataToCloud(context)
+        pendingSyncRunnable?.let { syncHandler.removeCallbacks(it) }
+        val runnable = Runnable { pushAllDataToCloud(context) }
+        pendingSyncRunnable = runnable
+        syncHandler.postDelayed(runnable, syncDebounceMs)
     }
 
     fun startRealTimeSync(context: Context) {
@@ -468,6 +471,8 @@ object FirestoreSyncManager {
             walletPrefs.edit()
                 .putInt("initial_balance", snapshot.getLong("initial_balance")?.toInt() ?: 0)
                 .putInt("wallet_balance", snapshot.getLong("current_balance")?.toInt() ?: 0)
+                .putString("balance_bar_mode", snapshot.getString("balance_bar_mode") ?: "gradient")
+                .putString("balance_bar_type", snapshot.getString("balance_bar_type") ?: "gradient1")
                 .apply()
 
             schedulePrefs.edit()

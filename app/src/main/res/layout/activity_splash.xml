@@ -5,18 +5,35 @@
     android:layout_height="match_parent"
     android:background="?attr/mainBackground">
 
-    <TextView
-        android:id="@+id/tvWelcomeSplash"
+    <LinearLayout
+        android:id="@+id/layoutSplashGreeting"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Welcome,"
-        android:textColor="@android:color/white"
-        android:textSize="32sp"
-        android:textStyle="bold"
-        android:transitionName="greeting_text_transition"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/tvWelcomeText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Welcome,"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="@dimen/text_headline"
+            android:textStyle="bold"
+            android:layout_marginEnd="8dp" />
+
+        <TextView
+            android:id="@+id/tvUsernameSplash"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="User"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="@dimen/text_headline"
+            android:textStyle="bold"
+            android:transitionName="greeting_text_transition" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

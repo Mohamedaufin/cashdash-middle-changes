@@ -4,30 +4,19 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
     
-    <!-- Sophisticated Glassy Hamburger Menu using transparent white layers -->
-    
     <!-- Bar 1 -->
     <path
         android:pathData="M3,6h18v2.5h-18z"
-        android:fillColor="#80FFFFFF"/> <!-- 50% white for frosted look -->
-    <path
-        android:pathData="M3,6h18v0.5h-18z"
-        android:fillColor="#E0FFFFFF"/> <!-- Bright rim highlight -->
+        android:fillColor="#FFFFFFFF"/>
 
     <!-- Bar 2 -->
     <path
         android:pathData="M3,11h18v2.5h-18z"
-        android:fillColor="#80FFFFFF"/>
-    <path
-        android:pathData="M3,11h18v0.5h-18z"
-        android:fillColor="#E0FFFFFF"/>
+        android:fillColor="#FFFFFFFF"/>
 
     <!-- Bar 3 -->
     <path
         android:pathData="M3,16h18v2.5h-18z"
-        android:fillColor="#80FFFFFF"/>
-    <path
-        android:pathData="M3,16h18v0.5h-18z"
-        android:fillColor="#E0FFFFFF"/>
+        android:fillColor="#FFFFFFFF"/>
         
 </vector>

@@ -20,8 +20,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Receiver: Unknown\nUPI ID: Unknown"
-        android:textSize="16sp"
-        android:textColor="#FFFFFF"
+        android:textSize="@dimen/text_subhead"
+        android:textColor="?attr/textPrimaryColor"
         android:layout_marginBottom="20dp" />
 
     <EditText
@@ -29,9 +29,9 @@
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:hint="Enter Amount"
-        android:textColorHint="#A0A0A0"
-        android:textColor="#FFFFFF"
-        android:textSize="20sp"
+        android:textColorHint="?attr/textMutedColor"
+        android:textColor="?attr/textPrimaryColor"
+        android:textSize="@dimen/text_title"
         android:inputType="numberDecimal"
         android:background="?attr/inputBackground"
         android:paddingHorizontal="20dp"
@@ -51,16 +51,20 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="No allocation selected"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp" />
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="@dimen/text_subhead" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnChooseAllocation"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Change"
-            android:textColor="#FFFFFF"
-            android:background="?attr/glass3dBackground"
+            android:textColor="?attr/textPrimaryColor"
+            android:textAllCaps="false"
+            android:background="?attr/cardBackground"
+            android:backgroundTint="@null"
+            android:stateListAnimator="@null"
+            android:elevation="0dp"
             android:paddingHorizontal="15dp" />
     </LinearLayout>
 
@@ -74,26 +78,34 @@
         android:layout_marginBottom="15dp"
         android:weightSum="2">
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnPayCred"
             android:layout_width="0dp"
             android:layout_height="60dp"
             android:layout_weight="1"
-            android:text="CRED"
-            android:textColor="#FFFFFF"
+            android:text="Cred"
+            android:textColor="?attr/textPrimaryColor"
             android:textStyle="bold"
-            android:background="?attr/glass3dBackground"
+            android:textAllCaps="false"
+            android:background="?attr/cardBackground"
+            android:backgroundTint="@null"
+            android:stateListAnimator="@null"
+            android:elevation="0dp"
             android:layout_marginEnd="8dp" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnPayGPay"
             android:layout_width="0dp"
             android:layout_height="60dp"
             android:layout_weight="1"
             android:text="GPay"
-            android:textColor="#FFFFFF"
+            android:textColor="?attr/textPrimaryColor"
             android:textStyle="bold"
-            android:background="?attr/glass3dBackground"
+            android:textAllCaps="false"
+            android:background="?attr/cardBackground"
+            android:backgroundTint="@null"
+            android:stateListAnimator="@null"
+            android:elevation="0dp"
             android:layout_marginStart="8dp" />
 
     </LinearLayout>
@@ -103,20 +115,24 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Wallet Balance: ₹0"
-        android:textColor="#FFFFFF"
-        android:textSize="14sp"
+        android:textColor="?attr/textPrimaryColor"
+        android:textSize="@dimen/text_body"
         android:gravity="center"
         android:layout_marginBottom="10dp" />
 
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnPayInitiate"
         android:layout_width="match_parent"
         android:layout_height="65dp"
         android:text="Pay ₹0"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
+        android:textColor="?attr/textPrimaryColor"
+        android:textSize="@dimen/text_subhead"
         android:textStyle="bold"
-        android:background="?attr/glass3dBackground"
+        android:textAllCaps="false"
+        android:background="?attr/cardBackground"
+        android:backgroundTint="@null"
+        android:stateListAnimator="@null"
+        android:elevation="0dp"
         android:layout_marginBottom="15dp" />
 
 </LinearLayout>
