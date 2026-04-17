@@ -37,9 +37,6 @@ class EntryActivity : ThemedActivity() {
             return
         }
         setContentView(R.layout.activity_entry)
-        // 🟦 Fullscreen like other activities
-        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
 
         auth = FirebaseAuth.getInstance()
 
@@ -161,7 +158,7 @@ class EntryActivity : ThemedActivity() {
             // 🟢 Restore working Login Autofill
             edtEmail.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
             edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
-            edtEmail.setAutofillHints(View.AUTOFILL_HINT_EMAIL_ADDRESS) // Standard for inline suggest
+            edtEmail.setAutofillHints(View.AUTOFILL_HINT_USERNAME)
             edtPassword.setAutofillHints(View.AUTOFILL_HINT_PASSWORD)
         } else {
             edtName.visibility = View.VISIBLE
@@ -174,6 +171,35 @@ class EntryActivity : ThemedActivity() {
             edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
             edtEmail.setAutofillHints(null)
             edtPassword.setAutofillHints(null)
+        }
+
+        // Apply theme-specific button colors (especially for White Theme Register)
+        applyThemedButtonColors(isLogin, btnAction, findViewById(R.id.btnSelectRegister))
+    }
+
+    private fun applyThemedButtonColors(isLogin: Boolean, btnAction: Button, btnSelectRegister: Button) {
+        val themePrefs = getSharedPreferences("ThemePrefs", MODE_PRIVATE)
+        val currentTheme = themePrefs.getString("current_theme", "Black")
+        val isWhiteTheme = currentTheme == "White"
+
+        if (isWhiteTheme) {
+            // "change register colour to white" -> White background, Dark text
+            val whiteBg = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadius = 20 * resources.displayMetrics.density
+            }
+            val darkText = Color.parseColor("#1A1A1A")
+            
+            btnSelectRegister.background = whiteBg
+            btnSelectRegister.setTextColor(darkText)
+
+            if (!isLogin) {
+                btnAction.background = whiteBg
+                btnAction.setTextColor(darkText)
+            } else {
+                // Login action color remains default or themed
+                btnAction.setTextColor(Color.WHITE)
+            }
         }
     }
 

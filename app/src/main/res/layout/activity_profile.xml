@@ -16,7 +16,7 @@
 
         <TextView
             android:text="Edit Profile"
-            android:textSize="26sp"
+            android:textSize="@dimen/text_title"
             android:textColor="?attr/textPrimaryColor"
             android:textStyle="bold"
             android:layout_marginBottom="35dp"
@@ -58,31 +58,36 @@
             android:inputType="textEmailAddress"
             android:layout_marginBottom="20dp"/>
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnSave"
             android:layout_width="match_parent"
             android:layout_height="65dp"
             android:text="Save"
+            android:textAllCaps="false"
             android:textStyle="bold"
-            android:textSize="18sp"
-            android:background="?attr/glass3dBackground"
-            app:backgroundTint="@null"
+            android:textSize="@dimen/text_subhead"
+            android:background="?attr/cardBackground"
+            android:backgroundTint="@null"
             android:textColor="?attr/textPrimaryColor"
             android:foreground="@null"
+            android:stateListAnimator="@null"
+            android:elevation="0dp"
             android:layout_marginBottom="25dp"/>
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnChangePassword"
             android:layout_width="match_parent"
             android:layout_height="65dp"
-            android:background="?attr/glass3dBackground"
-            app:backgroundTint="@null"
+            android:background="?attr/cardBackground"
+            android:backgroundTint="@null"
             android:text="Change Password"
             android:textAllCaps="false"
             android:textStyle="bold"
-            android:textSize="18sp"
+            android:textSize="@dimen/text_subhead"
             android:textColor="?attr/textPrimaryColor"
             android:foreground="@null"
+            android:stateListAnimator="@null"
+            android:elevation="0dp"
             android:layout_marginBottom="25dp"/>
 
         <LinearLayout
@@ -91,35 +96,41 @@
             android:orientation="horizontal"
             android:layout_marginBottom="35dp">
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnLogout"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
                 android:minHeight="65dp"
                 android:text="Logout"
+                android:textAllCaps="false"
                 android:textStyle="bold"
-                android:textSize="15sp"
+                android:textSize="@dimen/text_body"
                 android:layout_marginEnd="8dp"
-                android:background="?attr/glass3dRedBackground"
-                app:backgroundTint="@null"
-                android:textColor="?attr/textPrimaryColor"
-                android:foreground="@null" />
+                android:background="?attr/cardBackground"
+                android:backgroundTint="@null"
+                android:textColor="#FF4D4D"
+                android:foreground="@null"
+                android:stateListAnimator="@null"
+                android:elevation="0dp" />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnDeleteAccount"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
                 android:minHeight="65dp"
                 android:text="Delete Account"
+                android:textAllCaps="false"
                 android:textStyle="bold"
-                android:textSize="15sp"
+                android:textSize="@dimen/text_body"
                 android:layout_marginStart="8dp"
-                android:background="?attr/glass3dRedBackground"
-                app:backgroundTint="@null"
-                android:textColor="?attr/textPrimaryColor"
-                android:foreground="@null" />
+                android:background="?attr/cardBackground"
+                android:backgroundTint="@null"
+                android:textColor="#FF4D4D"
+                android:foreground="@null"
+                android:stateListAnimator="@null"
+                android:elevation="0dp" />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

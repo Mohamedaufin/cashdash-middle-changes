@@ -1,26 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <padding 
-        android:left="4dp" 
-        android:top="4dp" 
-        android:right="8dp" 
-        android:bottom="16dp" />
+    <!-- Adoption of robust symmetric padding from White theme -->
+    <padding android:left="3dp" android:top="3dp" android:right="3dp" android:bottom="3dp" />
 
-
-    <!-- 1. Deep Shadow for elevation -->
-    <item
-        android:left="4dp"
-        android:top="4dp">
-        <shape android:shape="rectangle">
-            <solid android:color="#40000000"/>
-            <corners android:radius="16dp"/>
-        </shape>
-    </item>
-
-    <!-- 2. Main Background Body -->
-    <item
-        android:bottom="4dp"
-        android:right="4dp">
+    <!-- 1. Deep Surface Base -->
+    <item>
         <shape android:shape="rectangle">
             <solid android:color="@color/surface"/>
             <corners android:radius="16dp"/>
@@ -30,15 +14,15 @@
         </shape>
     </item>
 
-    <!-- 3. Subdued Top Bevel Highlight (Gloss effect) -->
+    <!-- 2. Subtle Top Bevel Highlight (Gloss effect) -->
     <item
-        android:bottom="24dp"
-        android:right="4dp"
-        android:left="4dp"
+        android:bottom="20dp"
+        android:right="0dp"
+        android:left="0dp"
         android:top="0dp">
         <shape android:shape="rectangle">
             <gradient
-                android:startColor="#15FFFFFF"
+                android:startColor="#0AFFFFFF"
                 android:endColor="#00FFFFFF"
                 android:angle="270"
                 android:type="linear"/>
@@ -49,5 +33,4 @@
                 android:bottomRightRadius="0dp"/>
         </shape>
     </item>
-
 </layer-list>

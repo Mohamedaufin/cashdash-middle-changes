@@ -19,9 +19,7 @@ class SplashActivity : ThemedActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Fullscreen Setup
-        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
+        setContentView(R.layout.activity_splash)
 
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         val isFirstLaunch = prefs.getBoolean(KEY_FIRST, true)
@@ -43,14 +41,14 @@ class SplashActivity : ThemedActivity() {
                 setContentView(R.layout.activity_splash)
 
                 val userName = prefs.getString(KEY_NAME, "User") ?: "User"
-                val tvWelcome = findViewById<TextView>(R.id.tvWelcomeSplash)
-                tvWelcome.text = "Welcome $userName"
+                val tvUsername = findViewById<TextView>(R.id.tvUsernameSplash)
+                tvUsername.text = userName
 
                 Handler(Looper.getMainLooper()).postDelayed({
                     val intent = Intent(this@SplashActivity, MainActivity::class.java)
                     intent.putExtra("from_splash", true)
                     val options = ActivityOptions.makeSceneTransitionAnimation(
-                        this@SplashActivity, tvWelcome, "greeting_text_transition"
+                        this@SplashActivity, tvUsername, "greeting_text_transition"
                     )
                     startActivity(intent, options.toBundle())
 

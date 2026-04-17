@@ -37,9 +37,6 @@ class RigorActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_rigor)
 
-        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
-
         inputTitle = findViewById(R.id.Title)
         val inputAmount = findViewById<EditText>(R.id.inputAmount)
         val btnNext = findViewById<Button>(R.id.btnNext)
@@ -131,10 +128,12 @@ class RigorActivity : ThemedActivity() {
             text = "+ Create New Allocation"
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textPrimaryColor))
             isAllCaps = false
-            textSize = 16f
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_subhead))
             background = ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_3d))
+            stateListAnimator = null
+            elevation = 0f
             layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 150
+                LinearLayout.LayoutParams.MATCH_PARENT, (54 * resources.displayMetrics.density).toInt()
             ).apply { setMargins(0, 20, 0, 30) }
             
             setOnClickListener {
@@ -174,20 +173,14 @@ class RigorActivity : ThemedActivity() {
                 val maxWidth = progressOuter.width
                 val targetWidth = (maxWidth * progress).toInt()
 
-                spentBar.clearAnimation()
-
-                val anim = ScaleAnimation(
-                    0f, progress, 1f, 1f,
-                    ScaleAnimation.RELATIVE_TO_SELF, 0f,
-                    ScaleAnimation.RELATIVE_TO_SELF, 0f
-                )
+                val anim = android.animation.ValueAnimator.ofInt(0, targetWidth)
+                anim.addUpdateListener { valueAnimator ->
+                    val value = valueAnimator.animatedValue as Int
+                    spentBar.layoutParams.width = value
+                    spentBar.requestLayout()
+                }
                 anim.duration = 500
-                anim.fillAfter = true
-
-                spentBar.startAnimation(anim)
-
-                spentBar.layoutParams.width = targetWidth
-                spentBar.requestLayout()
+                anim.start()
 
                 if (limit > 0 && spent >= limit) {
                     spentBar.setBackgroundResource(R.drawable.bg_glass_progress_fill_red)
@@ -202,18 +195,21 @@ class RigorActivity : ThemedActivity() {
     }
 
     private fun showCreateCategoryDialog() {
-        val box = LinearLayout(this)
-        box.orientation = LinearLayout.VERTICAL
-        box.setPadding(60, 60, 60, 50)
-        box.setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(box.context, R.drawable.bg_transaction))
+        val density = resources.displayMetrics.density
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val p = (28 * density).toInt()
+            setPadding(p, p, p, (24 * density).toInt())
+            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
+        }
 
         val titleView = TextView(this).apply {
             text = "New Allocation"
-            textSize = 22f
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_title))
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
-            setPadding(0, 0, 0, 40)
+            setPadding(0, 0, 0, (20 * density).toInt())
         }
         box.addView(titleView)
 
@@ -223,7 +219,7 @@ class RigorActivity : ThemedActivity() {
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textPrimaryColor))
             setHintTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textMutedColor))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(0, 0, 0, 30)
+                setMargins(0, 0, 0, (16 * density).toInt())
             }
         }
         box.addView(inputName)
@@ -234,7 +230,7 @@ class RigorActivity : ThemedActivity() {
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textPrimaryColor))
             setHintTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textMutedColor))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(0, 0, 0, 50)
+                setMargins(0, 0, 0, (28 * density).toInt())
             }
         }
         box.addView(inputLimit)
@@ -242,6 +238,8 @@ class RigorActivity : ThemedActivity() {
         val buttonContainer = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            clipChildren = false
+            clipToPadding = false
         }
 
         val dialog = AlertDialog.Builder(this)
@@ -253,10 +251,15 @@ class RigorActivity : ThemedActivity() {
             text = "Cancel"
             isAllCaps = false
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
-            layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
-                setMargins(0, 0, 15, 0)
+            val tv = android.util.TypedValue()
+            context.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                setMargins(0, 0, (8 * density).toInt(), 0)
             }
+            minHeight = (54 * density).toInt()
             setOnClickListener { dialog.dismiss() }
         }
         buttonContainer.addView(btnCancel)
@@ -265,10 +268,16 @@ class RigorActivity : ThemedActivity() {
             text = "Create"
             isAllCaps = false
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
-            layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
-                setMargins(15, 0, 0, 0)
+            val tv = android.util.TypedValue()
+            context.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                setMargins((8 * density).toInt(), 0, 0, 0)
             }
+            minHeight = (54 * density).toInt()
+
             setOnClickListener {
                 val catName = inputName.text.toString().trim().replace("|", "-")
                 if (catName.equals("Overall", ignoreCase = true)) {

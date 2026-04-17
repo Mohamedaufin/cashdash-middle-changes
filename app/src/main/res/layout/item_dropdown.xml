@@ -6,4 +6,4 @@
     android:minWidth="180dp"
     android:padding="16dp"
     android:textColor="#FFFFFF"
-    android:textSize="16sp" />
+    android:textSize="@dimen/text_subhead" />

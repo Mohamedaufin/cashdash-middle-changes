@@ -32,9 +32,6 @@ class AllocatorActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_allocator)
 
-        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
-
         categoryContainer = findViewById(R.id.categoryContainer)
 
         // HOME NAVIGATION
@@ -111,26 +108,28 @@ class AllocatorActivity : ThemedActivity() {
             return
         }
 
+        val density = resources.displayMetrics.density
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(60, 60, 60, 50)
+            val p = (28 * density).toInt()
+            setPadding(p, p, p, p)
             setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
         }
 
         val titleView = TextView(this).apply {
             text = "Add Category"
-            textSize = 22f
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_subhead))
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
-            setPadding(0, 0, 0, 40)
+            setPadding(0, 0, 0, (20 * density).toInt())
         }
         box.addView(titleView)
 
         val input = EditText(this).apply {
             hint = "Enter category name"
-            setHintTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_dim))
-            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            setHintTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                 setMargins(0, 0, 0, 50)
             }
@@ -151,7 +150,9 @@ class AllocatorActivity : ThemedActivity() {
             text = "Cancel"
             isAllCaps = false
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
+            background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+            stateListAnimator = null
+            elevation = 0f
             layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                 setMargins(0, 0, 15, 0)
             }
@@ -163,7 +164,9 @@ class AllocatorActivity : ThemedActivity() {
             text = "Add"
             isAllCaps = false
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
+            background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+            stateListAnimator = null
+            elevation = 0f
             layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                 setMargins(15, 0, 0, 0)
             }
@@ -329,25 +332,28 @@ class AllocatorActivity : ThemedActivity() {
         }
 
         view.setOnLongClickListener {
-            val box = LinearLayout(this)
-            box.orientation = LinearLayout.VERTICAL
-            box.setPadding(60, 60, 60, 50)
-            box.setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(box.context, R.drawable.bg_transaction))
+            val density = resources.displayMetrics.density
+            val box = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                val p = (28 * density).toInt()
+                setPadding(p, p, p, p)
+                setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
+            }
 
             val titleView = TextView(this).apply {
                 text = "Rename Category"
-                textSize = 22f
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_subhead))
                 setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
                 setTypeface(null, android.graphics.Typeface.BOLD)
                 gravity = android.view.Gravity.CENTER
-                setPadding(0, 0, 0, 40)
+                setPadding(0, 0, 0, (20 * density).toInt())
             }
             box.addView(titleView)
 
             val input = EditText(this).apply {
                 setText(name)
-                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-                setHintTextColor(Color.GRAY)
+                setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                setHintTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
                 backgroundTintList = android.content.res.ColorStateList.valueOf(Color.CYAN)
                 layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                     setMargins(0, 0, 0, 50)
@@ -369,7 +375,9 @@ class AllocatorActivity : ThemedActivity() {
                 text = "Cancel"
                 isAllCaps = false
                 setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-                background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
+                background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+                stateListAnimator = null
+                elevation = 0f
                 layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                     setMargins(0, 0, 15, 0)
                 }
@@ -381,7 +389,9 @@ class AllocatorActivity : ThemedActivity() {
                 text = "Save"
                 isAllCaps = false
                 setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-                background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
+                background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+                stateListAnimator = null
+                elevation = 0f
                 layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
                     setMargins(15, 0, 0, 0)
                 }
@@ -416,18 +426,21 @@ class AllocatorActivity : ThemedActivity() {
                     if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 50 && vx < -150) {
                         view.animate().translationX(-view.width.toFloat()).alpha(0f).setDuration(250)
                             .withEndAction {
-                                val box = LinearLayout(this@AllocatorActivity)
-                                box.orientation = LinearLayout.VERTICAL
-                                box.setPadding(60, 60, 60, 50)
-                                box.setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(box.context, R.drawable.bg_transaction))
+                                val density = resources.displayMetrics.density
+                                val box = LinearLayout(this@AllocatorActivity).apply {
+                                    orientation = LinearLayout.VERTICAL
+                                    val p = (28 * density).toInt()
+                                    setPadding(p, p, p, (24 * density).toInt())
+                                    setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(this@AllocatorActivity, R.drawable.bg_transaction))
+                                }
 
                                 val titleView = TextView(this@AllocatorActivity).apply {
                                     text = "Delete Allocation - $name?"
-                                    textSize = 22f
+                                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_subhead))
                                     setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
                                     setTypeface(null, android.graphics.Typeface.BOLD)
                                     gravity = android.view.Gravity.CENTER
-                                    setPadding(0, 0, 0, 120) // Increased gap
+                                    setPadding(0, 0, 0, (16 * density).toInt())
                                 }
                                 box.addView(titleView)
 
@@ -445,10 +458,14 @@ class AllocatorActivity : ThemedActivity() {
                                 val btnCancel = android.widget.Button(this@AllocatorActivity).apply {
                                     text = "Cancel"
                                     isAllCaps = false
-                                    setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-                                    background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
-                                    layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
-                                        setMargins(0, 0, 15, 0)
+                                    setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@AllocatorActivity, R.attr.textPrimaryColor))
+                                    val tv = android.util.TypedValue()
+                                    this@AllocatorActivity.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+                                    background = androidx.core.content.ContextCompat.getDrawable(this@AllocatorActivity, tv.resourceId)
+                                    stateListAnimator = null
+                                    elevation = 0f
+                                    layoutParams = LinearLayout.LayoutParams(0, (54 * density).toInt(), 1f).apply {
+                                        setMargins(0, 0, (8 * density).toInt(), 0)
                                     }
                                     setOnClickListener {
                                         view.animate().translationX(0f).alpha(1f).setDuration(200).start()
@@ -460,10 +477,14 @@ class AllocatorActivity : ThemedActivity() {
                                 val btnDelete = android.widget.Button(this@AllocatorActivity).apply {
                                     text = "Delete"
                                     isAllCaps = false
-                                    setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-                                    background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
-                                    layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
-                                        setMargins(15, 0, 0, 0)
+                                    setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
+                                    val tv = android.util.TypedValue()
+                                    this@AllocatorActivity.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+                                    background = androidx.core.content.ContextCompat.getDrawable(this@AllocatorActivity, tv.resourceId)
+                                    stateListAnimator = null
+                                    elevation = 0f
+                                    layoutParams = LinearLayout.LayoutParams(0, (54 * density).toInt(), 1f).apply {
+                                        setMargins((8 * density).toInt(), 0, 0, 0)
                                     }
                                     setOnClickListener {
                                         deleteCategory(name)

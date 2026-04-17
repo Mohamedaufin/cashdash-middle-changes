@@ -23,10 +23,6 @@ class HelpActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_help)
 
-        // Immersive UI
-        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
-
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
 
         findViewById<TextView>(R.id.btnContactUs).setOnClickListener {

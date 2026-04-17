@@ -21,19 +21,44 @@
         app:layout_constraintTop_toTopOf="parent"/>
 
     <!-- Greeting -->
-    <TextView
-        android:id="@+id/tvGreeting"
+    <LinearLayout
+        android:id="@+id/layoutHomeGreeting"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello,"
-        android:textColor="?attr/textPrimaryColor"
-        android:textSize="22sp"
-        android:textStyle="bold"
+        android:orientation="horizontal"
         android:layout_marginStart="14dp"
-        android:transitionName="greeting_text_transition"
+        android:gravity="center_vertical"
         app:layout_constraintStart_toEndOf="@id/btnMenu"
         app:layout_constraintTop_toTopOf="@id/btnMenu"
-        app:layout_constraintBottom_toBottomOf="@id/btnMenu" />
+        app:layout_constraintBottom_toBottomOf="@id/btnMenu">
+
+        <TextView
+            android:id="@+id/tvHello"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hello "
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvUsernameHome"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="User"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold"
+            android:transitionName="greeting_text_transition" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=","
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold" />
+    </LinearLayout>
 
     <!-- Profile button -->
     <ImageView
@@ -55,7 +80,7 @@
         android:layout_height="wrap_content"
         android:text="Next money in 0 days"
         android:textColor="?attr/textMutedColor"
-        android:textSize="18sp"
+        android:textSize="@dimen/text_subhead"
         android:gravity="center"
         app:layout_constraintBottom_toTopOf="@id/walletContainer"
         android:layout_marginBottom="12dp"
@@ -67,19 +92,13 @@
         android:id="@+id/walletContainer"
         android:layout_width="340dp"
         android:layout_height="340dp"
-        app:layout_constraintTop_toBottomOf="@id/tvGreeting"
+        app:layout_constraintTop_toBottomOf="@id/layoutHomeGreeting"
         app:layout_constraintBottom_toTopOf="@id/cardScanner"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="65dp"
         android:layout_marginBottom="40dp">
 
-        <View
-            android:layout_width="370dp"
-            android:layout_height="370dp"
-            android:layout_gravity="center"
-            android:background="@drawable/bg_wallet_glow"
-            android:alpha="0.55"/>
 
         <com.cash.dash.GradientCircularProgressView
             android:id="@+id/walletProgress"
@@ -100,7 +119,7 @@
                 android:layout_marginBottom="7dp"
                 android:text="₹5000"
                 android:textColor="?attr/textPrimaryColor"
-                android:textSize="32sp"
+                android:textSize="@dimen/text_headline"
                 android:textStyle="bold"/>
 
             <TextView
@@ -109,7 +128,7 @@
                 android:text="Wallet balance"
                 android:textStyle="bold"
                 android:textColor="?attr/textMutedColor"
-                android:textSize="15sp"/>
+                android:textSize="@dimen/text_body"/>
         </LinearLayout>
     </FrameLayout>
 
@@ -130,10 +149,10 @@
 
         <ImageView
             android:id="@+id/iconScanner"
-            android:layout_width="85dp"
+            android:layout_width="40dp"
             android:layout_height="65dp"
-            android:src="@drawable/ic_scanner"
-            android:scaleType="fitCenter"/>
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_scanner" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -141,7 +160,7 @@
             android:layout_marginTop="2dp"
             android:text="Scanner"
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="12sp"
+            android:textSize="@dimen/text_caption"
             android:textStyle="bold"/>
     </LinearLayout>
 
@@ -172,7 +191,7 @@
             android:layout_marginTop="2dp"
             android:text="Rigor Tracker"
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="12sp"
+            android:textSize="@dimen/text_caption"
             android:textStyle="bold"/>
     </LinearLayout>
 

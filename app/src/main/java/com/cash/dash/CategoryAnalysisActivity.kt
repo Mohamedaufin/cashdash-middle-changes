@@ -36,15 +36,12 @@ class CategoryAnalysisActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_category_analysis)
 
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
-
         tvCategoryName = findViewById(R.id.tvCategoryName)
         tvAverage = findViewById(R.id.tvAverage)
         weeklyGraph = findViewById(R.id.weeklyGraph)
 
         categoryName = intent.getStringExtra("CATEGORY_NAME") ?: "Unknown"
-        tvCategoryName.text = categoryName.uppercase()
+        tvCategoryName.text = categoryName
 
         findViewById<ImageView>(R.id.btnBack).setOnClickListener { finish() }
 
@@ -58,6 +55,12 @@ class CategoryAnalysisActivity : ThemedActivity() {
         btnEditIcon.setImageResource(CategoryIconHelper.getIconForCategory(this, categoryName))
         btnEditIcon.setOnClickListener {
             showIconPickerDialog()
+        }
+
+        // Info Icon Border for White Theme
+        val infoIcon = findViewById<ImageView>(R.id.ivCategoryInfoIcon)
+        if (ThemeHelper.isWhiteTheme(this)) {
+            infoIcon.setBackgroundResource(R.drawable.bg_info_circle_white_bordered_black)
         }
 
         // Apply WindowInsets for edge-to-edge support
@@ -97,7 +100,7 @@ class CategoryAnalysisActivity : ThemedActivity() {
 
                 val tvLimitValue = findViewById<TextView>(R.id.tvLimitValue)
                 if (limit > 0) {
-                    weeklyGraph.setLimit(limit)
+                    weeklyGraph.setLimit(limit.toFloat())
                     tvLimitValue.text = "Limit : ₹$limit"
                     tvLimitValue.visibility = View.VISIBLE
                 } else {
@@ -222,19 +225,21 @@ class CategoryAnalysisActivity : ThemedActivity() {
     }
 
     private fun showIconPickerDialog() {
+        val density = resources.displayMetrics.density
         val box = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(60, 60, 60, 50)
+            val p = (28 * density).toInt()
+            setPadding(p, p, p, (24 * density).toInt())
             setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
         }
 
         val titleView = TextView(this).apply {
             text = "Select Category Icon"
-            textSize = 22f
-            setTextColor(androidx.core.content.ContextCompat.getColor(context, if (ThemeHelper.isWhiteTheme(context)) R.color.black else R.color.white))
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_title))
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@CategoryAnalysisActivity, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = android.view.Gravity.CENTER
-            setPadding(0, 0, 0, 40)
+            setPadding(0, 0, 0, (20 * density).toInt())
         }
         box.addView(titleView)
 
@@ -256,15 +261,15 @@ class CategoryAnalysisActivity : ThemedActivity() {
             val btn = Button(this).apply {
                 text = name
                 isAllCaps = false
-                setTextColor(androidx.core.content.ContextCompat.getColor(context, if (ThemeHelper.isWhiteTheme(context)) R.color.black else R.color.white))
+                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@CategoryAnalysisActivity, R.attr.textPrimaryColor))
                 
                 // Only aggressively bound the raw PNG (ic_edit), keep others natural
                 if (resId == R.drawable.ic_edit) {
                     val drw = androidx.core.content.ContextCompat.getDrawable(this@CategoryAnalysisActivity, resId)
                     drw?.let {
-                        val iconSize = 75 // Safe size for PNG
-                        val height = if (it.intrinsicWidth > 0) (iconSize * it.intrinsicHeight) / it.intrinsicWidth else iconSize
-                        it.setBounds(0, 0, iconSize, height)
+                        val iconSize = (24 * density).toInt()
+                        val h = if (it.intrinsicWidth > 0) (iconSize * it.intrinsicHeight) / it.intrinsicWidth else iconSize
+                        it.setBounds(0, 0, iconSize, h)
                     }
                     val tinted = com.cash.dash.ThemeHelper.tintDrawableIfWhiteTheme(this@CategoryAnalysisActivity, drw)
                     setCompoundDrawables(tinted, null, null, null)
@@ -274,13 +279,13 @@ class CategoryAnalysisActivity : ThemedActivity() {
                     setCompoundDrawablesWithIntrinsicBounds(tinted, null, null, null)
                 }
                 
-                compoundDrawablePadding = 20
-                setPadding(50, 0, 0, 0)
+                compoundDrawablePadding = (12 * density).toInt()
+                setPadding((16 * density).toInt(), 0, 0, 0)
                 gravity = android.view.Gravity.CENTER_VERTICAL or android.view.Gravity.START
-                background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
+                background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
                 layoutParams = android.widget.LinearLayout.LayoutParams(
-                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 150
-                ).apply { setMargins(0, 0, 0, 25) }
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt()
+                ).apply { setMargins(0, 0, 0, (12 * density).toInt()) }
 
                 setOnClickListener {
                     saveCustomIcon(resId)
@@ -293,10 +298,10 @@ class CategoryAnalysisActivity : ThemedActivity() {
         val btnCancel = Button(this).apply {
             text = "Cancel"
             isAllCaps = false
-            setTextColor(androidx.core.content.ContextCompat.getColor(context, if (ThemeHelper.isWhiteTheme(context)) R.color.black else R.color.white))
-            background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@CategoryAnalysisActivity, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
             layoutParams = android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 140
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, (50 * density).toInt()
             )
             setOnClickListener { dialog.dismiss() }
         }

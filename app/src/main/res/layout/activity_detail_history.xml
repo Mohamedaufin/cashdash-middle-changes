@@ -7,7 +7,8 @@
     android:paddingStart="20dp"
     android:paddingEnd="20dp"
     android:paddingTop="50dp"
-    android:paddingBottom="20dp">
+    android:paddingBottom="100dp"
+    android:clipToPadding="false">
 
     <ImageView
         android:id="@+id/btnBack"
@@ -22,7 +23,7 @@
         android:id="@+id/tvDetailTitle"
         android:text="Breakdown"
         android:textColor="?attr/textPrimaryColor"
-        android:textSize="22sp"
+        android:textSize="@dimen/text_title"
         android:layout_marginTop="10dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
@@ -36,7 +37,7 @@
     <TextView
         android:text="History"
         android:textColor="?attr/textPrimaryColor"
-        android:textSize="20sp"
+        android:textSize="@dimen/text_title"
         android:layout_marginTop="15dp"
         android:layout_marginBottom="25dp"
         android:layout_width="wrap_content"

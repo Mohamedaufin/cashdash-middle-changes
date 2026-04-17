@@ -1,47 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 3D card background: dark base + top-edge highlight bevel -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <!-- Shadow layer (bottom-right offset) -->
-    <item
-        android:left="4dp"
-        android:top="4dp">
-        <shape android:shape="rectangle">
-            <solid android:color="#05000000"/>
-            <corners android:radius="20dp"/>
-        </shape>
-    </item>
-
-    <item
-        android:bottom="4dp"
-        android:right="4dp">
-        <shape android:shape="rectangle">
-            <solid android:color="@color/surface"/>
-            <corners android:radius="20dp"/>
-            <stroke
-                android:width="1.2dp"
-                android:color="@color/border"/>
-        </shape>
-    </item>
-
-    <!-- Top-edge highlight (gloss bevel) -->
-    <item
-        android:bottom="16dp"
-        android:right="4dp"
-        android:left="4dp"
-        android:top="0dp">
-        <shape android:shape="rectangle">
-            <gradient
-                android:startColor="#40FFFFFF"
-                android:endColor="#00FFFFFF"
-                android:angle="270"
-                android:type="linear"/>
-            <corners
-                android:topLeftRadius="20dp"
-                android:topRightRadius="20dp"
-                android:bottomLeftRadius="0dp"
-                android:bottomRightRadius="0dp"/>
-        </shape>
-    </item>
-
-</layer-list>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#1A1B1F"/> <!-- Premium Matte Black -->
+    <corners android:radius="20dp"/>
+    <stroke
+        android:width="1dp"
+        android:color="#33FFFFFF"/> <!-- Subtle light border -->
+</shape>

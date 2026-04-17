@@ -11,4 +11,14 @@ object ToastHelper {
         currentToast = Toast.makeText(context, message, duration)
         currentToast?.show()
     }
+
+    fun showCustomToast(context: Context, message: String, durationMs: Long) {
+        currentToast?.cancel()
+        val toast = Toast.makeText(context, message, Toast.LENGTH_LONG)
+        currentToast = toast
+        toast.show()
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            toast.cancel()
+        }, durationMs)
+    }
 }

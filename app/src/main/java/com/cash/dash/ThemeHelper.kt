@@ -80,9 +80,32 @@ object ThemeHelper {
     fun resolveColorAttr(context: Context, attrResId: Int): Int {
         val typedValue = android.util.TypedValue()
         if (context.theme.resolveAttribute(attrResId, typedValue, true)) {
-            return typedValue.data
+            if (typedValue.type >= android.util.TypedValue.TYPE_FIRST_COLOR_INT && typedValue.type <= android.util.TypedValue.TYPE_LAST_COLOR_INT) {
+                return typedValue.data
+            }
+            if (typedValue.resourceId != 0) {
+                try {
+                    return androidx.core.content.ContextCompat.getColor(context, typedValue.resourceId)
+                } catch (e: Exception) {
+                    // Not a color resource (e.g. it's a drawable)
+                }
+            }
         }
-        return android.graphics.Color.WHITE
+        // Fallback for specific attributes if resolution fails
+        return when (attrResId) {
+            R.attr.healthGreen -> android.graphics.Color.parseColor("#26FF26")
+            R.attr.healthYellow -> android.graphics.Color.parseColor("#FFC107")
+            R.attr.healthRed -> android.graphics.Color.parseColor("#B71C1C")
+            R.attr.progressTrackColor -> {
+                // If resolving from a wrapper failed, use the current theme preference as a secondary guide
+                when (getCurrentTheme(context)) {
+                    "Blue" -> android.graphics.Color.parseColor("#08123A")
+                    "White" -> android.graphics.Color.parseColor("#E2E8F0")
+                    else -> android.graphics.Color.parseColor("#262626")
+                }
+            }
+            else -> android.graphics.Color.WHITE
+        }
     }
 
     fun tintDrawableIfWhiteTheme(context: Context, drawable: android.graphics.drawable.Drawable?): android.graphics.drawable.Drawable? {

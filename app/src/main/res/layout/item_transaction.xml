@@ -16,7 +16,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:textColor="?attr/textPrimaryColor"
-        android:textSize="18sp"
+        android:textSize="@dimen/text_subhead"
         android:textStyle="bold"
         android:text="Title" />
 
@@ -26,7 +26,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="@color/text_secondary"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_body"
         android:text="(CATEGORY)"
         android:layout_marginRight="15dp" />
 
@@ -36,11 +36,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="#FF4D4D"
-        android:textSize="18sp"
+        android:textSize="@dimen/text_subhead"
         android:textStyle="bold"
-        android:text="+500"
-        android:shadowColor="#80FF4D4D"
-        android:shadowDx="0"
-        android:shadowDy="0"
-        android:shadowRadius="10" />
+        android:text="+500" />
 </LinearLayout>

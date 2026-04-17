@@ -41,9 +41,6 @@ class HistoryActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_history)
 
-        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
-
         val btnDate = findViewById<Button>(R.id.btnDate)
         val graph = findViewById<DayBarGraphView>(R.id.dayGraph)
         val title = findViewById<TextView>(R.id.tvGraphTitle)
@@ -194,7 +191,7 @@ class HistoryActivity : ThemedActivity() {
     private fun setupCategoryDropdown(btn: Button, graph: DayBarGraphView) {
         btn.setOnClickListener {
             fetchCategories() // Refresh before showing menu
-            DropdownHelper.showBlinkingDropdown(this, btn, categoriesList, 200) { index, cat ->
+            DropdownHelper.showBlinkingDropdown(this, btn, categoriesList, 200, null, android.view.Gravity.END) { index, cat ->
                 currentCategoryFilter = cat
                 btn.text = if (currentCategoryFilter == "no choice") "No Choice" else currentCategoryFilter
                 loadGraphValues(graph)
@@ -388,7 +385,7 @@ class HistoryActivity : ThemedActivity() {
                 // Show Year Picker
                 val currentYear = Calendar.getInstance().get(Calendar.YEAR)
                 val yearsRange = (-2..2).map { (currentYear + it).toString() }
-                DropdownHelper.showBlinkingDropdown(this, btn, yearsRange, 250) { _, yearStr ->
+                DropdownHelper.showBlinkingDropdown(this, btn, yearsRange, 200) { _, yearStr ->
                     selectedYear = yearStr.toInt()
                     btn.text = selectedYear.toString()
                     loadGraphValues(graph)
@@ -398,8 +395,7 @@ class HistoryActivity : ThemedActivity() {
                 // Show Month Picker (Jan - Dec)
                 val months = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
                 val displayList = months.map { "$it $selectedYear" }
-
-                DropdownHelper.showBlinkingDropdown(this, btn, displayList, 250) { position, _ ->
+                DropdownHelper.showBlinkingDropdown(this, btn, displayList, 200) { position, _ ->
                     selectedMonth = position
                     selectedWeek = 0 // Default to first week
                     val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }

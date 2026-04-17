@@ -23,7 +23,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingTop="5dp"
-        android:paddingBottom="20dp">
+        android:paddingBottom="100dp">
 
         <!-- TOP FILTER BUTTONS -->
         <LinearLayout
@@ -33,35 +33,41 @@
             android:orientation="horizontal"
             android:padding="10dp">
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnDaily"
                 android:layout_width="104dp"
                 android:layout_height="wrap_content"
-                android:background="?attr/glass3dBackground"
+                android:background="?attr/dropdownBackground"
+                android:backgroundTint="@null"
                 android:text="Daily"
+                android:textAllCaps="false"
                 android:textColor="?attr/textPrimaryColor"
-                android:textSize="18sp"
+                android:textSize="@dimen/text_subhead"
                 android:textStyle="bold" />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnDate"
                 android:layout_width="135dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
                 android:layout_marginEnd="12dp"
-                android:background="?attr/glass3dBackground"
+                android:background="?attr/dropdownBackground"
+                android:backgroundTint="@null"
                 android:text="--/--/----"
+                android:textAllCaps="false"
                 android:textColor="?attr/textPrimaryColor"
-                android:textSize="16sp" />
+                android:textSize="@dimen/text_body" />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnOverall"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="?attr/glass3dBackground"
+                android:background="?attr/dropdownBackground"
+                android:backgroundTint="@null"
                 android:text="Overall"
+                android:textAllCaps="false"
                 android:textColor="?attr/textPrimaryColor"
-                android:textSize="18sp" />
+                android:textSize="@dimen/text_subhead" />
         </LinearLayout>
 
 
@@ -91,7 +97,7 @@
                 android:layout_marginStart="12dp"
                 android:text="Search transactions..."
                 android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
+                android:textSize="@dimen/text_body" />
         </LinearLayout>
 
         <!-- GRAPH -->
@@ -108,7 +114,7 @@
             android:layout_height="wrap_content"
             android:text="Daily Spending"
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="18sp"
+            android:textSize="@dimen/text_subhead"
             android:textStyle="bold"
             android:layout_gravity="center"
             android:layout_marginTop="0dp"
@@ -162,7 +168,7 @@
                 android:layout_height="wrap_content"
                 android:text="Allocator"
                 android:textColor="?attr/textMutedColor"
-                android:textSize="11sp"
+                android:textSize="@dimen/text_caption"
                 android:textStyle="bold"
                 android:shadowColor="#000C40"
                 android:shadowDx="0"
@@ -197,7 +203,7 @@
                 android:layout_height="wrap_content"
                 android:text="Home"
                 android:textColor="?attr/textMutedColor"
-                android:textSize="11sp"
+                android:textSize="@dimen/text_caption"
                 android:textStyle="bold"
                 android:layout_marginTop="3dp"
                 android:shadowColor="#000C40"
@@ -225,7 +231,7 @@
                 android:layout_width="166dp"
                 android:layout_height="84dp"
                 android:src="@drawable/ic_history"
-                android:contentDescription="History"
+                android:contentDescription="               History"
                 android:translationZ="6dp"/>
 
             <TextView
@@ -233,7 +239,7 @@
                 android:layout_height="wrap_content"
                 android:text="History"
                 android:textColor="?attr/textPrimaryColor"
-                android:textSize="11sp"
+                android:textSize="@dimen/text_caption"
                 android:textStyle="bold"
                 android:shadowColor="#3A6AFF"
                 android:shadowDx="0"

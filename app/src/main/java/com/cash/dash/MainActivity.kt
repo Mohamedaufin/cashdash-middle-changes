@@ -73,9 +73,6 @@ class MainActivity : ThemedActivity() {
             supportPostponeEnterTransition()
         }
 
-        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
-
         density = resources.displayMetrics.density
         iconHeightPx = 84 * density
 
@@ -354,5 +351,11 @@ class MainActivity : ThemedActivity() {
             "failed" -> Snackbar.make(findViewById(android.R.id.content), "❌ Payment Failed or Cancelled", Snackbar.LENGTH_LONG).show()
         }
         intent.removeExtra("payment_status")
+
+        val toastMsg = intent.getStringExtra("toast_msg")
+        if (toastMsg != null) {
+            ToastHelper.showCustomToast(this, toastMsg, 800L)
+            intent.removeExtra("toast_msg")
+        }
     }
 }

@@ -6,7 +6,7 @@
     android:padding="20dp"
     android:layout_marginBottom="25dp"
     android:layout_marginTop="25dp"
-    android:background="?attr/glass3dBackground">
+    android:background="?attr/cardBackground">
 
     <!-- CATEGORY HEADER -->
     <LinearLayout
@@ -36,7 +36,7 @@
             android:layout_height="wrap_content"
             android:text="Category Name"
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="22sp"
+            android:textSize="@dimen/text_title"
             android:textStyle="bold"/>
     </LinearLayout>
 
@@ -72,7 +72,7 @@
             android:layout_height="wrap_content"
             android:text="Spent: ₹0"
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="14sp" />
+            android:textSize="@dimen/text_body" />
 
         <View
             android:layout_width="0dp"
@@ -85,7 +85,7 @@
             android:layout_height="wrap_content"
             android:text="Limit: ₹0"
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="14sp" />
+            android:textSize="@dimen/text_body" />
     </LinearLayout>
 
 </LinearLayout>

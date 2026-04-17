@@ -16,7 +16,7 @@
         android:layout_height="wrap_content"
         android:text="CashDash"
         android:textColor="?attr/textPrimaryColor"
-        android:textSize="32sp"
+        android:textSize="@dimen/text_headline"
         android:textStyle="bold"
         android:layout_marginBottom="8dp" />
 
@@ -26,7 +26,7 @@
         android:layout_height="wrap_content"
         android:text="Manage your wealth wisely"
         android:textColor="?attr/textMutedColor"
-        android:textSize="16sp"
+        android:textSize="@dimen/text_subhead"
         android:layout_marginBottom="40dp" />
 
     <!-- Flow Selection Buttons -->
@@ -37,27 +37,33 @@
         android:orientation="vertical"
         android:visibility="visible">
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnSelectLogin"
             android:layout_width="match_parent"
             android:layout_height="65dp"
             android:text="Login"
             android:textStyle="bold"
-            android:textSize="18sp"
-            android:background="?attr/glass3dBackground"
-            app:backgroundTint="@null"
+            android:textSize="@dimen/text_subhead"
+            android:textAllCaps="false"
+            android:background="?attr/cardBackground"
+            android:backgroundTint="@null"
+            android:stateListAnimator="@null"
+            android:elevation="0dp"
             android:textColor="?attr/textPrimaryColor"
             android:layout_marginBottom="16dp" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnSelectRegister"
             android:layout_width="match_parent"
             android:layout_height="65dp"
             android:text="Register"
             android:textStyle="bold"
-            android:textSize="18sp"
-            android:background="?attr/glass3dBackground"
-            app:backgroundTint="@null"
+            android:textSize="@dimen/text_subhead"
+            android:textAllCaps="false"
+            android:background="?attr/cardBackground"
+            android:backgroundTint="@null"
+            android:stateListAnimator="@null"
+            android:elevation="0dp"
             android:textColor="#FFFFFF" />
     </LinearLayout>
 
@@ -149,15 +155,18 @@
                 android:focusable="true"/>
         </FrameLayout>
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnAction"
             android:layout_width="match_parent"
             android:layout_height="65dp"
             android:text="Continue"
             android:textStyle="bold"
-            android:textSize="18sp"
-            android:background="?attr/glass3dBackground"
-            app:backgroundTint="@null"
+            android:textSize="@dimen/text_subhead"
+            android:textAllCaps="false"
+            android:background="?attr/cardBackground"
+            android:backgroundTint="@null"
+            android:stateListAnimator="@null"
+            android:elevation="0dp"
             android:textColor="#FFFFFF" />
 
         <TextView
@@ -168,7 +177,7 @@
             android:layout_marginTop="16dp"
             android:text="Back"
             android:textColor="?attr/textMutedColor"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_body"
             android:textStyle="bold"
             android:padding="8dp" />
     </LinearLayout>
@@ -180,7 +189,7 @@
         android:layout_marginTop="20dp"
         android:text="Forgot Password?"
         android:textColor="?attr/textMutedColor"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_body"
         android:textStyle="bold"
         android:padding="8dp"
         android:visibility="gone" />
@@ -201,6 +210,6 @@
         android:layout_marginTop="10dp"
         android:textAlignment="center"
         android:textColor="#FF6B6B"
-        android:textSize="14sp" />
+        android:textSize="@dimen/text_body" />
 
 </LinearLayout>

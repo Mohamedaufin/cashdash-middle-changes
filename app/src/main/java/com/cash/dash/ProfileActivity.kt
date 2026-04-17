@@ -27,8 +27,6 @@ class ProfileActivity : ThemedActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
-        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
 
         val edtName = findViewById<EditText>(R.id.edtName)
         val edtPhone = findViewById<EditText>(R.id.edtPhone)
@@ -173,7 +171,12 @@ class ProfileActivity : ThemedActivity() {
 
     private fun showConfirmDialog(title: String, message: String, actionText: String, onConfirm: () -> Unit) {
         val dialog = Dialog(this)
-        dialog.setContentView(R.layout.dialog_confirm_action)
+        val layoutRes = if (ThemeHelper.getCurrentTheme(this) == "Blue") {
+            R.layout.dialog_confirm_blue
+        } else {
+            R.layout.dialog_confirm_action
+        }
+        dialog.setContentView(layoutRes)
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.window?.setLayout(
             resources.displayMetrics.widthPixels - 100,

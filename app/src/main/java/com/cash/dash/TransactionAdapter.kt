@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import java.util.Locale
 
 data class TransactionItem(val title: String, val category: String, val amount: Int, val rawEntry: String)
 
@@ -27,8 +28,16 @@ class TransactionAdapter(
 
     override fun onBindViewHolder(holder: Holder, position: Int) {
         val item = items[position]
-        holder.title.text = item.title
-        holder.category.text = item.category
+        
+        fun toTitleCase(s: String): String {
+            if (s.isEmpty()) return s
+            return s.split(" ").joinToString(" ") { word ->
+                word.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() }
+            }
+        }
+
+        holder.title.text = toTitleCase(item.title)
+        holder.category.text = toTitleCase(item.category)
         holder.amount.text = "-₹${item.amount}"
 
         holder.itemView.setOnLongClickListener {

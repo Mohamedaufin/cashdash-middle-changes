@@ -35,10 +35,6 @@ class MenuActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_menu)
 
-        // Fullscreen
-        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
-
         // Load User Profile
         val appPrefs = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
         val userName = appPrefs.getString("user_name", "User")
@@ -60,6 +56,8 @@ class MenuActivity : ThemedActivity() {
             startActivity(Intent(this, BalanceSetupActivity::class.java))
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
+
+
 
         btnUpdateSchedule.setOnClickListener {
             startActivity(Intent(this, MoneyScheduleActivity::class.java))

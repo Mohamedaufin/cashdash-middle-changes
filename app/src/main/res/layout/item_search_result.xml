@@ -21,7 +21,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="18sp"
+            android:textSize="@dimen/text_subhead"
             android:textStyle="bold"
             android:text="Title" />
 
@@ -31,7 +31,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="?attr/textMutedColor"
-            android:textSize="12sp"
+            android:textSize="@dimen/text_caption"
             android:text="May 1, 2024"
             android:layout_marginTop="2dp" />
     </LinearLayout>
@@ -48,13 +48,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="#FF4D4D"
-            android:textSize="18sp"
+            android:textSize="@dimen/text_subhead"
             android:textStyle="bold"
-            android:text="-₹500"
-            android:shadowColor="#80FF4D4D"
-            android:shadowDx="0"
-            android:shadowDy="0"
-            android:shadowRadius="10" />
+            android:text="-₹500" />
 
         <!-- Category Name -->
         <TextView
@@ -62,7 +58,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/text_secondary"
-            android:textSize="12sp"
+            android:textSize="@dimen/text_caption"
             android:text="(CATEGORY)"
             android:layout_marginTop="2dp" />
     </LinearLayout>

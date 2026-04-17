@@ -38,7 +38,7 @@
             android:layout_height="wrap_content"
             android:text="Category"
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="26sp"
+            android:textSize="@dimen/text_title"
             android:textStyle="bold"/>
 
         <!-- NEW SUBTITLE -->
@@ -48,18 +48,20 @@
             android:layout_height="wrap_content"
             android:text="Current limit = ₹0"
             android:textColor="?attr/textMutedColor"
-            android:textSize="11sp"
+            android:textSize="@dimen/text_caption"
             android:layout_marginTop="6dp"/>
     </LinearLayout>
 
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnLimit"
         android:layout_width="wrap_content"
         android:layout_height="38dp"
-        android:background="@drawable/bg_glass_3d"
+        android:background="?attr/inputBackground"
+        android:backgroundTint="@null"
         android:stateListAnimator="@null"
         android:text="Set limit"
+        android:textAllCaps="false"
         android:textColor="?attr/textPrimaryColor"
-        android:textSize="13sp"
+        android:textSize="@dimen/text_caption"
         android:textStyle="bold"/>
 </LinearLayout>

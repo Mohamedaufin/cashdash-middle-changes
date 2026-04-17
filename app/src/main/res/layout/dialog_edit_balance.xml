@@ -4,10 +4,10 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingStart="24dp"
-    android:paddingTop="24dp"
-    android:paddingEnd="24dp"
-    android:paddingBottom="20dp"
+    android:paddingStart="28dp"
+    android:paddingTop="28dp"
+    android:paddingEnd="28dp"
+    android:paddingBottom="24dp"
     android:background="?attr/transactionItemBackground">
 
     <TextView
@@ -15,11 +15,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Edit Current Balance"
-        android:textSize="22sp"
+        android:textSize="@dimen/text_title"
         android:textColor="?attr/textPrimaryColor"
         android:gravity="center"
         android:textStyle="bold"
-        android:paddingBottom="16dp" />
+        android:paddingBottom="20dp" />
 
     <EditText
         android:id="@+id/edtNewBalance"
@@ -31,7 +31,7 @@
         android:background="?attr/inputBackground"
         android:padding="16dp"
         android:inputType="number"
-        android:textSize="18sp"
+        android:textSize="@dimen/text_subhead"
         android:layout_marginBottom="24dp" />
 
     <LinearLayout
@@ -39,29 +39,35 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnCancel"
             android:layout_width="0dp"
-            android:layout_height="56dp"
+            android:layout_height="54dp"
             android:layout_weight="1"
             android:text="Cancel"
             android:textAllCaps="false"
             android:textColor="?attr/textPrimaryColor"
-            android:background="?attr/inputBackground"
-            app:backgroundTint="@null"
-            android:layout_marginEnd="6dp" />
+            android:textSize="@dimen/text_subhead"
+            android:background="?attr/cardBackground"
+            android:backgroundTint="@null"
+            android:stateListAnimator="@null"
+            android:elevation="0dp"
+            android:layout_marginEnd="8dp" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnSave"
             android:layout_width="0dp"
-            android:layout_height="56dp"
+            android:layout_height="54dp"
             android:layout_weight="1"
             android:text="Save"
             android:textAllCaps="false"
             android:textColor="?attr/textPrimaryColor"
+            android:textSize="@dimen/text_subhead"
             android:textStyle="bold"
-            android:background="?attr/inputBackground"
-            app:backgroundTint="@null"
-            android:layout_marginStart="6dp" />
+            android:background="?attr/cardBackground"
+            android:backgroundTint="@null"
+            android:stateListAnimator="@null"
+            android:elevation="0dp"
+            android:layout_marginStart="8dp" />
     </LinearLayout>
 </LinearLayout>

@@ -38,8 +38,8 @@ class DayBarGraphView(context: Context, attrs: AttributeSet?) : View(context, at
     }
 
     private val textPaint = Paint().apply {
-        color = ContextCompat.getColor(context, R.color.text_primary)
-        textSize = 32f
+        color = ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor)
+        textSize = context.resources.getDimension(R.dimen.graph_text_subhead) 
         textAlign = Paint.Align.CENTER
         isAntiAlias = true
     }
@@ -72,6 +72,39 @@ class DayBarGraphView(context: Context, attrs: AttributeSet?) : View(context, at
         val bottom = height - 100f 
         val graphHeight = height - 260f 
 
+        var unifiedAmountSize = context.resources.getDimension(R.dimen.graph_text_subhead)
+        if (barValues.isNotEmpty()) {
+            textPaint.textSize = unifiedAmountSize
+            textPaint.typeface = Typeface.DEFAULT
+            var maxAmount = "₹0"
+            var maxLen = 0f
+            for (value in barValues) {
+                val str = "₹${value.toInt()}"
+                val len = textPaint.measureText(str)
+                if (len > maxLen) { maxLen = len; maxAmount = str }
+            }
+            while (textPaint.measureText(maxAmount) > spacing - 4f && unifiedAmountSize > (8 * resources.displayMetrics.density)) {
+                unifiedAmountSize -= 1f
+                textPaint.textSize = unifiedAmountSize
+            }
+        }
+
+        var unifiedLabelSize = context.resources.getDimension(R.dimen.graph_text_caption)
+        if (labels.isNotEmpty()) {
+            textPaint.textSize = unifiedLabelSize
+            textPaint.typeface = Typeface.DEFAULT
+            var maxLabel = labels[0]
+            var maxLen = 0f
+            for (lbl in labels) {
+               val len = textPaint.measureText(lbl)
+               if (len > maxLen) { maxLen = len; maxLabel = lbl }
+            }
+            while (textPaint.measureText(maxLabel) > spacing - 4f && unifiedLabelSize > (6 * resources.displayMetrics.density)) {
+                unifiedLabelSize -= 1f
+                textPaint.textSize = unifiedLabelSize
+            }
+        }
+
         for (i in barValues.indices) {
             val value = barValues[i]
             val center = paddingLeft + (spacing * (i + 1))
@@ -80,17 +113,18 @@ class DayBarGraphView(context: Context, attrs: AttributeSet?) : View(context, at
             textPaint.textAlign = Paint.Align.CENTER
 
             if (value == 0f) {
-                val label = labels[i]
-                
-                textPaint.typeface = Typeface.DEFAULT_BOLD
-                textPaint.color = ContextCompat.getColor(context, R.color.text_dim)
-                textPaint.textSize = 38f
+                textPaint.typeface = Typeface.DEFAULT
+                textPaint.color = ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor)
+                textPaint.textSize = unifiedAmountSize
                 canvas.drawText("₹0", center, bottom - 30f, textPaint)
                 
                 textPaint.typeface = Typeface.DEFAULT
-                textPaint.color = ContextCompat.getColor(context, R.color.text_muted)
-                textPaint.textSize = if (label.length > 5) 24f else 32f
-                canvas.drawText(label, center, height - 30f, textPaint)
+                val labelStr = labels[i]
+                textPaint.textSize = unifiedLabelSize
+                textPaint.color = if (ThemeHelper.isWhiteTheme(context)) 
+                    ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor) 
+                    else ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor)
+                canvas.drawText(labelStr, center, height - 30f, textPaint)
                 continue
             }
 
@@ -100,9 +134,13 @@ class DayBarGraphView(context: Context, attrs: AttributeSet?) : View(context, at
             val top = bottom - barHeight
 
             if (isHighlighted) {
-                val shader = LinearGradient(0f, top, 0f, bottom,
-                    intArrayOf(Color.parseColor("#8BF7E6"), Color.parseColor("#4DE1C1")),
-                    null, Shader.TileMode.CLAMP)
+                val isWhiteTheme = com.cash.dash.ThemeHelper.isWhiteTheme(context)
+                val colors = if (isWhiteTheme) {
+                    intArrayOf(Color.parseColor("#8BF7E6"), Color.parseColor("#4DE1C1"))
+                } else {
+                    intArrayOf(Color.parseColor("#FFFFFF"), Color.parseColor("#E0E0E0"))
+                }
+                val shader = LinearGradient(0f, top, 0f, bottom, colors, null, Shader.TileMode.CLAMP)
                 highlightBarPaint.shader = shader
                 canvas.drawRoundRect(RectF(left, top, right, bottom), 40f, 40f, highlightBarPaint)
             } else {
@@ -111,16 +149,17 @@ class DayBarGraphView(context: Context, attrs: AttributeSet?) : View(context, at
                 canvas.drawRoundRect(RectF(left, top, right, bottom), 40f, 40f, barPaint)
             }
 
-            textPaint.typeface = Typeface.DEFAULT_BOLD
-            textPaint.color = ContextCompat.getColor(context, R.color.text_primary)
-            textPaint.textSize = 42f
-            canvas.drawText("₹${value.toInt()}", center, top - 25f, textPaint)
-            
-            val label = labels[i]
             textPaint.typeface = Typeface.DEFAULT
-            textPaint.color = ContextCompat.getColor(context, R.color.text_primary)
-            textPaint.textSize = if (label.length > 5) 24f else 32f
-            canvas.drawText(label, center, height - 30f, textPaint)
+            textPaint.color = ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor)
+            var amountStr = "₹${value.toInt()}"
+            textPaint.textSize = unifiedAmountSize
+            canvas.drawText(amountStr, center, top - 25f, textPaint)
+            
+            val labelStr = labels[i]
+            textPaint.typeface = Typeface.DEFAULT
+            textPaint.color = ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor)
+            textPaint.textSize = unifiedLabelSize
+            canvas.drawText(labelStr, center, height - 30f, textPaint)
         }
     }
 

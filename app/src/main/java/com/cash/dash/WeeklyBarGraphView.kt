@@ -2,16 +2,16 @@ package com.cash.dash
 
 import android.content.Context
 import android.graphics.*
-import androidx.core.content.ContextCompat
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.content.ContextCompat
 
 class WeeklyBarGraphView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
 
-    private var weekValues: List<Float> = listOf(0f, 0f, 0f, 0f)
-    private val weekLabels = mutableListOf("W1", "W2", "W3", "W4")
-
-    private var limitValue: Float = -1f
+    private val weekValues = mutableListOf<Float>()
+    private val weekLabels = mutableListOf<String>()
+    private var limitValue: Float = 0f
+    private val barRadius = 40f
 
     private val barPaint = Paint().apply {
         isAntiAlias = true
@@ -22,130 +22,160 @@ class WeeklyBarGraphView(context: Context, attrs: AttributeSet?) : View(context,
     }
 
     private val textPaint = Paint().apply {
-        color = ContextCompat.getColor(context, R.color.text_primary)
-        textSize = 32f
+        color = ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor)
+        textSize = context.resources.getDimension(R.dimen.graph_text_subhead) 
         textAlign = Paint.Align.CENTER
         isAntiAlias = true
     }
-
+    
     private val limitPaint = Paint().apply {
         color = Color.RED
         strokeWidth = 6f
         isAntiAlias = true
     }
 
-    private val limitTextPaint = Paint().apply {
-        color = ContextCompat.getColor(context, R.color.text_primary)
-        textSize = 28f
-        textAlign = Paint.Align.LEFT
-        typeface = Typeface.DEFAULT_BOLD
-        isAntiAlias = true
-    }
 
-    private val barRadius = 40f
 
-    fun setValues(values: List<Float>) {
-        weekValues = values
+    fun setValues(list: List<Float>) {
+        weekValues.clear()
+        weekValues.addAll(list)
         invalidate()
     }
 
-    fun setLimit(limit: Int) {
-        limitValue = limit.toFloat()
+    fun setLimit(limit: Float) {
+        limitValue = limit
         invalidate()
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        val maxVal = maxOf(
-            limitValue.takeIf { it > 0 } ?: 0f,
-            weekValues.maxOrNull() ?: 0f
-        ).takeIf { it > 0 } ?: 1f
-
-        val barCount = weekValues.size
-        val availableWidth = width - paddingLeft - paddingRight
-        val barWidth = availableWidth / 14f
-        val spacing = availableWidth / (barCount + 1f)
-
-        val bottom = height - 100f 
-        val graphHeight = height - 260f 
+        if (weekValues.isEmpty()) return
         
-        if (limitValue > 0) {
-            val ratio = limitValue / maxVal
-            var limitY = bottom - (ratio * graphHeight)
+        val maxVal = if (limitValue > 0f) {
+            (weekValues.maxOrNull() ?: 1f).coerceAtLeast(limitValue)
+        } else {
+            weekValues.maxOrNull()?.coerceAtLeast(1f) ?: 1f
+        }
 
-            if (limitY < 120f) limitY = 120f 
-            if (limitY > bottom) limitY = bottom
+        val count = weekValues.size
+        val availableWidth = width - paddingLeft - paddingRight
+        val spacing = availableWidth / (count + 1f)
+        val barWidth = availableWidth / 14f
 
+        val bottom = height - 120f
+        val graphHeight = height - 260f
+
+        // Draw Limit Line
+        if (limitValue > 0f) {
+            val limitY = bottom - (limitValue / maxVal * graphHeight)
+            
+            val pathEffect = DashPathEffect(floatArrayOf(15f, 15f), 0f)
+            limitPaint.pathEffect = pathEffect
+            
             canvas.drawLine(paddingLeft.toFloat(), limitY, (width - paddingRight).toFloat(), limitY, limitPaint)
         }
 
-        for (i in 0 until barCount) {
+        var unifiedAmountSize = context.resources.getDimension(R.dimen.graph_text_subhead)
+        if (weekValues.isNotEmpty()) {
+            textPaint.textSize = unifiedAmountSize
+            textPaint.typeface = Typeface.DEFAULT
+            var maxAmount = "₹0"
+            var maxLen = 0f
+            for (value in weekValues) {
+                val str = "₹${value.toInt()}"
+                val len = textPaint.measureText(str)
+                if (len > maxLen) { maxLen = len; maxAmount = str }
+            }
+            while (textPaint.measureText(maxAmount) > spacing - 4f && unifiedAmountSize > (8 * resources.displayMetrics.density)) {
+                unifiedAmountSize -= 1f
+                textPaint.textSize = unifiedAmountSize
+            }
+        }
+
+        var unifiedLabelSize = context.resources.getDimension(R.dimen.graph_text_body)
+        if (weekLabels.isNotEmpty()) {
+            textPaint.textSize = unifiedLabelSize
+            textPaint.typeface = Typeface.DEFAULT
+            var maxLabel = weekLabels[0]
+            var maxLen = 0f
+            for (lbl in weekLabels) {
+               val len = textPaint.measureText(lbl)
+               if (len > maxLen) { maxLen = len; maxLabel = lbl }
+            }
+            while (textPaint.measureText(maxLabel) > spacing - 4f && unifiedLabelSize > (6 * resources.displayMetrics.density)) {
+                unifiedLabelSize -= 1f
+                textPaint.textSize = unifiedLabelSize
+            }
+        }
+
+        for (i in weekValues.indices) {
             val value = weekValues[i]
             val center = paddingLeft + (spacing * (i + 1))
-            
-            textPaint.textAlign = Paint.Align.CENTER
 
             if (value == 0f) {
                 val label = if (i < weekLabels.size) weekLabels[i] else "W${i+1}"
                 
-                textPaint.typeface = Typeface.DEFAULT_BOLD
-                textPaint.textSize = 38f
+                textPaint.textSize = unifiedAmountSize
+                textPaint.typeface = Typeface.DEFAULT
+                textPaint.color = ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor)
                 canvas.drawText("₹0", center, bottom - 30f, textPaint)
                 
                 textPaint.typeface = Typeface.DEFAULT
-                textPaint.textSize = if (label.length > 8) 24f else 32f
-                canvas.drawText(label, center, height - 30f, textPaint)
+                val labelStr = if (i < weekLabels.size) weekLabels[i] else "W${i+1}"
+                
+                
+                textPaint.textSize = unifiedLabelSize
+                
+                textPaint.color = if (ThemeHelper.isWhiteTheme(context)) 
+                    ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor) 
+                    else ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor)
+                canvas.drawText(labelStr, center, height - 30f, textPaint)
                 continue
             }
 
             var barHeight = (value / maxVal) * graphHeight
-            if (barHeight < 25f) barHeight = 25f
+            if (barHeight < 15f) barHeight = 15f
 
             val left = center - barWidth / 2
             val right = center + barWidth / 2
             val top = bottom - barHeight
 
-            val isOverLimit = limitValue > 0 && value >= limitValue
-            if (isOverLimit) {
-                val shader = LinearGradient(0f, top, 0f, bottom,
-                    intArrayOf(Color.parseColor("#FF6B6B"), Color.parseColor("#D32F2F")),
-                    null, Shader.TileMode.CLAMP)
-                highlightPaint.shader = shader
-                canvas.drawRoundRect(RectF(left, top, right, bottom), barRadius, barRadius, highlightPaint)
-            } else {
-                barPaint.shader = null
-                barPaint.color = Color.parseColor("#D9D9D9")
-                canvas.drawRoundRect(RectF(left, top, right, bottom), barRadius, barRadius, barPaint)
-            }
-            barPaint.shader = null
+            val isWhiteTheme = com.cash.dash.ThemeHelper.isWhiteTheme(context)
+            val isLimitCrossed = limitValue > 0f && value > limitValue
 
+            val colors = if (isLimitCrossed) {
+                intArrayOf(Color.parseColor("#FFA1A1"), Color.parseColor("#FF4D4D"))
+            } else if (isWhiteTheme) {
+                intArrayOf(Color.parseColor("#8BF7E6"), Color.parseColor("#4DE1C1"))
+            } else {
+                intArrayOf(Color.parseColor("#FFFFFF"), Color.parseColor("#E0E0E0"))
+            }
+
+            val shader = LinearGradient(0f, top, 0f, bottom, colors, null, Shader.TileMode.CLAMP)
             val glossPaint = Paint().apply {
                 isAntiAlias = true
-                shader = LinearGradient(
-                    center, top, center, top + barHeight * 0.5f,
-                    Color.argb(100, 255, 255, 255), Color.TRANSPARENT,
-                    Shader.TileMode.CLAMP
-                )
+                this.shader = shader
             }
+
             canvas.drawRoundRect(
-                RectF(left + 2f, top + 2f, right - 2f, top + barHeight * 0.4f),
+                RectF(left, top, right, bottom),
                 barRadius, barRadius,
                 glossPaint
             )
 
-            // Value Text (Amount)
-            textPaint.textSize = 42f 
-            textPaint.typeface = Typeface.DEFAULT_BOLD
-            textPaint.color = ContextCompat.getColor(context, R.color.text_primary)
-            canvas.drawText("₹${value.toInt()}", center, top - 25f, textPaint)
+            var amountStr = "₹${value.toInt()}"
+            textPaint.textSize = unifiedAmountSize
+            textPaint.typeface = Typeface.DEFAULT
+            textPaint.color = ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor)
+            canvas.drawText(amountStr, center, top - 25f, textPaint)
 
             // Label Text (Date)
-            val label = if (i < weekLabels.size) weekLabels[i] else "W${i+1}"
-            textPaint.textSize = if (label.length > 8) 24f else 32f
+            val labelStr = if (i < weekLabels.size) weekLabels[i] else "W${i+1}"
+            textPaint.textSize = unifiedLabelSize
             textPaint.typeface = Typeface.DEFAULT
-            textPaint.color = ContextCompat.getColor(context, R.color.text_primary)
-            canvas.drawText(label, center, height - 30f, textPaint)
+            textPaint.color = ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor)
+            canvas.drawText(labelStr, center, height - 30f, textPaint)
         }
     }
 

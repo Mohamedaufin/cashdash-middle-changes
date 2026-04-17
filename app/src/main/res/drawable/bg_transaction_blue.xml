@@ -15,14 +15,11 @@
         android:bottom="4dp"
         android:right="4dp">
         <shape android:shape="rectangle">
-            <gradient
-                android:startColor="#1A2D8A"
-                android:endColor="#07103D"
-                android:angle="135"
-                android:type="linear"/>
+            <solid android:color="#060C26"/>
             <corners android:radius="16dp"/>
             <stroke
                 android:width="1.2dp"
-                android:color="#4A5FA1"/>        </shape>
+                android:color="#1E3A8A"/>
+        </shape>
     </item>
 </layer-list>

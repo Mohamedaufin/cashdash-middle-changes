@@ -96,7 +96,7 @@ object HistoryDataManager {
 
             if (!match) continue
 
-            val catDisplay = "(${category.uppercase()})"
+            val catDisplay = "($category)"
 
             // Filter transactions
             if (categoryFilter == "Overall" || category == categoryFilter) {

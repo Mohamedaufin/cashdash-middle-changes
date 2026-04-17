@@ -25,8 +25,8 @@ class MonthlyBarGraphView(context: Context, attrs: AttributeSet?) : View(context
     }
 
     private val textPaint = Paint().apply {
-        color = ContextCompat.getColor(context, R.color.text_primary)
-        textSize = 28f
+        color = ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor)
+        textSize = context.resources.getDimension(R.dimen.graph_text_subhead) 
         textAlign = Paint.Align.CENTER
         isAntiAlias = true
     }
@@ -60,24 +60,29 @@ class MonthlyBarGraphView(context: Context, attrs: AttributeSet?) : View(context
 
             if (value == 0f) {
                 // Only draw month label, skip ₹0 to avoid crowding
-                textPaint.color = ContextCompat.getColor(context, R.color.text_muted)
-                textPaint.textSize = 24f
-                canvas.drawText(monthLabels[i], center, height - 70f, textPaint)
+                val labelStr = monthLabels[i]
+                textPaint.color = if (ThemeHelper.isWhiteTheme(context)) 
+                    ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor) 
+                    else ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor)
+                canvas.drawText(labelStr, center, height - 70f, textPaint)
                 continue
             }
 
             var barHeight = (value / maxVal) * graphHeight
-            if (barHeight < 8f) barHeight = 8f
+            if (barHeight < 10f) barHeight = 10f
 
             val left = center - barWidth / 2
             val right = center + barWidth / 2
             val top = bottom - barHeight
 
-            val isHighlighted = (i == selectedMonthIndex)
-            if (isHighlighted) {
-                val shader = LinearGradient(0f, top, 0f, bottom,
-                    intArrayOf(ContextCompat.getColor(context, R.color.primary_light), ContextCompat.getColor(context, R.color.primary_purple)),
-                    null, Shader.TileMode.CLAMP)
+            if (i == selectedMonthIndex) {
+                 val isWhiteTheme = com.cash.dash.ThemeHelper.isWhiteTheme(context)
+                 val colors = if (isWhiteTheme) {
+                     intArrayOf(Color.parseColor("#8BF7E6"), Color.parseColor("#4DE1C1"))
+                 } else {
+                     intArrayOf(Color.parseColor("#FFFFFF"), Color.parseColor("#E0E0E0"))
+                 }
+                 val shader = LinearGradient(0f, top, 0f, bottom, colors, null, Shader.TileMode.CLAMP)
                 highlightPaint.shader = shader
                 canvas.drawRoundRect(RectF(left, top, right, bottom), barRadius, barRadius, highlightPaint)
             } else {
@@ -86,30 +91,23 @@ class MonthlyBarGraphView(context: Context, attrs: AttributeSet?) : View(context
                 canvas.drawRoundRect(RectF(left, top, right, bottom), barRadius, barRadius, barPaint)
             }
 
-            textPaint.color = ContextCompat.getColor(context, R.color.text_primary)
-            val amountStr = "₹${value.toInt()}"
-            var amountSize = 26f
+            textPaint.color = ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor)
+            var amountStr = "₹${value.toInt()}"
+            var amountSize = context.resources.getDimension(R.dimen.graph_text_subhead) 
             textPaint.textSize = amountSize
-            while (textPaint.measureText(amountStr) > spacing - 8f && amountSize > 14f) {
+            while (textPaint.measureText(amountStr) > spacing - 8f && amountSize > (10 * resources.displayMetrics.density)) {
                 amountSize -= 1f
                 textPaint.textSize = amountSize
             }
-            // Calculate safe label Y: push up if it would overlap a neighbour bar
-            var labelY = top - 20f
-            listOf(i - 1, i + 1).forEach { ni ->
-                if (ni in 0 until 12 && monthlyTotals[ni] > 0f) {
-                    val nBarHeight = ((monthlyTotals[ni] / maxVal) * graphHeight).coerceAtLeast(8f)
-                    val nTop = bottom - nBarHeight
-                    if (labelY > nTop) labelY = nTop - 20f
-                }
-            }
+            
+            val labelY = if (barHeight > 60f) top - 20f else top - 10f
             canvas.drawText(amountStr, center, labelY, textPaint)
 
             textPaint.color = ContextCompat.getColor(context, R.color.text_primary)
-            val labelStr = monthLabels[i]
-            var labelSize = 24f
+            var labelStr = monthLabels[i]
+            var labelSize = context.resources.getDimension(R.dimen.graph_text_body)
             textPaint.textSize = labelSize
-            while (textPaint.measureText(labelStr) > spacing - 8f && labelSize > 14f) {
+            while (textPaint.measureText(labelStr) > spacing - 8f && labelSize > (10 * resources.displayMetrics.density)) {
                 labelSize -= 1f
                 textPaint.textSize = labelSize
             }
@@ -118,21 +116,16 @@ class MonthlyBarGraphView(context: Context, attrs: AttributeSet?) : View(context
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (event.action != MotionEvent.ACTION_DOWN) return true
-
-        val barWidth = width / 28f
-        val spacing = width / 13f
-
-        for (i in 0 until 12) {
-            val center = spacing * (i + 1)
-            val left = center - barWidth / 2
-            val right = center + barWidth / 2
-
-            if (event.x in left..right) {
-                selectedMonthIndex = i
-                invalidate()
-                onMonthClick?.invoke(i)
-                return true
+        if (event.action == MotionEvent.ACTION_DOWN) {
+            val spacing = width / 13f
+            for (i in 0 until 12) {
+                val center = spacing * (i + 1)
+                if (event.x > center - 30f && event.x < center + 30f) {
+                    selectedMonthIndex = i
+                    onMonthClick?.invoke(i)
+                    invalidate()
+                    break
+                }
             }
         }
         return true

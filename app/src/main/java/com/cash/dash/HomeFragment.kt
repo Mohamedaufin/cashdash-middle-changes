@@ -27,6 +27,8 @@ class HomeFragment : Fragment() {
     // Cache for optimization
     private var lastLoadedName: String? = null
     private var lastLoadedBalance: String? = null
+    private var lastLoadedBarMode: String? = null
+    private var lastLoadedBarType: String? = null
     private var lastLoadedDateStr: String? = null
 
     override fun onCreateView(
@@ -41,8 +43,8 @@ class HomeFragment : Fragment() {
 
         loadUserName(view)
         
-        // Ensure greeting is visible for the shared element transition
-        view.findViewById<TextView>(R.id.tvGreeting)?.apply {
+        // Ensure username is visible for the shared element transition
+        view.findViewById<TextView>(R.id.tvUsernameHome)?.apply {
             visibility = View.VISIBLE
             alpha = 1f
         }
@@ -97,31 +99,35 @@ class HomeFragment : Fragment() {
     }
 
     private fun checkInitialSetup() {
+        val density = resources.displayMetrics.density
         val prefs = requireContext().getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
         val initialBalance = prefs.getInt("initial_balance", -1)
 
         if (initialBalance <= 0) {
-            val box = android.widget.LinearLayout(requireContext())
-            box.orientation = android.widget.LinearLayout.VERTICAL
-            box.setPadding(60, 60, 60, 50)
-            box.setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(box.context, R.drawable.bg_transaction))
+            val box = android.widget.LinearLayout(requireContext()).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                val p = (28 * density).toInt()
+                setPadding(p, p, p, (24 * density).toInt())
+                setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
+            }
 
             val titleView = TextView(requireContext()).apply {
                 text = "Welcome to CashDash! ⚡"
-                textSize = 22f
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_title))
                 setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
                 setTypeface(null, android.graphics.Typeface.BOLD)
                 gravity = android.view.Gravity.CENTER
-                setPadding(0, 0, 0, 40)
+                setPadding(0, 0, 0, (20 * density).toInt())
             }
             box.addView(titleView)
 
             val messageView = TextView(requireContext()).apply {
                 text = "To start tracking your money, please set up your initial wallet balance."
-                textSize = 16f
-                setTextColor(android.graphics.Color.parseColor("#A8B5D1"))
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_body))
+                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(requireContext(), R.attr.textMutedColor))
                 gravity = android.view.Gravity.CENTER
-                setPadding(0, 0, 0, 80)
+                setLineSpacing(8f, 1f)
+                setPadding(0, 0, 0, (40 * density).toInt())
             }
             box.addView(messageView)
 
@@ -135,8 +141,8 @@ class HomeFragment : Fragment() {
                 text = "Set Up Wallet"
                 isAllCaps = false
                 setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-                background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
-                layoutParams = android.widget.LinearLayout.LayoutParams(android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 150)
+                background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+                layoutParams = android.widget.LinearLayout.LayoutParams(android.widget.LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt())
                 setOnClickListener {
                     startActivity(Intent(requireContext(), BalanceSetupActivity::class.java))
                     dialog.dismiss()
@@ -159,7 +165,7 @@ class HomeFragment : Fragment() {
         val prefs = requireContext().getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
         val name = prefs.getString(KEY_NAME, "User") ?: "User"
         if (name != lastLoadedName) {
-            view.findViewById<TextView>(R.id.tvGreeting)?.text = "Hello $name,"
+            view.findViewById<TextView>(R.id.tvUsernameHome)?.text = name
             lastLoadedName = name
         }
     }
@@ -172,12 +178,21 @@ class HomeFragment : Fragment() {
         val initial = if (initialRaw == -1) 0 else initialRaw
         val displayInitial = if (initial == 0 && bal == 0) 0 else initial.coerceAtLeast(1)
         
+        val mode = prefs.getString("balance_bar_mode", "gradient") ?: "gradient"
+        val type = prefs.getString("balance_bar_type", "gradient1") ?: "gradient1"
+        
         val balanceStr = "₹$bal/$displayInitial"
-        if (balanceStr != lastLoadedBalance) {
+        if (balanceStr != lastLoadedBalance || mode != lastLoadedBarMode || type != lastLoadedBarType) {
             view.findViewById<TextView>(R.id.tvBalance)?.text = balanceStr
             val progressPercent = if (displayInitial > 0) ((bal.toFloat() / displayInitial.toFloat()) * 100).toInt().coerceIn(0, 100) else 0
-            view.findViewById<com.cash.dash.GradientCircularProgressView>(R.id.walletProgress)?.setProgressCompat(progressPercent, true)
+            
+            val pBar = view.findViewById<com.cash.dash.GradientCircularProgressView>(R.id.walletProgress)
+            pBar?.setColorConfig(mode, type)
+            pBar?.setProgressCompat(progressPercent, true)
+            
             lastLoadedBalance = balanceStr
+            lastLoadedBarMode = mode
+            lastLoadedBarType = type
         }
     }
 

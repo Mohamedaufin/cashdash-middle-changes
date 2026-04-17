@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import java.util.Locale
 
 class SearchAdapter(private val items: List<SearchListItem>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -34,14 +35,26 @@ class SearchAdapter(private val items: List<SearchListItem>) : RecyclerView.Adap
             holder.title.text = item.title
         } else if (holder is TransactionHolder && item is SearchListItem.Transaction) {
             val trans = item.item
-            holder.title.text = trans.title
+            
+            // Hardened Title-Casing Sanitizer
+            fun toTitleCase(s: String): String {
+                if (s.isEmpty()) return s
+                return s.split(" ").joinToString(" ") { word ->
+                    word.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() }
+                }
+            }
+
+            holder.title.text = toTitleCase(trans.title)
             holder.date.text = trans.date
-            holder.category.text = "(${trans.category.uppercase()})"
+            holder.category.text = "(${toTitleCase(trans.category)})"
             holder.amount.text = "-₹${trans.amount}"
         }
     }
 
     override fun getItemCount() = items.size
+    
+    // Explicitly import Locale
+    private val locale = java.util.Locale.getDefault()
 
     class HeaderHolder(view: View) : RecyclerView.ViewHolder(view) {
         val title: TextView = view.findViewById(R.id.tvHeaderTitle)
