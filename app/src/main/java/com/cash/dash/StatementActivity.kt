@@ -25,7 +25,7 @@ class StatementActivity : ThemedActivity() {
         // Status bar safe padding
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.topBar)) { v, insets ->
             val statusInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-            v.setPadding(v.paddingLeft, statusInsets.top + 10, v.paddingRight, v.paddingBottom)
+            v.setPadding(v.paddingLeft, statusInsets.top + 25, v.paddingRight, v.paddingBottom)
             insets
         }
 
@@ -52,7 +52,8 @@ class StatementActivity : ThemedActivity() {
 
     private fun loadTransactions() {
         val breakdown = HistoryDataManager.getCategoryBreakdownForRange(this, startMillis, endMillis)
-        val statementList = breakdown.transactions.sortedByDescending { entry ->
+        // Ascending sort (April 1, April 2, etc.)
+        val statementList = breakdown.transactions.sortedBy { entry ->
             val p = entry.rawEntry.split("|")
             if (p.size >= 2) p[1].toLongOrNull() ?: 0L else 0L
         }
@@ -61,6 +62,6 @@ class StatementActivity : ThemedActivity() {
         tvTotal.text = "₹${String.format("%,.2f", totalSpent)}"
 
         rvTransactions.layoutManager = LinearLayoutManager(this)
-        rvTransactions.adapter = TransactionAdapter(statementList)
+        rvTransactions.adapter = TransactionAdapter(statementList, showTimestamp = true)
     }
 }
