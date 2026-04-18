@@ -115,6 +115,12 @@ object ThemeHelper {
         }
     }
 
+    fun getResIdFromAttr(context: Context, attrResId: Int): Int {
+        val typedValue = android.util.TypedValue()
+        context.theme.resolveAttribute(attrResId, typedValue, true)
+        return typedValue.resourceId
+    }
+
     fun tintDrawableIfWhiteTheme(context: Context, drawable: android.graphics.drawable.Drawable?): android.graphics.drawable.Drawable? {
         if (drawable == null) return null
         if (isWhiteTheme(context)) {
