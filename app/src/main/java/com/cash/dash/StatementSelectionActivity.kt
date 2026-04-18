@@ -8,7 +8,17 @@ import android.os.Bundle
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.GridLayoutManager
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowCompat
+import androidx.constraintlayout.widget.ConstraintLayout
+import com.google.android.material.button.MaterialButton
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -166,5 +176,4 @@ class StatementSelectionActivity : ThemedActivity() {
             val container: View = v.findViewById(R.id.cardContainer)
         }
     }
-}
 }
