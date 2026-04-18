@@ -94,9 +94,18 @@ class CategoryAnalysisActivity : ThemedActivity() {
             val prefs = getSharedPreferences(LIMIT_PREF, Context.MODE_PRIVATE)
             val limit = prefs.getInt("LIMIT_$categoryName", -1)
 
+            val creationTime = getAccountCreationTime()
+            val firstMonday = getFirstMonday(creationTime)
+            val now = System.currentTimeMillis()
+            var currentWeekIndexGlobal = java.util.concurrent.TimeUnit.MILLISECONDS.toDays(now - firstMonday).toInt() / 7
+            if (currentWeekIndexGlobal < 0) currentWeekIndexGlobal = 0
+            val startWeekIndex = if (currentWeekIndexGlobal < 4) 0 else currentWeekIndexGlobal - 3
+            val currentWeekRelative = currentWeekIndexGlobal - startWeekIndex
+
             runOnUiThread {
                 weeklyGraph.setValues(weeklyValues.map { it.toFloat() })
                 weeklyGraph.setLabels(labels)
+                weeklyGraph.setCurrentWeekIndex(currentWeekRelative)
 
                 val tvLimitValue = findViewById<TextView>(R.id.tvLimitValue)
                 if (limit > 0) {

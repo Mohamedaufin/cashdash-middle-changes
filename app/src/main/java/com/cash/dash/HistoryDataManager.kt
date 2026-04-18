@@ -158,6 +158,73 @@ object HistoryDataManager {
                 }
             }
         }
+        return BreakdownResult(finalCats, finalVals, transactions)
+    }
+
+    fun getCategoryBreakdownForRange(
+        context: Context,
+        startMillis: Long,
+        endMillis: Long,
+        categoryFilter: String = "Overall"
+    ): BreakdownResult {
+        val prefsGraph = context.getSharedPreferences("GraphData", Context.MODE_PRIVATE)
+        val prefsCat = context.getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
+        val savedCategories = prefsCat.getStringSet("categories", emptySet())?.toList() ?: emptyList()
+        val categories = savedCategories.toMutableList()
+        
+        var noChoiceValue = 0f
+        val values = MutableList(categories.size) { 0f }
+        val transactions = mutableListOf<TransactionItem>()
+        val historyList = prefsGraph.getStringSet("HISTORY_LIST", emptySet()) ?: emptySet()
+
+        for (entry in historyList) {
+            val parts = entry.split("|")
+            if (parts.size < 5) continue
+
+            var category = "no choice"
+            var amount = 0f
+            var title = "Expense"
+            var timestamp = 0L
+
+            if (parts.size >= 9) {
+                timestamp = parts[1].toLongOrNull() ?: 0L
+                title = parts[2]
+                category = parts[3]
+                amount = parts[4].toFloatOrNull() ?: 0f
+            } else if (parts.size == 7) {
+                continue 
+            } else {
+                timestamp = parts[1].toLongOrNull() ?: 0L
+                title = "Expense"
+                category = parts[3]
+                amount = parts[4].toFloatOrNull() ?: 0f
+            }
+
+            if (timestamp !in startMillis..endMillis) continue
+
+            if (categoryFilter == "Overall" || category == categoryFilter) {
+                transactions.add(TransactionItem(title, "($category)", amount.toInt(), entry))
+            }
+
+            if (category == "no choice") {
+                noChoiceValue += amount
+            } else {
+                val idx = categories.indexOf(category)
+                if (idx != -1) values[idx] += amount
+            }
+        }
+
+        val finalCats = mutableListOf<String>()
+        val finalVals = mutableListOf<Float>()
+        
+        for (i in categories.indices) {
+            finalCats.add(categories[i])
+            finalVals.add(values[i])
+        }
+        if (noChoiceValue > 0) {
+            finalCats.add("no choice")
+            finalVals.add(noChoiceValue)
+        }
 
         return BreakdownResult(finalCats, finalVals, transactions)
     }

@@ -22,8 +22,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingTop="5dp"
-        android:paddingBottom="100dp">
+        android:paddingTop="35dp"
+        android:paddingBottom="160dp"
+        android:clipToPadding="false">
 
         <!-- TOP FILTER BUTTONS -->
         <LinearLayout
@@ -100,6 +101,7 @@
                 android:textSize="@dimen/text_body" />
         </LinearLayout>
 
+        <!-- SPLIT ACTION BUTTONS (Side-by-Side Row) -->
         <!-- GRAPH -->
         <com.cash.dash.DayBarGraphView
             android:id="@+id/dayGraph"
@@ -117,11 +119,79 @@
             android:textSize="@dimen/text_subhead"
             android:textStyle="bold"
             android:layout_gravity="center"
-            android:layout_marginTop="0dp"
-            android:shadowColor="#3A6AFF"
-            android:shadowDx="0"
-            android:shadowDy="3"
-            android:shadowRadius="8"/>
+            android:layout_marginTop="15dp" />
+
+        <!-- SPLIT ACTION BUTTONS (Moved to the bottom) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal"
+            android:weightSum="2">
+
+            <!-- FINANCIAL REPORT BUTTON -->
+            <LinearLayout
+                android:id="@+id/cardReport"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:background="?attr/cardBackground"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="16dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@drawable/ic_search"
+                    android:tint="?attr/textPrimaryColor"
+                    android:layout_marginBottom="8dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Financial Report"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:gravity="center"/>
+            </LinearLayout>
+
+            <!-- VIEW STATEMENT BUTTON -->
+            <LinearLayout
+                android:id="@+id/cardStatement"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:background="?attr/cardBackground"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="16dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@drawable/ic_paper_sheet"
+                    app:tint="?attr/textPrimaryColor"
+                    android:layout_marginBottom="8dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="View Statement"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:gravity="center"/>
+            </LinearLayout>
+        </LinearLayout>
 
     </LinearLayout>
 

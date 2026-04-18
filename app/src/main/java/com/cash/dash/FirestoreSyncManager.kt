@@ -153,6 +153,7 @@ object FirestoreSyncManager {
                 Tasks.await(configColl.document("undo_details").set(hashMapOf("LocalScanPrefs" to localScanPrefs.all)))
 
                 Log.d(TAG, "✅ Sequential background sync to cloud complete")
+                syncHandler.post { notifyUI(appContext) }
             } catch (e: Exception) {
                 Log.e(TAG, "❌ FATAL SYNC ERROR: ${e.message}", e)
             }

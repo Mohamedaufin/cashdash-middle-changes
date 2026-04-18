@@ -73,6 +73,42 @@ class HistoryFragment : Fragment() {
             val intent = Intent(requireContext(), SearchActivity::class.java)
             startActivity(intent)
         }
+
+        view.findViewById<View>(R.id.cardReport).setOnClickListener {
+            val intent = Intent(requireContext(), ReportActivity::class.java)
+            startActivity(intent)
+        }
+
+        view.findViewById<View>(R.id.cardStatement).setOnClickListener {
+            showRangePicker()
+        }
+    }
+
+    private fun showRangePicker() {
+        val cal = Calendar.getInstance()
+        val pickerStart = android.app.DatePickerDialog(requireContext(), ThemeHelper.getDatePickerTheme(requireContext()), { _, year, month, day ->
+            val startCal = Calendar.getInstance().apply { set(year, month, day, 0, 0, 0) }
+            
+            val pickerEnd = android.app.DatePickerDialog(requireContext(), ThemeHelper.getDatePickerTheme(requireContext()), { _, eYear, eMonth, eDay ->
+                val endCal = Calendar.getInstance().apply { set(eYear, eMonth, eDay, 23, 59, 59) }
+                
+                if (endCal.before(startCal)) {
+                    android.widget.Toast.makeText(requireContext(), "End date must be after start date", android.widget.Toast.LENGTH_SHORT).show()
+                } else {
+                    val intent = Intent(requireContext(), StatementActivity::class.java)
+                    intent.putExtra("START_MILLIS", startCal.timeInMillis)
+                    intent.putExtra("END_MILLIS", endCal.timeInMillis)
+                    startActivity(intent)
+                }
+            }, year, month, day)
+            
+            pickerEnd.setTitle("Select End Date")
+            pickerEnd.show()
+            
+        }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
+        
+        pickerStart.setTitle("Select Start Date")
+        pickerStart.show()
     }
 
     override fun onStart() {
@@ -383,7 +419,7 @@ class HistoryFragment : Fragment() {
                     animateGraph(graph)
                 }
             } else {
-                android.app.DatePickerDialog(requireContext(), { _, y, m, d ->
+                android.app.DatePickerDialog(requireContext(), ThemeHelper.getDatePickerTheme(requireContext()), { _, y, m, d ->
                     selectedYear = y; selectedMonth = m
                     selectedWeek = Calendar.getInstance().apply { firstDayOfWeek = Calendar.MONDAY; minimalDaysInFirstWeek = 1; set(y, m, d) }.get(Calendar.WEEK_OF_MONTH) - 1
                     

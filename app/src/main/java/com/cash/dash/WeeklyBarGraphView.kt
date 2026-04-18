@@ -11,6 +11,7 @@ class WeeklyBarGraphView(context: Context, attrs: AttributeSet?) : View(context,
     private val weekValues = mutableListOf<Float>()
     private val weekLabels = mutableListOf<String>()
     private var limitValue: Float = 0f
+    private var currentWeekIndex: Int = -1
     private val barRadius = 40f
 
     private val barPaint = Paint().apply {
@@ -44,6 +45,11 @@ class WeeklyBarGraphView(context: Context, attrs: AttributeSet?) : View(context,
 
     fun setLimit(limit: Float) {
         limitValue = limit
+        invalidate()
+    }
+
+    fun setCurrentWeekIndex(index: Int) {
+        currentWeekIndex = index
         invalidate()
     }
 
@@ -147,9 +153,17 @@ class WeeklyBarGraphView(context: Context, attrs: AttributeSet?) : View(context,
             val colors = if (isLimitCrossed) {
                 intArrayOf(Color.parseColor("#FFA1A1"), Color.parseColor("#FF4D4D"))
             } else if (isWhiteTheme) {
-                intArrayOf(Color.parseColor("#8BF7E6"), Color.parseColor("#4DE1C1"))
+                if (i == currentWeekIndex && value > 0f) {
+                    intArrayOf(Color.parseColor("#8BF7E6"), Color.parseColor("#4DE1C1"))
+                } else {
+                    intArrayOf(Color.parseColor("#D9D9D9"), Color.parseColor("#BDBDBD"))
+                }
             } else {
-                intArrayOf(Color.parseColor("#FFFFFF"), Color.parseColor("#E0E0E0"))
+                if (i == currentWeekIndex && value > 0f) {
+                    intArrayOf(Color.parseColor("#8BF7E6"), Color.parseColor("#4DE1C1"))
+                } else {
+                    intArrayOf(Color.parseColor("#FFFFFF"), Color.parseColor("#FFFFFF"))
+                }
             }
 
             val shader = LinearGradient(0f, top, 0f, bottom, colors, null, Shader.TileMode.CLAMP)

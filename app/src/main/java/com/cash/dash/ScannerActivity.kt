@@ -42,6 +42,7 @@ import java.util.Calendar
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 
 class ScannerActivity : ThemedActivity(), SensorEventListener {
 
@@ -72,6 +73,15 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     private var pendingCategory: String? = null
     private var pendingTitle: String = "UPI Payment"
     private var allocationHandled: Boolean = false
+    private var currentChooser: BottomSheetDialog? = null
+
+    private val syncReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+            currentChooser?.takeIf { it.isShowing }?.let { dialog: BottomSheetDialog ->
+                refreshAllocationListSimple(dialog)
+            }
+        }
+    }
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
         if (ev != null) {
@@ -326,26 +336,16 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        lightSensor?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
-        
-        com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.reload()?.addOnFailureListener { e ->
-            if (e is com.google.firebase.auth.FirebaseAuthInvalidUserException) {
-                com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
-                getSharedPreferences("AppPrefs", MODE_PRIVATE).edit().clear().apply()
-                // Clear other prefs... (skipped explicit repeats for brevity, add as needed)
-                startActivity(Intent(this, EntryActivity::class.java).apply {
-                    putExtra("reason", "admin_deleted")
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                })
-                finish()
-            }
-        }
+    override fun onStart() {
+        super.onStart()
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            syncReceiver, android.content.IntentFilter(FirestoreSyncManager.ACTION_SYNC_UPDATE)
+        )
     }
 
-    override fun onPause() {
-        super.onPause()
+    override fun onStop() {
+        super.onStop()
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(syncReceiver)
         sensorManager.unregisterListener(this)
     }
 
@@ -541,12 +541,44 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     }
 
     private fun showAllocationChooser(parentDialog: BottomSheetDialog, label: TextView, btn: Button, paymentContainer: LinearLayout, btnPayInit: Button) {
-        val density = resources.displayMetrics.density
         val chooser = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+        currentChooser = chooser
         val view = layoutInflater.inflate(R.layout.layout_allocation_chooser_bottom_sheet, null)
         chooser.setContentView(view)
 
-        val container = view.findViewById<LinearLayout>(R.id.allocationListContainer)
+        // Store references in tags for sync refresh
+        view.tag = arrayOf(parentDialog, label, btn, paymentContainer, btnPayInit)
+
+        refreshAllocationList(chooser, parentDialog, label, btn, paymentContainer, btnPayInit)
+
+        chooser.show()
+        val bottomSheet = chooser.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+        if (bottomSheet != null) {
+            val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(bottomSheet as FrameLayout)
+            behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+            behavior.skipCollapsed = true
+        }
+    }
+
+    private fun refreshAllocationListSimple(chooser: BottomSheetDialog) {
+        val view = chooser.findViewById<View>(R.id.allocationListContainer)?.parent as? View ?: return
+        val tags = view.tag as? Array<Any> ?: return
+        if (tags.size < 5) return
+
+        refreshAllocationList(
+            chooser,
+            tags[0] as BottomSheetDialog,
+            tags[1] as TextView,
+            tags[2] as Button,
+            tags[3] as LinearLayout,
+            tags[4] as Button
+        )
+    }
+
+    private fun refreshAllocationList(chooser: BottomSheetDialog, parentDialog: BottomSheetDialog, label: TextView, btn: Button, paymentContainer: LinearLayout, btnPayInit: Button) {
+        val container = chooser.findViewById<LinearLayout>(R.id.allocationListContainer) ?: return
+        container.removeAllViews()
+        val density = resources.displayMetrics.density
         val prefs = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)
         val spentPrefs = getSharedPreferences("GraphData", MODE_PRIVATE)
 
@@ -645,14 +677,8 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 container.addView(row)
             }
         }
-        chooser.show()
-        val bottomSheet = chooser.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-        if (bottomSheet != null) {
-            val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(bottomSheet as FrameLayout)
-            behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
-            behavior.skipCollapsed = true
-        }
     }
+
 
     private fun showCreateCategoryDialog(parentDialog: BottomSheetDialog, label: TextView, btn: Button, paymentContainer: LinearLayout, btnPayInit: Button) {
         val density = resources.displayMetrics.density
