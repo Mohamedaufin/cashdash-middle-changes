@@ -22,12 +22,6 @@ class StatementActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_statement)
 
-        // Status bar safe padding
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.topBar)) { v, insets ->
-            val statusInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-            v.setPadding(v.paddingLeft, statusInsets.top + 25, v.paddingRight, v.paddingBottom)
-            insets
-        }
 
         tvDateRange = findViewById(R.id.tvDateRange)
         tvTotal = findViewById(R.id.tvTotalAmount)

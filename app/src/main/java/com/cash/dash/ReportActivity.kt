@@ -31,12 +31,6 @@ class ReportActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_report)
 
-        // Handle System Insets for Status Bar Padding
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.topBar)) { v, insets ->
-            val statusInsets = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars())
-            v.setPadding(v.paddingLeft, statusInsets.top + 25, v.paddingRight, v.paddingBottom)
-            insets
-        }
 
         layoutContent = findViewById(R.id.reportContent)
         layoutLoading = findViewById(R.id.layoutAILoading)
