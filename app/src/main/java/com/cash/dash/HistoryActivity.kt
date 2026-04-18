@@ -139,7 +139,10 @@ class HistoryActivity : ThemedActivity() {
         // Handle System Insets
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainContent)) { v, insets ->
             val statusInsets = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars())
-            v.setPadding(v.paddingLeft, statusInsets.top + 10, v.paddingRight, v.paddingBottom)
+            val navInsets = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+            
+            // Apply status bar padding to top and navigation bar padding to bottom
+            v.setPadding(v.paddingLeft, statusInsets.top + 10, v.paddingRight, navInsets.bottom)
             insets
         }
 

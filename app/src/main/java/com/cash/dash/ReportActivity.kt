@@ -34,14 +34,21 @@ class ReportActivity : ThemedActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_report)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         val topBar = findViewById<View>(R.id.topBar)
 
-        ViewCompat.setOnApplyWindowInsetsListener(topBar) { view, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { view, insets ->
             val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            val navBarHeight = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
 
-            val params = view.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+            // Top Bar Margin
+            val topBarView = findViewById<View>(R.id.topBar)
+            val params = topBarView.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
             params.topMargin = statusBarHeight
-            view.layoutParams = params
+            topBarView.layoutParams = params
+
+            // Bottom Nav Padding
+            view.setPadding(0, 0, 0, navBarHeight)
 
             insets
         }

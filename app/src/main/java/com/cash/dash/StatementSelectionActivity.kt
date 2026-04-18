@@ -53,12 +53,18 @@ class StatementSelectionActivity : ThemedActivity() {
 
         val topBar = findViewById<View>(R.id.topBar)
 
-        ViewCompat.setOnApplyWindowInsetsListener(topBar) { view, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { view, insets ->
             val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            val navBarHeight = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
 
-            val params = view.layoutParams as ConstraintLayout.LayoutParams
+            // Status bar padding for the top bar
+            val topBarView = findViewById<View>(R.id.topBar)
+            val params = topBarView.layoutParams as ConstraintLayout.LayoutParams
             params.topMargin = statusBarHeight
-            view.layoutParams = params
+            topBarView.layoutParams = params
+
+            // Navigation bar padding for the root container
+            view.setPadding(0, 0, 0, navBarHeight)
 
             insets
         }
