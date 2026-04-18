@@ -147,31 +147,24 @@ class StatementSelectionActivity : ThemedActivity() {
             
             val isSelected = (item == selectedCategory)
             
-            // Apply isolated selection drawable based on theme
-            val bgRes = if (ThemeHelper.isWhiteTheme(this@StatementSelectionActivity)) {
-                R.drawable.bg_allocation_card_white
-            } else {
-                R.drawable.bg_allocation_card
-            }
+            // Mirror Appearance page selection logic: cardBackground + scale + bold
+            val bgRes = ThemeHelper.getResIdFromAttr(this@StatementSelectionActivity, R.attr.inputBackground)
             holder.container.setBackgroundResource(bgRes)
             
-            // Premium background selection logic using native background state
-            holder.container.isSelected = isSelected
+            val activeText = ThemeHelper.resolveColorAttr(this@StatementSelectionActivity, R.attr.textPrimaryColor)
+            val mutedText = ThemeHelper.resolveColorAttr(this@StatementSelectionActivity, R.attr.textMutedColor)
             
-            // Text color for contrast against 'clipped' fill
-            val primaryText = ThemeHelper.resolveColorAttr(this@StatementSelectionActivity, R.attr.textPrimaryColor)
-            holder.tvName.setTextColor(if (isSelected) Color.WHITE else primaryText)
+            holder.tvName.setTextColor(if (isSelected) activeText else mutedText)
+            holder.tvName.setTypeface(null, if (isSelected) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
             
-            if (isSelected) {
-                holder.container.animate().scaleX(1.05f).scaleY(1.05f).setDuration(200).start()
-                // Focus tint for selected state
-                holder.container.isPressed = true 
-            } else {
-                holder.container.animate().scaleX(1.0f).scaleY(1.0f).setDuration(200).start()
-                holder.container.isPressed = false
-            }
+            // Mirror scale logic from ThemeActivity (1.08f)
+            holder.container.animate()
+                .scaleX(if (isSelected) 1.08f else 1.0f)
+                .scaleY(if (isSelected) 1.08f else 1.0f)
+                .setDuration(200)
+                .start()
 
-            holder.itemView.setOnClickListener {
+            holder.container.setOnClickListener {
                 if (selectedCategory != item) {
                     val oldIdx = items.indexOf(selectedCategory)
                     selectedCategory = item
