@@ -102,7 +102,7 @@ class StatementSelectionActivity : ThemedActivity() {
         val saved = prefsCat.getStringSet("categories", emptySet()) ?: emptySet()
         val categories = saved.toList().sorted()
 
-        val isDark = ThemeHelper.isDarkMode(this)
+        val isDark = !ThemeHelper.isWhiteTheme(this)
         val textColor = if (isDark) Color.WHITE else Color.BLACK
         val chipBg = if (isDark) Color.parseColor("#1F1F2B") else Color.parseColor("#F0F0F5")
 
