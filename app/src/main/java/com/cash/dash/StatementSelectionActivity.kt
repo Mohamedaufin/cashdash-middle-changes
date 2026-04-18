@@ -18,7 +18,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowCompat
 import androidx.constraintlayout.widget.ConstraintLayout
-import com.google.android.material.button.MaterialButton
+import androidx.appcompat.widget.AppCompatButton
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -27,7 +27,7 @@ class StatementSelectionActivity : ThemedActivity() {
     private lateinit var tvStartDate: TextView
     private lateinit var tvEndDate: TextView
     private lateinit var rvAllocations: RecyclerView
-    private lateinit var btnGenerate: MaterialButton
+    private lateinit var btnGenerate: AppCompatButton
 
     private var selectedCategory: String = "Overall"
 
