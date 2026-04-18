@@ -11,6 +11,7 @@ data class TransactionItem(val title: String, val category: String, val amount: 
 
 class TransactionAdapter(
     private val items: List<TransactionItem>,
+    private val showTimestamp: Boolean = false,
     private val onItemLongClick: ((TransactionItem) -> Unit)? = null
 ) : RecyclerView.Adapter<TransactionAdapter.Holder>() {
 
@@ -37,7 +38,19 @@ class TransactionAdapter(
         }
 
         holder.title.text = toTitleCase(item.title)
-        holder.category.text = toTitleCase(item.category)
+        
+        if (showTimestamp) {
+            val p = item.rawEntry.split("|")
+            val ts = if (p.size >= 2) p[1].toLongOrNull() ?: 0L else 0L
+            val dateStr = if (ts > 0) {
+                java.text.SimpleDateFormat("MMM d, h:mm a", java.util.Locale.getDefault()).format(java.util.Date(ts))
+            } else ""
+            
+            holder.category.text = "${toTitleCase(item.category)} | $dateStr"
+        } else {
+            holder.category.text = toTitleCase(item.category)
+        }
+        
         holder.amount.text = "-₹${item.amount}"
 
         holder.itemView.setOnLongClickListener {

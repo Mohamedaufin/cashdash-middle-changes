@@ -157,7 +157,8 @@ object PdfReportManager {
 
     fun generateStandaloneStatement(context: Context, startMillis: Long, endMillis: Long) {
         val breakdown = HistoryDataManager.getCategoryBreakdownForRange(context, startMillis, endMillis)
-        val transactions = breakdown.transactions.sortedByDescending { entry ->
+        // Ascending sort (Oldest first)
+        val transactions = breakdown.transactions.sortedBy { entry ->
             val p = entry.rawEntry.split("|")
             if (p.size >= 2) p[1].toLongOrNull() ?: 0L else 0L
         }
@@ -206,7 +207,7 @@ object PdfReportManager {
         canvas.drawLine(40f, yTable, 555f, yTable, paint)
         
         yTable += 22f
-        val sdfShort = java.text.SimpleDateFormat("dd MMM", Locale.getDefault())
+        val sdfShort = java.text.SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
         paint.color = Color.WHITE
         paint.typeface = Typeface.DEFAULT
         
