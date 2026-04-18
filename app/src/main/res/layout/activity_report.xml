@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/reportRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/mainBackground">
@@ -108,6 +109,8 @@
         android:textStyle="bold"
         android:backgroundTint="#7C5CFC"
         app:cornerRadius="0dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
         android:elevation="16dp"
         app:layout_constraintBottom_toBottomOf="parent"/>
 

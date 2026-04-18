@@ -37,18 +37,22 @@ class ReportActivity : ThemedActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         val topBar = findViewById<View>(R.id.topBar)
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { view, insets ->
-            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.reportRoot)) { _, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val navBarHeight = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
 
             // Top Bar Margin
             val topBarView = findViewById<View>(R.id.topBar)
             val params = topBarView.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
-            params.topMargin = statusBarHeight
+            params.topMargin = systemBars.top
             topBarView.layoutParams = params
 
-            // Bottom Nav Padding
-            view.setPadding(0, 0, 0, navBarHeight)
+            // Sticky Download Button (Absolute Edge-to-Edge)
+            val btnDownload = findViewById<View>(R.id.btnDownloadFinal)
+            btnDownload.setPadding(0, 0, 0, navBarHeight)
+            val btnParams = btnDownload.layoutParams
+            btnParams.height = (64 * resources.displayMetrics.density).toInt() + navBarHeight
+            btnDownload.layoutParams = btnParams
 
             insets
         }
@@ -60,6 +64,11 @@ class ReportActivity : ThemedActivity() {
         tvAITimer = findViewById(R.id.tvAITimer)
         btnPeriodSelect = findViewById(R.id.btnPeriodSelect)
         toggleMode = findViewById(R.id.toggleMode)
+
+        // White Theme UI Refinement
+        if (ThemeHelper.isWhiteTheme(this)) {
+            btnPeriodSelect.compoundDrawableTintList = android.content.res.ColorStateList.valueOf(Color.BLACK)
+        }
 
         try {
             lottieLoading.setAnimation(R.raw.financial_analysis)
