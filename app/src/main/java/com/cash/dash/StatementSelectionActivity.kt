@@ -147,22 +147,16 @@ class StatementSelectionActivity : ThemedActivity() {
             
             val isSelected = (item == selectedCategory)
             
-            // Mirror Appearance page selection logic: cardBackground + scale + bold
-            val bgRes = ThemeHelper.getResIdFromAttr(this@StatementSelectionActivity, R.attr.inputBackground)
-            holder.container.setBackgroundResource(bgRes)
-            
+            // Simplified Highlight: Text only
             val activeText = ThemeHelper.resolveColorAttr(this@StatementSelectionActivity, R.attr.textPrimaryColor)
             val mutedText = ThemeHelper.resolveColorAttr(this@StatementSelectionActivity, R.attr.textMutedColor)
             
             holder.tvName.setTextColor(if (isSelected) activeText else mutedText)
             holder.tvName.setTypeface(null, if (isSelected) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
             
-            // Mirror scale logic from ThemeActivity (1.08f)
-            holder.container.animate()
-                .scaleX(if (isSelected) 1.08f else 1.0f)
-                .scaleY(if (isSelected) 1.08f else 1.0f)
-                .setDuration(200)
-                .start()
+            // Standard background (no selection variant)
+            val bgRes = ThemeHelper.getResIdFromAttr(this@StatementSelectionActivity, R.attr.inputBackground)
+            holder.container.setBackgroundResource(bgRes)
 
             holder.container.setOnClickListener {
                 if (selectedCategory != item) {
