@@ -5,6 +5,7 @@ import android.view.View
 import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
@@ -22,14 +23,24 @@ class StatementActivity : ThemedActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_statement)
-        val topBar = findViewById<View>(R.id.topBar)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val topBarView = findViewById<View>(R.id.topBar)
 
-        ViewCompat.setOnApplyWindowInsetsListener(topBar) { view, insets ->
-            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.stmtViewRoot)) { _, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val navBarHeight = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
 
-            val params = view.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
-            params.topMargin = statusBarHeight
-            view.layoutParams = params
+            // Top Bar Margin
+            val params = topBarView.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+            params.topMargin = systemBars.top
+            topBarView.layoutParams = params
+
+            // Sticky Download Bar (Absolute Edge-to-Edge)
+            val btnDownload = findViewById<View>(R.id.btnDownload)
+            btnDownload.setPadding(0, 0, 0, navBarHeight)
+            val btnParams = btnDownload.layoutParams
+            btnParams.height = (64 * resources.displayMetrics.density).toInt() + navBarHeight
+            btnDownload.layoutParams = btnParams
 
             insets
         }
