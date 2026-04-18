@@ -19,18 +19,12 @@ import java.util.Locale
 
 object PdfReportManager {
 
-    fun generateAndSavePremiumReport(context: Context, startMillis: Long, endMillis: Long) {
+    fun generateAndSavePremiumReport(context: Context, startMillis: Long, endMillis: Long, isMonthly: Boolean, weekIndex: Int = -1) {
         val cal = Calendar.getInstance().apply { timeInMillis = startMillis }
         val month = cal.get(Calendar.MONTH)
         val year = cal.get(Calendar.YEAR)
-        val insights = FinancialInsightsManager.generateReport(context, true, month, year)
-        val breakdown = HistoryDataManager.getCategoryBreakdownForRange(context, startMillis, endMillis)
+        val insights = FinancialInsightsManager.generateReport(context, isMonthly, month, year, weekIndex)
         
-        val transactions = breakdown.transactions.sortedBy { entry ->
-            val p = entry.rawEntry.split("|")
-            if (p.size >= 2) p[1].toLongOrNull() ?: 0L else 0L
-        }
-
         val document = PdfDocument()
         var pageNum = 1
         var pageInfo = PdfDocument.PageInfo.Builder(595, 842, pageNum).create()
@@ -42,15 +36,6 @@ object PdfReportManager {
         val paint = Paint().apply { isAntiAlias = true; color = Color.WHITE }
         val cardPaint = Paint().apply { color = Color.parseColor("#0F0F14") }
 
-        fun startNextPage() {
-            document.finishPage(page)
-            pageNum++
-            pageInfo = PdfDocument.PageInfo.Builder(595, 842, pageNum).create()
-            page = document.startPage(pageInfo)
-            canvas = page.canvas
-            canvas.drawRect(0f, 0f, 595f, 842f, bgPaint)
-        }
-
         // --- PAGE 1: EXECUTIVE DASHBOARD ---
         canvas.drawRect(0f, 0f, 595f, 842f, bgPaint)
         
@@ -58,100 +43,99 @@ object PdfReportManager {
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         canvas.drawText("CASHDASH ADVISORY", 40f, 65f, paint)
 
-        val sdfYear = java.text.SimpleDateFormat("MMMM yyyy", Locale.getDefault())
         paint.textSize = 12f
         paint.color = Color.parseColor("#7E7D96")
         paint.typeface = Typeface.DEFAULT
         canvas.drawText("EXECUTIVE FINANCIAL SUMMARY: ${insights.periodLabel}", 40f, 88f, paint)
 
         // Totals Card
-        canvas.drawRoundRect(40f, 120f, 280f, 205f, 12f, 12f, cardPaint)
+        canvas.drawRoundRect(40f, 120f, 555f, 205f, 12f, 12f, cardPaint)
         paint.color = Color.WHITE
         paint.textSize = 10f
         paint.alpha = 140
-        canvas.drawText("TOTAL EXPENDITURE", 60f, 150f, paint)
+        canvas.drawText("TOTAL EXPENDITURE", 60f, 153f, paint)
         paint.alpha = 255
         paint.textSize = 32f
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         canvas.drawText("₹${insights.totalSpent.toInt()}", 60f, 185f, paint)
-
-        // Health Score Card
-        canvas.drawRoundRect(300f, 120f, 550f, 205f, 12f, 12f, cardPaint)
-        paint.color = accentColor
-        paint.textSize = 10f
-        canvas.drawText("FINANCIAL HEALTH", 320f, 150f, paint)
-        paint.color = Color.WHITE
-        paint.textSize = 24f
-        canvas.drawText("${insights.score}/100", 320f, 185f, paint)
+        
+        paint.textSize = 12f
+        paint.alpha = 180
+        val compText = "vs previous: ${if (insights.changePercent >= 0) "+" else ""}${insights.changePercent.toInt()}%"
+        canvas.drawText(compText, 440f, 185f, paint)
 
         // Category breakdown overview
-        var yCat = 240f
+        var yPos = 240f
+        paint.alpha = 255
         paint.textSize = 14f
         paint.color = Color.WHITE
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        canvas.drawText("Top Capital Allocations", 40f, yCat, paint)
-        yCat += 25f
-        insights.topCategories.take(5).forEach { catSummary ->
+        canvas.drawText("TOTAL SPENT: ₹${insights.totalSpent.toInt()} | ${insights.periodLabel}", 40f, yPos, paint)
+        yPos += 25f
+
+        val colorPalette = intArrayOf(
+            Color.parseColor("#7C5CFC"), Color.parseColor("#FCA311"), 
+            Color.parseColor("#00F5FF"), Color.parseColor("#FF4D6D"), Color.parseColor("#70E000")
+        )
+
+        insights.topCategories.forEachIndexed { index, catSummary ->
+            if (yPos > 400) return@forEachIndexed // Simple constraint for page 1
+            paint.color = colorPalette[index % colorPalette.size]
+            canvas.drawCircle(45f, yPos - 3f, 4f, paint)
+
             paint.color = Color.parseColor("#7E7D96")
             paint.typeface = Typeface.DEFAULT
-            paint.textSize = 11f
-            canvas.drawText("${catSummary.category.uppercase()} : ₹${catSummary.amount.toInt()} (${catSummary.percentage.toInt()}%)", 45f, yCat, paint)
-            yCat += 18f
+            paint.textSize = 10f
+            canvas.drawText("${catSummary.category.uppercase()} : ₹${catSummary.amount.toInt()} (${catSummary.percentage.toInt()}%)", 55f, yPos, paint)
+            yPos += 16f
         }
 
-        // 3D Chart Embed
-        draw3DPieChart(canvas, insights.topCategories, 420f, 310f, 90f)
+        // 3D Chart Embed (Filter for > 0)
+        draw3DPieChart(canvas, insights.topCategories.filter { it.amount > 0 }, 420f, 310f, 90f)
 
-        // Behavioral Highlights
-        var yInsights = 440f
+        // Patterns & Optimization
+        yPos = 440f
         paint.textSize = 14f
         paint.color = accentColor
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        canvas.drawText("Behavioral Pattern Analysis", 40f, yInsights, paint)
+        canvas.drawText("Strategic Optimization", 40f, yPos, paint)
         
-        yInsights += 30f
+        yPos += 30f
         paint.textSize = 11f
         paint.typeface = Typeface.DEFAULT
-        insights.habitInsights.take(3).forEach { habitInsight ->
-            canvas.drawRoundRect(40f, yInsights, 555f, yInsights + 35f, 8f, 8f, cardPaint)
-            paint.color = Color.WHITE
-            canvas.drawText("• ${habitInsight.message}", 55f, yInsights + 22f, paint)
-            yInsights += 42f
+        
+        // Savings Opp Card
+        canvas.drawRoundRect(40f, yPos, 555f, yPos + 60f, 8f, 8f, cardPaint)
+        paint.color = Color.WHITE
+        val oppLines = insights.savingsOpportunity.chunked(70)
+        oppLines.forEachIndexed { i, line ->
+            canvas.drawText(line, 55f, yPos + 25f + (i * 15f), paint)
+        }
+        yPos += 80f
+
+        // Pattern Card
+        if (isMonthly) {
+            val topWeek = insights.topWeeks.firstOrNull()
+            canvas.drawRoundRect(40f, yPos, 555f, yPos + 40f, 8f, 8f, cardPaint)
+            paint.color = Color.parseColor("#00F5FF")
+            canvas.drawText("PEAK WEEK: ${topWeek?.weekLabel ?: "N/A"} - ₹${topWeek?.amount?.toInt() ?: 0}", 55f, yPos + 25f, paint)
+        } else {
+            val peak = insights.dailyPatterns.find { it.isPeak }
+            canvas.drawRoundRect(40f, yPos, 555f, yPos + 40f, 8f, 8f, cardPaint)
+            paint.color = Color.parseColor("#00F5FF")
+            canvas.drawText("PEAK DAY: ${peak?.dayLabel ?: "N/A"} - ₹${peak?.amount?.toInt() ?: 0}", 55f, yPos + 25f, paint)
         }
 
-        // Strategic Suggestions (Savings Opportunity & Alerts)
-        yInsights += 10f
-        paint.textSize = 14f
-        paint.color = accentColor
-        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        canvas.drawText("Integrity Alerts & Opportunities", 40f, yInsights, paint)
-        
-        yInsights += 30f
-        paint.typeface = Typeface.DEFAULT
-        paint.textSize = 11f
-        
-        // Savings Opp
-        canvas.drawRoundRect(40f, yInsights, 555f, yInsights + 35f, 8f, 8f, cardPaint)
-        paint.color = Color.parseColor("#00F5FF")
-        canvas.drawText("SAVINGS: ${insights.savingsOpportunity}", 55f, yInsights + 22f, paint)
-        yInsights += 42f
-        
-        // Alerts
-        insights.alerts.take(2).forEach { alert ->
-            canvas.drawRoundRect(40f, yInsights, 555f, yInsights + 35f, 8f, 8f, cardPaint)
-            paint.color = if (alert.severity == 2) Color.RED else Color.YELLOW
-            canvas.drawText("ALERT: ${alert.title} - ${alert.message}", 55f, yInsights + 22f, paint)
-            yInsights += 42f
-        }
 
-        // Footer on last page
+        // Footer
         paint.textSize = 9f
         paint.color = Color.parseColor("#4A495E")
         canvas.drawText("Generated by CashDash Executive Reporting Engine | Strategic Summary Only", 40f, 820f, paint)
 
         document.finishPage(page)
 
-        val fileName = "CashDash_Strategy_Summary_${System.currentTimeMillis()}.pdf"
+        val monthName = java.text.DateFormatSymbols().months[month]
+        val fileName = if (isMonthly) "Cashdash_${monthName}_Report.pdf" else "CashDash_Weekly_Report.pdf"
         savePdfToDownloads(context, document, fileName)
     }
 
@@ -259,7 +243,8 @@ object PdfReportManager {
         canvas.drawText("₹${transactions.sumOf { it.amount.toDouble() }.toInt()}", 430f, yTable + 26f, paint)
 
         document.finishPage(page)
-        val fileName = "CashDash_Statement_${System.currentTimeMillis()}.pdf"
+        val formattedCategory = categoryFilter.replace(" ", "_")
+        val fileName = "CashDash_${formattedCategory}_Statement.pdf"
         savePdfToDownloads(context, document, fileName)
     }
 

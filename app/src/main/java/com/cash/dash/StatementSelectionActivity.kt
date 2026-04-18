@@ -65,7 +65,6 @@ class StatementSelectionActivity : ThemedActivity() {
 
             // Navigation bar padding for the root container
             view.setPadding(0, 0, 0, navBarHeight)
-
             insets
         }
 
@@ -113,7 +112,6 @@ class StatementSelectionActivity : ThemedActivity() {
             updateDateLabels()
         }, current.get(Calendar.YEAR), current.get(Calendar.MONTH), current.get(Calendar.DAY_OF_MONTH))
         
-        picker.setTitle(if (isStart) "Select Start Date" else "Select End Date")
         picker.show()
     }
 

@@ -174,7 +174,7 @@ class ReportActivity : ThemedActivity() {
                 addEmptyStateCard(); return
             }
 
-            // 0. Render 3D Chart (added AFTER removeAllViews so it's not wiped)
+            // 0. Render 3D Chart
             if (insights.topCategories.isNotEmpty()) {
                 injectPieChartCard(insights)
             }
@@ -197,87 +197,54 @@ class ReportActivity : ThemedActivity() {
                 }
             }
 
-            // 3. Overspending Alerts
-            if (insights.alerts.isNotEmpty()) {
-                addCard("Integrity & Risk Alerts", 
-                    "${insights.alerts.size} Active", 
-                    "Anomalies detected in budget flow",
+            // 3. Weekly/Daily Patterns
+            if (isMonthlyMode) {
+                val topWeek = insights.topWeeks.firstOrNull()
+                addCard("Weekly Spending Pattern", 
+                    topWeek?.weekLabel ?: "N/A", 
+                    "Peak consumption week",
                     R.drawable.ic_glass_menu_vector) {
-                    insights.alerts.forEach { alert ->
-                        addWarningLabel("${alert.title}: ${alert.message}")
+                    insights.topWeeks.forEach { 
+                        addInfoRow(it.weekLabel, "₹${it.amount.toInt()}", it.dates)
+                    }
+                }
+            } else {
+                val peak = insights.dailyPatterns.find { it.isPeak }
+                addCard("Daily Spending Pattern", 
+                    peak?.dayLabel ?: "N/A", 
+                    "Peak velocity: ₹${peak?.amount?.toInt() ?: 0}",
+                    R.drawable.ic_glass_menu_vector) {
+                    insights.dailyPatterns.forEach { 
+                        addInfoRow(it.dayLabel, "₹${it.amount.toInt()}", if (it.isPeak) "PEAK" else if (it.isLow) "LOW" else null)
                     }
                 }
             }
 
-            // 4. Budget Tracker
-            val budgetUsed = if (insights.budgetStatus.totalBudget > 0) 
-                (insights.totalSpent / insights.budgetStatus.totalBudget) * 100 
-                else 0f
-            addCard("Budget Progress Tracker", 
-                "${budgetUsed.toInt()}% Capacity", 
-                "₹${insights.totalSpent.toInt()} / ₹${insights.budgetStatus.totalBudget}",
-                R.drawable.ic_plus) {
-                insights.budgetStatus.categoryProgress.take(3).forEach {
-                    addInfoRow(it.category, "${it.percent.toInt()}%", "₹${it.spent.toInt()} / ₹${it.budget}")
+            // 4. Budget & Allocation Limits (Weekly Focus)
+            if (!isMonthlyMode) {
+                addCard("Allocation Limit Analysis", 
+                    "${insights.budgetStatus.categoryProgress.count { it.percent > 100 }} Crossed", 
+                    "Checking targets vs actuals",
+                    R.drawable.ic_plus) {
+                    insights.budgetStatus.categoryProgress.forEach {
+                        val diffPer = (it.percent - 100).toInt()
+                        val status = when {
+                            it.percent > 100f -> "Used: ₹${it.spent.toInt()} (+$diffPer%)"
+                            it.percent > 0f -> "Used: ₹${it.spent.toInt()} (${(it.percent - 100).toInt()}%)"
+                            else -> "No spent recorded"
+                        }
+                        addInfoRow(it.category, "Original limit: ₹${it.budget}", status)
+                    }
                 }
             }
 
-            // 5. Habits & Timing
-            addCard("Behavioral Habitation", 
-                "${insights.habitInsights.size} Patterns", 
-                "Strategic routine analysis",
-                R.drawable.ic_glass_menu_vector) {
-                insights.habitInsights.forEach { addInsightBullet(it.message) }
-            }
-
-            // 6. Daily Patterns
-            val peak = insights.dailyPatterns.find { it.isPeak }
-            addCard("Daily Spending Pattern", 
-                peak?.dayLabel ?: "N/A", 
-                "Peak velocity: ₹${peak?.amount?.toInt() ?: 0}",
-                R.drawable.ic_glass_menu_vector) {
-                insights.dailyPatterns.forEach { 
-                    addInfoRow(it.dayLabel, "₹${it.amount.toInt()}", if (it.isPeak) "PEAK" else if (it.isLow) "LOW" else null)
-                }
-            }
-
-            // 7. Transaction Insights
-            addCard("Transaction Granularity", 
-                "${insights.transactionStats.totalCount} Orders", 
-                "Average ticket: ₹${insights.transactionStats.avgPerTrans.toInt()}",
-                R.drawable.ic_glass_menu_vector) {
-                addInfoRow("Most Frequent", insights.transactionStats.frequentCategory)
-            }
-
-            // 8. Financial Score
-            addCard("Executive Health Score", 
-                "${insights.score}/100", 
-                getHealthLabel(insights.score),
-                R.drawable.ic_glass_menu_vector)
-
-            // 9. Savings Opportunity
+            // 5. Savings & Improvement Opportunities
             addCard("Savings Optimization", 
-                "₹ Efficiency Opportunity", 
-                "Actionable reduction strategy",
+                "₹ Efficiency Strategy", 
+                "Actionable reduction targets",
                 R.drawable.ic_glass_menu_vector) {
                 addInsightBullet(insights.savingsOpportunity)
             }
-
-            // 10. Achievements
-            if (insights.achievements.isNotEmpty()) {
-                addCard("Milestones & Achievements", 
-                    "${insights.achievements.size} Unlocked", 
-                    "Strategic budget excellence",
-                    R.drawable.ic_glass_menu_vector) {
-                    insights.achievements.forEach { addAchievementLabel(it) }
-                }
-            }
-
-            // 11. Prediction
-            addCard("Fiscal Outlook Forecast", 
-                "₹${insights.prediction.toInt()}", 
-                "Projected burn for next period",
-                R.drawable.ic_glass_menu_vector)
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -306,7 +273,7 @@ class ReportActivity : ThemedActivity() {
 
         // 1. Title for the Chart with Total Budget
         val tvHeader = TextView(this).apply {
-            text = "CAPITAL ALLOCATION  |  BUDGET: ₹${insights.budgetStatus.totalBudget}"
+            text = "TOTAL SPENT: ₹${insights.totalSpent.toInt()}  |  ${insights.periodLabel}"
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor))
             textSize = 10f
             letterSpacing = 0.1f
@@ -327,11 +294,12 @@ class ReportActivity : ThemedActivity() {
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         )
-        chart.setData(summaries)
+        // Only show segments with > 0 amount in the actual chart
+        chart.setData(summaries.filter { it.amount > 0 })
         chartContainer.addView(chart)
         cardWrapper.addView(chartContainer)
 
-        // 3. The Legend
+        // 3. The Legend (Shows ALL categories, including ₹0)
         val legendContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
@@ -352,7 +320,7 @@ class ReportActivity : ThemedActivity() {
                 setPadding(0, (6 * dp).toInt(), 0, (6 * dp).toInt())
             }
 
-            // Color Indicator
+            // Color Indicator (Always show in legend)
             val indicator = View(this).apply {
                 layoutParams = LinearLayout.LayoutParams((12 * dp).toInt(), (12 * dp).toInt())
                 background = android.graphics.drawable.GradientDrawable().apply {
@@ -453,26 +421,11 @@ class ReportActivity : ThemedActivity() {
         addView(tv)
     }
 
-    private fun LinearLayout.addWarningLabel(text: String) {
-        addView(TextView(context).apply { this.text = "⚠️ $text"; setTextColor(Color.parseColor("#FF4D6D")); textSize = 12f; setPadding(0, 8, 0, 8); setTypeface(null, Typeface.BOLD) })
-    }
-
-    private fun LinearLayout.addAchievementLabel(text: String) {
-        addView(TextView(context).apply { this.text = "🏆 $text"; setTextColor(Color.parseColor("#70E000")); textSize = 13f; setPadding(0, 8, 0, 8); setTypeface(null, Typeface.BOLD) })
-    }
-
-    private fun getHealthLabel(score: Int) = when {
-        score >= 85 -> "Excellent Control"
-        score >= 70 -> "Good Sustainability"
-        score >= 50 -> "Atmospheric Risk Detected"
-        else -> "Critical Budget Integrity Loss"
-    }
-
     private fun generateDownload() {
         val cal = Calendar.getInstance().apply { set(currentYear, currentMonth, 1) }
         val start = cal.timeInMillis
         cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH))
         val end = cal.timeInMillis
-        PdfReportManager.generateAndSavePremiumReport(this, start, end)
+        PdfReportManager.generateAndSavePremiumReport(this, start, end, isMonthlyMode, selectedWeekIndex)
     }
 }
