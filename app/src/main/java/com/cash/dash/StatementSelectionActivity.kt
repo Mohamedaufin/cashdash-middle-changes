@@ -5,13 +5,10 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
-import android.view.View
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.Toast
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.GridLayoutManager
+import android.view.LayoutInflater
+import android.view.ViewGroup
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -19,8 +16,10 @@ class StatementSelectionActivity : ThemedActivity() {
 
     private lateinit var tvStartDate: TextView
     private lateinit var tvEndDate: TextView
-    private lateinit var chipGroup: ChipGroup
+    private lateinit var rvAllocations: RecyclerView
     private lateinit var btnGenerate: MaterialButton
+
+    private var selectedCategory: String = "Overall"
 
     private var startCal = Calendar.getInstance().apply { 
         set(Calendar.DAY_OF_MONTH, 1)
@@ -40,9 +39,23 @@ class StatementSelectionActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_statement_selection)
 
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        val topBar = findViewById<View>(R.id.topBar)
+
+        ViewCompat.setOnApplyWindowInsetsListener(topBar) { view, insets ->
+            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+
+            val params = view.layoutParams as ConstraintLayout.LayoutParams
+            params.topMargin = statusBarHeight
+            view.layoutParams = params
+
+            insets
+        }
+
         tvStartDate = findViewById(R.id.tvStartDate)
         tvEndDate = findViewById(R.id.tvEndDate)
-        chipGroup = findViewById(R.id.chipGroupAllocations)
+        rvAllocations = findViewById(R.id.rvAllocations)
         btnGenerate = findViewById(R.id.btnGenerate)
 
         findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
@@ -57,7 +70,7 @@ class StatementSelectionActivity : ThemedActivity() {
             showDatePicker(false)
         }
 
-        populateCategories()
+        setupAllocationsGrid()
 
         btnGenerate.setOnClickListener {
             if (endCal.before(startCal)) {
@@ -65,14 +78,10 @@ class StatementSelectionActivity : ThemedActivity() {
                 return@setOnClickListener
             }
 
-            val selectedChipId = chipGroup.checkedChipId
-            val selectedChip = findViewById<Chip>(selectedChipId)
-            val category = selectedChip?.text?.toString() ?: "Overall"
-
             val intent = Intent(this, StatementActivity::class.java)
             intent.putExtra("START_MILLIS", startCal.timeInMillis)
             intent.putExtra("END_MILLIS", endCal.timeInMillis)
-            intent.putExtra("CATEGORY_FILTER", category)
+            intent.putExtra("CATEGORY_FILTER", selectedCategory)
             startActivity(intent)
         }
     }
@@ -97,41 +106,65 @@ class StatementSelectionActivity : ThemedActivity() {
         tvEndDate.text = sdf.format(endCal.time)
     }
 
-    private fun populateCategories() {
+    private fun setupAllocationsGrid() {
         val prefsCat = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)
         val saved = prefsCat.getStringSet("categories", emptySet()) ?: emptySet()
-        val categories = saved.toList().sorted()
+        val categories = mutableListOf("Overall")
+        categories.addAll(saved.toList().sorted())
 
-        val isDark = !ThemeHelper.isWhiteTheme(this)
-        val textColor = if (isDark) Color.WHITE else Color.BLACK
-        val chipBg = if (isDark) Color.parseColor("#1F1F2B") else Color.parseColor("#F0F0F5")
-
-        categories.forEach { cat ->
-            val chip = Chip(this)
-            chip.text = cat
-            chip.isCheckable = true
-            chip.isCheckedIconVisible = false
-            chip.chipBackgroundColor = ColorStateList.valueOf(chipBg)
-            chip.setTextColor(textColor)
-            chip.setChipStrokeColorResource(R.color.border)
-            chip.setChipStrokeWidthResource(R.dimen.chip_stroke_width)
-            
-            // Apply similar style to "Overall"
-            chipGroup.addView(chip)
-        }
-        
-        // Dynamic \"no choice\" handling
         val prefsGraph = getSharedPreferences("GraphData", MODE_PRIVATE)
         val historySet = prefsGraph.getStringSet("HISTORY_LIST", emptySet()) ?: emptySet()
-        val hasNoChoice = historySet.any { it.contains("|no choice|") }
-        if (hasNoChoice) {
-            val chip = Chip(this)
-            chip.text = "no choice"
-            chip.isCheckable = true
-            chip.isCheckedIconVisible = false
-            chip.chipBackgroundColor = ColorStateList.valueOf(chipBg)
-            chip.setTextColor(textColor)
-            chipGroup.addView(chip)
+        if (historySet.any { it.contains("|no choice|") }) {
+            categories.add("no choice")
+        }
+
+        rvAllocations.layoutManager = GridLayoutManager(this, 2)
+        rvAllocations.adapter = AllocationAdapter(categories)
+    }
+
+    inner class AllocationAdapter(private val items: List<String>) : 
+        RecyclerView.Adapter<AllocationAdapter.ViewHolder>() {
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_allocation_text_card, parent, false)
+            return ViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val item = items[position]
+            holder.tvName.text = if (item == "no choice") "No Choice" else item
+            
+            val isSelected = (item == selectedCategory)
+            
+            // Premium background selection logic using native background state
+            holder.container.isSelected = isSelected
+            
+            if (isSelected) {
+                holder.container.animate().scaleX(1.05f).scaleY(1.05f).setDuration(200).start()
+                // Focus tint for selected state
+                holder.container.isPressed = true 
+            } else {
+                holder.container.animate().scaleX(1.0f).scaleY(1.0f).setDuration(200).start()
+                holder.container.isPressed = false
+            }
+
+            holder.itemView.setOnClickListener {
+                if (selectedCategory != item) {
+                    val oldIdx = items.indexOf(selectedCategory)
+                    selectedCategory = item
+                    notifyItemChanged(oldIdx)
+                    notifyItemChanged(position)
+                }
+            }
+        }
+
+        override fun getItemCount() = items.size
+
+        inner class ViewHolder(v: View) : RecyclerView.ViewHolder(v) {
+            val tvName: TextView = v.findViewById(R.id.tvCategoryName)
+            val container: View = v.findViewById(R.id.cardContainer)
         }
     }
+}
 }
