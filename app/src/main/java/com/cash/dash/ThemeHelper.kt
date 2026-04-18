@@ -108,6 +108,13 @@ object ThemeHelper {
         }
     }
 
+    fun getDatePickerTheme(context: Context): Int {
+        return when (getCurrentTheme(context)) {
+            "White" -> R.style.DatePickerThemeWhite
+            else -> 0 // Use default for others
+        }
+    }
+
     fun tintDrawableIfWhiteTheme(context: Context, drawable: android.graphics.drawable.Drawable?): android.graphics.drawable.Drawable? {
         if (drawable == null) return null
         if (isWhiteTheme(context)) {

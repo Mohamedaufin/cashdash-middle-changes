@@ -29,7 +29,10 @@ class RigorActivity : ThemedActivity() {
 
     private val syncReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (isPage2) loadCategories()
+            // Robust refresh: only reload if we are actually viewing the categories page
+            if (isPage2 && !isFinishing) {
+                loadCategories()
+            }
         }
     }
 

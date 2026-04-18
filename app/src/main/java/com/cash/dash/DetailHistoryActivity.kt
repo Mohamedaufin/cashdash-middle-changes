@@ -373,22 +373,54 @@ class DetailHistoryActivity : ThemedActivity() {
 
             // 2. Extract detailed info from rawEntry for category/time updates
             val parts = item.rawEntry.split("|")
+            val category: String
+            val amount: Float
+            var hYear: Int? = null
+            var hMonth: Int? = null
+            var hWeek: Int? = null
+            var hDay: Int? = null
+            var timestamp: String? = null
+
             if (parts.size >= 9) {
-                val category = parts[3]
-                val amount = parts[4].toFloat()
-                val week = parts[5]
-                val day = parts[6]
-                val month = parts[7]
-                val year = parts[8]
+                timestamp = parts[1]
+                category = parts[3]
+                amount = parts[4].toFloatOrNull() ?: 0f
+                hWeek = parts[5].toIntOrNull()
+                hDay = parts[6].toIntOrNull()
+                hMonth = parts[7].toIntOrNull()
+                hYear = parts[8].toIntOrNull()
+            } else if (parts.size == 7) {
+                category = parts[1]
+                amount = parts[2].toFloatOrNull() ?: 0f
+                hWeek = parts[3].toIntOrNull()
+                hDay = parts[4].toIntOrNull()
+                hMonth = parts[5].toIntOrNull()
+                hYear = parts[6].toIntOrNull()
+            } else if (parts.size >= 5) {
+                timestamp = parts[1]
+                category = parts[3]
+                amount = parts[4].toFloatOrNull() ?: 0f
+                timestamp.toLongOrNull()?.let { ts ->
+                    val c = java.util.Calendar.getInstance()
+                    c.setFirstDayOfWeek(java.util.Calendar.MONDAY)
+                    c.setMinimalDaysInFirstWeek(1)
+                    c.timeInMillis = ts
+                    hYear = c.get(java.util.Calendar.YEAR)
+                    hMonth = c.get(java.util.Calendar.MONTH)
+                    hWeek = c.get(java.util.Calendar.WEEK_OF_MONTH) - 1
+                    hDay = (c.get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7
+                }
+            } else return
 
-                // Adjust SPENT_$category
-                val oldSpent = prefsGraph.getFloat("SPENT_$category", 0f)
-                prefsGraph.edit().putFloat("SPENT_$category", (oldSpent - amount).coerceAtLeast(0f)).apply()
+            // Adjust SPENT_$category
+            val oldSpent = prefsGraph.getFloat("SPENT_$category", 0f)
+            prefsGraph.edit().putFloat("SPENT_$category", (oldSpent - amount).coerceAtLeast(0f)).apply()
 
-                // Adjust DAY/WEEK/MONTH slots
-                val dayKey = "DAY_${week}_${day}_${month}_${year}"
-                val weekKey = "WEEK_${week}_${month}_${year}"
-                val monthKey = "MONTH_${month}_${year}"
+            // Adjust DAY/WEEK/MONTH slots if available
+            if (hYear != null && hMonth != null && hWeek != null && hDay != null) {
+                val dayKey = "DAY_${hWeek}_${hDay}_${hMonth}_${hYear}"
+                val weekKey = "WEEK_${hWeek}_${month}_${hYear}"
+                val monthKey = "MONTH_${month}_${hYear}"
 
                 prefsGraph.edit()
                     .putFloat(dayKey, (prefsGraph.getFloat(dayKey, 0f) - amount).coerceAtLeast(0f))
@@ -397,21 +429,22 @@ class DetailHistoryActivity : ThemedActivity() {
                     .apply()
 
                 // Adjust CategoryWeekData
-                val weekNum = week.toInt() + 1
+                val weekNum = hWeek + 1
                 val catWeekKey = "${category}_W$weekNum"
                 val oldCatWeek = prefsWeek.getInt(catWeekKey, 0)
                 prefsWeek.edit().putInt(catWeekKey, (oldCatWeek - amount.toInt()).coerceAtLeast(0)).apply()
+            }
 
-                // 3. Wipe individual TRANS_ lookup keys
-                val timestamp = parts[1]
+            // 3. Wipe individual TRANS_ lookup keys if timestamp is available
+            timestamp?.let { ts ->
                 prefsGraph.edit()
-                    .remove("TRANS_${timestamp}_TITLE")
-                    .remove("TRANS_${timestamp}_CATEGORY")
-                    .remove("TRANS_${timestamp}_AMOUNT")
-                    .remove("TRANS_${timestamp}_WEEK")
-                    .remove("TRANS_${timestamp}_DAY")
-                    .remove("TRANS_${timestamp}_MONTH")
-                    .remove("TRANS_${timestamp}_YEAR")
+                    .remove("TRANS_${ts}_TITLE")
+                    .remove("TRANS_${ts}_CATEGORY")
+                    .remove("TRANS_${ts}_AMOUNT")
+                    .remove("TRANS_${ts}_WEEK")
+                    .remove("TRANS_${ts}_DAY")
+                    .remove("TRANS_${ts}_MONTH")
+                    .remove("TRANS_${ts}_YEAR")
                     .apply()
             }
             

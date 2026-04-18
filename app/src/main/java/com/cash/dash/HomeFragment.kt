@@ -78,6 +78,7 @@ class HomeFragment : Fragment() {
             }
         }
 
+
         // Start the postponed transition from MainActivity once this view is ready
         view.viewTreeObserver.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
             override fun onPreDraw(): Boolean {

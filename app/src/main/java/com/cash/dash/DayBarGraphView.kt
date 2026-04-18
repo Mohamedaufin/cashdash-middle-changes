@@ -134,18 +134,15 @@ class DayBarGraphView(context: Context, attrs: AttributeSet?) : View(context, at
             val top = bottom - barHeight
 
             if (isHighlighted) {
-                val isWhiteTheme = com.cash.dash.ThemeHelper.isWhiteTheme(context)
-                val colors = if (isWhiteTheme) {
-                    intArrayOf(Color.parseColor("#8BF7E6"), Color.parseColor("#4DE1C1"))
-                } else {
-                    intArrayOf(Color.parseColor("#FFFFFF"), Color.parseColor("#E0E0E0"))
-                }
+                // Highlighted is Cyan for all themes now
+                val colors = intArrayOf(Color.parseColor("#8BF7E6"), Color.parseColor("#4DE1C1"))
                 val shader = LinearGradient(0f, top, 0f, bottom, colors, null, Shader.TileMode.CLAMP)
                 highlightBarPaint.shader = shader
                 canvas.drawRoundRect(RectF(left, top, right, bottom), 40f, 40f, highlightBarPaint)
             } else {
                 barPaint.shader = null
-                barPaint.color = Color.parseColor("#D9D9D9")
+                val isWhiteTheme = com.cash.dash.ThemeHelper.isWhiteTheme(context)
+                barPaint.color = if (isWhiteTheme) Color.parseColor("#D9D9D9") else Color.WHITE
                 canvas.drawRoundRect(RectF(left, top, right, bottom), 40f, 40f, barPaint)
             }
 

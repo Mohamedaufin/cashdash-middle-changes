@@ -31,20 +31,22 @@ class MoneyScheduleActivity : ThemedActivity() {
             val calendarView = findViewById<CalendarView>(R.id.calendarView)
             val btnSave = findViewById<Button>(R.id.btnSaveSchedule)
             val btnInfo = findViewById<ImageView>(R.id.btnInfoReset)
-            btnInfo.setColorFilter(com.cash.dash.ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor))
             
-            // Apply background programmatically to avoid inflation issues
+            // Apply background and tint based on theme
             val bgTv = android.util.TypedValue()
             val currentTheme = ThemeHelper.getCurrentTheme(this)
             
             if (currentTheme == "Blue") {
                 btnInfo.setBackgroundResource(R.drawable.bg_info_circle_white)
-                btnInfo.imageTintList = android.content.res.ColorStateList.valueOf(Color.BLACK)
+                btnInfo.setColorFilter(Color.BLACK)
             } else if (currentTheme == "Black") {
                 btnInfo.setBackgroundResource(R.drawable.bg_info_circle_black)
-                btnInfo.imageTintList = android.content.res.ColorStateList.valueOf(Color.WHITE)
-            } else if (theme.resolveAttribute(R.attr.infoIconBackground, bgTv, true)) {
-                btnInfo.setBackgroundResource(bgTv.resourceId)
+                btnInfo.setColorFilter(Color.WHITE)
+            } else {
+                btnInfo.setColorFilter(com.cash.dash.ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor))
+                if (theme.resolveAttribute(R.attr.infoIconBackground, bgTv, true)) {
+                    btnInfo.setBackgroundResource(bgTv.resourceId)
+                }
             }
             tvCyclePreview = findViewById(R.id.tvCyclePreview)
             etCustomDays = findViewById(R.id.etCustomDays)

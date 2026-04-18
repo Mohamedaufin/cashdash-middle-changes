@@ -86,6 +86,8 @@
         <activity android:name=".HelpActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".SuccessActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".ThemeActivity" android:screenOrientation="portrait" android:exported="false" />
+        <activity android:name=".ReportActivity" android:screenOrientation="portrait" android:exported="false" />
+        <activity android:name=".StatementActivity" android:screenOrientation="portrait" android:exported="false" />
 
         <activity 
             android:name=".NotificationActivity" 
