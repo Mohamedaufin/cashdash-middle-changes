@@ -154,37 +154,9 @@ class HistoryActivity : ThemedActivity() {
         }
 
         findViewById<View>(R.id.cardStatement).setOnClickListener {
-            showRangePicker()
+            val intent = Intent(this, StatementSelectionActivity::class.java)
+            startActivity(intent)
         }
-    }
-
-    private fun showRangePicker() {
-        // Step 1: Pick Start Date
-        val cal = Calendar.getInstance()
-        val pickerStart = android.app.DatePickerDialog(this, ThemeHelper.getDatePickerTheme(this), { _, year, month, day ->
-            val startCal = Calendar.getInstance().apply { set(year, month, day, 0, 0, 0) }
-            
-            // Step 2: Pick End Date
-            val pickerEnd = android.app.DatePickerDialog(this, ThemeHelper.getDatePickerTheme(this), { _, eYear, eMonth, eDay ->
-                val endCal = Calendar.getInstance().apply { set(eYear, eMonth, eDay, 23, 59, 59) }
-                
-                if (endCal.before(startCal)) {
-                    Toast.makeText(this, "End date must be after start date", Toast.LENGTH_SHORT).show()
-                } else {
-                    val intent = Intent(this, StatementActivity::class.java)
-                    intent.putExtra("START_MILLIS", startCal.timeInMillis)
-                    intent.putExtra("END_MILLIS", endCal.timeInMillis)
-                    startActivity(intent)
-                }
-            }, year, month, day)
-            
-            pickerEnd.setTitle("Select End Date")
-            pickerEnd.show()
-            
-        }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
-        
-        pickerStart.setTitle("Select Start Date")
-        pickerStart.show()
     }
 
     override fun onStart() {

@@ -17,10 +17,22 @@ class StatementActivity : ThemedActivity() {
     private lateinit var rvTransactions: RecyclerView
     private var startMillis: Long = 0
     private var endMillis: Long = 0
+    private var categoryFilter: String = "Overall"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_statement)
+        val topBar = findViewById<View>(R.id.topBar)
+
+        ViewCompat.setOnApplyWindowInsetsListener(topBar) { view, insets ->
+            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+
+            val params = view.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+            params.topMargin = statusBarHeight
+            view.layoutParams = params
+
+            insets
+        }
 
 
         tvDateRange = findViewById(R.id.tvDateRange)
@@ -29,10 +41,11 @@ class StatementActivity : ThemedActivity() {
 
         startMillis = intent.getLongExtra("START_MILLIS", 0)
         endMillis = intent.getLongExtra("END_MILLIS", 0)
+        categoryFilter = intent.getStringExtra("CATEGORY_FILTER") ?: "Overall"
 
         findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
         findViewById<View>(R.id.btnDownload).setOnClickListener {
-            PdfReportManager.generateStandaloneStatement(this, startMillis, endMillis)
+            PdfReportManager.generateStandaloneStatement(this, startMillis, endMillis, categoryFilter)
         }
 
         setupUI()
@@ -45,7 +58,7 @@ class StatementActivity : ThemedActivity() {
     }
 
     private fun loadTransactions() {
-        val breakdown = HistoryDataManager.getCategoryBreakdownForRange(this, startMillis, endMillis)
+        val breakdown = HistoryDataManager.getCategoryBreakdownForRange(this, startMillis, endMillis, categoryFilter)
         // Ascending sort (April 1, April 2, etc.)
         val statementList = breakdown.transactions.sortedBy { entry ->
             val p = entry.rawEntry.split("|")

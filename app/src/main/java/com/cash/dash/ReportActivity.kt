@@ -10,6 +10,9 @@ import androidx.core.content.ContextCompat
 import com.airbnb.lottie.LottieAnimationView
 import com.google.android.material.button.MaterialButtonToggleGroup
 import java.util.*
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowCompat
 import kotlin.math.abs
 
 class ReportActivity : ThemedActivity() {
@@ -18,6 +21,7 @@ class ReportActivity : ThemedActivity() {
     private lateinit var layoutLoading: View
     private lateinit var lottieLoading: LottieAnimationView
     private lateinit var tvAITimer: TextView
+
     private lateinit var btnPeriodSelect: Button
     private lateinit var toggleMode: MaterialButtonToggleGroup
 
@@ -30,6 +34,17 @@ class ReportActivity : ThemedActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_report)
+        val topBar = findViewById<View>(R.id.topBar)
+
+        ViewCompat.setOnApplyWindowInsetsListener(topBar) { view, insets ->
+            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+
+            val params = view.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+            params.topMargin = statusBarHeight
+            view.layoutParams = params
+
+            insets
+        }
 
 
         layoutContent = findViewById(R.id.reportContent)
