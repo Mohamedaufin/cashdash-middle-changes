@@ -155,8 +155,8 @@ object PdfReportManager {
         savePdfToDownloads(context, document, fileName)
     }
 
-    fun generateStandaloneStatement(context: Context, startMillis: Long, endMillis: Long) {
-        val breakdown = HistoryDataManager.getCategoryBreakdownForRange(context, startMillis, endMillis)
+    fun generateStandaloneStatement(context: Context, startMillis: Long, endMillis: Long, categoryFilter: String = "Overall") {
+        val breakdown = HistoryDataManager.getCategoryBreakdownForRange(context, startMillis, endMillis, categoryFilter)
         // Ascending sort (Oldest first)
         val transactions = breakdown.transactions.sortedBy { entry ->
             val p = entry.rawEntry.split("|")
@@ -192,7 +192,12 @@ object PdfReportManager {
         paint.textSize = 10f
         paint.color = Color.parseColor("#7E7D96")
         val sdf = java.text.SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-        canvas.drawText("PERIOD: ${sdf.format(Date(startMillis))} - ${sdf.format(Date(endMillis))}", 40f, 82f, paint)
+        val periodText = if (categoryFilter == "Overall") {
+            "PERIOD: ${sdf.format(Date(startMillis))} - ${sdf.format(Date(endMillis))}"
+        } else {
+            "ALLOCATION: ${categoryFilter.uppercase()} | ${sdf.format(Date(startMillis))} - ${sdf.format(Date(endMillis))}"
+        }
+        canvas.drawText(periodText, 40f, 82f, paint)
         
         var yTable = 120f
         paint.textSize = 10f

@@ -80,35 +80,9 @@ class HistoryFragment : Fragment() {
         }
 
         view.findViewById<View>(R.id.cardStatement).setOnClickListener {
-            showRangePicker()
+            val intent = Intent(requireContext(), StatementSelectionActivity::class.java)
+            startActivity(intent)
         }
-    }
-
-    private fun showRangePicker() {
-        val cal = Calendar.getInstance()
-        val pickerStart = android.app.DatePickerDialog(requireContext(), ThemeHelper.getDatePickerTheme(requireContext()), { _, year, month, day ->
-            val startCal = Calendar.getInstance().apply { set(year, month, day, 0, 0, 0) }
-            
-            val pickerEnd = android.app.DatePickerDialog(requireContext(), ThemeHelper.getDatePickerTheme(requireContext()), { _, eYear, eMonth, eDay ->
-                val endCal = Calendar.getInstance().apply { set(eYear, eMonth, eDay, 23, 59, 59) }
-                
-                if (endCal.before(startCal)) {
-                    android.widget.Toast.makeText(requireContext(), "End date must be after start date", android.widget.Toast.LENGTH_SHORT).show()
-                } else {
-                    val intent = Intent(requireContext(), StatementActivity::class.java)
-                    intent.putExtra("START_MILLIS", startCal.timeInMillis)
-                    intent.putExtra("END_MILLIS", endCal.timeInMillis)
-                    startActivity(intent)
-                }
-            }, year, month, day)
-            
-            pickerEnd.setTitle("Select End Date")
-            pickerEnd.show()
-            
-        }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
-        
-        pickerStart.setTitle("Select Start Date")
-        pickerStart.show()
     }
 
     override fun onStart() {
