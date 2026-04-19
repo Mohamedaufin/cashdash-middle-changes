@@ -268,7 +268,30 @@ object PdfReportManager {
             val uri = resolver.insert(externalUri, contentValues)
             uri?.let {
                 resolver.openOutputStream(it)?.use { os -> document.writeTo(os) }
-                Toast.makeText(context, "Report saved to Downloads", Toast.LENGTH_LONG).show()
+                
+                val viewIntent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                    setDataAndType(uri, "application/pdf")
+                    flags = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                }
+                val chooserIntent = android.content.Intent.createChooser(viewIntent, "Open PDF with...")
+                
+                // Construct pending intent for clicking the notification
+                val pendingIntent = android.app.PendingIntent.getActivity(
+                    context, 0, chooserIntent,
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+                )
+
+                val notification = androidx.core.app.NotificationCompat.Builder(context, "cashdash_urgent_heads_up_v10")
+                    .setSmallIcon(R.mipmap.ic_launcher_round) // Using safe app launcher icon
+                    .setContentTitle("Download completed")
+                    .setContentText("Tap to open $fileName")
+                    .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+                    .setContentIntent(pendingIntent)
+                    .setAutoCancel(true)
+                    .build()
+
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+                notificationManager.notify(System.currentTimeMillis().toInt(), notification)
             }
         } catch (e: Exception) {
             e.printStackTrace()

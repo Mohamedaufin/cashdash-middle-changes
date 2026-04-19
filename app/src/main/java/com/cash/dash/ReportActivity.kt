@@ -80,6 +80,9 @@ class ReportActivity : ThemedActivity() {
         toggleMode.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) {
                 isMonthlyMode = (checkedId == R.id.btnMonthly)
+                if (!isMonthlyMode) {
+                    selectedWeekIndex = getWeekIndexForNow()
+                }
                 updatePeriodLabel()
                 loadReport()
             }
@@ -104,6 +107,31 @@ class ReportActivity : ThemedActivity() {
                 btnPeriodSelect.text = "Select Week"
             }
         }
+    }
+
+    private fun getWeekIndexForNow(): Int {
+        val cal = Calendar.getInstance()
+        if (currentMonth != cal.get(Calendar.MONTH) || currentYear != cal.get(Calendar.YEAR)) return 0
+        
+        val weeks = FinancialInsightsManager.calculateWeeklyTrends(this, currentMonth, currentYear)
+        val sdf = java.text.SimpleDateFormat("MMM d", Locale.getDefault())
+        val nowCal = Calendar.getInstance()
+        
+        for (i in weeks.indices) {
+            val parts = weeks[i].dates.split(" - ")
+            if (parts.size == 2) {
+                try {
+                    val start = sdf.parse(parts[0])
+                    val end = sdf.parse(parts[1])
+                    if (start != null && end != null) {
+                        val startCal = Calendar.getInstance().apply { time = start; set(Calendar.YEAR, currentYear) }
+                        val endCal = Calendar.getInstance().apply { time = end; set(Calendar.YEAR, currentYear); set(Calendar.HOUR_OF_DAY, 23); set(Calendar.MINUTE, 59) }
+                        if (nowCal.timeInMillis in startCal.timeInMillis..endCal.timeInMillis) return i
+                    }
+                } catch (e: Exception) {}
+            }
+        }
+        return if (weeks.isNotEmpty()) weeks.size - 1 else 0
     }
 
     private fun showPeriodPicker() {

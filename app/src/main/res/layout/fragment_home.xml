@@ -4,7 +4,6 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
     <!-- Menu button -->
     <ImageView
         android:id="@+id/btnMenu"
@@ -19,7 +18,6 @@
         android:focusable="true"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
-
     <!-- Greeting -->
     <LinearLayout
         android:id="@+id/layoutHomeGreeting"
@@ -31,7 +29,6 @@
         app:layout_constraintStart_toEndOf="@id/btnMenu"
         app:layout_constraintTop_toTopOf="@id/btnMenu"
         app:layout_constraintBottom_toBottomOf="@id/btnMenu">
-
         <TextView
             android:id="@+id/tvHello"
             android:layout_width="wrap_content"
@@ -40,7 +37,6 @@
             android:textColor="?attr/textPrimaryColor"
             android:textSize="@dimen/text_title"
             android:textStyle="bold" />
-
         <TextView
             android:id="@+id/tvUsernameHome"
             android:layout_width="wrap_content"
@@ -50,7 +46,6 @@
             android:textSize="@dimen/text_title"
             android:textStyle="bold"
             android:transitionName="greeting_text_transition" />
-
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -59,7 +54,6 @@
             android:textSize="@dimen/text_title"
             android:textStyle="bold" />
     </LinearLayout>
-
     <!-- Profile button -->
     <ImageView
         android:id="@+id/btnProfile"
@@ -73,7 +67,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/btnMenu"
         app:layout_constraintBottom_toBottomOf="@id/btnMenu"/>
-
     <TextView
         android:id="@+id/tvNextMoney"
         android:layout_width="wrap_content"
@@ -86,12 +79,12 @@
         android:layout_marginBottom="12dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
-
     <!-- WALLET CIRCLE -->
     <FrameLayout
         android:id="@+id/walletContainer"
         android:layout_width="340dp"
         android:layout_height="340dp"
+        app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintTop_toBottomOf="@id/layoutHomeGreeting"
         app:layout_constraintBottom_toTopOf="@id/cardScanner"
         app:layout_constraintStart_toStartOf="parent"
@@ -99,19 +92,17 @@
         android:layout_marginTop="65dp"
         android:layout_marginBottom="40dp">
 
-
         <com.cash.dash.GradientCircularProgressView
             android:id="@+id/walletProgress"
             android:layout_width="340dp"
             android:layout_height="340dp"
-            android:layout_gravity="center" />
 
+            android:layout_gravity="center" />
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
             android:orientation="vertical">
-
             <TextView
                 android:id="@+id/tvBalance"
                 android:layout_width="wrap_content"
@@ -121,7 +112,6 @@
                 android:textColor="?attr/textPrimaryColor"
                 android:textSize="@dimen/text_headline"
                 android:textStyle="bold"/>
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -131,7 +121,6 @@
                 android:textSize="@dimen/text_body"/>
         </LinearLayout>
     </FrameLayout>
-
     <!-- ACTION CARDS -->
     <LinearLayout
         android:id="@+id/cardScanner"
@@ -145,15 +134,14 @@
         android:clickable="true"
         android:focusable="true"
         app:layout_constraintTop_toBottomOf="@id/walletContainer"
-        app:layout_constraintStart_toStartOf="parent">
 
+        app:layout_constraintStart_toStartOf="parent">
         <ImageView
             android:id="@+id/iconScanner"
             android:layout_width="40dp"
             android:layout_height="65dp"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_scanner" />
-
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -163,7 +151,6 @@
             android:textSize="@dimen/text_caption"
             android:textStyle="bold"/>
     </LinearLayout>
-
     <LinearLayout
         android:id="@+id/cardRigor"
         android:layout_width="120dp"
@@ -176,15 +163,14 @@
         android:clickable="true"
         android:focusable="true"
         app:layout_constraintTop_toBottomOf="@id/walletContainer"
-        app:layout_constraintEnd_toEndOf="parent">
 
+        app:layout_constraintEnd_toEndOf="parent">
         <ImageView
             android:id="@+id/iconRigorTracker"
             android:layout_width="85dp"
             android:layout_height="65dp"
             android:src="@drawable/ic_rigor_tracker"
             android:scaleType="fitCenter"/>
-
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -194,5 +180,4 @@
             android:textSize="@dimen/text_caption"
             android:textStyle="bold"/>
     </LinearLayout>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

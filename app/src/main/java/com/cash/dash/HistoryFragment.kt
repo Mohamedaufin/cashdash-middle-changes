@@ -326,7 +326,7 @@ class HistoryFragment : Fragment() {
 
     private fun setupModeDropdown(btn: Button, graph: DayBarGraphView, title: TextView, btnDate: Button) {
         btn.setOnClickListener {
-            DropdownHelper.showBlinkingDropdown(requireContext(), btn, listOf("Daily", "Weekly", "Monthly"), 200) { index, _ ->
+            DropdownHelper.showBlinkingDropdown(requireContext(), btn, listOf("Daily", "Weekly", "Monthly"), 180) { index, _ ->
                 when (index) {
                     0 -> switchMode("DAILY", graph, title, btn, btnDate)
                     1 -> switchMode("WEEKLY", graph, title, btn, btnDate)

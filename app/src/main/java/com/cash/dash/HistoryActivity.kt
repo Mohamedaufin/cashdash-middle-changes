@@ -537,7 +537,7 @@ class HistoryActivity : ThemedActivity() {
         val btnDaily = findViewById<Button>(R.id.btnDaily)
 
         btnDaily.setOnClickListener {
-            DropdownHelper.showBlinkingDropdown(this, btnDaily, listOf("Daily", "Weekly", "Monthly"), 200) { index, _ ->
+            DropdownHelper.showBlinkingDropdown(this, btnDaily, listOf("Daily", "Weekly", "Monthly"), 180) { index, _ ->
                 when (index) {
                     0 -> switchMode("DAILY")
                     1 -> switchMode("WEEKLY")

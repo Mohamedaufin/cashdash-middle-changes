@@ -198,26 +198,28 @@ class NotificationActivity : ThemedActivity() {
                         isPending -> "Waiting for response"
                         else -> "Query responded"
                     }
-                    val color = Color.parseColor(when {
-                        isResolved -> "#606880"
-                        isPending -> "#FFD93D"
-                        else -> "#4ADE80"
-                    })
+
+                    val isWhite = ThemeHelper.isWhiteTheme(this@NotificationActivity)
+                    val colorTeam = if (isWhite) "#008000" else "#4ADE80"
+                    val colorContent = if (isWhite) "#333333" else "#E0EBF5"
+                    val colorPending = if (isWhite) "#CD8500" else "#FFD93D"
 
                     val prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
                     val userName = prefs.getString("user_name", "User") ?: "User"
 
-                    // Clean up extra spaces to make it even and premium
-                    // --- THEME AWARE HTML COLORING ---
-                    val isWhite = ThemeHelper.isWhiteTheme(this@NotificationActivity)
-                    val colorUser = if (isWhite) "#0047AB" else "#B0C8FF"
-                    val colorTeam = if (isWhite) "#008000" else "#4ADE80"
-                    val colorContent = if (isWhite) "#333333" else "#E0EBF5"
+                    val userFormat = if (isWhite) "<font color='#0047AB'>$userName:</font>" else "$userName:"
 
+                    val color = Color.parseColor(when {
+                        isResolved -> "#606880"
+                        isPending -> colorPending
+                        else -> colorTeam
+                    })
+
+                    // Clean up extra spaces to make it even and premium
                     val displayQuery = query
-                        .replace("User Reply \\(\\d+\\):".toRegex(), "<font color='$colorUser'><b>$userName:</b></font>")
-                        .replace("User:".toRegex(), "<font color='$colorUser'><b>$userName:</b></font>")
-                        .replace("$userName:".toRegex(), "<font color='$colorUser'><b>$userName:</b></font>")
+                        .replace("User Reply \\(\\d+\\):".toRegex(), userFormat)
+                        .replace("User:".toRegex(), userFormat)
+                        .replace("$userName:".toRegex(), userFormat)
                         .replace("Team Cashdash:".toRegex(), "<font color='$colorTeam'><b>Team Cashdash:</b></font>")
                         .replace("\n", "<br>")
 
@@ -312,21 +314,23 @@ class NotificationActivity : ThemedActivity() {
                     isPending -> "Waiting for response"
                     else -> "Query responded"
                 }
-                val color = Color.parseColor(when {
-                    isResolved -> "#606880"
-                    isPending -> "#FFD93D"
-                    else -> "#4ADE80"
-                })
-
                 // --- THEME AWARE HTML COLORING ---
                 val isWhite = ThemeHelper.isWhiteTheme(this@NotificationActivity)
-                val colorUser = if (isWhite) "#0047AB" else "#B0C8FF"
                 val colorTeam = if (isWhite) "#008000" else "#4ADE80"
                 val colorContent = if (isWhite) "#333333" else "#E0EBF5"
+                val colorPending = if (isWhite) "#CD8500" else "#FFD93D"
 
+                val userFormat = if (isWhite) "<font color='#0047AB'>$userName:</font>" else "$userName:"
+
+                val color = Color.parseColor(when {
+                    isResolved -> "#606880"
+                    isPending -> colorPending
+                    else -> colorTeam
+                })
                 val displayQuery = query
-                    .replace("User Reply \\(\\d+\\):".toRegex(), "<font color='$colorUser'><b>$userName:</b></font>")
-                    .replace("User:".toRegex(), "<font color='$colorUser'><b>$userName:</b></font>")
+                    .replace("User Reply \\(\\d+\\):".toRegex(), userFormat)
+                    .replace("User:".toRegex(), userFormat)
+                    .replace("$userName:".toRegex(), userFormat)
                     .replace("Team Cashdash:".toRegex(), "<font color='$colorTeam'><b>Team Cashdash:</b></font>")
                     .replace("\n", "<br>")
 
@@ -521,6 +525,15 @@ class NotificationActivity : ThemedActivity() {
             holder.viewAccentBar.setBackgroundColor(item.statusColor)
             holder.tvQuery.text = item.queryFormatted
             holder.tvTime.text = item.timeFormatted
+
+            // 🔥 Eliminate smudge glow in Blue Theme explicitly
+            if (ThemeHelper.getCurrentTheme(this@NotificationActivity) == "Blue") {
+                holder.tvQuery.setShadowLayer(0f, 0f, 0f, android.graphics.Color.TRANSPARENT)
+                holder.tvTitle.setShadowLayer(0f, 0f, 0f, android.graphics.Color.TRANSPARENT)
+                holder.tvReply.setShadowLayer(0f, 0f, 0f, android.graphics.Color.TRANSPARENT)
+                holder.tvTime.setShadowLayer(0f, 0f, 0f, android.graphics.Color.TRANSPARENT)
+                holder.tvResolvedStatus.setShadowLayer(0f, 0f, 0f, android.graphics.Color.TRANSPARENT)
+            }
 
             if (item.replyFormatted != null) {
                 holder.tvReply.visibility = View.VISIBLE

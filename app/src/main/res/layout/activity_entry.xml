@@ -64,7 +64,7 @@
             android:backgroundTint="@null"
             android:stateListAnimator="@null"
             android:elevation="0dp"
-            android:textColor="#FFFFFF" />
+            android:textColor="?attr/textPrimaryColor" />
     </LinearLayout>
 
     <!-- Auth Form Section (Hidden Initially) -->
