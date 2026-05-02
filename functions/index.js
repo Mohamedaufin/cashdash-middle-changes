@@ -10,8 +10,8 @@ const { defineSecret } = require("firebase-functions/params");
 // ─────────────────────────────────────────────
 // CONFIGURATION & SECRETS
 // ─────────────────────────────────────────────
-const ADMIN_EMAIL = "cashdash.query@gmail.com";
-const GMAIL_USER = "cashdash.query@gmail.com";
+const ADMIN_EMAIL = "support@cashdash.co.in";
+const GMAIL_USER = "support@cashdash.co.in";
 const gmailPasswordSecret = defineSecret("GMAIL_PASS"); // Value: kwebifxmvfhqkdwf (from chat)
 
 // ─────────────────────────────────────────────
