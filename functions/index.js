@@ -12,17 +12,19 @@ const { defineSecret } = require("firebase-functions/params");
 // ─────────────────────────────────────────────
 const ADMIN_EMAIL = "support@cashdash.co.in";
 const GMAIL_USER = "support@cashdash.co.in";
-const gmailPasswordSecret = defineSecret("GMAIL_PASS"); // Value: kwebifxmvfhqkdwf (from chat)
+const EMAIL_PASS_SECRET = defineSecret("GMAIL_PASS"); // We'll keep the secret name GMAIL_PASS for now to avoid re-setting it immediately, but it now holds your Zoho App Password.
 
 // ─────────────────────────────────────────────
 // NODEMAILER HELPER
 // ─────────────────────────────────────────────
 function createTransporter() {
     return nodemailer.createTransport({
-        service: "gmail",
+        host: "smtp.zoho.in",
+        port: 465,
+        secure: true, // Use SSL
         auth: {
             user: GMAIL_USER,
-            pass: gmailPasswordSecret.value(),
+            pass: EMAIL_PASS_SECRET.value(),
         },
     });
 }
@@ -31,7 +33,7 @@ const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 
 exports.onSupportQuery = onDocumentWritten({
     document: "users/{userEmail}/notifications/{notificationId}",
-    secrets: [gmailPasswordSecret]
+    secrets: [EMAIL_PASS_SECRET]
 }, async (event) => {
     const newData = event.data.after.data();
     if (!newData) return; // Document was deleted, ignore
@@ -133,7 +135,7 @@ ${replyUrl}
 // ─────────────────────────────────────────────
 // FUNCTION 1: cashdashWebhook (v2 / Cloud Run)
 // ─────────────────────────────────────────────
-exports.cashdashWebhook = onRequest({ cors: true, region: "us-central1", secrets: [gmailPasswordSecret] }, async (req, res) => {
+exports.cashdashWebhook = onRequest({ cors: true, region: "us-central1", secrets: [EMAIL_PASS_SECRET] }, async (req, res) => {
     if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
 
     const {
@@ -222,7 +224,7 @@ ${replyUrl}
 });
 
 // ─────────────────────────────────────────────
-exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [gmailPasswordSecret] }, async (req, res) => {
+exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EMAIL_PASS_SECRET] }, async (req, res) => {
     if (req.method === "GET") {
         const { uid, id, email } = req.query;
         let queryText = "Loading...";
