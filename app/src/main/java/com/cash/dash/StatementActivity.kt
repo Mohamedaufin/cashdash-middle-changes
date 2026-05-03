@@ -20,6 +20,11 @@ class StatementActivity : ThemedActivity() {
     private var endMillis: Long = 0
     private var categoryFilter: String = "Overall"
 
+    private fun setupUI() {
+        val sdf = java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault())
+        tvDateRange.text = "${sdf.format(java.util.Date(startMillis))} – ${sdf.format(java.util.Date(endMillis))}"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_statement)
@@ -60,34 +65,38 @@ class StatementActivity : ThemedActivity() {
         }
 
         setupUI()
-        loadTransactions()
-    }
+        
+        // Fix: Use Coroutines to fetch data from Room (No Main Thread access)
+        androidx.lifecycle.lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val breakdown = HistoryDataManager.getCategoryBreakdownForRange(
+                this@StatementActivity, startMillis, endMillis, categoryFilter
+            )
+            
+            // Ascending sort (April 1, April 2, etc.)
+            val statementList = breakdown.transactions.sortedBy { entry ->
+                val p = entry.rawEntry.split("|")
+                if (p.size >= 2) p[1].toLongOrNull() ?: 0L else 0L
+            }
+            
+            val totalSpent = statementList.sumOf { it.amount.toDouble() }.toFloat()
 
-    private fun setupUI() {
-        val sdf = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-        tvDateRange.text = "${sdf.format(Date(startMillis))} – ${sdf.format(Date(endMillis))}"
-    }
-
-    private fun loadTransactions() {
-        val breakdown = HistoryDataManager.getCategoryBreakdownForRange(this, startMillis, endMillis, categoryFilter)
-        // Ascending sort (April 1, April 2, etc.)
-        val statementList = breakdown.transactions.sortedBy { entry ->
-            val p = entry.rawEntry.split("|")
-            if (p.size >= 2) p[1].toLongOrNull() ?: 0L else 0L
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                updateUI(statementList, totalSpent)
+            }
         }
+    }
 
-        val totalSpent = statementList.sumOf { it.amount.toDouble() }.toFloat()
-        val tvTotalLabel = findViewById<TextView>(R.id.tvTotalLabel)
-
+    private fun updateUI(statementList: List<TransactionItem>, totalSpent: Float) {
         tvTotal.text = "₹${String.format("%,.2f", totalSpent)}"
 
+        val tvTotalLabel = findViewById<TextView>(R.id.tvTotalLabel)
         if (categoryFilter == "Overall") {
             tvTotalLabel.text = "CUMULATIVE EXPENDITURE"
         } else {
             tvTotalLabel.text = "${categoryFilter.uppercase()} EXPENDITURE"
         }
 
-        rvTransactions.layoutManager = LinearLayoutManager(this)
+        rvTransactions.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
         rvTransactions.adapter = TransactionAdapter(statementList, showTimestamp = true)
     }
 }

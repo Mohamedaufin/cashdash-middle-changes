@@ -186,17 +186,29 @@ class ReportActivity : ThemedActivity() {
             override fun onFinish() {
                 isGenerating = false
                 layoutLoading.visibility = View.GONE
-                renderReport()
+                
+                // Fix: Move DB-heavy report generation to IO thread
+                lifecycleScope.launch(Dispatchers.IO) {
+                    try {
+                        val insights = FinancialInsightsManager.generateReport(
+                            this@ReportActivity, isMonthlyMode, currentMonth, currentYear, if (isMonthlyMode) -1 else selectedWeekIndex
+                        )
+                        withContext(Dispatchers.Main) {
+                            renderReport(insights)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        withContext(Dispatchers.Main) {
+                            addCard("Advisory Offline", "Error", "Quantum engine error: ${e.localizedMessage}", R.drawable.ic_glass_menu_vector)
+                        }
+                    }
+                }
             }
         }.start()
     }
 
-    private fun renderReport() {
+    private fun renderReport(insights: FinancialInsightsManager.AdvisoryInsights) {
         try {
-            val insights = FinancialInsightsManager.generateReport(
-                this, isMonthlyMode, currentMonth, currentYear, if (isMonthlyMode) -1 else selectedWeekIndex
-            )
-            
             layoutContent.removeAllViews()
             if (insights.totalSpent == 0f && insights.topCategories.isEmpty()) {
                 addEmptyStateCard(); return
