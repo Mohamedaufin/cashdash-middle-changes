@@ -12,6 +12,10 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.IntentFilter
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -221,120 +225,78 @@ class HistoryActivity : ThemedActivity() {
     }
 
     private fun loadGraphValues(graph: DayBarGraphView) {
-        val prefs = getSharedPreferences("GraphData", MODE_PRIVATE)
-        val historySet = prefs.getStringSet("HISTORY_LIST", emptySet()) ?: emptySet()
+        lifecycleScope.launch(Dispatchers.IO) {
+            val db = AppDatabase.getDatabase(this@HistoryActivity)
+            val dao = db.transactionDao()
+            val allTransactions = dao.getTransactionsInRange(0L, Long.MAX_VALUE)
 
-        val dailyMap = mutableMapOf<Int, Float>() // dayIndex -> total
-        val weeklyMap = mutableMapOf<Int, Float>() // weekIndex -> total
-        val monthlyMap = mutableMapOf<Int, Float>() // monthIndex -> total
+            val dailyMap = mutableMapOf<Int, Float>()
+            val weeklyMap = mutableMapOf<Int, Float>()
+            val monthlyMap = mutableMapOf<Int, Float>()
 
-        val cal = Calendar.getInstance().apply {
-            firstDayOfWeek = Calendar.MONDAY
-            minimalDaysInFirstWeek = 1
-        }
+            for (item in allTransactions) {
+                if (currentCategoryFilter != "Overall" && item.category != currentCategoryFilter) continue
 
-        for (entry in historySet) {
-            val p = entry.split("|")
-            if (p.size < 5) continue
-
-            val timestampLong = p[1].toLongOrNull()
-
-            val category: String
-            val amount: Float
-
-            if (p.size >= 9) {
-                category = p[3]
-                amount = p[4].toFloatOrNull() ?: 0f
-            } else if (p.size == 7) {
-                category = p[1]
-                amount = p[2].toFloatOrNull() ?: 0f
-            } else {
-                category = p[3]
-                amount = p[4].toFloatOrNull() ?: 0f
-            }
-
-            if (currentCategoryFilter != "Overall" && category != currentCategoryFilter) continue
-
-            val hYear: Int
-            val hMonth: Int
-            val hWeek: Int
-            val hDay: Int
-
-            if (p.size >= 9) {
-                hWeek = p[5].toIntOrNull() ?: 0
-                hDay = p[6].toIntOrNull() ?: 0
-                hMonth = p[7].toIntOrNull() ?: 0
-                hYear = p[8].toIntOrNull() ?: 0
-            } else if (p.size == 7) {
-                hWeek = p[3].toIntOrNull() ?: 0
-                hDay = p[4].toIntOrNull() ?: 0
-                hMonth = p[5].toIntOrNull() ?: 0
-                hYear = p[6].toIntOrNull() ?: 0
-            } else if (timestampLong != null && timestampLong > 1000000000000L) {
-                cal.timeInMillis = timestampLong
-                hYear = cal.get(Calendar.YEAR)
-                hMonth = cal.get(Calendar.MONTH)
-                hWeek = cal.get(Calendar.WEEK_OF_MONTH) - 1
-                hDay = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7
-            } else continue
-
-            if (hYear == selectedYear) {
-                monthlyMap[hMonth] = (monthlyMap[hMonth] ?: 0f) + amount
-                if (hMonth == selectedMonth) {
-                    weeklyMap[hWeek] = (weeklyMap[hWeek] ?: 0f) + amount
-                    if (hWeek == selectedWeek) {
-                        dailyMap[hDay] = (dailyMap[hDay] ?: 0f) + amount
+                if (item.year == selectedYear) {
+                    monthlyMap[item.month] = (monthlyMap[item.month] ?: 0f) + item.amount
+                    if (item.month == selectedMonth) {
+                        weeklyMap[item.week] = (weeklyMap[item.week] ?: 0f) + item.amount
+                        if (item.week == selectedWeek) {
+                            dailyMap[item.day] = (dailyMap[item.day] ?: 0f) + item.amount
+                        }
                     }
                 }
             }
+
+            withContext(Dispatchers.Main) {
+                graph.setDailyData(List(7) { dailyMap[it] ?: 0f })
+
+                val calMonth = Calendar.getInstance().apply {
+                    firstDayOfWeek = Calendar.MONDAY
+                    minimalDaysInFirstWeek = 1
+                    set(selectedYear, selectedMonth, 1)
+                }
+                val totalWeeks = calMonth.getActualMaximum(Calendar.WEEK_OF_MONTH)
+                graph.setWeeklyData(List(totalWeeks) { weeklyMap[it] ?: 0f })
+
+                graph.setMonthlyData(List(12) { monthlyMap[it] ?: 0f })
+
+                val realC = Calendar.getInstance().apply {
+                    firstDayOfWeek = Calendar.MONDAY
+                    minimalDaysInFirstWeek = 1
+                }
+                val realYear = realC.get(Calendar.YEAR)
+                val realMonth = realC.get(Calendar.MONTH)
+                val realDay = (realC.get(Calendar.DAY_OF_WEEK) + 5) % 7
+
+                val hDay = if (forcedHighlightDay != -1) {
+                    forcedHighlightDay
+                } else if (realYear == selectedYear && realMonth == selectedMonth) {
+                    val realWeekOfMonth = realC.apply {
+                        firstDayOfWeek = Calendar.MONDAY
+                        minimalDaysInFirstWeek = 1
+                    }.get(Calendar.WEEK_OF_MONTH) - 1
+
+                    if (realWeekOfMonth == selectedWeek) realDay else -1
+                } else {
+                    -1
+                }
+
+                val hWeek = if (realYear == selectedYear && realMonth == selectedMonth) {
+                    realC.apply {
+                        firstDayOfWeek = Calendar.MONDAY
+                        minimalDaysInFirstWeek = 1
+                    }.get(Calendar.WEEK_OF_MONTH) - 1
+                } else -1
+                val hMonth = if (realYear == selectedYear) realMonth else -1
+
+                graph.setHighlightIndices(hDay, hWeek, hMonth)
+
+                updateDailyLabels(graph)
+                updateWeeklyLabels(graph)
+                updateMonthlyLabels(graph)
+            }
         }
-
-        graph.setDailyData(List(7) { dailyMap[it] ?: 0f })
-
-        val calMonth = Calendar.getInstance().apply {
-            firstDayOfWeek = Calendar.MONDAY
-            minimalDaysInFirstWeek = 1
-            set(selectedYear, selectedMonth, 1)
-        }
-        val totalWeeks = calMonth.getActualMaximum(Calendar.WEEK_OF_MONTH)
-        graph.setWeeklyData(List(totalWeeks) { weeklyMap[it] ?: 0f })
-
-        graph.setMonthlyData(List(12) { monthlyMap[it] ?: 0f })
-
-        val realC = Calendar.getInstance().apply {
-            firstDayOfWeek = Calendar.MONDAY
-            minimalDaysInFirstWeek = 1
-        }
-        val realYear = realC.get(Calendar.YEAR)
-        val realMonth = realC.get(Calendar.MONTH)
-        val realDay = (realC.get(Calendar.DAY_OF_WEEK) + 5) % 7
-
-        val hDay = if (forcedHighlightDay != -1) {
-            forcedHighlightDay
-        } else if (realYear == selectedYear && realMonth == selectedMonth) {
-            val realWeekOfMonth = realC.apply {
-                firstDayOfWeek = Calendar.MONDAY
-                minimalDaysInFirstWeek = 1
-            }.get(Calendar.WEEK_OF_MONTH) - 1
-
-            if (realWeekOfMonth == selectedWeek) realDay else -1
-        } else {
-            -1
-        }
-
-        val hWeek = if (realYear == selectedYear && realMonth == selectedMonth) {
-            realC.apply {
-                firstDayOfWeek = Calendar.MONDAY
-                minimalDaysInFirstWeek = 1
-            }.get(Calendar.WEEK_OF_MONTH) - 1
-        } else -1
-        val hMonth = if (realYear == selectedYear) realMonth else -1
-
-        graph.setHighlightIndices(hDay, hWeek, hMonth)
-
-        updateDailyLabels(graph)
-        updateWeeklyLabels(graph)
-        updateMonthlyLabels(graph)
     }
 
     private fun updateMonthlyLabels(graph: DayBarGraphView) {
@@ -454,63 +416,22 @@ class HistoryActivity : ThemedActivity() {
     }
 
     private fun loadDailyForSelectedWeek(graph: DayBarGraphView) {
-        val prefs = getSharedPreferences("GraphData", MODE_PRIVATE)
-        val historySet = prefs.getStringSet("HISTORY_LIST", emptySet()) ?: emptySet()
-        val dailyMap = mutableMapOf<Int, Float>()
-        val cal = Calendar.getInstance().apply {
-            firstDayOfWeek = Calendar.MONDAY
-            minimalDaysInFirstWeek = 1
-        }
-        for (entry in historySet) {
-            val p = entry.split("|")
-            if (p.size < 5) continue
+        lifecycleScope.launch(Dispatchers.IO) {
+            val db = AppDatabase.getDatabase(this@HistoryActivity)
+            val dao = db.transactionDao()
+            val transactions = dao.getTransactionsInRange(0L, Long.MAX_VALUE)
+            val dailyMap = mutableMapOf<Int, Float>()
 
-            val timestampLong = p[1].toLongOrNull()
-
-            val category: String
-            val amount: Float
-
-            if (p.size >= 9) {
-                category = p[3]
-                amount = p[4].toFloatOrNull() ?: 0f
-            } else if (p.size == 7) {
-                category = p[1]
-                amount = p[2].toFloatOrNull() ?: 0f
-            } else {
-                category = p[3]
-                amount = p[4].toFloatOrNull() ?: 0f
+            for (item in transactions) {
+                if (currentCategoryFilter != "Overall" && item.category != currentCategoryFilter) continue
+                if (item.year == selectedYear && item.month == selectedMonth && item.week == selectedWeek) {
+                    dailyMap[item.day] = (dailyMap[item.day] ?: 0f) + item.amount
+                }
             }
-
-            if (currentCategoryFilter != "Overall" && category != currentCategoryFilter) continue
-
-            val hYear: Int
-            val hMonth: Int
-            val hWeek: Int
-            val hDay: Int
-
-            if (p.size >= 9) {
-                hWeek = p[5].toIntOrNull() ?: 0
-                hDay = p[6].toIntOrNull() ?: 0
-                hMonth = p[7].toIntOrNull() ?: 0
-                hYear = p[8].toIntOrNull() ?: 0
-            } else if (p.size == 7) {
-                hWeek = p[3].toIntOrNull() ?: 0
-                hDay = p[4].toIntOrNull() ?: 0
-                hMonth = p[5].toIntOrNull() ?: 0
-                hYear = p[6].toIntOrNull() ?: 0
-            } else if (timestampLong != null && timestampLong > 1000000000000L) {
-                cal.timeInMillis = timestampLong
-                hYear = cal.get(Calendar.YEAR)
-                hMonth = cal.get(Calendar.MONTH)
-                hWeek = cal.get(Calendar.WEEK_OF_MONTH) - 1
-                hDay = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7
-            } else continue
-
-            if (hYear == selectedYear && hMonth == selectedMonth && hWeek == selectedWeek) {
-                dailyMap[hDay] = (dailyMap[hDay] ?: 0f) + amount
+            withContext(Dispatchers.Main) {
+                graph.setDailyData(List(7) { dailyMap[it] ?: 0f })
             }
         }
-        graph.setDailyData(List(7) { dailyMap[it] ?: 0f })
     }
 
 

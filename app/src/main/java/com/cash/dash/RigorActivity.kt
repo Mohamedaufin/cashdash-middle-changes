@@ -333,69 +333,16 @@ class RigorActivity : ThemedActivity() {
 
     private fun saveExpense(category: String) {
         try {
-            val prefs = getSharedPreferences("GraphData", MODE_PRIVATE)
-            val weeklyPrefs = getSharedPreferences("CategoryWeekData", MODE_PRIVATE)
-            val walletPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
-            
-            val editor = prefs.edit()
-            val weekEditor = weeklyPrefs.edit()
-
-            // Deduct from main balance
-            val currentBal = walletPrefs.getInt("wallet_balance", 0)
-            walletPrefs.edit().putInt("wallet_balance", currentBal - enteredAmount).apply()
-
             val titleText = inputTitle.text.toString().trim().replace("|", "-")
-            val cal = Calendar.getInstance().apply { timeInMillis = selectedExpenseDate }
             
+            val cal = Calendar.getInstance().apply { timeInMillis = selectedExpenseDate }
             val now = Calendar.getInstance()
             cal.set(Calendar.HOUR_OF_DAY, now.get(Calendar.HOUR_OF_DAY))
             cal.set(Calendar.MINUTE, now.get(Calendar.MINUTE))
             cal.set(Calendar.SECOND, now.get(Calendar.SECOND))
             cal.set(Calendar.MILLISECOND, now.get(Calendar.MILLISECOND))
 
-            val timestamp = cal.timeInMillis.toString()
-            val dayIndex = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7
-            val monthIndex = cal.get(Calendar.MONTH)
-            val year = cal.get(Calendar.YEAR)
-            val dayOfMonth = cal.get(Calendar.DAY_OF_MONTH)
-            cal.setFirstDayOfWeek(Calendar.MONDAY)
-            cal.setMinimalDaysInFirstWeek(1)
-            val weekIndex = cal.get(Calendar.WEEK_OF_MONTH) - 1
-
-            val oldSpent = prefs.getFloat("SPENT_$category", 0f)
-            editor.putFloat("SPENT_$category", oldSpent + enteredAmount)
-
-            val dailyKey = "DAY_${weekIndex}_${dayIndex}_${monthIndex}_${year}"
-            editor.putFloat(dailyKey, prefs.getFloat(dailyKey, 0f) + enteredAmount)
-
-            val weeklyKey = "WEEK_${weekIndex}_${monthIndex}_${year}"
-            editor.putFloat(weeklyKey, prefs.getFloat(weeklyKey, 0f) + enteredAmount)
-
-            val monthlyKey = "MONTH_${monthIndex}_${year}"
-            editor.putFloat(monthlyKey, prefs.getFloat(monthlyKey, 0f) + enteredAmount)
-
-            val weekSlot = weekIndex + 1
-            val categoryWeekKey = "${category}_W$weekSlot"
-            val oldWeekValue = weeklyPrefs.getInt(categoryWeekKey, 0)
-            weekEditor.putInt(categoryWeekKey, oldWeekValue + enteredAmount)
-
-            val historySet = (prefs.getStringSet("HISTORY_LIST", emptySet()) ?: emptySet()).toMutableSet()
-            historySet.add("EXP|$timestamp|$titleText|$category|$enteredAmount|$weekIndex|$dayIndex|$monthIndex|$year")
-            editor.putStringSet("HISTORY_LIST", historySet)
-
-            editor.putString("TRANS_${timestamp}_TITLE", titleText)
-            editor.putString("TRANS_${timestamp}_CATEGORY", category)
-            editor.putInt("TRANS_${timestamp}_AMOUNT", enteredAmount)
-            editor.putInt("TRANS_${timestamp}_WEEK", weekIndex)
-            editor.putInt("TRANS_${timestamp}_DAY", dayIndex)
-            editor.putInt("TRANS_${timestamp}_MONTH", monthIndex)
-            editor.putInt("TRANS_${timestamp}_YEAR", year)
-
-            editor.apply()
-            weekEditor.apply()
-            
-            FirestoreSyncManager.pushAllDataToCloud(this)
-
+            HistoryDataManager.saveTransaction(this, titleText, enteredAmount.toFloat(), category, cal.timeInMillis)
             finish()
         } catch (e: Exception) {
             ToastHelper.showToast(this, "⚠ Error saving expense")

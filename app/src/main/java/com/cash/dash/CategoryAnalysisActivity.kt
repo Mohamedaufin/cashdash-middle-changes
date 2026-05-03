@@ -13,6 +13,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import android.content.BroadcastReceiver
 import android.content.IntentFilter
@@ -87,7 +91,7 @@ class CategoryAnalysisActivity : ThemedActivity() {
     }
 
     private fun refreshUI() {
-        Thread {
+        lifecycleScope.launch(Dispatchers.IO) {
             val weeklyValues = loadWeeklyData(categoryName)
             val labels = calculateRollingLabels(categoryName)
             
@@ -102,7 +106,7 @@ class CategoryAnalysisActivity : ThemedActivity() {
             val startWeekIndex = if (currentWeekIndexGlobal < 4) 0 else currentWeekIndexGlobal - 3
             val currentWeekRelative = currentWeekIndexGlobal - startWeekIndex
 
-            runOnUiThread {
+            withContext(Dispatchers.Main) {
                 weeklyGraph.setValues(weeklyValues.map { it.toFloat() })
                 weeklyGraph.setLabels(labels)
                 weeklyGraph.setCurrentWeekIndex(currentWeekRelative)
@@ -119,7 +123,7 @@ class CategoryAnalysisActivity : ThemedActivity() {
                 val avg = if (weeklyValues.isNotEmpty()) weeklyValues.sum() / weeklyValues.size else 0
                 tvAverage.text = "₹${avg}"
             }
-        }.start()
+        }
     }
 
     private fun getAccountCreationTime(): Long {
@@ -143,9 +147,8 @@ class CategoryAnalysisActivity : ThemedActivity() {
     }
 
     private fun loadWeeklyData(categoryName: String): MutableList<Int> {
-        val prefs = getSharedPreferences("GraphData", Context.MODE_PRIVATE)
-        val historySet = prefs.getStringSet("HISTORY_LIST", emptySet()) ?: emptySet()
-
+        val db = AppDatabase.getDatabase(this)
+        val dao = db.transactionDao()
         val creationTime = getAccountCreationTime()
         val firstMonday = getFirstMonday(creationTime)
         val now = System.currentTimeMillis()
@@ -159,44 +162,22 @@ class CategoryAnalysisActivity : ThemedActivity() {
         
         val weekBarSums = FloatArray(4) { 0f }
 
-        for (entry in historySet) {
-            val p = entry.split("|")
-            val catInEntry: String
-            val amount: Float
-            val timestampLong: Long?
+        // Fetch relevant transactions from Room
+        val transactions = if (categoryName == "Overall") {
+            dao.getTransactionsInRange(firstMonday, Long.MAX_VALUE)
+        } else {
+            dao.getTransactionsByCategoryInRange(categoryName, firstMonday, Long.MAX_VALUE)
+        }
 
-            if (p.size >= 9) {
-                catInEntry = p[3]
-                amount = p[4].toFloatOrNull() ?: 0f
-                timestampLong = p[1].toLongOrNull()
-            } else if (p.size == 7) {
-                catInEntry = p[1]
-                amount = p[2].toFloatOrNull() ?: 0f
-                timestampLong = null // Legacy 7nd part has no timestamp
-            } else continue
-
-            if (catInEntry != categoryName && categoryName != "Overall") continue
-
-            val entryWeekIndex: Int
-            if (timestampLong != null && timestampLong > 1000000000000L) {
-                val daysSinceFirstMonday = TimeUnit.MILLISECONDS.toDays(timestampLong - firstMonday).toInt()
-                if (daysSinceFirstMonday < 0) continue 
-                entryWeekIndex = daysSinceFirstMonday / 7
-            } else if (p.size == 7) {
-                // For rolling weeks in CategoryAnalysis, we still need a global week index.
-                // If we don't have a timestamp, we can't accurately place it in a 'rolling' 4-week window 
-                // unless the stored week index aligns with this display's definition.
-                // However, CategoryAnalysis uses weeks since account creation.
-                // Since legacy data doesn't have a timestamp, we'll continue to skip it here to avoid 
-                // misplacement, or we can use the stored week if we assume it matches.
-                // For now, I'll continue to skip if No Timestamp as 're-deriving' is impossible.
-                continue
-            } else continue
+        for (item in transactions) {
+            val daysSinceFirstMonday = TimeUnit.MILLISECONDS.toDays(item.timestamp - firstMonday).toInt()
+            if (daysSinceFirstMonday < 0) continue 
+            val entryWeekIndex = daysSinceFirstMonday / 7
 
             // Map the entry into our 4-bar display
             if (entryWeekIndex in startWeekIndex..(startWeekIndex + 3)) {
                 val arrayIndex = entryWeekIndex - startWeekIndex
-                weekBarSums[arrayIndex] += amount
+                weekBarSums[arrayIndex] += item.amount
             }
         }
         return weekBarSums.map { it.toInt() }.toMutableList()

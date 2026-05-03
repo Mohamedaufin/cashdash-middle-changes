@@ -251,31 +251,7 @@ class AllocatorActivity : ThemedActivity() {
             }
             weekEditor.apply()
 
-            // 4. Update History List Entries
-            val historySet = (graphPrefs.getStringSet("HISTORY_LIST", emptySet()) ?: emptySet()).toMutableSet()
-            val newHistorySet = mutableSetOf<String>()
-            var updatedCount = 0
-
-            historySet.forEach { entry ->
-                val parts = entry.split("|").toMutableList()
-                if (parts.size >= 4 && parts[3] == oldName) {
-                    parts[3] = newName
-                    newHistorySet.add(parts.joinToString("|"))
-
-                    // Also update the individual TRANS_ lookup key if it exists
-                    val timestamp = parts[1]
-                    graphPrefs.edit().putString("TRANS_${timestamp}_CATEGORY", newName).apply()
-                    updatedCount++
-                } else {
-                    newHistorySet.add(entry)
-                }
-            }
-
-            if (updatedCount > 0) {
-                graphPrefs.edit().putStringSet("HISTORY_LIST", newHistorySet).apply()
-            }
-
-            // android.util.Log.d("AllocatorActivity", "Renamed $oldName to $newName. Migrated $updatedCount history entries.")
+            HistoryDataManager.renameCategory(this, oldName, newName)
         }
     }
 
