@@ -77,7 +77,24 @@ class StatementActivity : ThemedActivity() {
         }
 
         val totalSpent = statementList.sumOf { it.amount.toDouble() }.toFloat()
-        tvTotal.text = "₹${String.format("%,.2f", totalSpent)}"
+        val tvTotalLabel = findViewById<TextView>(R.id.tvTotalLabel)
+
+        if (categoryFilter == "Overall") {
+            tvTotal.text = "₹${String.format("%,.2f", totalSpent)}"
+            tvTotalLabel.text = "CUMULATIVE EXPENDITURE"
+        } else {
+            val limitPrefs = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)
+            val limit = limitPrefs.getInt("LIMIT_$categoryFilter", 0)
+
+            if (limit > 0) {
+                val percentage = ((totalSpent / limit.toFloat()) * 100).toInt()
+                tvTotal.text = "$percentage%"
+                tvTotalLabel.text = "% ALLOCATION EXPENDITURE"
+            } else {
+                tvTotal.text = "₹${String.format("%,.2f", totalSpent)}"
+                tvTotalLabel.text = "TOTAL CATEGORY EXPENDITURE"
+            }
+        }
 
         rvTransactions.layoutManager = LinearLayoutManager(this)
         rvTransactions.adapter = TransactionAdapter(statementList, showTimestamp = true)
