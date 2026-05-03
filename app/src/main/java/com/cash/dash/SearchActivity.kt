@@ -10,6 +10,10 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -65,43 +69,27 @@ class SearchActivity : ThemedActivity() {
     }
 
     private fun loadAllTransactions() {
-        val prefs = getSharedPreferences("GraphData", MODE_PRIVATE)
-        val historySet = prefs.getStringSet("HISTORY_LIST", emptySet()) ?: emptySet()
-
-        allTransactions.clear()
-        for (entry in historySet) {
-            val parts = entry.split("|")
-            if (parts.size < 5) continue
-
-            val title: String
-            val amount: Int
-            val category: String
-            val timestamp: Long?
-
-            if (parts.size >= 9) {
-                timestamp = parts[1].toLongOrNull()
-                title = parts[2]
-                category = parts[3]
-                amount = parts[4].toIntOrNull() ?: 0
-            } else if (parts.size == 7) {
-                title = "Expense"
-                category = parts[1]
-                amount = parts[2].toIntOrNull() ?: 0
-                timestamp = null
-            } else {
-                timestamp = parts[1].toLongOrNull()
-                title = "Expense"
-                category = parts[3]
-                amount = parts[4].toIntOrNull() ?: 0
+        lifecycleScope.launch(Dispatchers.IO) {
+            val db = AppDatabase.getDatabase(this@SearchActivity)
+            val transactions = db.transactionDao().getTransactionsInRange(0L, Long.MAX_VALUE)
+            
+            allTransactions.clear()
+            transactions.forEach { entity ->
+                allTransactions.add(SearchTransactionItemWithTime(
+                    entity.title,
+                    entity.category,
+                    entity.amount,
+                    entity.timestamp
+                ))
             }
 
-            allTransactions.add(SearchTransactionItemWithTime(title, category, amount, timestamp ?: 0L))
+            // Sort by time descending (Room query already does this if we want, but keeping it explicit)
+            allTransactions.sortByDescending { it.timestamp }
+            
+            withContext(Dispatchers.Main) {
+                filterTransactions("")
+            }
         }
-        
-        // Sort by time descending
-        allTransactions.sortByDescending { it.timestamp }
-        
-        filterTransactions("")
     }
 
     private fun filterTransactions(query: String) {

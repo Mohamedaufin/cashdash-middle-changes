@@ -12,6 +12,9 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import android.content.Intent
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 object FirestoreSyncManager {
 
@@ -341,6 +344,37 @@ object FirestoreSyncManager {
                             }
                             gRestore.putStringSet("HISTORY_LIST", finalTransactions)
                             gRestore.apply()
+
+                            // 🔄 Sync to Room
+                            syncExecutor.execute {
+                                val db = AppDatabase.getDatabase(context)
+                                val dao = db.transactionDao()
+                                val entities = mutableListOf<TransactionEntity>()
+                                for (entry in finalTransactions) {
+                                    val parts = entry.split("|")
+                                    if (parts.size >= 9) {
+                                        entities.add(TransactionEntity(
+                                            timestamp = parts[1].toLongOrNull() ?: 0L,
+                                            title = parts[2],
+                                            category = parts[3],
+                                            amount = parts[4].toIntOrNull() ?: 0,
+                                            week = parts[5].toIntOrNull() ?: 0,
+                                            day = parts[6].toIntOrNull() ?: 0,
+                                            month = parts[7].toIntOrNull() ?: 0,
+                                            year = parts[8].toIntOrNull() ?: 0,
+                                            rawEntry = entry
+                                        ))
+                                    }
+                                }
+                                if (entities.isNotEmpty()) {
+                                    // Use a blocking call or launch a scope inside the executor if needed
+                                    // Room's insertAll is suspend, so we need a scope
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        dao.deleteAll()
+                                        dao.insertAll(entities)
+                                    }
+                                }
+                            }
                             isSyncingFromCloud = false
                         }
                     }

@@ -18,6 +18,10 @@ class CashDashApplication : Application() {
         
         // Start Security Monitoring globally
         SecurityManager.startListening(this)
+        
+        // Migrate legacy data to Room if needed
+        MigrationManager.checkAndMigrate(this)
+        
         createNotificationChannel()
     }
 

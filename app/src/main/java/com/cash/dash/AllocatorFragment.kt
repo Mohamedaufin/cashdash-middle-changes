@@ -209,16 +209,7 @@ class AllocatorFragment : Fragment() {
         prefs.edit().putStringSet(KEY, saved).apply()
         prefs.edit().remove("LIMIT_$name").apply()
 
-        val graphPrefs = requireContext().getSharedPreferences("GraphData", Context.MODE_PRIVATE)
-        graphPrefs.edit().remove("SPENT_$name").apply()
-
-        val weekPrefs = requireContext().getSharedPreferences("CategoryWeekData", Context.MODE_PRIVATE)
-        val weekEditor = weekPrefs.edit()
-        for (w in 1..5) {
-            weekEditor.remove("${name}_W$w")
-        }
-        weekEditor.apply()
-        FirestoreSyncManager.pushAllDataToCloud(requireContext())
+        HistoryDataManager.deleteCategory(requireContext(), name)
     }
 
     private fun renameCategory(oldName: String, newName: String) {
@@ -232,39 +223,7 @@ class AllocatorFragment : Fragment() {
             val oldLimit = catPrefs.getInt("LIMIT_$oldName", 0)
             catPrefs.edit().putInt("LIMIT_$newName", oldLimit).remove("LIMIT_$oldName").apply()
 
-            val graphPrefs = requireContext().getSharedPreferences("GraphData", Context.MODE_PRIVATE)
-            val oldSpent = graphPrefs.getFloat("SPENT_$oldName", 0f)
-            graphPrefs.edit().putFloat("SPENT_$newName", oldSpent).remove("SPENT_$oldName").apply()
-
-            val weekPrefs = requireContext().getSharedPreferences("CategoryWeekData", Context.MODE_PRIVATE)
-            val weekEditor = weekPrefs.edit()
-            for (w in 1..5) {
-                val oldVal = weekPrefs.getInt("${oldName}_W$w", 0)
-                if (oldVal > 0) {
-                    weekEditor.putInt("${newName}_W$w", oldVal).remove("${oldName}_W$w")
-                }
-            }
-            weekEditor.apply()
-
-            val historySet = (graphPrefs.getStringSet("HISTORY_LIST", emptySet()) ?: emptySet()).toMutableSet()
-            val newHistorySet = mutableSetOf<String>()
-            var updatedCount = 0
-
-            historySet.forEach { entry ->
-                val parts = entry.split("|").toMutableList()
-                if (parts.size >= 4 && parts[3] == oldName) {
-                    parts[3] = newName
-                    newHistorySet.add(parts.joinToString("|"))
-                    val timestamp = parts[1]
-                    graphPrefs.edit().putString("TRANS_${timestamp}_CATEGORY", newName).apply()
-                    updatedCount++
-                } else {
-                    newHistorySet.add(entry)
-                }
-            }
-            if (updatedCount > 0) {
-                graphPrefs.edit().putStringSet("HISTORY_LIST", newHistorySet).apply()
-            }
+            HistoryDataManager.renameCategory(requireContext(), oldName, newName)
         }
     }
 

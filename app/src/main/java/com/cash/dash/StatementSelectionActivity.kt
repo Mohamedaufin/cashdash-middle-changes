@@ -21,6 +21,10 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.appcompat.widget.AppCompatButton
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class StatementSelectionActivity : ThemedActivity() {
 
@@ -121,19 +125,24 @@ class StatementSelectionActivity : ThemedActivity() {
     }
 
     private fun setupAllocationsGrid() {
-        val prefsCat = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)
-        val saved = prefsCat.getStringSet("categories", emptySet()) ?: emptySet()
-        val categories = mutableListOf("Overall")
-        categories.addAll(saved.toList().sorted())
+        lifecycleScope.launch(Dispatchers.IO) {
+            val prefsCat = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)
+            val saved = prefsCat.getStringSet("categories", emptySet()) ?: emptySet()
+            val categories = mutableListOf("Overall")
+            categories.addAll(saved.toList().sorted())
 
-        val prefsGraph = getSharedPreferences("GraphData", MODE_PRIVATE)
-        val historySet = prefsGraph.getStringSet("HISTORY_LIST", emptySet()) ?: emptySet()
-        if (historySet.any { it.contains("|no choice|") }) {
-            categories.add("no choice")
+            val db = AppDatabase.getDatabase(this@StatementSelectionActivity)
+            val noChoiceCount = db.transactionDao().getTransactionsByCategoryInRange("no choice", 0L, Long.MAX_VALUE).size
+            
+            if (noChoiceCount > 0) {
+                categories.add("no choice")
+            }
+
+            withContext(Dispatchers.Main) {
+                rvAllocations.layoutManager = GridLayoutManager(this@StatementSelectionActivity, 2)
+                rvAllocations.adapter = AllocationAdapter(categories)
+            }
         }
-
-        rvAllocations.layoutManager = GridLayoutManager(this, 2)
-        rvAllocations.adapter = AllocationAdapter(categories)
     }
 
     inner class AllocationAdapter(private val items: List<String>) : 

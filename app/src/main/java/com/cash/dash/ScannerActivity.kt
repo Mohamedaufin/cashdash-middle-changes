@@ -877,32 +877,9 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         val timestamp = cal.timeInMillis.toString()
 
         val dayIndex = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7
-        val monthIndex = cal.get(Calendar.MONTH)
-        val year = cal.get(Calendar.YEAR)
-        val weekIndex = cal.get(Calendar.WEEK_OF_MONTH) - 1
+        val timestampLong = cal.timeInMillis
 
-        editor.putFloat("SPENT_$category", prefs.getFloat("SPENT_$category", 0f) + amount)
-        editor.putFloat("DAY_${weekIndex}_${dayIndex}_${monthIndex}_${year}", prefs.getFloat("DAY_${weekIndex}_${dayIndex}_${monthIndex}_${year}", 0f) + amount)
-        editor.putFloat("WEEK_${weekIndex}_${monthIndex}_${year}", prefs.getFloat("WEEK_${weekIndex}_${monthIndex}_${year}", 0f) + amount)
-        editor.putFloat("MONTH_${monthIndex}_${year}", prefs.getFloat("MONTH_${monthIndex}_${year}", 0f) + amount)
-
-        val catWeekKey = "${category}_W${weekIndex + 1}"
-        weekEditor.putInt(catWeekKey, weeklyPrefs.getInt(catWeekKey, 0) + amount)
-
-        val historySet = (prefs.getStringSet("HISTORY_LIST", emptySet()) ?: emptySet()).toMutableSet()
-        historySet.add("EXP|$timestamp|$titleText|$category|$amount|$weekIndex|$dayIndex|$monthIndex|$year")
-        editor.putStringSet("HISTORY_LIST", historySet)
-
-        editor.putString("TRANS_${timestamp}_TITLE", titleText)
-        editor.putString("TRANS_${timestamp}_CATEGORY", category)
-        editor.putInt("TRANS_${timestamp}_AMOUNT", amount)
-        editor.putInt("TRANS_${timestamp}_WEEK", weekIndex)
-        editor.putInt("TRANS_${timestamp}_DAY", dayIndex)
-        editor.putInt("TRANS_${timestamp}_MONTH", monthIndex)
-        editor.putInt("TRANS_${timestamp}_YEAR", year)
-
-        editor.apply(); weekEditor.apply()
-        FirestoreSyncManager.pushAllDataToCloud(this)
+        HistoryDataManager.saveTransaction(this, titleText, amount.toFloat(), category, timestampLong)
     }
 
     private fun getParam(t: String, k: String) = Regex("$k=([^&]*)").find(t)?.groupValues?.get(1)
