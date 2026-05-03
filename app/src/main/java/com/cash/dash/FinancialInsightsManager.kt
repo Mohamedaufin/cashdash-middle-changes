@@ -25,7 +25,7 @@ object FinancialInsightsManager {
     data class CategoryBudget(val category: String, val budget: Int, val spent: Float, val percent: Float)
     data class DayStat(val dayLabel: String, val amount: Float, val isPeak: Boolean, val isLow: Boolean)
 
-    fun generateReport(context: Context, isMonthly: Boolean, month: Int, year: Int, weekIndex: Int = -1): AdvisoryInsights {
+    suspend fun generateReport(context: Context, isMonthly: Boolean, month: Int, year: Int, weekIndex: Int = -1): AdvisoryInsights = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val cal = Calendar.getInstance().apply { 
             firstDayOfWeek = Calendar.MONDAY
             set(year, month, 1, 0, 0, 0)
@@ -79,7 +79,7 @@ object FinancialInsightsManager {
                 prevEndMillis = startMillis - 1000L
                 label = week.weekLabel
             } else {
-                return generateEmptyReport("Week Selection Error")
+                return@withContext generateEmptyReport("Week Selection Error")
             }
         }
 
@@ -138,7 +138,7 @@ object FinancialInsightsManager {
         }
 
 
-        return AdvisoryInsights(
+        AdvisoryInsights(
             label, totalSpent, prevTotal, changePer, dailyAvg, summaries, budgetStatus,
             dailyStats, savingsOpp, isMonthly, topWeeksList
         )
@@ -149,7 +149,7 @@ object FinancialInsightsManager {
         BudgetStatus(0, 0f, emptyList()), emptyList(), "", false, emptyList()
     )
 
-    fun calculateWeeklyTrends(context: Context, month: Int, year: Int): List<WeeklyTrend> {
+    suspend fun calculateWeeklyTrends(context: Context, month: Int, year: Int): List<WeeklyTrend> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val list = mutableListOf<WeeklyTrend>()
         val cal = Calendar.getInstance().apply {
             firstDayOfWeek = Calendar.MONDAY
@@ -183,7 +183,7 @@ object FinancialInsightsManager {
             cal.add(Calendar.DAY_OF_YEAR, 7)
             if (cal.get(Calendar.MONTH) > month && cal.get(Calendar.YEAR) >= year) return@repeat
         }
-        return list
+        return@withContext list
     }
 
     private fun calculateBudgetStatus(context: Context, breakdown: HistoryDataManager.BreakdownResult): BudgetStatus {

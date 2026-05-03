@@ -10,6 +10,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class StatementActivity : ThemedActivity() {
 
@@ -61,13 +65,15 @@ class StatementActivity : ThemedActivity() {
 
         findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
         findViewById<View>(R.id.btnDownload).setOnClickListener {
-            PdfReportManager.generateStandaloneStatement(this, startMillis, endMillis, categoryFilter)
+            lifecycleScope.launch(Dispatchers.IO) {
+                PdfReportManager.generateStandaloneStatement(this@StatementActivity, startMillis, endMillis, categoryFilter)
+            }
         }
 
         setupUI()
         
         // Fix: Use Coroutines to fetch data from Room (No Main Thread access)
-        androidx.lifecycle.lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        lifecycleScope.launch(Dispatchers.IO) {
             val breakdown = HistoryDataManager.getCategoryBreakdownForRange(
                 this@StatementActivity, startMillis, endMillis, categoryFilter
             )

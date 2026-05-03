@@ -14,6 +14,11 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowCompat
 import kotlin.math.abs
+import java.text.SimpleDateFormat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ReportActivity : ThemedActivity() {
 
@@ -80,11 +85,16 @@ class ReportActivity : ThemedActivity() {
         toggleMode.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) {
                 isMonthlyMode = (checkedId == R.id.btnMonthly)
-                if (!isMonthlyMode) {
-                    selectedWeekIndex = getWeekIndexForNow()
+                
+                lifecycleScope.launch(Dispatchers.IO) {
+                    if (!isMonthlyMode) {
+                        selectedWeekIndex = getWeekIndexForNow()
+                    }
+                    withContext(Dispatchers.Main) {
+                        updatePeriodLabel()
+                        loadReport()
+                    }
                 }
-                updatePeriodLabel()
-                loadReport()
             }
         }
 
@@ -95,26 +105,34 @@ class ReportActivity : ThemedActivity() {
     }
 
     private fun updatePeriodLabel() {
-        if (isMonthlyMode) {
-            val sdf = java.text.SimpleDateFormat("MMMM yyyy", Locale.getDefault())
-            val cal = Calendar.getInstance().apply { set(currentYear, currentMonth, 1) }
-            btnPeriodSelect.text = sdf.format(cal.time)
-        } else {
-            val weeks = FinancialInsightsManager.calculateWeeklyTrends(this, currentMonth, currentYear)
-            if (selectedWeekIndex < weeks.size) {
-                btnPeriodSelect.text = "${weeks[selectedWeekIndex].weekLabel} (${weeks[selectedWeekIndex].dates})"
+        lifecycleScope.launch(Dispatchers.IO) {
+            if (isMonthlyMode) {
+                val sdf = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
+                val cal = Calendar.getInstance().apply { set(currentYear, currentMonth, 1) }
+                val label = sdf.format(cal.time)
+                withContext(Dispatchers.Main) {
+                    btnPeriodSelect.text = label
+                }
             } else {
-                btnPeriodSelect.text = "Select Week"
+                val weeks = FinancialInsightsManager.calculateWeeklyTrends(this@ReportActivity, currentMonth, currentYear)
+                val label = if (selectedWeekIndex < weeks.size) {
+                    "${weeks[selectedWeekIndex].weekLabel} (${weeks[selectedWeekIndex].dates})"
+                } else {
+                    "Select Week"
+                }
+                withContext(Dispatchers.Main) {
+                    btnPeriodSelect.text = label
+                }
             }
         }
     }
 
-    private fun getWeekIndexForNow(): Int {
+    private suspend fun getWeekIndexForNow(): Int = withContext(Dispatchers.IO) {
         val cal = Calendar.getInstance()
-        if (currentMonth != cal.get(Calendar.MONTH) || currentYear != cal.get(Calendar.YEAR)) return 0
+        if (currentMonth != cal.get(Calendar.MONTH) || currentYear != cal.get(Calendar.YEAR)) return@withContext 0
         
-        val weeks = FinancialInsightsManager.calculateWeeklyTrends(this, currentMonth, currentYear)
-        val sdf = java.text.SimpleDateFormat("MMM d", Locale.getDefault())
+        val weeks = FinancialInsightsManager.calculateWeeklyTrends(this@ReportActivity, currentMonth, currentYear)
+        val sdf = SimpleDateFormat("MMM d", Locale.getDefault())
         val nowCal = Calendar.getInstance()
         
         for (i in weeks.indices) {
@@ -124,14 +142,22 @@ class ReportActivity : ThemedActivity() {
                     val start = sdf.parse(parts[0])
                     val end = sdf.parse(parts[1])
                     if (start != null && end != null) {
-                        val startCal = Calendar.getInstance().apply { time = start; set(Calendar.YEAR, currentYear) }
-                        val endCal = Calendar.getInstance().apply { time = end; set(Calendar.YEAR, currentYear); set(Calendar.HOUR_OF_DAY, 23); set(Calendar.MINUTE, 59) }
-                        if (nowCal.timeInMillis in startCal.timeInMillis..endCal.timeInMillis) return i
+                        val startCal = Calendar.getInstance().apply { 
+                            time = start
+                            set(Calendar.YEAR, currentYear)
+                        }
+                        val endCal = Calendar.getInstance().apply { 
+                            time = end
+                            set(Calendar.YEAR, currentYear)
+                            set(Calendar.HOUR_OF_DAY, 23)
+                            set(Calendar.MINUTE, 59)
+                        }
+                        if (nowCal.timeInMillis in startCal.timeInMillis..endCal.timeInMillis) return@withContext i
                     }
                 } catch (e: Exception) {}
             }
         }
-        return if (weeks.isNotEmpty()) weeks.size - 1 else 0
+        return@withContext if (weeks.isNotEmpty()) weeks.size - 1 else 0
     }
 
     private fun showPeriodPicker() {
@@ -158,16 +184,20 @@ class ReportActivity : ThemedActivity() {
     }
 
     private fun showWeekPicker() {
-        val weeks = FinancialInsightsManager.calculateWeeklyTrends(this, currentMonth, currentYear)
-        val weekLabels = weeks.map { "${it.weekLabel} (${it.dates})" }.toTypedArray()
-        
-        android.app.AlertDialog.Builder(this)
-            .setTitle("Select Week for ${java.text.DateFormatSymbols().months[currentMonth]}")
-            .setItems(weekLabels) { _, which ->
-                selectedWeekIndex = which
-                updatePeriodLabel()
-                loadReport()
-            }.show()
+        lifecycleScope.launch(Dispatchers.IO) {
+            val weeks = FinancialInsightsManager.calculateWeeklyTrends(this@ReportActivity, currentMonth, currentYear)
+            val weekLabels = weeks.map { "${it.weekLabel} (${it.dates})" }.toTypedArray()
+            
+            withContext(Dispatchers.Main) {
+                android.app.AlertDialog.Builder(this@ReportActivity)
+                    .setTitle("Select Week for ${java.text.DateFormatSymbols().months[currentMonth]}")
+                    .setItems(weekLabels) { _, which ->
+                        selectedWeekIndex = which
+                        updatePeriodLabel()
+                        loadReport()
+                    }.show()
+            }
+        }
     }
 
     private fun loadReport() {
@@ -466,6 +496,9 @@ class ReportActivity : ThemedActivity() {
         val start = cal.timeInMillis
         cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH))
         val end = cal.timeInMillis
-        PdfReportManager.generateAndSavePremiumReport(this, start, end, isMonthlyMode, selectedWeekIndex)
+        
+        lifecycleScope.launch(Dispatchers.IO) {
+            PdfReportManager.generateAndSavePremiumReport(this@ReportActivity, start, end, isMonthlyMode, selectedWeekIndex)
+        }
     }
 }

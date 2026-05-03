@@ -19,7 +19,7 @@ import java.util.Locale
 
 object PdfReportManager {
 
-    fun generateAndSavePremiumReport(context: Context, startMillis: Long, endMillis: Long, isMonthly: Boolean, weekIndex: Int = -1) {
+    suspend fun generateAndSavePremiumReport(context: Context, startMillis: Long, endMillis: Long, isMonthly: Boolean, weekIndex: Int = -1) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val cal = Calendar.getInstance().apply { timeInMillis = startMillis }
         val month = cal.get(Calendar.MONTH)
         val year = cal.get(Calendar.YEAR)
@@ -139,7 +139,7 @@ object PdfReportManager {
         savePdfToDownloads(context, document, fileName)
     }
 
-    fun generateStandaloneStatement(context: Context, startMillis: Long, endMillis: Long, categoryFilter: String = "Overall") {
+    suspend fun generateStandaloneStatement(context: Context, startMillis: Long, endMillis: Long, categoryFilter: String = "Overall") = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val breakdown = HistoryDataManager.getCategoryBreakdownForRange(context, startMillis, endMillis, categoryFilter)
         // Ascending sort (Oldest first)
         val transactions = breakdown.transactions.sortedBy { entry ->
