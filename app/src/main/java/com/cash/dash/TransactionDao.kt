@@ -29,17 +29,17 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE rawEntry = :rawEntry LIMIT 1")
     suspend fun findByRawEntry(rawEntry: String): TransactionEntity?
 
-    @Query("DELETE FROM transactions WHERE rawEntry = :rawEntry")
-    suspend fun deleteByRawEntry(rawEntry: String)
+    @Query("DELETE FROM transactions WHERE timestamp = :timestamp")
+    suspend fun deleteByTimestamp(timestamp: Long)
 
-    @Query("UPDATE transactions SET title = :newTitle, rawEntry = :newRawEntry WHERE rawEntry = :oldRawEntry")
-    suspend fun updateTitle(oldRawEntry: String, newRawEntry: String, newTitle: String)
+    @Query("UPDATE transactions SET amount = :newAmount, rawEntry = :newRawEntry WHERE timestamp = :timestamp")
+    suspend fun updateAmountByTimestamp(timestamp: Long, newAmount: Int, newRawEntry: String)
 
-    @Query("UPDATE transactions SET amount = :newAmount, rawEntry = :newRawEntry WHERE rawEntry = :oldRawEntry")
-    suspend fun updateAmount(oldRawEntry: String, newRawEntry: String, newAmount: Int)
+    @Query("UPDATE transactions SET title = :newTitle, rawEntry = :newRawEntry WHERE timestamp = :timestamp")
+    suspend fun updateTitleByTimestamp(timestamp: Long, newTitle: String, newRawEntry: String)
 
-    @Query("UPDATE transactions SET category = :newCategory, rawEntry = :newRawEntry WHERE rawEntry = :oldRawEntry")
-    suspend fun updateCategory(oldRawEntry: String, newRawEntry: String, newCategory: String)
+    @Query("UPDATE transactions SET category = :newCategory, rawEntry = :newRawEntry WHERE timestamp = :timestamp")
+    suspend fun updateCategoryByTimestamp(timestamp: Long, newCategory: String, newRawEntry: String)
 
     @Query("SELECT SUM(amount) FROM transactions WHERE category = :category AND timestamp BETWEEN :startMillis AND :endMillis")
     fun getSumByCategoryInRange(category: String, startMillis: Long, endMillis: Long): Float?

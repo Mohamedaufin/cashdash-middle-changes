@@ -11,6 +11,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlinx.coroutines.*
 
 class NotificationActivity : ThemedActivity() {
 
@@ -84,6 +85,12 @@ class NotificationActivity : ThemedActivity() {
                     val batch = db.batch()
                     for (doc in docs) batch.update(doc.reference, "read", true)
                     batch.commit()
+                    
+                    // Sync to Room
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val dao = AppDatabase.getDatabase(this@NotificationActivity).notificationDao()
+                        for (doc in docs) dao.updateReadStatus(doc.id, true)
+                    }
                 }
             }
     }
@@ -95,7 +102,7 @@ class NotificationActivity : ThemedActivity() {
         val tvEmpty = findViewById<TextView>(R.id.tvEmptyNotifications)
         val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
 
-        loadFromCacheAndRender()
+        loadFromRoomAndRender()
 
         notificationListener?.remove()
         notificationListener = db.collection("users").document(email).collection("notifications")
@@ -126,7 +133,6 @@ class NotificationActivity : ThemedActivity() {
                                     }
                                     batch.commit().addOnSuccessListener {
                                         prefs.edit().putBoolean("migrated_notifications_uid", true).apply()
-                                        // The addSnapshotListener will automatically trigger when the batch commit pushes the new docs
                                     }
                                 } else {
                                     prefs.edit().putBoolean("migrated_notifications_uid", true).apply()
@@ -135,7 +141,7 @@ class NotificationActivity : ThemedActivity() {
                                     findViewById<LinearLayout>(R.id.filterBar).visibility = View.VISIBLE
                                     rv.visibility = View.GONE
                                     allNotifications = emptyList()
-                                    cacheNotifications(emptyList())
+                                    saveToRoom(emptyList())
                                 }
                             }
                         return@addSnapshotListener
@@ -145,12 +151,12 @@ class NotificationActivity : ThemedActivity() {
                         findViewById<LinearLayout>(R.id.filterBar).visibility = View.VISIBLE
                         rv.visibility = View.GONE
                         allNotifications = emptyList()
-                        cacheNotifications(emptyList())
+                        saveToRoom(emptyList())
                         return@addSnapshotListener
                     }
                 }
 
-                // 1. Silent cleanup for duplicates (improved)
+                // 1. Silent cleanup for duplicates
                 val rawDocs = docs.documents
                 val grouped = rawDocs.groupBy { "${it.getString("subject")}|${it.getString("query")}" }
                 val toDelete = mutableListOf<com.google.firebase.firestore.DocumentSnapshot>()
@@ -169,191 +175,111 @@ class NotificationActivity : ThemedActivity() {
                     batch.commit()
                 }
 
-                // 2. Map to performant models
-                val sdf = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
-                val now = System.currentTimeMillis()
-                                val fortyEightHours = 48 * 60 * 60 * 1000L // 48 hours for production
-
-                allNotifications = rawDocs.filter { d -> !toDelete.any { it.id == d.id } }.map { doc ->
-                    val query = doc.getString("query") ?: "No query"
-                    val reply = doc.getString("reply") ?: "Waiting for reply..."
-                    val subject = doc.getString("subject") ?: "General Help"
-                    val ts = doc.getLong("timestamp") ?: 0L
-                    val status = doc.getString("status") ?: (if (reply == "Waiting for reply...") "pending" else "responded")
-                    
-                    var isResolved = status == "resolved" || 
-                                     reply.contains("[RESOLVED]", ignoreCase = true) || 
-                                     reply.contains("[DONE]", ignoreCase = true)
-                    
-                    // Auto-resolve check (Trigger only after team responds if user is silent for 48h)
-                    if (!isResolved && status == "responded" && (now - ts) > fortyEightHours) {
-                        isResolved = true
-                        db.collection("users").document(email).collection("notifications").document(doc.id).update("status", "resolved")
-                    }
-
-                    val isPending = (reply == "Waiting for reply...")
-                    
-                    val queryTitle = when {
-                        isResolved -> "Query resolved"
-                        isPending -> "Waiting for response"
-                        else -> "Query responded"
-                    }
-
-                    val isWhite = ThemeHelper.isWhiteTheme(this@NotificationActivity)
-                    val colorTeam = if (isWhite) "#008000" else "#4ADE80"
-                    val colorContent = if (isWhite) "#333333" else "#E0EBF5"
-                    val colorPending = if (isWhite) "#CD8500" else "#FFD93D"
-
-                    val prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
-                    val userName = prefs.getString("user_name", "User") ?: "User"
-
-                    val userFormat = if (isWhite) "<font color='#0047AB'>$userName:</font>" else "$userName:"
-
-                    val color = Color.parseColor(when {
-                        isResolved -> "#606880"
-                        isPending -> colorPending
-                        else -> colorTeam
-                    })
-
-                    // Clean up extra spaces to make it even and premium
-                    val displayQuery = query
-                        .replace("User Reply \\(\\d+\\):".toRegex(), userFormat)
-                        .replace("User:".toRegex(), userFormat)
-                        .replace("$userName:".toRegex(), userFormat)
-                        .replace("Team Cashdash:".toRegex(), "<font color='$colorTeam'><b>Team Cashdash:</b></font>")
-                        .replace("\n", "<br>")
-
-                    NotificationModel(
+                // 2. Map to entities and save to Room
+                val finalDocs = rawDocs.filter { d -> !toDelete.any { it.id == d.id } }
+                val entities = finalDocs.map { doc ->
+                    NotificationEntity(
                         id = doc.id,
-                        queryFormatted = android.text.Html.fromHtml("<b>Subject:</b> $subject<br><b>Question:</b> $displayQuery", android.text.Html.FROM_HTML_MODE_LEGACY),
-                        replyFormatted = if (isPending) null else android.text.Html.fromHtml("<font color='$colorTeam'><b>Response</b></font><br><font color='$colorContent'>${reply.replace("\n", "<br>")}</font>", android.text.Html.FROM_HTML_MODE_LEGACY),
-                        timestamp = ts,
-                        title = queryTitle,
-                        timeFormatted = if (ts > 0) sdf.format(Date(ts)) else "",
-                        statusColor = color,
-                        isPending = isPending,
-                        isUnread = doc.getBoolean("read") == false,
-                        isResolved = isResolved,
-                        originalSubject = subject,
-                        originalQuery = query,
-                        originalReply = reply
+                        subject = doc.getString("subject") ?: "General Help",
+                        query = doc.getString("query") ?: "No query",
+                        reply = doc.getString("reply") ?: "Waiting for reply...",
+                        timestamp = doc.getLong("timestamp") ?: 0L,
+                        status = doc.getString("status") ?: "",
+                        read = doc.getBoolean("read") ?: true
                     )
                 }
-
-                val keepers = rawDocs.filter { d -> !toDelete.any { it.id == d.id } }
-                cacheNotifications(keepers)
+                saveToRoom(entities)
+                
+                // 3. Map to models for UI
+                allNotifications = mapEntitiesToModels(entities)
                 applyFilter()
             }
     }
 
-    private fun cacheNotifications(docs: List<com.google.firebase.firestore.DocumentSnapshot>) {
-        try {
-            val jsonArray = org.json.JSONArray()
-            for (doc in docs) {
-                val obj = org.json.JSONObject()
-                obj.put("id", doc.id)
-                obj.put("query", doc.getString("query") ?: "")
-                obj.put("reply", doc.getString("reply") ?: "")
-                obj.put("subject", doc.getString("subject") ?: "")
-                obj.put("timestamp", doc.getLong("timestamp") ?: 0L)
-                obj.put("status", doc.getString("status") ?: "")
-                obj.put("read", doc.getBoolean("read") ?: true)
-                jsonArray.put(obj)
-            }
-            getSharedPreferences("NotificationCache", MODE_PRIVATE).edit()
-                .putString("cache_data", jsonArray.toString())
-                .apply()
-        } catch (e: Exception) {
-            // e.printStackTrace()
+    private fun saveToRoom(entities: List<NotificationEntity>) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val db = AppDatabase.getDatabase(this@NotificationActivity)
+            db.notificationDao().deleteAll()
+            db.notificationDao().insertAll(entities)
         }
     }
 
-    private fun loadFromCacheAndRender() {
-        val prefs = getSharedPreferences("NotificationCache", MODE_PRIVATE)
-        val jsonStr = prefs.getString("cache_data", null)
-        if (jsonStr == null) {
-            val tvEmpty = findViewById<TextView>(R.id.tvEmptyNotifications)
-            val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
-            tvEmpty.text = "Loading notifications..."
-            tvEmpty.visibility = View.VISIBLE
-            rv.visibility = View.GONE
-            findViewById<LinearLayout>(R.id.filterBar).visibility = View.GONE
-            return
-        }
-        try {
-            val array = org.json.JSONArray(jsonStr)
-            val sdf = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
-            val now = System.currentTimeMillis()
-            val fortyEightHours = 48 * 60 * 60 * 1000L // 48 hours for production
-
-            val userPrefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
-            val userName = userPrefs.getString("user_name", "User") ?: "User"
-
-            val list = mutableListOf<NotificationModel>()
-            for (i in 0 until array.length()) {
-                val obj = array.getJSONObject(i)
-                val id = obj.getString("id")
-                val query = obj.optString("query", "No query")
-                val reply = obj.optString("reply", "Waiting for reply...")
-                val subject = obj.optString("subject", "General Help")
-                val ts = obj.optLong("timestamp", 0L)
-                val status = obj.optString("status", if (reply == "Waiting for reply...") "pending" else "responded")
-                val read = obj.optBoolean("read", true)
-
-                var isResolved = status == "resolved" || 
-                                 reply.contains("[RESOLVED]", ignoreCase = true) || 
-                                 reply.contains("[DONE]", ignoreCase = true)
-                
-                if (!isResolved && status == "responded" && (now - ts) > fortyEightHours) {
-                    isResolved = true
-                }
-
-                val isPending = (reply == "Waiting for reply...")
-                val queryTitle = when {
-                    isResolved -> "Query resolved"
-                    isPending -> "Waiting for response"
-                    else -> "Query responded"
-                }
-                // --- THEME AWARE HTML COLORING ---
-                val isWhite = ThemeHelper.isWhiteTheme(this@NotificationActivity)
-                val colorTeam = if (isWhite) "#008000" else "#4ADE80"
-                val colorContent = if (isWhite) "#333333" else "#E0EBF5"
-                val colorPending = if (isWhite) "#CD8500" else "#FFD93D"
-
-                val userFormat = if (isWhite) "<font color='#0047AB'>$userName:</font>" else "$userName:"
-
-                val color = Color.parseColor(when {
-                    isResolved -> "#606880"
-                    isPending -> colorPending
-                    else -> colorTeam
-                })
-                val displayQuery = query
-                    .replace("User Reply \\(\\d+\\):".toRegex(), userFormat)
-                    .replace("User:".toRegex(), userFormat)
-                    .replace("$userName:".toRegex(), userFormat)
-                    .replace("Team Cashdash:".toRegex(), "<font color='$colorTeam'><b>Team Cashdash:</b></font>")
-                    .replace("\n", "<br>")
-
-                list.add(NotificationModel(
-                    id = id,
-                    queryFormatted = android.text.Html.fromHtml("<b>Subject:</b> $subject<br><b>Question:</b> $displayQuery", android.text.Html.FROM_HTML_MODE_LEGACY),
-                    replyFormatted = if (isPending) null else android.text.Html.fromHtml("<font color='$colorTeam'><b>Response</b></font><br><font color='$colorContent'>${reply.replace("\n", "<br>")}</font>", android.text.Html.FROM_HTML_MODE_LEGACY),
-                    timestamp = ts,
-                    title = queryTitle,
-                    timeFormatted = if (ts > 0) sdf.format(Date(ts)) else "",
-                    statusColor = color,
-                    isPending = isPending,
-                    isUnread = !read,
-                    isResolved = isResolved,
-                    originalSubject = subject,
-                    originalQuery = query,
-                    originalReply = reply
-                ))
+    private fun loadFromRoomAndRender() {
+        CoroutineScope(Dispatchers.IO).launch {
+            val db = AppDatabase.getDatabase(this@NotificationActivity)
+            val entities = db.notificationDao().getAll()
+            val models = mapEntitiesToModels(entities)
+            
+            withContext(Dispatchers.Main) {
+                allNotifications = models
+                if (allNotifications.isNotEmpty()) applyFilter()
             }
-            allNotifications = list
-            applyFilter()
-        } catch (e: Exception) {
-            // e.printStackTrace()
+        }
+    }
+
+    private fun mapEntitiesToModels(entities: List<NotificationEntity>): List<NotificationModel> {
+        val sdf = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
+        val now = System.currentTimeMillis()
+        val fortyEightHours = 48 * 60 * 60 * 1000L
+
+        val userPrefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
+        val userName = userPrefs.getString("user_name", "User") ?: "User"
+        val isWhite = ThemeHelper.isWhiteTheme(this@NotificationActivity)
+        val colorTeam = if (isWhite) "#008000" else "#4ADE80"
+        val colorContent = if (isWhite) "#333333" else "#E0EBF5"
+        val colorPending = if (isWhite) "#CD8500" else "#FFD93D"
+        val userFormat = if (isWhite) "<font color='#0047AB'>$userName:</font>" else "$userName:"
+
+        return entities.map { entity ->
+            val query = entity.query
+            val reply = entity.reply
+            val subject = entity.subject
+            val ts = entity.timestamp
+            val status = entity.status.ifEmpty { if (reply == "Waiting for reply...") "pending" else "responded" }
+
+            var isResolved = status == "resolved" || 
+                             reply.contains("[RESOLVED]", ignoreCase = true) || 
+                             reply.contains("[DONE]", ignoreCase = true)
+            
+            if (!isResolved && status == "responded" && (now - ts) > fortyEightHours) {
+                isResolved = true
+            }
+
+            val isPending = (reply == "Waiting for reply...")
+            val queryTitle = when {
+                isResolved -> "Query resolved"
+                isPending -> "Waiting for response"
+                else -> "Query responded"
+            }
+
+            val color = Color.parseColor(when {
+                isResolved -> "#606880"
+                isPending -> colorPending
+                else -> colorTeam
+            })
+
+            val displayQuery = query
+                .replace("User Reply \\(\\d+\\):".toRegex(), userFormat)
+                .replace("User:".toRegex(), userFormat)
+                .replace("$userName:".toRegex(), userFormat)
+                .replace("Team Cashdash:".toRegex(), "<font color='$colorTeam'><b>Team Cashdash:</b></font>")
+                .replace("\n", "<br>")
+
+            NotificationModel(
+                id = entity.id,
+                queryFormatted = android.text.Html.fromHtml("<b>Subject:</b> $subject<br><b>Question:</b> $displayQuery", android.text.Html.FROM_HTML_MODE_LEGACY),
+                replyFormatted = if (isPending) null else android.text.Html.fromHtml("<font color='$colorTeam'><b>Response</b></font><br><font color='$colorContent'>${reply.replace("\n", "<br>")}</font>", android.text.Html.FROM_HTML_MODE_LEGACY),
+                timestamp = ts,
+                title = queryTitle,
+                timeFormatted = if (ts > 0) sdf.format(Date(ts)) else "",
+                statusColor = color,
+                isPending = isPending,
+                isUnread = !entity.read,
+                isResolved = isResolved,
+                originalSubject = subject,
+                originalQuery = query,
+                originalReply = reply
+            )
         }
     }
 
@@ -464,26 +390,14 @@ class NotificationActivity : ThemedActivity() {
                 mutList.removeAll { it.id == model.id }
                 allNotifications = mutList
                 
-                // Force sync the offline storage JSON instantly
-                val prefs = getSharedPreferences("NotificationCache", MODE_PRIVATE)
-                val jsonStr = prefs.getString("cache_data", null)
-                if (jsonStr != null) {
-                    try {
-                        val arr = org.json.JSONArray(jsonStr)
-                        val newArr = org.json.JSONArray()
-                        for (i in 0 until arr.length()) {
-                            val obj = arr.getJSONObject(i)
-                            if (obj.getString("id") != model.id) {
-                                newArr.put(obj)
-                            }
-                        }
-                        prefs.edit().putString("cache_data", newArr.toString()).apply()
-                    } catch (e: Exception) {}
+                if (allNotifications.isEmpty()) {
+                    saveToRoom(emptyList()) // Ensures the empty state sticks
+                } else {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        AppDatabase.getDatabase(this@NotificationActivity).notificationDao().deleteById(model.id)
+                    }
                 }
 
-                if (allNotifications.isEmpty()) {
-                    cacheNotifications(emptyList()) // Ensures the empty state sticks
-                }
                 applyFilter() // Redraws RecyclerView instantaneously
                 
                 // Process the deletion with Firestore sequentially

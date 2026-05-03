@@ -13,6 +13,7 @@ import android.view.animation.OvershootInterpolator
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.snackbar.Snackbar
 import java.util.*
+import kotlinx.coroutines.*
 
 class HomeFragment : Fragment() {
 
@@ -104,7 +105,7 @@ class HomeFragment : Fragment() {
         val prefs = requireContext().getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
         val initialBalance = prefs.getInt("initial_balance", -1)
 
-        if (initialBalance <= 0) {
+        if (initialBalance == -1) {
             val box = android.widget.LinearLayout(requireContext()).apply {
                 orientation = android.widget.LinearLayout.VERTICAL
                 val p = (28 * density).toInt()
@@ -224,38 +225,45 @@ class HomeFragment : Fragment() {
         }
 
         if (today.after(next)) {
-            // Perform Cycle Reset (Expensive path)
-            while (next.before(today)) {
-                next.add(Calendar.DAY_OF_YEAR, freq)
+            // Perform Cycle Reset (Offloaded to background thread)
+            CoroutineScope(Dispatchers.IO).launch {
+                while (next.before(today)) {
+                    next.add(Calendar.DAY_OF_YEAR, freq)
+                }
+
+                val newNextDateMs = next.timeInMillis
+                prefs.edit().putLong(KEY_NEXT_DATE, newNextDateMs).apply()
+
+                val categoryPrefs = requireContext().getSharedPreferences("CategoryPrefs", android.content.Context.MODE_PRIVATE)
+                val categories = categoryPrefs.getStringSet("categories", emptySet()) ?: emptySet()
+                val graphPrefs = requireContext().getSharedPreferences("GraphData", android.content.Context.MODE_PRIVATE)
+                val graphEditor = graphPrefs.edit()
+                for (cat in categories) {
+                    graphEditor.putFloat("SPENT_$cat", 0f)
+                }
+                graphEditor.putFloat("SPENT_no choice", 0f)
+                graphEditor.apply()
+
+                val wPrefs = requireContext().getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
+                val initialBal = wPrefs.getInt("initial_balance", 0)
+                wPrefs.edit().putInt("wallet_balance", initialBal).apply()
+
+                FirestoreSyncManager.pushAllDataToCloud(requireContext())
+
+                val newNextDateStr = "%02d/%02d/%04d".format(
+                    next.get(Calendar.DAY_OF_MONTH),
+                    next.get(Calendar.MONTH) + 1,
+                    next.get(Calendar.YEAR)
+                )
+
+                withContext(Dispatchers.Main) {
+                    if (isAdded) {
+                        textView.text = "This money is tentatively till $newNextDateStr"
+                        lastLoadedDateStr = newNextDateStr
+                        loadBalance(requireView())
+                    }
+                }
             }
-
-            val newNextDateMs = next.timeInMillis
-            prefs.edit().putLong(KEY_NEXT_DATE, newNextDateMs).apply()
-
-            val categoryPrefs = requireContext().getSharedPreferences("CategoryPrefs", android.content.Context.MODE_PRIVATE)
-            val categories = categoryPrefs.getStringSet("categories", emptySet()) ?: emptySet()
-            val graphPrefs = requireContext().getSharedPreferences("GraphData", android.content.Context.MODE_PRIVATE)
-            val graphEditor = graphPrefs.edit()
-            for (cat in categories) {
-                graphEditor.putFloat("SPENT_$cat", 0f)
-            }
-            graphEditor.putFloat("SPENT_no choice", 0f)
-            graphEditor.apply()
-
-            val wPrefs = requireContext().getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
-            val initialBal = wPrefs.getInt("initial_balance", 0)
-            wPrefs.edit().putInt("wallet_balance", initialBal).apply()
-
-            FirestoreSyncManager.pushAllDataToCloud(requireContext())
-
-            val newNextDateStr = "%02d/%02d/%04d".format(
-                next.get(Calendar.DAY_OF_MONTH),
-                next.get(Calendar.MONTH) + 1,
-                next.get(Calendar.YEAR)
-            )
-            textView.text = "This money is tentatively till $newNextDateStr"
-            lastLoadedDateStr = newNextDateStr
-            loadBalance(view)
         } else {
             val nextDateStr = "%02d/%02d/%04d".format(
                 next.get(Calendar.DAY_OF_MONTH),

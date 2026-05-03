@@ -17,14 +17,24 @@ class SmsReceiver : BroadcastReceiver() {
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
         val fullText = messages.joinToString("") { it.messageBody }.lowercase()
 
-        // 🔥 SIMPLE UPI PAYMENT DETECTION
-        if ("upi" in fullText && ("debited" in fullText || "credited" in fullText)) {
+        // 🔥 IMPROVED UPI PAYMENT DETECTION & LOGGING
+        if ("upi" in fullText && ("debited" in fullText || "sent" in fullText || "paid" in fullText)) {
+            val amountRegex = Regex("(?:rs\\.?|inr)\\s?([\\d,]+\\.?\\d*)")
+            val match = amountRegex.find(fullText)
+            val amount = match?.groupValues?.get(1)?.replace(",", "")?.toFloatOrNull() ?: 0f
 
-            ToastHelper.showToast(context, "✔ Transaction Successful", Toast.LENGTH_LONG)
+            if (amount > 0f) {
+                // Determine a generic title or use sender info if available
+                val title = "UPI Payment (Auto-detected)"
+                HistoryDataManager.saveTransaction(context, title, amount, "Overall")
+                ToastHelper.showToast(context, "✔ Paid ₹$amount (Logged)", Toast.LENGTH_LONG)
+            } else {
+                ToastHelper.showToast(context, "✔ Transaction Detected", Toast.LENGTH_LONG)
+            }
 
-            // Return → MainActivity
+            // Return → MainActivity to refresh UI
             val i = Intent(context, MainActivity::class.java)
-            i.putExtra("payment_status", "success") // Use same key as ScannerActivity for consistency
+            i.putExtra("payment_status", "success")
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             context.startActivity(i)
         }
