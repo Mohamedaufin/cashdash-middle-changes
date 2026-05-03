@@ -5,8 +5,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "transactions")
 data class TransactionEntity(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val timestamp: Long,
+    @PrimaryKey val timestamp: Long,
     val title: String,
     val category: String,
     val amount: Int,
@@ -14,5 +13,5 @@ data class TransactionEntity(
     val day: Int,
     val month: Int,
     val year: Int,
-    val rawEntry: String // Keeping the original string format for backward compatibility/sync
+    val rawEntry: String 
 )

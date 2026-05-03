@@ -89,10 +89,11 @@ object HistoryDataManager {
         val amount = parts[4].toFloatOrNull() ?: 0f
         val category = parts[3]
         val timestampStr = parts[1]
+        val timestamp = timestampStr.toLongOrNull() ?: 0L
 
         // 1. Delete from Room (Async)
         CoroutineScope(Dispatchers.IO).launch {
-            AppDatabase.getDatabase(context).transactionDao().deleteByRawEntry(rawEntry)
+            AppDatabase.getDatabase(context).transactionDao().deleteByTimestamp(timestamp)
         }
 
         // 2. Delete from SharedPreferences (Legacy)
@@ -149,11 +150,12 @@ object HistoryDataManager {
         val oldRawEntry = rawEntry
         parts[2] = newTitle
         val newRawEntry = parts.joinToString("|")
-        val timestamp = parts[1]
+        val timestampStr = parts[1]
+        val timestamp = timestampStr.toLongOrNull() ?: 0L
 
         // 1. Update Room (Async)
         CoroutineScope(Dispatchers.IO).launch {
-            AppDatabase.getDatabase(context).transactionDao().updateTitle(oldRawEntry, newRawEntry, newTitle)
+            AppDatabase.getDatabase(context).transactionDao().updateTitleByTimestamp(timestamp, newTitle, newRawEntry)
         }
 
         // 2. Update SharedPreferences
@@ -178,7 +180,8 @@ object HistoryDataManager {
         val oldRawEntry = rawEntry
         val oldCategory = parts[3]
         val amount = parts[4].toIntOrNull() ?: 0
-        val timestamp = parts[1]
+        val timestampStr = parts[1]
+        val timestamp = timestampStr.toLongOrNull() ?: 0L
         val hWeek = parts[5].toInt()
 
         parts[3] = newCategory
@@ -186,7 +189,7 @@ object HistoryDataManager {
 
         // 1. Update Room (Async)
         CoroutineScope(Dispatchers.IO).launch {
-            AppDatabase.getDatabase(context).transactionDao().updateCategory(oldRawEntry, newRawEntry, newCategory)
+            AppDatabase.getDatabase(context).transactionDao().updateCategoryByTimestamp(timestamp, newCategory, newRawEntry)
         }
 
         // 2. Update SharedPreferences
@@ -230,7 +233,8 @@ object HistoryDataManager {
         val oldAmount = parts[4].toIntOrNull() ?: 0
         val delta = newAmount - oldAmount
         val category = parts[3]
-        val timestamp = parts[1]
+        val timestampStr = parts[1]
+        val timestamp = timestampStr.toLongOrNull() ?: 0L
         
         val hWeek = parts[5]
         val hDay = parts[6]
@@ -242,7 +246,7 @@ object HistoryDataManager {
 
         // 1. Update Room (Async)
         CoroutineScope(Dispatchers.IO).launch {
-            AppDatabase.getDatabase(context).transactionDao().updateAmount(oldRawEntry, newRawEntry, newAmount)
+            AppDatabase.getDatabase(context).transactionDao().updateAmountByTimestamp(timestamp, newAmount, newRawEntry)
         }
 
         // 2. Update SharedPreferences
@@ -440,7 +444,7 @@ object HistoryDataManager {
                 if (parts.size >= 4) {
                     parts[3] = newName
                     val newRaw = parts.joinToString("|")
-                    dao.updateCategory(item.rawEntry, newRaw, newName)
+                    dao.updateCategoryByTimestamp(item.timestamp, newName, newRaw)
                 }
             }
         }

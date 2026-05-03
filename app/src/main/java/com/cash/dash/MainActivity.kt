@@ -103,7 +103,11 @@ class MainActivity : ThemedActivity() {
         FirestoreSyncManager.startRealTimeSync(this)
         
         // 🔄 MIGRATION TRIGGER: Ensure existing logged-in users have their data pushed to the new Email-based document ID
-        FirestoreSyncManager.pushAllDataToCloud(this)
+        val migrationPrefs = getSharedPreferences("MigrationPrefs", MODE_PRIVATE)
+        if (!migrationPrefs.getBoolean("email_sync_migrated", false)) {
+            FirestoreSyncManager.pushAllDataToCloud(this)
+            migrationPrefs.edit().putBoolean("email_sync_migrated", true).apply()
+        }
     }
 
     private fun initNavbar() {
