@@ -244,20 +244,10 @@ object PdfReportManager {
 
         if (categoryFilter == "Overall") {
             canvas.drawText("CUMULATIVE EXPENDITURE", 60f, yTable + 26f, paint)
-            canvas.drawText("₹$totalSpent", 430f, yTable + 26f, paint)
         } else {
-            val limitPrefs = context.getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
-            val limit = limitPrefs.getInt("LIMIT_$categoryFilter", 0)
-            
-            if (limit > 0) {
-                val percentage = ((totalSpent.toFloat() / limit.toFloat()) * 100).toInt()
-                canvas.drawText("% ALLOCATION EXPENDITURE", 60f, yTable + 26f, paint)
-                canvas.drawText("$percentage%", 430f, yTable + 26f, paint)
-            } else {
-                canvas.drawText("TOTAL CATEGORY EXPENDITURE", 60f, yTable + 26f, paint)
-                canvas.drawText("₹$totalSpent", 430f, yTable + 26f, paint)
-            }
+            canvas.drawText("${categoryFilter.uppercase()} EXPENDITURE", 60f, yTable + 26f, paint)
         }
+        canvas.drawText("₹$totalSpent", 430f, yTable + 26f, paint)
 
         document.finishPage(page)
         val formattedCategory = categoryFilter.replace(" ", "_")
