@@ -31,6 +31,12 @@ class HomeFragment : Fragment() {
     private var lastLoadedBarMode: String? = null
     private var lastLoadedBarType: String? = null
     private var lastLoadedDateStr: String? = null
+    
+    private val walletListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == KEY_BALANCE || key == "initial_balance" || key == "balance_bar_mode" || key == "balance_bar_type") {
+            view?.let { loadBalance(it) }
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -88,6 +94,15 @@ class HomeFragment : Fragment() {
                 return true
             }
         })
+        
+        val wPrefs = requireContext().getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
+        wPrefs.registerOnSharedPreferenceChangeListener(walletListener)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        val wPrefs = requireContext().getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
+        wPrefs.unregisterOnSharedPreferenceChangeListener(walletListener)
     }
 
     override fun onResume() {
