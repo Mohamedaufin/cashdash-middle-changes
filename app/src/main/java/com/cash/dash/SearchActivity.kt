@@ -41,6 +41,21 @@ class SearchActivity : ThemedActivity() {
             }
             override fun afterTextChanged(s: Editable?) {}
         })
+
+        edtSearch.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                hideKeyboard()
+                true
+            } else {
+                false
+            }
+        }
+    }
+
+    private fun hideKeyboard() {
+        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+        imm.hideSoftInputFromWindow(edtSearch.windowToken, 0)
+        edtSearch.clearFocus()
     }
 
     private fun setupRecyclerView() {
