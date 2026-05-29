@@ -21,7 +21,7 @@ function createTransporter() {
     return nodemailer.createTransport({
         host: "smtp.zoho.in",
         port: 465,
-        secure: true, // Use SSL
+        secure: true,
         auth: {
             user: GMAIL_USER,
             pass: EMAIL_PASS_SECRET.value(),

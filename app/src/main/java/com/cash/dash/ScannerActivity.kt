@@ -845,7 +845,6 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
     private fun redirectSuccess() {
         if (pendingAmount > 0) {
-            deductFromWallet(pendingAmount)
             saveExpense(pendingCategory ?: "no choice", pendingAmount, pendingTitle)
         }
         startActivity(Intent(this, MainActivity::class.java).apply {
@@ -887,5 +886,4 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     private fun toast(s: String) = ToastHelper.showToast(this, s)
     private fun successBeep() { try { (getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(VibrationEffect.createOneShot(150, VibrationEffect.DEFAULT_AMPLITUDE)); MediaPlayer.create(this, android.provider.Settings.System.DEFAULT_NOTIFICATION_URI).start() } catch (_: Exception) {} }
     private fun shake() { /* Visual feedback */ }
-    private fun deductFromWallet(amt: Int) { val prefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE); prefs.edit().putInt("wallet_balance", prefs.getInt("wallet_balance", 0) - amt).apply() }
 }

@@ -12,6 +12,11 @@ import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlinx.coroutines.*
+import org.json.JSONObject
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
+import java.net.URL
+import android.util.Log
 
 class NotificationActivity : ThemedActivity() {
 
@@ -175,24 +180,33 @@ class NotificationActivity : ThemedActivity() {
                     batch.commit()
                 }
 
-                // 2. Map to entities and save to Room
-                val finalDocs = rawDocs.filter { d -> !toDelete.any { it.id == d.id } }
-                val entities = finalDocs.map { doc ->
-                    NotificationEntity(
-                        id = doc.id,
-                        subject = doc.getString("subject") ?: "General Help",
-                        query = doc.getString("query") ?: "No query",
-                        reply = doc.getString("reply") ?: "Waiting for reply...",
-                        timestamp = doc.getLong("timestamp") ?: 0L,
-                        status = doc.getString("status") ?: "",
-                        read = doc.getBoolean("read") ?: true
-                    )
+                // 🚀 ASYNCHRONOUS OPTIMIZATION: Heavy HTML parsing & mapping offloaded from UI Thread
+                CoroutineScope(Dispatchers.Default).launch {
+                    // 1. Filter and Map to Entities
+                    val finalDocs = rawDocs.filter { d -> !toDelete.any { it.id == d.id } }
+                    val entities = finalDocs.map { doc ->
+                        NotificationEntity(
+                            id = doc.id,
+                            subject = doc.getString("subject") ?: "General Help",
+                            query = doc.getString("query") ?: "No query",
+                            reply = doc.getString("reply") ?: "Waiting for reply...",
+                            timestamp = doc.getLong("timestamp") ?: 0L,
+                            status = doc.getString("status") ?: "",
+                            read = doc.getBoolean("read") ?: true
+                        )
+                    }
+                    
+                    saveToRoom(entities)
+
+                    // 2. Heavy CPU computation: String replacement + HTML interpolation
+                    val models = mapEntitiesToModels(entities)
+                    
+                    // 3. Push results to UI
+                    withContext(Dispatchers.Main) {
+                        allNotifications = models
+                        applyFilter()
+                    }
                 }
-                saveToRoom(entities)
-                
-                // 3. Map to models for UI
-                allNotifications = mapEntitiesToModels(entities)
-                applyFilter()
             }
     }
 
@@ -609,11 +623,68 @@ class NotificationActivity : ThemedActivity() {
                     // 🚀 IMMEDIATE SUCCESS FEEDBACK
                     ToastHelper.showToast(this@NotificationActivity, "Reply sent!")
                     loadNotifications()
-                    // Removed HTTP webhook trigger - Firestore handles it silently now
+
+                    // 🚀 ASYNC DIRECT WEBHOOK INJECTION:
+                    // Direct fire to the project's Cloud Run endpoint to avoid Firestore trigger delays.
+                    triggerImmediateWebhook(
+                        uid = user.uid,
+                        id = model.id,
+                        name = userName,
+                        email = email,
+                        subject = model.originalSubject,
+                        updatedQuery = updatedQuery,
+                        originalQuery = model.originalQuery,
+                        teamReply = model.originalReply,
+                        userFollowup = replyText,
+                        timestamp = timestamp
+                    )
                 }
                 .addOnFailureListener {
                     ToastHelper.showToast(this@NotificationActivity, "Failed to send reply")
                 }
+        }
+
+        private fun triggerImmediateWebhook(
+            uid: String, id: String, name: String, email: String, subject: String, 
+            updatedQuery: String, originalQuery: String, teamReply: String, userFollowup: String, timestamp: Long
+        ) {
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val webhookUrl = "https://cashdashwebhook-khhfw7mtba-uc.a.run.app"
+                    val url = URL(webhookUrl)
+                    val conn = url.openConnection() as HttpURLConnection
+                    conn.requestMethod = "POST"
+                    conn.setRequestProperty("Content-Type", "application/json; utf-8")
+                    conn.doOutput = true
+
+                    val payload = JSONObject().apply {
+                        put("uid", uid)
+                        put("id", id)
+                        put("name", name)
+                        put("email", email)
+                        put("subject", subject)
+                        put("query", updatedQuery) // Unified history format for DB backward compat
+                        put("originalQuery", originalQuery) // Thread separation for cleaner email render
+                        put("teamReply", teamReply)
+                        put("userFollowup", userFollowup)
+                        put("is_reply", true)
+                        put("timestamp", timestamp)
+                    }
+
+                    val os = conn.outputStream
+                    val writer = OutputStreamWriter(os, "UTF-8")
+                    writer.write(payload.toString())
+                    writer.flush()
+                    writer.close()
+                    os.close()
+
+                    val responseCode = conn.responseCode
+                    Log.d("NotificationActivity", "⚡ Reply Webhook Sent. Response: $responseCode")
+                    conn.disconnect()
+                } catch (e: Exception) {
+                    Log.e("NotificationActivity", "❌ Reply Webhook Failed: ${e.message}")
+                }
+            }
         }
 
 

@@ -89,7 +89,7 @@ object FinancialInsightsManager {
         val totalSpent = currentBreakdown.values.sum()
         val prevTotal = prevBreakdown.values.sum()
         val changePer = if (prevTotal > 0) ((totalSpent - prevTotal) / prevTotal) * 100f else 0f
-        val days = ((endMillis - startMillis) / (24*60*60*1000L) + 1).toInt()
+        val days = ((endMillis - startMillis) / (24*60*60*1000L) + 1).toInt().coerceAtLeast(1)
         val dailyAvg = totalSpent / days
 
         // Category breakdown
@@ -163,7 +163,7 @@ object FinancialInsightsManager {
         var weekNum = 1
         val sdf = java.text.SimpleDateFormat("MMM d", Locale.getDefault())
         
-        repeat(6) {
+        for (i in 0 until 6) {
             val weekStart = cal.timeInMillis
             val tuesdayCal = cal.clone() as Calendar
             tuesdayCal.add(Calendar.DAY_OF_YEAR, 1)
@@ -181,7 +181,13 @@ object FinancialInsightsManager {
                 weekNum++
             }
             cal.add(Calendar.DAY_OF_YEAR, 7)
-            if (cal.get(Calendar.MONTH) > month && cal.get(Calendar.YEAR) >= year) return@repeat
+            
+            // Robust Termination: Safely exit loop if we pass into the next year or next month of target year
+            val currentCalYear = cal.get(Calendar.YEAR)
+            val currentCalMonth = cal.get(Calendar.MONTH)
+            if (currentCalYear > year || (currentCalYear == year && currentCalMonth > month)) {
+                break
+            }
         }
         return@withContext list
     }

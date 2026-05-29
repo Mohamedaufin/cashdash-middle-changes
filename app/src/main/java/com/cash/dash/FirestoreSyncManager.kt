@@ -42,7 +42,7 @@ object FirestoreSyncManager {
         syncExecutor.execute {
             try {
                 val db = FirebaseFirestore.getInstance()
-                Log.d(TAG, "Starting sequential background sync to cloud for $email")
+                Log.d(TAG, "Starting consolidated ATOMIC batch sync to cloud for $email")
 
                 val walletPrefs = appContext.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
                 val categoryPrefs = appContext.getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
@@ -56,6 +56,9 @@ object FirestoreSyncManager {
                 val userDocRef = db.collection("users").document(email)
                 val configColl = userDocRef.collection("config")
 
+                // 🚀 Consolidate all 8 writes into a single high-performance atomic network blast
+                val batch = db.batch()
+
                 // 1. App Settings / User Config
                 val userConfigData = hashMapOf(
                     "name" to (userPrefs.getString("user_name", "User") ?: "User"),
@@ -66,8 +69,8 @@ object FirestoreSyncManager {
                     "account_creation_time" to userPrefs.getLong("account_creation_time", 0L),
                     "account_status" to "active"
                 )
-                Tasks.await(configColl.document("profile").set(userConfigData, SetOptions.merge()))
-                Tasks.await(userDocRef.set(hashMapOf("email" to email), SetOptions.merge()))
+                batch.set(configColl.document("profile"), userConfigData, SetOptions.merge())
+                batch.set(userDocRef, hashMapOf("email" to email), SetOptions.merge())
 
                 // 2. Wallet Data
                 val initialBalance = walletPrefs.getInt("initial_balance", 0)
@@ -88,7 +91,7 @@ object FirestoreSyncManager {
                     "balance_bar_mode" to walletPrefs.getString("balance_bar_mode", "gradient"),
                     "balance_bar_type" to walletPrefs.getString("balance_bar_type", "gradient1")
                 )
-                Tasks.await(configColl.document("wallet").set(walletData))
+                batch.set(configColl.document("wallet"), walletData)
 
                 // 3. Category Data (Limits & Spent)
                 val categoriesSet = categoryPrefs.getStringSet("categories", emptySet()) ?: emptySet()
@@ -103,10 +106,10 @@ object FirestoreSyncManager {
                         "icon" to icon
                     )
                 }
-                Tasks.await(configColl.document("categories").set(hashMapOf(
+                batch.set(configColl.document("categories"), hashMapOf(
                     "data" to catMap,
                     "allocation_categories" to categoriesSet.toList()
-                )))
+                ))
 
                 // 4. Transaction History
                 val historySet = graphPrefs.getStringSet("HISTORY_LIST", emptySet()) ?: emptySet()
@@ -134,28 +137,33 @@ object FirestoreSyncManager {
                             itemMap["merchant"] = parts[2]
                             itemMap["category"] = parts[3]
                             itemMap["amount"] = parts[4].toIntOrNull() ?: 0
+                            itemMap["week"] = 0
+                            itemMap["day"] = 0
+                            itemMap["month"] = 0
+                            itemMap["year"] = 0
                             detailedTransactions.add(itemMap)
                         }
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Skipping malformed history entry: $entry")
-                    }
+                    } catch (e: Exception) { }
                 }
 
                 val historyPayload = HashMap<String, Any>()
                 historyPayload["raw_list"] = historySet.toList()
                 historyPayload["detailed_transactions"] = detailedTransactions
-                Tasks.await(configColl.document("history").set(historyPayload))
+                batch.set(configColl.document("history"), historyPayload)
 
                 // 5. CategoryWeekData
-                Tasks.await(configColl.document("analytics").set(hashMapOf("CategoryWeekData" to categoryWeekPrefs.all)))
+                batch.set(configColl.document("analytics"), hashMapOf("CategoryWeekData" to categoryWeekPrefs.all))
 
                 // 6. ScannerHistory
-                Tasks.await(configColl.document("history_scanner").set(hashMapOf("ScannerHistory" to scannerHistPrefs.all)))
+                batch.set(configColl.document("history_scanner"), hashMapOf("ScannerHistory" to scannerHistPrefs.all))
 
                 // 7. LocalScanPrefs
-                Tasks.await(configColl.document("undo_details").set(hashMapOf("LocalScanPrefs" to localScanPrefs.all)))
+                batch.set(configColl.document("undo_details"), hashMapOf("LocalScanPrefs" to localScanPrefs.all))
 
-                Log.d(TAG, "✅ Sequential background sync to cloud complete")
+                // ⚡ Final Atomic Execution (1 Trip vs 8 Trip)
+                Tasks.await(batch.commit())
+
+                Log.d(TAG, "✅ Atomic batch sync to cloud completed successfully")
                 syncHandler.post { notifyUI(appContext) }
             } catch (e: Exception) {
                 Log.e(TAG, "❌ FATAL SYNC ERROR: ${e.message}", e)

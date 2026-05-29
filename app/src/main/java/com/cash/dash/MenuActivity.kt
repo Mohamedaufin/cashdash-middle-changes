@@ -75,9 +75,11 @@ class MenuActivity : ThemedActivity() {
         }
 
         btnPrivacyPolicy.setOnClickListener {
-            val url = "https://github.com/Mohamedaufin/cashdash/blob/main/privacy_policy.md"
-            val intent = Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+            val intent = Intent(this, WebViewActivity::class.java)
+            intent.putExtra("url", "https://www.cashdash.co.in/privacy?source=app")
+            intent.putExtra("title", "Privacy Policy")
             startActivity(intent)
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
 
         btnNotifications.setOnClickListener {
