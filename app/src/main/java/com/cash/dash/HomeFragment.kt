@@ -3,6 +3,7 @@ package com.cash.dash
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -79,8 +80,32 @@ class HomeFragment : Fragment() {
             startActivity(Intent(requireContext(), ProfileActivity::class.java))
         }
 
-        view.findViewById<View>(R.id.walletContainer)?.setOnClickListener {
+        val walletContainer = view.findViewById<View>(R.id.walletContainer)
+        walletContainer?.setOnClickListener {
             startActivity(Intent(requireContext(), MoneyScheduleActivity::class.java))
+        }
+        var touchDownInside = false
+        walletContainer?.setOnTouchListener { v, event ->
+            val cx = v.width / 2f
+            val cy = v.height / 2f
+            val dx = event.x - cx
+            val dy = event.y - cy
+            val distance = Math.sqrt((dx * dx + dy * dy).toDouble())
+            val radius = v.width / 2f
+            
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    touchDownInside = distance <= radius
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    if (touchDownInside && distance <= radius) {
+                        v.performClick()
+                    }
+                    true
+                }
+                else -> true
+            }
         }
 
         view.findViewById<LinearLayout>(R.id.cardRigor).setOnClickListener {
