@@ -73,7 +73,7 @@ class HistoryFragment : Fragment() {
             handleBarClick(index, mode, graph, title, btnDaily, btnDate)
         }
 
-        graph.onSwipeLeftListener = {
+        graph.onSwipeRightListener = {
             (activity as? MainActivity)?.let { mainAct ->
                 mainAct.navigateTo(1)
             }

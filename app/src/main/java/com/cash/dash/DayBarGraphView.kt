@@ -3,6 +3,7 @@ package com.cash.dash
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
 import androidx.core.content.ContextCompat
@@ -29,12 +30,55 @@ class DayBarGraphView(context: Context, attrs: AttributeSet?) : View(context, at
 
     var onBarClickListener: ((index: Int, mode: String) -> Unit)? = null
 
-    private var startX = 0f
-    private var startY = 0f
-    private var isSwiping = false
-
     var onSwipeLeftListener: (() -> Unit)? = null
     var onSwipeRightListener: (() -> Unit)? = null
+
+    private var startX = 0f
+    private var startY = 0f
+
+    private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+        override fun onSingleTapUp(e: MotionEvent): Boolean {
+            val barCount = when (currentMode) {
+                "WEEKLY" -> weeklyTotals.size
+                "MONTHLY" -> monthlyTotals.size
+                else -> dailyData.size
+            }
+
+            val availableWidth = width - paddingLeft - paddingRight
+            val spacing = availableWidth / (barCount + 1f)
+            val barWidth = availableWidth / 14f
+
+            for (i in 0 until barCount) {
+                val center = paddingLeft + (spacing * (i + 1))
+                if (e.x in (center - barWidth / 2)..(center + barWidth / 2)) {
+                    when (currentMode) {
+                        "WEEKLY" -> onBarClickListener?.invoke(i, "WEEKLY_SWITCHED")
+                        "MONTHLY" -> onBarClickListener?.invoke(i, "MONTHLY_SWITCHED")
+                        else -> onBarClickListener?.invoke(i, "DAILY")
+                    }
+                    return true
+                }
+            }
+            return false
+        }
+
+        override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+            if (e1 == null) return false
+            val diffX = e2.x - e1.x
+            val diffY = e2.y - e1.y
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (Math.abs(diffX) > 60 && Math.abs(velocityX) > 50) {
+                    if (diffX < 0) {
+                        onSwipeLeftListener?.invoke()
+                    } else {
+                        onSwipeRightListener?.invoke()
+                    }
+                    return true
+                }
+            }
+            return false
+        }
+    })
 
 
     private val barPaint = Paint().apply {
@@ -169,62 +213,25 @@ class DayBarGraphView(context: Context, attrs: AttributeSet?) : View(context, at
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        val handled = gestureDetector.onTouchEvent(event)
+        
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 startX = event.x
                 startY = event.y
-                isSwiping = false
-                return true
+                parent?.requestDisallowInterceptTouchEvent(true)
             }
             MotionEvent.ACTION_MOVE -> {
                 val dX = Math.abs(event.x - startX)
                 val dY = Math.abs(event.y - startY)
-                if (dX > 15 && dX > dY * 1.5) {
-                    isSwiping = true
+                if (dX > 10 && dX > dY * 1.3) {
                     parent?.requestDisallowInterceptTouchEvent(true)
+                } else if (dY > 10 && dY > dX * 1.3) {
+                    parent?.requestDisallowInterceptTouchEvent(false)
                 }
-                return true
-            }
-            MotionEvent.ACTION_UP -> {
-                val deltaX = event.x - startX
-                if (isSwiping) {
-                    if (deltaX < -150) {
-                        onSwipeLeftListener?.invoke()
-                    } else if (deltaX > 150) {
-                        onSwipeRightListener?.invoke()
-                    }
-                } else {
-                    val barCount = when (currentMode) {
-                        "WEEKLY" -> weeklyTotals.size
-                        "MONTHLY" -> monthlyTotals.size
-                        else -> dailyData.size
-                    }
-
-                    val availableWidth = width - paddingLeft - paddingRight
-                    val spacing = availableWidth / (barCount + 1f)
-                    val barWidth = availableWidth / 14f
-
-                    for (i in 0 until barCount) {
-                        val center = paddingLeft + (spacing * (i + 1))
-                        if (event.x in (center - barWidth / 2)..(center + barWidth / 2)) {
-                            when (currentMode) {
-                                "WEEKLY" -> onBarClickListener?.invoke(i, "WEEKLY_SWITCHED")
-                                "MONTHLY" -> onBarClickListener?.invoke(i, "MONTHLY_SWITCHED")
-                                else -> onBarClickListener?.invoke(i, "DAILY")
-                            }
-                            break
-                        }
-                    }
-                }
-                isSwiping = false
-                return true
-            }
-            MotionEvent.ACTION_CANCEL -> {
-                isSwiping = false
-                return true
             }
         }
-        return super.onTouchEvent(event)
+        return true
     }
 
     fun setDayMode() { currentMode = "DAILY"; invalidate() }
