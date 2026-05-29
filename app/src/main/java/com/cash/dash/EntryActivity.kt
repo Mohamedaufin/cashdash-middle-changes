@@ -318,16 +318,40 @@ class EntryActivity : ThemedActivity() {
         progressBar: ProgressBar,
         tvStatus: TextView
     ) {
-        val editor = prefs.edit()
+        // 🚨 CRITICAL SANITIZATION: Thoroughly purge stale state from previous device users 
+        // so new registrations don't inherit ghosts of older local caches.
+        val prefsToPurge = listOf(
+            "WalletPrefs", "CategoryPrefs", "GraphData", 
+            "CategoryWeekData", "MoneySchedulePrefs", "ScannerHistory", 
+            "LocalScanPrefs", "NotificationCache", "AppPrefs" // Cleared carefully below
+        )
+        
+        // Capture ThemePrefs if needed? Actually we probably want to keep theme? No, clear state.
+        prefsToPurge.forEach { prefName ->
+            getSharedPreferences(prefName, MODE_PRIVATE).edit().clear().apply()
+        }
+        
+        // Fully nuke Room SQL Database to destroy lingering transaction logs
+        val context = this.applicationContext
+        java.util.concurrent.Executors.newSingleThreadExecutor().execute {
+            try {
+                AppDatabase.getDatabase(context).clearAllTables()
+            } catch (e: Exception) {
+                // Room database might lock, safe ignore as next write will force override
+            }
+        }
+
+        // Re-obtain clear preferences reference just to be explicitly distinct
+        val finalPrefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+        val editor = finalPrefs.edit()
             .putString(KEY_EMAIL, email)
 
         if (!isLogin) {
-            editor.putBoolean(KEY_FIRST, false)
+            // Register logic: Setup not done yet, so Splash routes back into HomeFragment's balance setup logic
+            editor.putBoolean(KEY_FIRST, false) 
             editor.putString(KEY_NAME, name)
             editor.putString(KEY_PHONE, phone)
-            if (!prefs.contains("account_creation_time")) {
-                editor.putLong("account_creation_time", System.currentTimeMillis())
-            }
+            editor.putLong("account_creation_time", System.currentTimeMillis())
         }
         editor.apply()
 

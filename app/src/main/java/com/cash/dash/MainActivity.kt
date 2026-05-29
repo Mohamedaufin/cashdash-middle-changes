@@ -132,7 +132,7 @@ class MainActivity : ThemedActivity() {
         updateNavbarStateBetween(1, 1, 0f)
     }
 
-    private fun navigateTo(index: Int) {
+    fun navigateTo(index: Int) {
         val current = viewPager.currentItem
         if (current == index || isNavigating) return
 

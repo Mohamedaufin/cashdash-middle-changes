@@ -79,6 +79,10 @@ class HomeFragment : Fragment() {
             startActivity(Intent(requireContext(), ProfileActivity::class.java))
         }
 
+        view.findViewById<View>(R.id.walletContainer)?.setOnClickListener {
+            startActivity(Intent(requireContext(), MoneyScheduleActivity::class.java))
+        }
+
         view.findViewById<LinearLayout>(R.id.cardRigor).setOnClickListener {
             animateAndStart(view.findViewById<ImageView>(R.id.iconRigorTracker)) {
                 startActivity(Intent(requireContext(), RigorActivity::class.java))
@@ -119,8 +123,9 @@ class HomeFragment : Fragment() {
         val density = resources.displayMetrics.density
         val prefs = requireContext().getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
         val initialBalance = prefs.getInt("initial_balance", -1)
-
-        if (initialBalance == -1) {
+        
+        // 🔧 FIX: Explicitly aligns with BalanceSetupActivity logic where <= 0 is treated as unset
+        if (initialBalance <= 0) {
             val box = android.widget.LinearLayout(requireContext()).apply {
                 orientation = android.widget.LinearLayout.VERTICAL
                 val p = (28 * density).toInt()

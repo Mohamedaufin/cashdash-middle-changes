@@ -73,6 +73,12 @@ class HistoryFragment : Fragment() {
             handleBarClick(index, mode, graph, title, btnDaily, btnDate)
         }
 
+        graph.onSwipeLeftListener = {
+            (activity as? MainActivity)?.let { mainAct ->
+                mainAct.navigateTo(1)
+            }
+        }
+
         view.findViewById<View>(R.id.searchBar).setOnClickListener {
             val intent = Intent(requireContext(), SearchActivity::class.java)
             startActivity(intent)

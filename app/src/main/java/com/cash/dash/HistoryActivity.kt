@@ -140,6 +140,14 @@ class HistoryActivity : ThemedActivity() {
             }
         }
 
+        graph.onSwipeLeftListener = {
+            val intent = Intent(this, MainActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            startActivity(intent)
+            finish()
+            overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
+        }
+
         // Handle System Insets
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainContent)) { v, insets ->
             val statusInsets = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars())

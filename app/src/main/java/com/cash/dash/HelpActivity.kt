@@ -15,6 +15,13 @@ import java.text.SimpleDateFormat
 import java.util.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
+import java.net.URL
 
 
 class HelpActivity : ThemedActivity() {
@@ -128,8 +135,46 @@ class HelpActivity : ThemedActivity() {
 
         // 🚀 SHOW IMMEDIATE SUCCESS (Don't wait for background webhook)
         ToastHelper.showToast(this, "Query sent! We'll notify you when we reply.")
-        
-        // Remove the HTTP POST webhook entirely. Firestore will trigger the email when online.
 
+        // 🚀 ASYNC DIRECT WEBHOOK INJECTION:
+        // Parallel direct push to circumvent Firestore trigger cold-starts and send instant email!
+        triggerImmediateWebhook(user.uid, name, userEmail, time, subject, query, timestamp)
+    }
+
+    private fun triggerImmediateWebhook(uid: String, name: String, email: String, time: String, subject: String, query: String, timestamp: Long) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val webhookUrl = "https://cashdashwebhook-khhfw7mtba-uc.a.run.app"
+                val url = URL(webhookUrl)
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Content-Type", "application/json; utf-8")
+                conn.doOutput = true
+
+                val payload = JSONObject().apply {
+                    put("uid", uid)
+                    put("id", timestamp.toString()) // ⚡ CRITICAL: Required for direct Cloud Function routing
+                    put("name", name)
+                    put("email", email)
+                    put("time", time)
+                    put("subject", subject)
+                    put("query", query)
+                    put("timestamp", timestamp)
+                }
+
+                val os = conn.outputStream
+                val writer = OutputStreamWriter(os, "UTF-8")
+                writer.write(payload.toString())
+                writer.flush()
+                writer.close()
+                os.close()
+
+                val responseCode = conn.responseCode
+                Log.d("HelpActivity", "⚡ Immediate Webhook Sent. Response: $responseCode")
+                conn.disconnect()
+            } catch (e: Exception) {
+                Log.e("HelpActivity", "❌ Immediate Webhook Failed: ${e.message}")
+            }
+        }
     }
 }

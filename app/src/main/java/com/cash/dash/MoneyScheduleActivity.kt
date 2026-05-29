@@ -70,8 +70,8 @@ class MoneyScheduleActivity : ThemedActivity() {
                 }
             }
 
-            // Pre-select previous date
-            if (savedDate != -1L) {
+            // 🔧 FIX: Handle 0 (Epoch) explicitly which leaked randomly as Jan 1970
+            if (savedDate > 0) {
                 calendarView.date = savedDate
                 selectedDateMillis = savedDate
             } else {
@@ -117,7 +117,7 @@ class MoneyScheduleActivity : ThemedActivity() {
                     ToastHelper.showToast(this, "Select a frequency")
                     return@setOnClickListener
                 }
-                if (selectedDateMillis == -1L) {
+                if (selectedDateMillis <= 0) {
                     ToastHelper.showToast(this, "Select next receiving date")
                     return@setOnClickListener
                 }
@@ -206,7 +206,8 @@ class MoneyScheduleActivity : ThemedActivity() {
 
     private fun updateCyclePreview(rg: RadioGroup) {
         val freqId = rg.checkedRadioButtonId
-        if (freqId == -1 || selectedDateMillis == -1L) {
+        // 🔧 FIX: Guard against negative and epoch zeroes
+        if (freqId == -1 || selectedDateMillis <= 0) {
             tvCyclePreview.visibility = View.GONE
             return
         }
