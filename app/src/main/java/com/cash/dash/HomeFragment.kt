@@ -89,7 +89,7 @@ class HomeFragment : Fragment() {
 
         val walletContainer = view.findViewById<View>(R.id.walletContainer)
         walletContainer?.setOnClickListener {
-            startActivity(Intent(requireContext(), MoneyScheduleActivity::class.java))
+            startActivity(Intent(requireContext(), BalanceSetupActivity::class.java))
         }
         var touchDownInside = false
         walletContainer?.setOnTouchListener { v, event ->
