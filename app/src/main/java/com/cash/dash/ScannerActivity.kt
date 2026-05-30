@@ -80,6 +80,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     private var pendingTitle: String = "UPI Payment"
     private var allocationHandled: Boolean = false
     private var currentChooser: BottomSheetDialog? = null
+    private var pendingUpiId: String? = null
 
     private val syncReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
@@ -454,6 +455,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         try {
             val name = (decode(getParam(upi,"pn")) ?: "Unknown").replace("|", "-")
             val id = (decode(getParam(upi,"pa")) ?: "Unknown").replace("|", "-")
+            pendingUpiId = id
 
             if (upi.contains("upi://pay")) {
                 getSharedPreferences("LocalScanPrefs", MODE_PRIVATE).edit().putString("last_upi", upi).apply()
@@ -465,8 +467,8 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             dialog.setContentView(view)
 
             pendingAmount = 0
-            pendingCategory = null
             pendingTitle = "To: $name"
+            pendingCategory = null
             allocationHandled = false
 
             val tvInfo = view.findViewById<TextView>(R.id.tvReceiverInfo)
@@ -499,8 +501,39 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
             btnCred.visibility = View.VISIBLE
             btnGPay.visibility = View.VISIBLE
+
+            // Set default offline UI state
             tvAllocation.visibility = View.GONE
             btnChoose.visibility = View.GONE
+            paymentActionContainer.visibility = View.GONE
+            btnPayInitiate.visibility = View.VISIBLE
+
+            // Query previous category from synced local DB and local preference fallback
+            CoroutineScope(Dispatchers.IO).launch {
+                val db = AppDatabase.getDatabase(this@ScannerActivity)
+                var savedAllocation = db.transactionDao().getLastCategoryForTitle(pendingTitle)
+
+                if (savedAllocation == null) {
+                    val key = if (id != "Unknown") id else if (name != "Unknown") name else null
+                    if (key != null) {
+                        savedAllocation = getSharedPreferences("QR_Allocation_Prefs", MODE_PRIVATE).getString(key, null)
+                            ?: getSharedPreferences("ScannerHistory", MODE_PRIVATE).getString(key, null)
+                    }
+                }
+
+                withContext(Dispatchers.Main) {
+                    if (savedAllocation != null && savedAllocation != "no choice") {
+                        pendingCategory = savedAllocation
+                        allocationHandled = true
+                        tvAllocation.text = "Allocated to: $savedAllocation"
+                        tvAllocation.visibility = View.VISIBLE
+                        btnChoose.text = "Change"
+                        btnChoose.visibility = View.VISIBLE
+                        paymentActionContainer.visibility = View.VISIBLE
+                        btnPayInitiate.visibility = View.GONE
+                    }
+                }
+            }
 
             etAmount.addTextChangedListener(object : android.text.TextWatcher {
                 override fun afterTextChanged(s: android.text.Editable?) {
@@ -621,6 +654,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 btn.visibility = View.VISIBLE
                 paymentContainer.visibility = View.VISIBLE
                 btnPayInit.visibility = View.GONE
+                saveAllocationForKey("no choice")
                 chooser.dismiss()
             }
         }
@@ -680,6 +714,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                     btn.visibility = View.VISIBLE
                     paymentContainer.visibility = View.VISIBLE
                     btnPayInit.visibility = View.GONE
+                    saveAllocationForKey(cat)
                     chooser.dismiss()
                 }
                 container.addView(row)
@@ -886,7 +921,34 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         val dayIndex = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7
         val timestampLong = cal.timeInMillis
 
+        val upiId = pendingUpiId
+        val key = if (!upiId.isNullOrEmpty() && upiId != "Unknown") {
+            upiId
+        } else {
+            val name = titleText.removePrefix("To: ")
+            if (name.isNotEmpty() && name != "Unknown") name else null
+        }
+
+        if (key != null) {
+            getSharedPreferences("QR_Allocation_Prefs", MODE_PRIVATE).edit().putString(key, category).apply()
+            getSharedPreferences("ScannerHistory", MODE_PRIVATE).edit().putString(key, category).apply()
+        }
+
         HistoryDataManager.saveTransaction(this, titleText, amount.toFloat(), category, timestampLong)
+    }
+
+    private fun saveAllocationForKey(category: String) {
+        val upiId = pendingUpiId
+        val key = if (!upiId.isNullOrEmpty() && upiId != "Unknown") {
+            upiId
+        } else {
+            val name = pendingTitle.removePrefix("To: ")
+            if (name.isNotEmpty() && name != "Unknown") name else null
+        }
+        if (key != null) {
+            getSharedPreferences("QR_Allocation_Prefs", MODE_PRIVATE).edit().putString(key, category).apply()
+            getSharedPreferences("ScannerHistory", MODE_PRIVATE).edit().putString(key, category).apply()
+        }
     }
 
     private fun getParam(t: String, k: String) = Regex("$k=([^&]*)").find(t)?.groupValues?.get(1)
