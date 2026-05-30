@@ -387,84 +387,92 @@ class DetailHistoryActivity : ThemedActivity() {
     }
 
     private fun showReallocationDialog(item: TransactionItem, mode: String, week: Int, day: Int, month: Int, year: Int, categoryFilter: String) {
+        val bottomSheet = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+        
         val density = resources.displayMetrics.density
-        val box = LinearLayout(this).apply {
+        val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            val p = (28 * density).toInt()
-            setPadding(p, p, p, (24 * density).toInt())
-            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(this@DetailHistoryActivity, R.drawable.bg_transaction))
+            val p = (24 * density).toInt()
+            setPadding(p, p, p, (32 * density).toInt())
+            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(this.context, R.drawable.bg_transaction))
         }
 
-        val titleView = TextView(this).apply {
-            text = "Reallocate Category"
+        val title = TextView(this).apply {
+            text = "Reallocate ₹${item.amount}"
             setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_subhead))
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@DetailHistoryActivity, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(0, 0, 0, (24 * density).toInt())
             gravity = android.view.Gravity.CENTER
-            setPadding(0, 0, 0, (20 * density).toInt())
         }
-        box.addView(titleView)
+        container.addView(title)
 
-        val prefsCat = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)
+        val prefsCat = getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
         val categories = prefsCat.getStringSet("categories", emptySet())?.toMutableList() ?: mutableListOf()
         if (!categories.contains("no choice")) categories.add("no choice")
 
-        val spinner = android.widget.Spinner(this).apply {
-            val adapter = android.widget.ArrayAdapter(this@DetailHistoryActivity, android.R.layout.simple_spinner_dropdown_item, categories)
-            this.adapter = adapter
-            val current = item.category.replace("(", "").replace(")", "")
-            val idx = categories.indexOf(current)
-            if (idx != -1) setSelection(idx)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(0, 0, 0, (28 * density).toInt())
-            }
-        }
-        box.addView(spinner)
+        val parts = item.rawEntry.split("|")
+        val oldCat = if (parts.size >= 9) parts[3] else "no choice"
+        val oldCatClean = oldCat.replace("(", "").replace(")", "").trim()
 
-        val buttonContainer = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        if (categories.isEmpty()) {
+            val empty = TextView(this).apply {
+                text = "No categories available."
+                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@DetailHistoryActivity, R.attr.textPrimaryColor))
+                gravity = android.view.Gravity.CENTER
+                setPadding(0, 0, 0, (24 * density).toInt())
+            }
+            container.addView(empty)
+        } else {
+            val scrollView = android.widget.ScrollView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                isFillViewport = true
+            }
+            val buttonListContainer = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+            
+            for (cat in categories) {
+                val catClean = cat.replace("(", "").replace(")", "").trim()
+                if (catClean.equals(oldCatClean, ignoreCase = true)) continue
+                
+                val btn = android.widget.Button(this).apply {
+                    text = cat
+                    isAllCaps = false
+                    setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@DetailHistoryActivity, R.attr.textPrimaryColor))
+                    background = androidx.core.content.ContextCompat.getDrawable(
+                        this@DetailHistoryActivity,
+                        com.cash.dash.ThemeHelper.getDrawable(this@DetailHistoryActivity, R.drawable.bg_glass_3d)
+                    )
+                    stateListAnimator = null
+                    elevation = 0f
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt()
+                    ).apply {
+                        setMargins(0, 0, 0, (12 * density).toInt())
+                    }
+                    
+                    setOnClickListener {
+                        reallocateTransaction(item.rawEntry, oldCat, cat, item.amount)
+                        bottomSheet.dismiss()
+                        refreshData(mode, week, day, month, year, categoryFilter)
+                    }
+                }
+                buttonListContainer.addView(btn)
+            }
+            scrollView.addView(buttonListContainer)
+            container.addView(scrollView)
         }
 
-        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
-            .setView(box)
-            .create()
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-        val btnCancel = android.widget.Button(this).apply {
-            text = "Cancel"
-            isAllCaps = false
-            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@DetailHistoryActivity, R.attr.textPrimaryColor))
-            val tv = android.util.TypedValue()
-            this@DetailHistoryActivity.theme.resolveAttribute(R.attr.cardBackground, tv, true)
-            background = androidx.core.content.ContextCompat.getDrawable(this@DetailHistoryActivity, tv.resourceId)
-            layoutParams = LinearLayout.LayoutParams(0, (54 * density).toInt(), 1f).apply {
-                setMargins(0, 0, (8 * density).toInt(), 0)
-            }
-            setOnClickListener { dialog.dismiss() }
-        }
-        buttonContainer.addView(btnCancel)
-
-        val btnSave = android.widget.Button(this).apply {
-            text = "Reallocate"
-            isAllCaps = false
-            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@DetailHistoryActivity, R.attr.textPrimaryColor))
-            val tv = android.util.TypedValue()
-            this@DetailHistoryActivity.theme.resolveAttribute(R.attr.cardBackground, tv, true)
-            background = androidx.core.content.ContextCompat.getDrawable(this@DetailHistoryActivity, tv.resourceId)
-            layoutParams = LinearLayout.LayoutParams(0, (54 * density).toInt(), 1f).apply {
-                setMargins((8 * density).toInt(), 0, 0, 0)
-            }
-            setOnClickListener {
-                val newCat = spinner.selectedItem.toString()
-                reallocateTransaction(item.rawEntry, item.category, newCat, item.amount)
-                refreshData(mode, week, day, month, year, categoryFilter)
-                dialog.dismiss()
-            }
-        }
-        buttonContainer.addView(btnSave)
-        box.addView(buttonContainer)
-        dialog.show()
+        bottomSheet.setContentView(container)
+        bottomSheet.show()
     }
 
     private fun updateTransactionTitle(item: TransactionItem, newTitle: String) {

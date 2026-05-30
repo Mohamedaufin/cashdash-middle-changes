@@ -15,6 +15,10 @@ import androidx.appcompat.app.AlertDialog
 import com.google.android.material.snackbar.Snackbar
 import java.util.*
 import kotlinx.coroutines.*
+import android.widget.Button
+import android.widget.PopupMenu
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 
 class HomeFragment : Fragment() {
 
@@ -32,6 +36,7 @@ class HomeFragment : Fragment() {
     private var lastLoadedBarMode: String? = null
     private var lastLoadedBarType: String? = null
     private var lastLoadedDateStr: String? = null
+    private var activeResetDialog: AlertDialog? = null
     
     private val walletListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == KEY_BALANCE || key == "initial_balance" || key == "balance_bar_mode" || key == "balance_bar_type") {
@@ -59,6 +64,8 @@ class HomeFragment : Fragment() {
 
         loadBalance(view)
         updateNextMoneyDays(view)
+
+
 
         // Set theme-aware icons
         view.findViewById<ImageView>(R.id.btnMenu)?.setImageResource(ThemeHelper.getDrawable(requireContext(), R.drawable.ic_glass_menu_vector))
@@ -248,9 +255,11 @@ class HomeFragment : Fragment() {
         val nextDate = prefs.getLong(KEY_NEXT_DATE, -1)
         val freq = prefs.getInt(KEY_FREQUENCY, -1)
         val textView = view.findViewById<TextView>(R.id.tvNextMoney) ?: return
+        val tvResetPending = view.findViewById<TextView>(R.id.tvResetPending) ?: return
 
         if (nextDate <= 0L || freq == -1) {
             textView.text = "Next money: schedule not set"
+            tvResetPending.visibility = View.GONE
             return
         }
 
@@ -269,47 +278,32 @@ class HomeFragment : Fragment() {
             set(Calendar.MILLISECOND, 0)
         }
 
-        if (today.after(next)) {
-            // Perform Cycle Reset (Offloaded to background thread)
-            CoroutineScope(Dispatchers.IO).launch {
-                while (next.before(today)) {
-                    next.add(Calendar.DAY_OF_YEAR, freq)
-                }
+        val isDue = today.after(next)
+        if (isDue) {
+            val postponeUntil = prefs.getLong("postpone_until", 0L)
+            val now = System.currentTimeMillis()
 
-                val newNextDateMs = next.timeInMillis
-                prefs.edit().putLong(KEY_NEXT_DATE, newNextDateMs).apply()
-
-                val categoryPrefs = requireContext().getSharedPreferences("CategoryPrefs", android.content.Context.MODE_PRIVATE)
-                val categories = categoryPrefs.getStringSet("categories", emptySet()) ?: emptySet()
-                val graphPrefs = requireContext().getSharedPreferences("GraphData", android.content.Context.MODE_PRIVATE)
-                val graphEditor = graphPrefs.edit()
-                for (cat in categories) {
-                    graphEditor.putFloat("SPENT_$cat", 0f)
-                }
-                graphEditor.putFloat("SPENT_no choice", 0f)
-                graphEditor.apply()
-
-                val wPrefs = requireContext().getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
-                val initialBal = wPrefs.getInt("initial_balance", 0)
-                wPrefs.edit().putInt("wallet_balance", initialBal).apply()
-
-                FirestoreSyncManager.pushAllDataToCloud(requireContext())
-
-                val newNextDateStr = "%02d/%02d/%04d".format(
-                    next.get(Calendar.DAY_OF_MONTH),
-                    next.get(Calendar.MONTH) + 1,
-                    next.get(Calendar.YEAR)
-                )
-
-                withContext(Dispatchers.Main) {
-                    if (isAdded) {
-                        textView.text = "This money is tentatively till $newNextDateStr"
-                        lastLoadedDateStr = newNextDateStr
-                        loadBalance(requireView())
-                    }
+            if (now >= postponeUntil) {
+                tvResetPending.visibility = View.GONE
+                showResetConfirmationDialog(nextDate, freq)
+            } else {
+                tvResetPending.visibility = View.VISIBLE
+                tvResetPending.setOnClickListener {
+                    showResetConfirmationDialog(nextDate, freq)
                 }
             }
+
+            val nextDateStr = "%02d/%02d/%04d".format(
+                next.get(Calendar.DAY_OF_MONTH),
+                next.get(Calendar.MONTH) + 1,
+                next.get(Calendar.YEAR)
+            )
+            if (nextDateStr != lastLoadedDateStr) {
+                textView.text = "This money was tentatively till $nextDateStr"
+                lastLoadedDateStr = nextDateStr
+            }
         } else {
+            tvResetPending.visibility = View.GONE
             val nextDateStr = "%02d/%02d/%04d".format(
                 next.get(Calendar.DAY_OF_MONTH),
                 next.get(Calendar.MONTH) + 1,
@@ -318,6 +312,246 @@ class HomeFragment : Fragment() {
             if (nextDateStr != lastLoadedDateStr) {
                 textView.text = "This money is tentatively till $nextDateStr"
                 lastLoadedDateStr = nextDateStr
+            }
+        }
+    }
+
+
+
+    private fun showResetConfirmationDialog(nextDate: Long, freq: Int) {
+        if (activeResetDialog?.isShowing == true) return
+
+        val context = requireContext()
+        val density = resources.displayMetrics.density
+        val box = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            val p = (28 * density).toInt()
+            setPadding(p, p, p, (24 * density).toInt())
+            setBackgroundResource(ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
+        }
+
+        val titleView = TextView(context).apply {
+            text = "Cycle Reset Due! 💰"
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_title))
+            setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, 0, 0, (20 * density).toInt())
+        }
+        box.addView(titleView)
+
+        val cal = Calendar.getInstance().apply { timeInMillis = nextDate }
+        val dateStr = "%02d/%02d/%04d".format(
+            cal.get(Calendar.DAY_OF_MONTH),
+            cal.get(Calendar.MONTH) + 1,
+            cal.get(Calendar.YEAR)
+        )
+
+        val content = TextView(context).apply {
+            text = "Your scheduled cycle reset date was on $dateStr. Have you received your money?"
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_body))
+            setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            setLineSpacing(8f, 1f)
+            setPadding(0, 0, 0, (28 * density).toInt())
+            gravity = android.view.Gravity.CENTER
+        }
+        box.addView(content)
+
+        val btnReset = Button(context).apply {
+            text = "Yes, Reset Now"
+            isAllCaps = false
+            setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, ThemeHelper.getDrawable(context, R.drawable.bg_3d_card))
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt())
+        }
+        box.addView(btnReset)
+
+        val spacer = View(context).apply { layoutParams = LinearLayout.LayoutParams(1, (16 * density).toInt()) }
+        box.addView(spacer)
+
+        val btnRemindLater = Button(context).apply {
+            text = "Remind Me Later"
+            isAllCaps = false
+            setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, ThemeHelper.getDrawable(context, R.drawable.bg_3d_card))
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt())
+        }
+        box.addView(btnRemindLater)
+
+        val dialog = AlertDialog.Builder(context)
+            .setView(box)
+            .setCancelable(false)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        activeResetDialog = dialog
+
+        btnReset.setOnClickListener {
+            dialog.dismiss()
+            performCycleReset(nextDate, freq)
+        }
+
+        btnRemindLater.setOnClickListener { btnView ->
+            showPostponeDropdown(btnView, dialog)
+        }
+
+        dialog.show()
+    }
+
+    private fun showPostponeDropdown(anchorView: View, parentDialog: AlertDialog) {
+        val context = requireContext()
+        val popup = PopupMenu(context, anchorView)
+        
+        popup.menu.add(0, 1, 0, "30 minutes")
+        popup.menu.add(0, 2, 1, "1 hour")
+        popup.menu.add(0, 3, 2, "3 hours")
+        popup.menu.add(0, 4, 3, "Custom...")
+
+        popup.setOnMenuItemClickListener { item ->
+            val durationMs = when (item.itemId) {
+                1 -> 30L * 60 * 1000        // 30 min
+                2 -> 60L * 60 * 1000        // 1 hour
+                3 -> 3L * 60 * 60 * 1000     // 3 hours
+                4 -> {
+                    showCustomDatePicker(parentDialog)
+                    return@setOnMenuItemClickListener true
+                }
+                else -> 0L
+            }
+
+            if (durationMs > 0L) {
+                val newPostponeUntil = System.currentTimeMillis() + durationMs
+                savePostponeTime(newPostponeUntil)
+                parentDialog.dismiss()
+                val minutes = durationMs / (60 * 1000)
+                ToastHelper.showCustomToast(context, "Rescheduled. Reminding in ${if (minutes >= 60) "${minutes / 60} hour(s)" else "$minutes minutes"}", 1200L)
+                refreshUI()
+            }
+            true
+        }
+        popup.show()
+    }
+
+    private fun showCustomDatePicker(parentDialog: AlertDialog) {
+        val context = requireContext()
+        val currentCal = Calendar.getInstance()
+        
+        val datePicker = DatePickerDialog(
+            context,
+            ThemeHelper.getDatePickerTheme(context),
+            { _, year, month, dayOfMonth ->
+                val selectedCal = Calendar.getInstance()
+                selectedCal.set(Calendar.YEAR, year)
+                selectedCal.set(Calendar.MONTH, month)
+                selectedCal.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+                
+                showCustomTimePicker(selectedCal, parentDialog)
+            },
+            currentCal.get(Calendar.YEAR),
+            currentCal.get(Calendar.MONTH),
+            currentCal.get(Calendar.DAY_OF_MONTH)
+        )
+        
+        datePicker.datePicker.minDate = System.currentTimeMillis() - 1000
+        datePicker.show()
+    }
+
+    private fun showCustomTimePicker(selectedCal: Calendar, parentDialog: AlertDialog) {
+        val context = requireContext()
+        val currentCal = Calendar.getInstance()
+
+        val timePicker = android.app.TimePickerDialog(
+            context,
+            ThemeHelper.getDatePickerTheme(context),
+            { _, hourOfDay, minute ->
+                selectedCal.set(Calendar.HOUR_OF_DAY, hourOfDay)
+                selectedCal.set(Calendar.MINUTE, minute)
+                selectedCal.set(Calendar.SECOND, 0)
+                selectedCal.set(Calendar.MILLISECOND, 0)
+
+                val selectedMs = selectedCal.timeInMillis
+                if (selectedMs <= System.currentTimeMillis()) {
+                    ToastHelper.showCustomToast(context, "Please choose a future time", 1000L)
+                } else {
+                    savePostponeTime(selectedMs)
+                    parentDialog.dismiss()
+                    
+                    val sdf = java.text.SimpleDateFormat("MMM d, yyyy 'at' hh:mm a", java.util.Locale.getDefault())
+                    ToastHelper.showCustomToast(context, "Rescheduled. Reminding on ${sdf.format(selectedCal.time)}", 1500L)
+                    refreshUI()
+                }
+            },
+            currentCal.get(Calendar.HOUR_OF_DAY),
+            currentCal.get(Calendar.MINUTE),
+            false
+        )
+        timePicker.show()
+    }
+
+    private fun savePostponeTime(timestamp: Long) {
+        val prefs = requireContext().getSharedPreferences(PREFS_SCHEDULE, android.content.Context.MODE_PRIVATE)
+        prefs.edit().putLong("postpone_until", timestamp).apply()
+    }
+
+    private fun performCycleReset(nextDate: Long, freq: Int) {
+        val context = requireContext()
+        val prefs = context.getSharedPreferences(PREFS_SCHEDULE, android.content.Context.MODE_PRIVATE)
+        val textView = view?.findViewById<TextView>(R.id.tvNextMoney) ?: return
+        
+        prefs.edit().remove("postpone_until").apply()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val today = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            
+            val next = Calendar.getInstance().apply {
+                timeInMillis = nextDate
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+
+            while (next.before(today)) {
+                next.add(Calendar.DAY_OF_YEAR, freq)
+            }
+
+            val newNextDateMs = next.timeInMillis
+            prefs.edit().putLong(KEY_NEXT_DATE, newNextDateMs).apply()
+
+            val categoryPrefs = context.getSharedPreferences("CategoryPrefs", android.content.Context.MODE_PRIVATE)
+            val categories = categoryPrefs.getStringSet("categories", emptySet()) ?: emptySet()
+            val graphPrefs = context.getSharedPreferences("GraphData", android.content.Context.MODE_PRIVATE)
+            val graphEditor = graphPrefs.edit()
+            for (cat in categories) {
+                graphEditor.putFloat("SPENT_$cat", 0f)
+            }
+            graphEditor.putFloat("SPENT_no choice", 0f)
+            graphEditor.apply()
+
+            val wPrefs = context.getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
+            val initialBal = wPrefs.getInt("initial_balance", 0)
+            wPrefs.edit().putInt("wallet_balance", initialBal).apply()
+
+            FirestoreSyncManager.pushAllDataToCloud(context)
+
+            val newNextDateStr = "%02d/%02d/%04d".format(
+                next.get(Calendar.DAY_OF_MONTH),
+                next.get(Calendar.MONTH) + 1,
+                next.get(Calendar.YEAR)
+            )
+
+            withContext(Dispatchers.Main) {
+                if (isAdded) {
+                    textView.text = "This money is tentatively till $newNextDateStr"
+                    lastLoadedDateStr = newNextDateStr
+                    loadBalance(requireView())
+                    view?.findViewById<TextView>(R.id.tvResetPending)?.visibility = View.GONE
+                    ToastHelper.showCustomToast(context, "Cycle Reset Successfully!", 1000L)
+                }
             }
         }
     }
