@@ -225,7 +225,7 @@ class HistoryActivity : ThemedActivity() {
             fetchCategories() // Refresh before showing menu
             DropdownHelper.showBlinkingDropdown(this, btn, categoriesList, 200, null, android.view.Gravity.END) { index, cat ->
                 currentCategoryFilter = cat
-                btn.text = if (currentCategoryFilter == "no choice") "No Choice" else currentCategoryFilter
+                btn.text = if (currentCategoryFilter == "no choice") "No Allocation" else currentCategoryFilter
                 loadGraphValues(graph)
                 animateGraph(graph)
             }

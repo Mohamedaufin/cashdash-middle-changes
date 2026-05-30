@@ -39,6 +39,7 @@ class SearchAdapter(private val items: List<SearchListItem>) : RecyclerView.Adap
             // Hardened Title-Casing Sanitizer
             fun toTitleCase(s: String): String {
                 if (s.isEmpty()) return s
+                if (s.equals("no choice", ignoreCase = true)) return "No Allocation"
                 return s.split(" ").joinToString(" ") { word ->
                     word.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() }
                 }

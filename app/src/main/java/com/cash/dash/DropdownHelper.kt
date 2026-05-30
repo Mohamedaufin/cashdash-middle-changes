@@ -29,6 +29,12 @@ object DropdownHelper {
         val adapter = object : ArrayAdapter<String>(context, android.R.layout.simple_list_item_1, items) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val v = super.getView(position, convertView, parent) as TextView
+                val rawText = getItem(position) ?: ""
+                v.text = if (rawText.equals("no choice", ignoreCase = true)) {
+                    "No Allocation"
+                } else {
+                    rawText
+                }
                 val textColor = com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor)
                 v.setTextColor(textColor)
                 v.setBackgroundColor(Color.TRANSPARENT)

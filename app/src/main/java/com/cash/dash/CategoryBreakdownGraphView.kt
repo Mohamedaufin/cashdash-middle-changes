@@ -53,7 +53,8 @@ class CategoryBreakdownGraphView(context: Context, attrs: AttributeSet?) : View(
                 textPaint.color = ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor)
                 canvas.drawText("₹0", center, bottom - 25f, textPaint)
                 
-                val labelStr = categories[i]
+                val rawLabel = categories[i]
+                val labelStr = if (rawLabel.equals("no choice", ignoreCase = true)) "No Allocation" else rawLabel
                 textPaint.color = if (ThemeHelper.isWhiteTheme(context)) 
                     ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor) 
                     else ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor)
@@ -96,7 +97,8 @@ class CategoryBreakdownGraphView(context: Context, attrs: AttributeSet?) : View(
             canvas.drawText(amountStr, center, top - 20f, textPaint)
 
             textPaint.color = ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor)
-            var labelStr = categories[i]
+            val rawLabel = categories[i]
+            val labelStr = if (rawLabel.equals("no choice", ignoreCase = true)) "No Allocation" else rawLabel
             var labelSize = context.resources.getDimension(R.dimen.graph_text_body)
             textPaint.textSize = labelSize
             while (textPaint.measureText(labelStr) > spacing - 4f && labelSize > (8 * resources.displayMetrics.density)) {
