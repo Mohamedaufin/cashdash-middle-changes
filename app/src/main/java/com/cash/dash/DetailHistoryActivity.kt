@@ -409,7 +409,7 @@ class DetailHistoryActivity : ThemedActivity() {
 
         val prefsCat = getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
         val categories = prefsCat.getStringSet("categories", emptySet())?.toMutableList() ?: mutableListOf()
-        if (!categories.contains("no choice")) categories.add("no choice")
+        categories.removeAll { it.equals("no choice", ignoreCase = true) }
 
         val parts = item.rawEntry.split("|")
         val oldCat = if (parts.size >= 9) parts[3] else "no choice"
