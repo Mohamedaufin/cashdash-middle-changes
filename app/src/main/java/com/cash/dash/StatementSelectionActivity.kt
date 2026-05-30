@@ -156,7 +156,7 @@ class StatementSelectionActivity : ThemedActivity() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val item = items[position]
-            holder.tvName.text = if (item == "no choice") "No Choice" else item
+            holder.tvName.text = if (item == "no choice") "No Allocation" else item
             
             val isSelected = (item == selectedCategory)
             

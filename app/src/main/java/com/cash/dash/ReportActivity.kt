@@ -257,13 +257,15 @@ class ReportActivity : ThemedActivity() {
                 addInfoRow("Daily Average", "₹${insights.dailyAverage.toInt()}")
             }
 
-            // 2. Category Breakdown
+            val topCategoryName = insights.topCategories.firstOrNull()?.category ?: "None"
+            val displayTopCategoryName = if (topCategoryName.equals("no choice", ignoreCase = true)) "No Allocation" else topCategoryName
             addCard("Category-wise Attribution", 
-                insights.topCategories.firstOrNull()?.category ?: "None", 
+                displayTopCategoryName, 
                 "Dominates ${insights.topCategories.firstOrNull()?.percentage?.toInt() ?: 0}% of budget",
                 R.drawable.ic_category_transport) {
                 insights.topCategories.take(5).forEach {
-                    addInfoRow(it.category, "₹${it.amount.toInt()} (${it.percentage.toInt()}%)")
+                    val displayCatName = if (it.category.equals("no choice", ignoreCase = true)) "No Allocation" else it.category
+                    addInfoRow(displayCatName, "₹${it.amount.toInt()} (${it.percentage.toInt()}%)")
                 }
             }
 
@@ -303,7 +305,8 @@ class ReportActivity : ThemedActivity() {
                             it.percent > 0f -> "Used: ₹${it.spent.toInt()} (${(it.percent - 100).toInt()}%)"
                             else -> "No spent recorded"
                         }
-                        addInfoRow(it.category, "Original limit: ₹${it.budget}", status)
+                        val displayCatName = if (it.category.equals("no choice", ignoreCase = true)) "No Allocation" else it.category
+                        addInfoRow(displayCatName, "Original limit: ₹${it.budget}", status)
                     }
                 }
             }
@@ -402,7 +405,8 @@ class ReportActivity : ThemedActivity() {
 
             // Name
             val nameTv = TextView(this).apply {
-                text = summary.category.uppercase()
+                val displayCatName = if (summary.category.equals("no choice", ignoreCase = true)) "No Allocation" else summary.category
+                text = displayCatName.uppercase()
                 setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
                 textSize = 13f
                 setPadding((12 * dp).toInt(), 0, 0, 0)
