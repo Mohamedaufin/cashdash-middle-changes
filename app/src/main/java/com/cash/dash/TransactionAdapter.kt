@@ -32,10 +32,17 @@ class TransactionAdapter(
         
         fun toTitleCase(s: String): String {
             if (s.isEmpty()) return s
-            if (s.equals("no choice", ignoreCase = true)) return "No Allocation"
-            return s.split(" ").joinToString(" ") { word ->
-                word.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() }
+            val hasBrackets = s.startsWith("(") && s.endsWith(")")
+            val clean = if (hasBrackets) s.substring(1, s.length - 1).trim() else s.trim()
+            
+            val formatted = if (clean.equals("no choice", ignoreCase = true)) {
+                "No Allocation"
+            } else {
+                clean.split(" ").joinToString(" ") { word ->
+                    word.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() }
+                }
             }
+            return if (hasBrackets) "($formatted)" else formatted
         }
 
         holder.title.text = toTitleCase(item.title)
