@@ -99,7 +99,8 @@ class StatementActivity : ThemedActivity() {
         if (categoryFilter == "Overall") {
             tvTotalLabel.text = "CUMULATIVE EXPENDITURE"
         } else {
-            tvTotalLabel.text = "${categoryFilter.uppercase()} EXPENDITURE"
+            val displayCat = if (categoryFilter.equals("no choice", ignoreCase = true)) "No Allocation" else categoryFilter
+            tvTotalLabel.text = "${displayCat.uppercase()} EXPENDITURE"
         }
 
         rvTransactions.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
