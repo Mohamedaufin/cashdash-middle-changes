@@ -68,6 +68,22 @@
         app:layout_constraintTop_toTopOf="@id/btnMenu"
         app:layout_constraintBottom_toBottomOf="@id/btnMenu"/>
     <TextView
+        android:id="@+id/tvResetPending"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="⚠️ Scheduled reset is pending. Tap text to configure."
+        android:textColor="#FF5252"
+        android:textSize="@dimen/text_subhead"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintBottom_toTopOf="@id/walletContainer"
+        android:layout_marginBottom="12dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+    <TextView
         android:id="@+id/tvNextMoney"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -75,8 +91,8 @@
         android:textColor="?attr/textMutedColor"
         android:textSize="@dimen/text_subhead"
         android:gravity="center"
-        app:layout_constraintBottom_toTopOf="@id/walletContainer"
-        android:layout_marginBottom="12dp"
+        app:layout_constraintBottom_toTopOf="@id/tvResetPending"
+        android:layout_marginBottom="4dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
     <!-- WALLET CIRCLE -->
