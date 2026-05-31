@@ -63,6 +63,24 @@ class AllocatorFragment : Fragment() {
     private fun refreshUI() {
         if (!::categoryContainer.isInitialized) return
         categoryContainer.removeAllViews()
+
+        // Category counter label
+        val prefs = requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val count = (prefs.getStringSet(KEY, emptySet()) ?: emptySet()).size
+        val density = requireContext().resources.displayMetrics.density
+        val counterTv = android.widget.TextView(requireContext()).apply {
+            text = "$count of $MAX_CATEGORIES allocations used"
+            textSize = 12f
+            setTextColor(ThemeHelper.resolveColorAttr(requireContext(), R.attr.textMutedColor))
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, (8 * density).toInt(), 0, (4 * density).toInt())
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        categoryContainer.addView(counterTv)
+
         loadCategories()
         addAddNewButton()
     }
