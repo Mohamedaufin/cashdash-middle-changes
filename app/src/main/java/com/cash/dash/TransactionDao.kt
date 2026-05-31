@@ -46,7 +46,4 @@ interface TransactionDao {
 
     @Query("DELETE FROM transactions WHERE category = :category")
     suspend fun deleteByCategory(category: String)
-
-    @Query("SELECT category FROM transactions WHERE title = :title ORDER BY timestamp DESC LIMIT 1")
-    suspend fun getLastCategoryForTitle(title: String): String?
 }

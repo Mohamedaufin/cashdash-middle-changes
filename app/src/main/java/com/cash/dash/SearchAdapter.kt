@@ -7,7 +7,10 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import java.util.Locale
 
-class SearchAdapter(private val items: List<SearchListItem>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class SearchAdapter(
+    private val items: List<SearchListItem>,
+    private val onItemClick: (SearchTransactionItem) -> Unit
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
         private const val TYPE_HEADER = 0
@@ -52,10 +55,19 @@ class SearchAdapter(private val items: List<SearchListItem>) : RecyclerView.Adap
                 return if (hasBrackets) "($formatted)" else formatted
             }
 
-            holder.title.text = toTitleCase(trans.title)
+            val displayTitle = if (trans.title.startsWith("To: ", ignoreCase = true)) {
+                trans.title.substring(4)
+            } else {
+                trans.title
+            }
+            holder.title.text = toTitleCase(displayTitle)
             holder.date.text = trans.date
             holder.category.text = "(${toTitleCase(trans.category)})"
             holder.amount.text = "-₹${trans.amount}"
+
+            holder.itemView.setOnClickListener {
+                onItemClick(trans)
+            }
         }
     }
 

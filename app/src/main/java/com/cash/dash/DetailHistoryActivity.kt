@@ -105,12 +105,53 @@ class DetailHistoryActivity : ThemedActivity() {
                 graph.setData(data.categories, data.values)
 
                 recycler.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
-                val adapter = TransactionAdapter(data.transactions) { item ->
-                    showTransactionActionMenu(item, mode, week, day, month, year, categoryFilter)
+                val sortedTransactions = data.transactions.sortedByDescending { item ->
+                    val parts = item.rawEntry.split("|")
+                    if (parts.size >= 2) parts[1].toLongOrNull() ?: 0L else 0L
                 }
+                val adapter = TransactionAdapter(
+                    items = sortedTransactions,
+                    showTimestamp = false,
+                    onItemClick = { item ->
+                        handleTransactionClick(item)
+                    },
+                    onItemLongClick = { item ->
+                        showTransactionActionMenu(item, mode, week, day, month, year, categoryFilter)
+                    }
+                )
                 recycler.adapter = adapter
             }
         }.start()
+    }
+
+    private fun handleTransactionClick(item: TransactionItem) {
+        if (item.title.startsWith("To: ", ignoreCase = true)) {
+            val parts = item.rawEntry.split("|")
+            val timestamp = if (parts.size >= 2) parts[1].toLongOrNull() ?: 0L else 0L
+
+            val metaPrefs = getSharedPreferences("ScannerMetadataPrefs", MODE_PRIVATE)
+            val upiUri = metaPrefs.getString("UPI_${timestamp}", "") ?: ""
+            val paymentApp = metaPrefs.getString("APP_${timestamp}", "Google Pay") ?: "Google Pay"
+
+            val recipientName = item.title.removePrefix("To: ")
+            val recipientUpiId = if (upiUri.isNotEmpty()) {
+                val paMatch = Regex("[?&]pa=([^&]+)").find(upiUri)?.groupValues?.get(1)
+                if (paMatch != null) java.net.URLDecoder.decode(paMatch, "UTF-8") else ""
+            } else {
+                ""
+            }
+
+            val successIntent = Intent(this, SuccessActivity::class.java).apply {
+                putExtra("recipient_name", recipientName)
+                putExtra("recipient_upi_id", recipientUpiId)
+                putExtra("amount", item.amount)
+                putExtra("payment_app", paymentApp)
+                putExtra("upi_uri", upiUri)
+                putExtra("timestamp", timestamp)
+                putExtra("from_history", true)
+            }
+            startActivity(successIntent)
+        }
     }
 
     private fun showTransactionActionMenu(item: TransactionItem, mode: String, week: Int, day: Int, month: Int, year: Int, categoryFilter: String) {

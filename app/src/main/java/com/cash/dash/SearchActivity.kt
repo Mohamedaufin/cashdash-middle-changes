@@ -7,6 +7,7 @@ import android.text.TextWatcher
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -63,9 +64,40 @@ class SearchActivity : ThemedActivity() {
     }
 
     private fun setupRecyclerView() {
-        adapter = SearchAdapter(displayList)
+        adapter = SearchAdapter(displayList) { item ->
+            handleTransactionClick(item)
+        }
         rvSearchResults.layoutManager = LinearLayoutManager(this)
         rvSearchResults.adapter = adapter
+    }
+
+    private fun handleTransactionClick(item: SearchTransactionItem) {
+        if (item.title.startsWith("To: ", ignoreCase = true)) {
+            val timestamp = item.timestamp
+
+            val metaPrefs = getSharedPreferences("ScannerMetadataPrefs", MODE_PRIVATE)
+            val upiUri = metaPrefs.getString("UPI_${timestamp}", "") ?: ""
+            val paymentApp = metaPrefs.getString("APP_${timestamp}", "Google Pay") ?: "Google Pay"
+
+            val recipientName = item.title.removePrefix("To: ")
+            val recipientUpiId = if (upiUri.isNotEmpty()) {
+                val paMatch = Regex("[?&]pa=([^&]+)").find(upiUri)?.groupValues?.get(1)
+                if (paMatch != null) java.net.URLDecoder.decode(paMatch, "UTF-8") else ""
+            } else {
+                ""
+            }
+
+            val successIntent = Intent(this@SearchActivity, SuccessActivity::class.java).apply {
+                putExtra("recipient_name", recipientName)
+                putExtra("recipient_upi_id", recipientUpiId)
+                putExtra("amount", item.amount)
+                putExtra("payment_app", paymentApp)
+                putExtra("upi_uri", upiUri)
+                putExtra("timestamp", timestamp)
+                putExtra("from_history", true)
+            }
+            startActivity(successIntent)
+        }
     }
 
     private fun loadAllTransactions() {
@@ -131,7 +163,7 @@ class SearchActivity : ThemedActivity() {
             }
 
             displayList.add(SearchListItem.Transaction(
-                SearchTransactionItem(item.title, item.category, item.amount, dateStr)
+                SearchTransactionItem(item.title, item.category, item.amount, dateStr, item.timestamp)
             ))
         }
 
@@ -150,7 +182,7 @@ class SearchActivity : ThemedActivity() {
     }
 }
 
-data class SearchTransactionItem(val title: String, val category: String, val amount: Int, val date: String)
+data class SearchTransactionItem(val title: String, val category: String, val amount: Int, val date: String, val timestamp: Long)
 
 data class SearchTransactionItemWithTime(val title: String, val category: String, val amount: Int, val timestamp: Long)
 

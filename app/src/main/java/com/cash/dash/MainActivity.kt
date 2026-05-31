@@ -351,7 +351,6 @@ class MainActivity : ThemedActivity() {
         super.onResume()
         val result = intent.getStringExtra("payment_status")
         when (result) {
-            "success" -> Snackbar.make(findViewById(android.R.id.content), "✔ Payment Successful", Snackbar.LENGTH_LONG).show()
             "failed" -> Snackbar.make(findViewById(android.R.id.content), "❌ Payment Failed or Cancelled", Snackbar.LENGTH_LONG).show()
         }
         intent.removeExtra("payment_status")

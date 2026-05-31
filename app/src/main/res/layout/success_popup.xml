@@ -1,85 +1,276 @@
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/mainBackground">
+    android:fillViewport="true"
+    android:background="#121212">
 
-    <!-- Success Glow Circle -->
-    <View
-        android:id="@+id/glowCircle"
-        android:layout_width="220dp"
-        android:layout_height="220dp"
-        android:background="@drawable/bg_glass_3d_round"
-        android:alpha="0.4"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginBottom="100dp"/>
-
-    <!-- Checkmark Icon -->
-    <ImageView
-        android:id="@+id/ivCheck"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:src="@drawable/ic_history"
-        android:tint="#00FF88"
-        app:layout_constraintTop_toTopOf="@id/glowCircle"
-        app:layout_constraintBottom_toBottomOf="@id/glowCircle"
-        app:layout_constraintStart_toStartOf="@id/glowCircle"
-        app:layout_constraintEnd_toEndOf="@id/glowCircle"
-        android:padding="15dp"
-        android:translationZ="12dp"/>
-
-    <TextView
-        android:id="@+id/tvSuccess"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Success"
-        android:textColor="#FFFFFF"
-        android:textSize="@dimen/text_headline"
-        android:textStyle="bold"
-        android:letterSpacing="0.2"
-        android:layout_marginTop="20dp"
-        app:layout_constraintTop_toBottomOf="@id/glowCircle"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <!-- DETAILS PANEL -->
-    <LinearLayout
-        android:id="@+id/detailsPanel"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp"
-        android:layout_marginHorizontal="30dp"
-        android:layout_marginTop="30dp"
-        android:background="?attr/panelBackground"
-        app:layout_constraintTop_toBottomOf="@id/tvSuccess">
+        android:paddingBottom="16dp">
 
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="36dp"
+            android:background="?attr/roundBackground"
+            android:padding="12dp"
+            android:src="@drawable/ic_back_arrow1"
+            android:contentDescription="Go Back"
+            app:tint="?attr/textPrimaryColor"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Avatar Container (Rounded Circle) -->
+        <FrameLayout
+            android:id="@+id/avatarContainer"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_marginTop="90dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_solid_circle"
+                android:backgroundTint="#00838F" />
+
+            <TextView
+                android:id="@+id/tvAvatarLetter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="M"
+                android:textColor="#FFFFFF"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+        </FrameLayout>
+
+        <!-- Recipient Name Header -->
         <TextView
-            android:id="@+id/paymentMessage"
-            android:layout_width="match_parent"
+            android:id="@+id/tvRecipientNameHeader"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Transaction Detected!"
-            android:textSize="@dimen/text_subhead"
-            android:textColor="#B0C8FF"
+            android:layout_marginTop="12dp"
+            android:layout_marginHorizontal="32dp"
             android:gravity="center"
-            android:lineSpacingExtra="4dp"/>
-    </LinearLayout>
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/avatarContainer"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnDone"
-        android:layout_width="match_parent"
-        android:layout_height="65dp"
-        android:layout_marginHorizontal="30dp"
-        android:layout_marginBottom="50dp"
-        android:text="Dismiss"
-        android:textColor="#FFFFFF"
-        android:textSize="@dimen/text_subhead"
-        android:textStyle="bold"
-        android:background="?attr/inputBackground"
-        android:backgroundTint="@null"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+        <!-- Recipient UPI Header -->
+        <TextView
+            android:id="@+id/tvRecipientUpiHeader"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginHorizontal="32dp"
+            android:gravity="center"
+            android:textColor="#C4C7C5"
+            android:textSize="14sp"
+            app:layout_constraintTop_toBottomOf="@id/tvRecipientNameHeader"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <!-- Amount Paid -->
+        <TextView
+            android:id="@+id/tvAmount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="#FFFFFF"
+            android:textSize="48sp"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/tvRecipientUpiHeader"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Pay Again Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPayAgain"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginTop="16dp"
+            android:text="Pay again"
+            android:textColor="#001D35"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            app:cornerRadius="24dp"
+            app:backgroundTint="#AECBFA"
+            app:layout_constraintTop_toBottomOf="@id/tvAmount"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Status Container (✓ Completed) -->
+        <LinearLayout
+            android:id="@+id/statusContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            app:layout_constraintTop_toBottomOf="@id/btnPayAgain"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <!-- Circular check icon -->
+            <FrameLayout
+                android:layout_width="20dp"
+                android:layout_height="20dp">
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_solid_circle"
+                    android:backgroundTint="#34A853" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="✓"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Completed"
+                android:textColor="#34A853"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Divider Line -->
+        <View
+            android:id="@+id/dividerLine"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginHorizontal="24dp"
+            android:background="#2E3033"
+            app:layout_constraintTop_toBottomOf="@id/statusContainer"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Date & Time -->
+        <TextView
+            android:id="@+id/tvDateTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textColor="#C4C7C5"
+            android:textSize="14sp"
+            app:layout_constraintTop_toBottomOf="@id/dividerLine"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Details Card -->
+        <LinearLayout
+            android:id="@+id/detailsCard"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginHorizontal="24dp"
+            android:background="@drawable/bg_transaction"
+            android:backgroundTint="#1A1C1E"
+            android:orientation="vertical"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/tvDateTime"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <!-- Row 2: To details -->
+            <TextView
+                android:id="@+id/tvToDetailsLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="0dp"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvToDetailsSub"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="#C4C7C5"
+                android:textSize="12sp" />
+
+            <!-- Row 3: From details -->
+            <TextView
+                android:id="@+id/tvFromDetailsLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvFromDetailsSub"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="#C4C7C5"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Bottom Logos -->
+        <LinearLayout
+            android:id="@+id/bottomLogosLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:layout_marginStart="24dp"
+            android:orientation="vertical"
+            android:gravity="start"
+            app:layout_constraintTop_toBottomOf="@id/detailsCard"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="POWERED BY"
+                android:textColor="#C4C7C5"
+                android:textSize="10sp"
+                android:letterSpacing="0.1" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@mipmap/ic_launcher_round" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="CashDash"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>
