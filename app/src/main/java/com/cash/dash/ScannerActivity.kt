@@ -633,7 +633,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
     private fun refreshAllocationListSimple(chooser: BottomSheetDialog) {
         val view = chooser.findViewById<View>(R.id.allocationListContainer)?.parent as? View ?: return
-        val tags = view.tag as? Array<Any> ?: return
+        val tags = view.tag as? Array<*> ?: return
         if (tags.size < 5) return
 
         refreshAllocationList(

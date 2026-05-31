@@ -85,6 +85,8 @@ class SuccessActivity : ThemedActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         val fromHistory = intent.getBooleanExtra("from_history", false)
         if (fromHistory) {

@@ -309,8 +309,8 @@ class HomeFragment : Fragment() {
                 reminderRunnable?.let { handler.removeCallbacks(it) }
                 val delay = postponeUntil - now
                 val runnable = Runnable {
-                    if (isAdded && view != null) {
-                        view?.findViewById<TextView>(R.id.tvResetPending)?.visibility = View.GONE
+                    if (isAdded) {
+                        view.findViewById<TextView>(R.id.tvResetPending)?.visibility = View.GONE
                         showResetConfirmationDialog(nextDate, freq)
                     }
                 }
