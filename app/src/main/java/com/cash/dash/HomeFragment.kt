@@ -37,6 +37,8 @@ class HomeFragment : Fragment() {
     private var lastLoadedBarType: String? = null
     private var lastLoadedDateStr: String? = null
     private var activeResetDialog: AlertDialog? = null
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var reminderRunnable: Runnable? = null
     
     private val walletListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == KEY_BALANCE || key == "initial_balance" || key == "balance_bar_mode" || key == "balance_bar_type") {
@@ -149,6 +151,11 @@ class HomeFragment : Fragment() {
         view?.postDelayed({
             if (isAdded) checkInitialSetup()
         }, 800)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        reminderRunnable?.let { handler.removeCallbacks(it) }
     }
 
     private fun checkInitialSetup() {
@@ -284,13 +291,31 @@ class HomeFragment : Fragment() {
             val now = System.currentTimeMillis()
 
             if (now >= postponeUntil) {
+                reminderRunnable?.let { handler.removeCallbacks(it) }
                 tvResetPending.visibility = View.GONE
                 showResetConfirmationDialog(nextDate, freq)
             } else {
                 tvResetPending.visibility = View.VISIBLE
+                val reminderCal = Calendar.getInstance().apply { timeInMillis = postponeUntil }
+                val sdf = java.text.SimpleDateFormat("dd/MM/yyyy h:mm a", java.util.Locale.US)
+                val formattedTime = sdf.format(reminderCal.time).lowercase(java.util.Locale.US)
+                tvResetPending.text = "Reminder set at $formattedTime. Tap here to configure"
+                
                 tvResetPending.setOnClickListener {
                     showResetConfirmationDialog(nextDate, freq)
                 }
+
+                // Schedule reminder popup when time comes
+                reminderRunnable?.let { handler.removeCallbacks(it) }
+                val delay = postponeUntil - now
+                val runnable = Runnable {
+                    if (isAdded && view != null) {
+                        view?.findViewById<TextView>(R.id.tvResetPending)?.visibility = View.GONE
+                        showResetConfirmationDialog(nextDate, freq)
+                    }
+                }
+                reminderRunnable = runnable
+                handler.postDelayed(runnable, delay)
             }
 
             val nextDateStr = "%02d/%02d/%04d".format(
@@ -303,6 +328,7 @@ class HomeFragment : Fragment() {
                 lastLoadedDateStr = nextDateStr
             }
         } else {
+            reminderRunnable?.let { handler.removeCallbacks(it) }
             tvResetPending.visibility = View.GONE
             val nextDateStr = "%02d/%02d/%04d".format(
                 next.get(Calendar.DAY_OF_MONTH),
@@ -331,7 +357,7 @@ class HomeFragment : Fragment() {
         }
 
         val titleView = TextView(context).apply {
-            text = "Cycle Reset Due! 💰"
+            text = "Cycle Reset Due"
             setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_title))
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
@@ -358,7 +384,7 @@ class HomeFragment : Fragment() {
         box.addView(content)
 
         val btnReset = Button(context).apply {
-            text = "Yes, Reset Now"
+            text = "Yes, Reset cycle now"
             isAllCaps = false
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             background = androidx.core.content.ContextCompat.getDrawable(context, ThemeHelper.getDrawable(context, R.drawable.bg_3d_card))
@@ -399,21 +425,25 @@ class HomeFragment : Fragment() {
 
     private fun showPostponeDropdown(anchorView: View, parentDialog: AlertDialog) {
         val context = requireContext()
-        val popup = PopupMenu(context, anchorView)
-        
-        popup.menu.add(0, 1, 0, "30 minutes")
-        popup.menu.add(0, 2, 1, "1 hour")
-        popup.menu.add(0, 3, 2, "3 hours")
-        popup.menu.add(0, 4, 3, "Custom...")
+        val items = listOf("30 minutes", "1 hour", "3 hours", "Custom")
+        val density = resources.displayMetrics.density
+        val btnWidthDp = (anchorView.width / density).toInt()
 
-        popup.setOnMenuItemClickListener { item ->
-            val durationMs = when (item.itemId) {
-                1 -> 30L * 60 * 1000        // 30 min
-                2 -> 60L * 60 * 1000        // 1 hour
-                3 -> 3L * 60 * 60 * 1000     // 3 hours
-                4 -> {
+        DropdownHelper.showBlinkingDropdown(
+            context,
+            anchorView,
+            items,
+            fixedWidthDp = btnWidthDp,
+            horizontalOffsetDp = 0,
+            gravity = android.view.Gravity.CENTER_HORIZONTAL
+        ) { position, _ ->
+            val durationMs = when (position) {
+                0 -> 30L * 60 * 1000        // 30 min
+                1 -> 60L * 60 * 1000        // 1 hour
+                2 -> 3L * 60 * 60 * 1000     // 3 hours
+                3 -> {
                     showCustomDatePicker(parentDialog)
-                    return@setOnMenuItemClickListener true
+                    return@showBlinkingDropdown
                 }
                 else -> 0L
             }
@@ -426,9 +456,7 @@ class HomeFragment : Fragment() {
                 ToastHelper.showCustomToast(context, "Rescheduled. Reminding in ${if (minutes >= 60) "${minutes / 60} hour(s)" else "$minutes minutes"}", 1200L)
                 refreshUI()
             }
-            true
         }
-        popup.show()
     }
 
     private fun showCustomDatePicker(parentDialog: AlertDialog) {
@@ -475,8 +503,9 @@ class HomeFragment : Fragment() {
                     savePostponeTime(selectedMs)
                     parentDialog.dismiss()
                     
-                    val sdf = java.text.SimpleDateFormat("MMM d, yyyy 'at' hh:mm a", java.util.Locale.getDefault())
-                    ToastHelper.showCustomToast(context, "Rescheduled. Reminding on ${sdf.format(selectedCal.time)}", 1500L)
+                    val sdf = java.text.SimpleDateFormat("MMM d, yyyy 'at' h:mm a", java.util.Locale.US)
+                    val formatted = sdf.format(selectedCal.time).lowercase(java.util.Locale.US)
+                    ToastHelper.showCustomToast(context, "Rescheduled. Reminding on $formatted", 1500L)
                     refreshUI()
                 }
             },

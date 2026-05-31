@@ -5,6 +5,7 @@
         <item name="android:autofilledHighlight">@android:color/transparent</item>
         <item name="textPrimaryColor">@color/text_primary</item>
         <item name="textMutedColor">@color/text_muted</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
     </style>
 
     <style name="Theme.Cashdash" parent="Base.Theme.Cashdash">

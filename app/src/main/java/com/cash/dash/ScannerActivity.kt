@@ -80,7 +80,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     private var pendingTitle: String = "UPI Payment"
     private var allocationHandled: Boolean = false
     private var currentChooser: BottomSheetDialog? = null
-    private var pendingUpiId: String? = null
+    private var selectedPaymentApp: String = "Google Pay"
 
     private val syncReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
@@ -215,6 +215,15 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         })
 
         checkMoneyScheduleResetDue()
+
+        val payAgainUpi = intent.getStringExtra("pay_again_upi")
+        if (payAgainUpi != null) {
+            scannedOnce = true
+            previewView.post {
+                if (::cameraProvider.isInitialized) cameraProvider.unbindAll()
+                showAmountDialog(payAgainUpi)
+            }
+        }
     }
 
     private fun startCamera() {
@@ -403,12 +412,63 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         startActivityForResult(Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI), GALLERY_PICK)
     }
 
+    private fun parseUpiResponse(response: String): Map<String, String> {
+        val map = mutableMapOf<String, String>()
+        val queryString = if (response.contains("?")) response.substringAfter("?") else response
+        if (queryString.isNotEmpty()) {
+            val pairs = queryString.split("&")
+            for (pair in pairs) {
+                val parts = pair.split("=")
+                if (parts.size >= 2) {
+                    map[parts[0]] = parts[1]
+                }
+            }
+        }
+        return map
+    }
+
     override fun onActivityResult(req: Int, res: Int, data: Intent?) {
         super.onActivityResult(req, res, data)
         if (req == PAYMENT_REQ) {
-            val response = data?.getStringExtra("response") ?: ""
-            if (response.contains("SUCCESS", true)) redirectSuccess()
-            else redirectFailed()
+
+
+
+            // Gather potential response sources
+            val responseExtra = data?.getStringExtra("response") ?: ""
+            val dataUriString = data?.data?.toString() ?: ""
+            
+            val rawResponse = when {
+                responseExtra.isNotEmpty() -> responseExtra
+                dataUriString.isNotEmpty() -> dataUriString
+                else -> ""
+            }
+
+            val params = parseUpiResponse(rawResponse)
+            
+            // Helper to retrieve params case-insensitively and check direct extras
+            fun getParam(vararg keys: String): String {
+                for (key in keys) {
+                    val value = params.entries.find { it.key.equals(key, ignoreCase = true) }?.value
+                    if (!value.isNullOrEmpty()) return value
+                }
+                for (key in keys) {
+                    val value = data?.getStringExtra(key)
+                    if (!value.isNullOrEmpty()) return value
+                }
+                return ""
+            }
+
+            val status = getParam("Status", "status")
+
+            val isSuccess = status.equals("SUCCESS", ignoreCase = true) || 
+                            rawResponse.contains("SUCCESS", ignoreCase = true) || 
+                            res == Activity.RESULT_OK
+
+            if (isSuccess) {
+                redirectSuccess()
+            } else {
+                redirectFailed()
+            }
         }
         if (req == GALLERY_PICK && res == Activity.RESULT_OK) {
             data?.data?.let { scanGalleryQR(it) }
@@ -455,7 +515,6 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         try {
             val name = (decode(getParam(upi,"pn")) ?: "Unknown").replace("|", "-")
             val id = (decode(getParam(upi,"pa")) ?: "Unknown").replace("|", "-")
-            pendingUpiId = id
 
             if (upi.contains("upi://pay")) {
                 getSharedPreferences("LocalScanPrefs", MODE_PRIVATE).edit().putString("last_upi", upi).apply()
@@ -467,8 +526,8 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             dialog.setContentView(view)
 
             pendingAmount = 0
-            pendingTitle = "To: $name"
             pendingCategory = null
+            pendingTitle = "To: $name"
             allocationHandled = false
 
             val tvInfo = view.findViewById<TextView>(R.id.tvReceiverInfo)
@@ -501,39 +560,8 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
             btnCred.visibility = View.VISIBLE
             btnGPay.visibility = View.VISIBLE
-
-            // Set default offline UI state
             tvAllocation.visibility = View.GONE
             btnChoose.visibility = View.GONE
-            paymentActionContainer.visibility = View.GONE
-            btnPayInitiate.visibility = View.VISIBLE
-
-            // Query previous category from synced local DB and local preference fallback
-            CoroutineScope(Dispatchers.IO).launch {
-                val db = AppDatabase.getDatabase(this@ScannerActivity)
-                var savedAllocation = db.transactionDao().getLastCategoryForTitle(pendingTitle)
-
-                if (savedAllocation == null) {
-                    val key = if (id != "Unknown") id else if (name != "Unknown") name else null
-                    if (key != null) {
-                        savedAllocation = getSharedPreferences("QR_Allocation_Prefs", MODE_PRIVATE).getString(key, null)
-                            ?: getSharedPreferences("ScannerHistory", MODE_PRIVATE).getString(key, null)
-                    }
-                }
-
-                withContext(Dispatchers.Main) {
-                    if (savedAllocation != null && savedAllocation != "no choice") {
-                        pendingCategory = savedAllocation
-                        allocationHandled = true
-                        tvAllocation.text = "Allocated to: $savedAllocation"
-                        tvAllocation.visibility = View.VISIBLE
-                        btnChoose.text = "Change"
-                        btnChoose.visibility = View.VISIBLE
-                        paymentActionContainer.visibility = View.VISIBLE
-                        btnPayInitiate.visibility = View.GONE
-                    }
-                }
-            }
 
             etAmount.addTextChangedListener(object : android.text.TextWatcher {
                 override fun afterTextChanged(s: android.text.Editable?) {
@@ -560,6 +588,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 val amtStr = etAmount.text.toString()
                 if (amtStr.isEmpty()) return@setOnClickListener
                 pendingAmount = amtStr.toIntOrNull() ?: 0
+                selectedPaymentApp = "CRED"
                 dialog.dismiss()
                 payUPI(upi, amtStr, "com.dreamplug.androidapp")
             }
@@ -569,6 +598,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 val amtStr = etAmount.text.toString()
                 if (amtStr.isEmpty()) return@setOnClickListener
                 pendingAmount = amtStr.toIntOrNull() ?: 0
+                selectedPaymentApp = "Google Pay"
                 dialog.dismiss()
                 payUPI(upi, amtStr, "com.google.android.apps.nbu.paisa.user")
             }
@@ -654,7 +684,6 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 btn.visibility = View.VISIBLE
                 paymentContainer.visibility = View.VISIBLE
                 btnPayInit.visibility = View.GONE
-                saveAllocationForKey("no choice")
                 chooser.dismiss()
             }
         }
@@ -714,7 +743,6 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                     btn.visibility = View.VISIBLE
                     paymentContainer.visibility = View.VISIBLE
                     btnPayInit.visibility = View.GONE
-                    saveAllocationForKey(cat)
                     chooser.dismiss()
                 }
                 container.addView(row)
@@ -858,16 +886,55 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         dialog.show()
     }
 
+    private fun updateUpiAmount(upiUri: String, newAmount: String): String {
+        try {
+            val uri = Uri.parse(upiUri)
+            val params = uri.queryParameterNames
+            val builder = Uri.parse("upi://pay").buildUpon()
+            
+            val formattedAmt = String.format(java.util.Locale.US, "%.2f", newAmount.toDoubleOrNull() ?: 0.0)
+            builder.appendQueryParameter("am", formattedAmt)
+
+            var hasTr = false
+            for (param in params) {
+                if (param == "am") continue
+                if (param.equals("tr", ignoreCase = true)) hasTr = true
+                val values = uri.getQueryParameters(param)
+                for (value in values) {
+                    builder.appendQueryParameter(param, value)
+                }
+            }
+
+            // Inject a unique transaction reference if missing to prompt payment apps to return txn details
+            if (!hasTr) {
+                val uniqueTxnRef = "CD" + System.currentTimeMillis() + (100..999).random()
+                builder.appendQueryParameter("tr", uniqueTxnRef)
+            }
+
+            return builder.build().toString()
+        } catch (e: Exception) {
+            val paMatch = Regex("[?&]pa=([^&]+)").find(upiUri)?.groupValues?.get(1) ?: ""
+            val pnMatch = Regex("[?&]pn=([^&]+)").find(upiUri)?.groupValues?.get(1) ?: ""
+            val trMatch = Regex("[?&]tr=([^&]+)").find(upiUri)?.groupValues?.get(1) ?: ""
+            val formattedAmt = String.format(java.util.Locale.US, "%.2f", newAmount.toDoubleOrNull() ?: 0.0)
+            var fallback = "upi://pay?pa=$paMatch&am=$formattedAmt&cu=INR"
+            if (pnMatch.isNotEmpty()) fallback += "&pn=$pnMatch"
+            if (trMatch.isNotEmpty()) {
+                fallback += "&tr=$trMatch"
+            } else {
+                val uniqueTxnRef = "CD" + System.currentTimeMillis() + (100..999).random()
+                fallback += "&tr=$uniqueTxnRef"
+            }
+            return fallback
+        }
+    }
+
     private fun payUPI(upi: String, amt: String, pkg: String) {
         try {
             val paMatch = Regex("[?&]pa=([^&]+)").find(upi)?.groupValues?.get(1)
-            val pnMatch = Regex("[?&]pn=([^&]+)").find(upi)?.groupValues?.get(1)
-
             if (paMatch == null || paMatch.isEmpty()) { toast("Invalid QR: Missing UPI ID"); return }
-            val formattedAmt = String.format(java.util.Locale.US, "%.2f", amt.toDoubleOrNull() ?: 0.0)
 
-            var p2pUriString = "upi://pay?pa=$paMatch&am=$formattedAmt&cu=INR"
-            if (pnMatch != null && pnMatch.isNotEmpty()) p2pUriString += "&pn=$pnMatch"
+            val p2pUriString = updateUpiAmount(upi, amt)
 
             val baseIntent = Intent(Intent.ACTION_VIEW).apply {
                 data = Uri.parse(p2pUriString)
@@ -890,12 +957,18 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         if (pendingAmount > 0) {
             saveExpense(pendingCategory ?: "no choice", pendingAmount, pendingTitle)
         }
-        startActivity(Intent(this, MainActivity::class.java).apply {
-            putExtra("payment_detected", true)
-            putExtra("result", "Transaction Successful")
-            putExtra("payment_status", "success")
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-        })
+        val lastUpi = getSharedPreferences("LocalScanPrefs", MODE_PRIVATE).getString("last_upi", "") ?: ""
+        val recipientUpi = (decode(getParam(lastUpi, "pa")) ?: "")
+
+        val intent = Intent(this, SuccessActivity::class.java).apply {
+            putExtra("recipient_name", pendingTitle.removePrefix("To: "))
+            putExtra("recipient_upi_id", recipientUpi)
+            putExtra("amount", pendingAmount)
+            putExtra("payment_app", selectedPaymentApp)
+            putExtra("upi_uri", lastUpi)
+            putExtra("timestamp", System.currentTimeMillis())
+        }
+        startActivity(intent)
         finish()
     }
 
@@ -921,34 +994,14 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         val dayIndex = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7
         val timestampLong = cal.timeInMillis
 
-        val upiId = pendingUpiId
-        val key = if (!upiId.isNullOrEmpty() && upiId != "Unknown") {
-            upiId
-        } else {
-            val name = titleText.removePrefix("To: ")
-            if (name.isNotEmpty() && name != "Unknown") name else null
-        }
-
-        if (key != null) {
-            getSharedPreferences("QR_Allocation_Prefs", MODE_PRIVATE).edit().putString(key, category).apply()
-            getSharedPreferences("ScannerHistory", MODE_PRIVATE).edit().putString(key, category).apply()
-        }
-
         HistoryDataManager.saveTransaction(this, titleText, amount.toFloat(), category, timestampLong)
-    }
 
-    private fun saveAllocationForKey(category: String) {
-        val upiId = pendingUpiId
-        val key = if (!upiId.isNullOrEmpty() && upiId != "Unknown") {
-            upiId
-        } else {
-            val name = pendingTitle.removePrefix("To: ")
-            if (name.isNotEmpty() && name != "Unknown") name else null
-        }
-        if (key != null) {
-            getSharedPreferences("QR_Allocation_Prefs", MODE_PRIVATE).edit().putString(key, category).apply()
-            getSharedPreferences("ScannerHistory", MODE_PRIVATE).edit().putString(key, category).apply()
-        }
+        // Save Scanner Metadata (UPI and App) for history lookup
+        val lastUpi = getSharedPreferences("LocalScanPrefs", MODE_PRIVATE).getString("last_upi", "") ?: ""
+        getSharedPreferences("ScannerMetadataPrefs", MODE_PRIVATE).edit()
+            .putString("UPI_${timestampLong}", lastUpi)
+            .putString("APP_${timestampLong}", selectedPaymentApp)
+            .apply()
     }
 
     private fun getParam(t: String, k: String) = Regex("$k=([^&]*)").find(t)?.groupValues?.get(1)
@@ -1005,7 +1058,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         }
 
         val titleView = TextView(context).apply {
-            text = "Cycle Reset Due! 💰"
+            text = "Cycle Reset Due"
             setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_title))
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
@@ -1032,7 +1085,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         box.addView(content)
 
         val btnReset = Button(context).apply {
-            text = "Yes, Reset Now"
+            text = "Yes, Reset cycle now"
             isAllCaps = false
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             background = androidx.core.content.ContextCompat.getDrawable(context, ThemeHelper.getDrawable(context, R.drawable.bg_3d_card))
@@ -1073,21 +1126,25 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
     private fun showPostponeDropdownInScanner(anchorView: View, parentDialog: AlertDialog) {
         val context = this
-        val popup = PopupMenu(context, anchorView)
-        
-        popup.menu.add(0, 1, 0, "30 minutes")
-        popup.menu.add(0, 2, 1, "1 hour")
-        popup.menu.add(0, 3, 2, "3 hours")
-        popup.menu.add(0, 4, 3, "Custom...")
+        val items = listOf("30 minutes", "1 hour", "3 hours", "Custom")
+        val density = resources.displayMetrics.density
+        val btnWidthDp = (anchorView.width / density).toInt()
 
-        popup.setOnMenuItemClickListener { item ->
-            val durationMs = when (item.itemId) {
-                1 -> 30L * 60 * 1000        // 30 min
-                2 -> 60L * 60 * 1000        // 1 hour
-                3 -> 3L * 60 * 60 * 1000     // 3 hours
-                4 -> {
+        DropdownHelper.showBlinkingDropdown(
+            context,
+            anchorView,
+            items,
+            fixedWidthDp = btnWidthDp,
+            horizontalOffsetDp = 0,
+            gravity = android.view.Gravity.CENTER_HORIZONTAL
+        ) { position, _ ->
+            val durationMs = when (position) {
+                0 -> 30L * 60 * 1000        // 30 min
+                1 -> 60L * 60 * 1000        // 1 hour
+                2 -> 3L * 60 * 60 * 1000     // 3 hours
+                3 -> {
                     showCustomDatePickerInScanner(parentDialog)
-                    return@setOnMenuItemClickListener true
+                    return@showBlinkingDropdown
                 }
                 else -> 0L
             }
@@ -1100,9 +1157,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 ToastHelper.showCustomToast(context, "Rescheduled. Reminding in ${if (minutes >= 60) "${minutes / 60} hour(s)" else "$minutes minutes"}", 1200L)
                 resumeScanning()
             }
-            true
         }
-        popup.show()
     }
 
     private fun showCustomDatePickerInScanner(parentDialog: AlertDialog) {
@@ -1149,8 +1204,9 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                     savePostponeTimeInScanner(selectedMs)
                     parentDialog.dismiss()
                     
-                    val sdf = java.text.SimpleDateFormat("MMM d, yyyy 'at' hh:mm a", java.util.Locale.getDefault())
-                    ToastHelper.showCustomToast(context, "Rescheduled. Reminding on ${sdf.format(selectedCal.time)}", 1500L)
+                    val sdf = java.text.SimpleDateFormat("MMM d, yyyy 'at' h:mm a", java.util.Locale.US)
+                    val formatted = sdf.format(selectedCal.time).lowercase(java.util.Locale.US)
+                    ToastHelper.showCustomToast(context, "Rescheduled. Reminding on $formatted", 1500L)
                     resumeScanning()
                 }
             },

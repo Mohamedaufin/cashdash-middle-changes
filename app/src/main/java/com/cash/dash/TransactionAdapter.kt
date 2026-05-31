@@ -12,6 +12,7 @@ data class TransactionItem(val title: String, val category: String, val amount: 
 class TransactionAdapter(
     private val items: List<TransactionItem>,
     private val showTimestamp: Boolean = false,
+    private val onItemClick: ((TransactionItem) -> Unit)? = null,
     private val onItemLongClick: ((TransactionItem) -> Unit)? = null
 ) : RecyclerView.Adapter<TransactionAdapter.Holder>() {
 
@@ -45,7 +46,12 @@ class TransactionAdapter(
             return if (hasBrackets) "($formatted)" else formatted
         }
 
-        holder.title.text = toTitleCase(item.title)
+        val displayTitle = if (item.title.startsWith("To: ", ignoreCase = true)) {
+            item.title.substring(4)
+        } else {
+            item.title
+        }
+        holder.title.text = toTitleCase(displayTitle)
         
         if (showTimestamp) {
             val p = item.rawEntry.split("|")
@@ -60,6 +66,10 @@ class TransactionAdapter(
         }
         
         holder.amount.text = "-₹${item.amount}"
+
+        holder.itemView.setOnClickListener {
+            onItemClick?.invoke(item)
+        }
 
         holder.itemView.setOnLongClickListener {
             onItemLongClick?.invoke(item)
