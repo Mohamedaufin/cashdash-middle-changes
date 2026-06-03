@@ -146,8 +146,17 @@ class RigorActivity : ThemedActivity() {
         categoryList.addView(btnCreateNew)
 
         val savedList = prefs.getStringSet(KEY, emptySet()) ?: emptySet()
+        val recentCatsStr = getSharedPreferences("ScannerPrefs", MODE_PRIVATE).getString("recent_rigor_allocations", "") ?: ""
+        val recentCats = if (recentCatsStr.isNotEmpty()) recentCatsStr.split("|").toMutableList() else mutableListOf()
+        
+        val sortedList = mutableListOf<String>()
+        for (r in recentCats) {
+            if (savedList.contains(r)) sortedList.add(r)
+        }
+        val remainingSorted = savedList.filter { !sortedList.contains(it) }.sortedBy { it.lowercase() }
+        sortedList.addAll(remainingSorted)
 
-        for (name in savedList) {
+        for (name in sortedList) {
 
             val row = layoutInflater.inflate(R.layout.item_rigor_category, categoryList, false)
 
@@ -192,7 +201,16 @@ class RigorActivity : ThemedActivity() {
                 }
             }
 
-            row.setOnClickListener { saveExpense(name) }
+            row.setOnClickListener {
+                val sPrefs = getSharedPreferences("ScannerPrefs", MODE_PRIVATE)
+                val historyStr = sPrefs.getString("recent_rigor_allocations", "") ?: ""
+                val history = if (historyStr.isNotEmpty()) historyStr.split("|").toMutableList() else mutableListOf()
+                history.remove(name)
+                history.add(0, name)
+                if (history.size > 3) history.subList(3, history.size).clear()
+                sPrefs.edit().putString("recent_rigor_allocations", history.joinToString("|")).apply()
+                saveExpense(name)
+            }
             categoryList.addView(row)
         }
     }
@@ -343,6 +361,7 @@ class RigorActivity : ThemedActivity() {
             cal.set(Calendar.MILLISECOND, now.get(Calendar.MILLISECOND))
 
             HistoryDataManager.saveTransaction(this, titleText, enteredAmount.toFloat(), category, cal.timeInMillis)
+            ToastHelper.showCustomToast(this, "Expense recorded successfully!", 1000L)
             finish()
         } catch (e: Exception) {
             ToastHelper.showToast(this, "⚠ Error saving expense")

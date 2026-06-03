@@ -100,45 +100,64 @@ object HistoryDataManager {
         val prefsGraph = context.getSharedPreferences("GraphData", Context.MODE_PRIVATE)
         val historyList = prefsGraph.getStringSet("HISTORY_LIST", emptySet())?.toMutableSet() ?: mutableSetOf()
         
-        if (historyList.remove(rawEntry)) {
-            prefsGraph.edit().putStringSet("HISTORY_LIST", historyList).apply()
+        var actualAmount = amount
+        var actualCategory = category
+        var actualParts = parts
 
-            // 3. Restore Wallet Balance
-            val prefsWallet = context.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
-            val currentBal = prefsWallet.getInt("wallet_balance", 0)
-            prefsWallet.edit().putInt("wallet_balance", currentBal + amount.toInt()).apply()
-
-            // 4. Adjust SPENT_$category
-            val oldSpent = prefsGraph.getFloat("SPENT_$category", 0f)
-            prefsGraph.edit().putFloat("SPENT_$category", (oldSpent - amount).coerceAtLeast(0f)).apply()
-
-            // 5. Adjust analytical slots
-            if (parts.size >= 9) {
-                val hWeek = parts[5]
-                val hDay = parts[6]
-                val hMonth = parts[7]
-                val hYear = parts[8]
-
-                val dayKey = "DAY_${hWeek}_${hDay}_${hMonth}_${hYear}"
-                val weekKey = "WEEK_${hWeek}_${hMonth}_${hYear}"
-                val monthKey = "MONTH_${hMonth}_${hYear}"
-
-                prefsGraph.edit()
-                    .putFloat(dayKey, (prefsGraph.getFloat(dayKey, 0f) - amount).coerceAtLeast(0f))
-                    .putFloat(weekKey, (prefsGraph.getFloat(weekKey, 0f) - amount).coerceAtLeast(0f))
-                    .putFloat(monthKey, (prefsGraph.getFloat(monthKey, 0f) - amount).coerceAtLeast(0f))
-                    .apply()
-
-                // Adjust CategoryWeekData
-                val prefsWeek = context.getSharedPreferences("CategoryWeekData", Context.MODE_PRIVATE)
-                val catWeekKey = "${category}_W${hWeek.toInt() + 1}"
-                val oldCatWeek = prefsWeek.getInt(catWeekKey, 0)
-                prefsWeek.edit().putInt(catWeekKey, (oldCatWeek - amount.toInt()).coerceAtLeast(0)).apply()
+        val iterator = historyList.iterator()
+        var foundInHistory = false
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            val entryParts = entry.split("|")
+            if (entryParts.size >= 5 && entryParts[1] == timestampStr) {
+                iterator.remove()
+                foundInHistory = true
+                actualAmount = entryParts[4].toFloatOrNull() ?: amount
+                actualCategory = entryParts[3]
+                actualParts = entryParts
+                break
             }
-
-            // 6. Remove metadata
-            prefsGraph.edit().remove("TRANS_${timestampStr}_TITLE").apply()
         }
+
+        if (foundInHistory) {
+            prefsGraph.edit().putStringSet("HISTORY_LIST", historyList).apply()
+        }
+
+        // 3. Restore Wallet Balance
+        val prefsWallet = context.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
+        val currentBal = prefsWallet.getInt("wallet_balance", 0)
+        prefsWallet.edit().putInt("wallet_balance", currentBal + actualAmount.toInt()).apply()
+
+        // 4. Adjust SPENT_$actualCategory
+        val oldSpent = prefsGraph.getFloat("SPENT_$actualCategory", 0f)
+        prefsGraph.edit().putFloat("SPENT_$actualCategory", (oldSpent - actualAmount).coerceAtLeast(0f)).apply()
+
+        // 5. Adjust analytical slots
+        if (actualParts.size >= 9) {
+            val hWeek = actualParts[5]
+            val hDay = actualParts[6]
+            val hMonth = actualParts[7]
+            val hYear = actualParts[8]
+
+            val dayKey = "DAY_${hWeek}_${hDay}_${hMonth}_${hYear}"
+            val weekKey = "WEEK_${hWeek}_${hMonth}_${hYear}"
+            val monthKey = "MONTH_${hMonth}_${hYear}"
+
+            prefsGraph.edit()
+                .putFloat(dayKey, (prefsGraph.getFloat(dayKey, 0f) - actualAmount).coerceAtLeast(0f))
+                .putFloat(weekKey, (prefsGraph.getFloat(weekKey, 0f) - actualAmount).coerceAtLeast(0f))
+                .putFloat(monthKey, (prefsGraph.getFloat(monthKey, 0f) - actualAmount).coerceAtLeast(0f))
+                .apply()
+
+            // Adjust CategoryWeekData
+            val prefsWeek = context.getSharedPreferences("CategoryWeekData", Context.MODE_PRIVATE)
+            val catWeekKey = "${actualCategory}_W${hWeek.toInt() + 1}"
+            val oldCatWeek = prefsWeek.getInt(catWeekKey, 0)
+            prefsWeek.edit().putInt(catWeekKey, (oldCatWeek - actualAmount.toInt()).coerceAtLeast(0)).apply()
+        }
+
+        // 6. Remove metadata
+        prefsGraph.edit().remove("TRANS_${timestampStr}_TITLE").apply()
         
         FirestoreSyncManager.pushAllDataToCloud(context)
     }

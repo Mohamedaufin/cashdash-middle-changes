@@ -23,7 +23,7 @@
             android:layout_height="45dp"
             android:background="?attr/roundBackground"
             android:src="@drawable/ic_back_arrow1"
-            android:tint="?attr/textPrimaryColor"
+            app:tint="?attr/textPrimaryColor"
             android:padding="10dp"
             android:scaleType="fitCenter"/>
 

@@ -20,7 +20,6 @@ class AllocatorActivity : ThemedActivity() {
     private lateinit var categoryContainer: LinearLayout
     private val PREFS = "CategoryPrefs"
     private val KEY = "categories"
-    private val MAX_CATEGORIES = 7
 
     private val syncReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -76,7 +75,8 @@ class AllocatorActivity : ThemedActivity() {
     private fun loadCategories() {
         val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val savedList = HashSet(prefs.getStringSet(KEY, emptySet()) ?: emptySet())
-        for (name in savedList) addCategoryCard(name)
+        val sortedList = savedList.sortedBy { it.lowercase() }
+        for (name in sortedList) addCategoryCard(name)
     }
 
     private fun addAddNewButton() {
@@ -102,11 +102,6 @@ class AllocatorActivity : ThemedActivity() {
     private fun showAddCategoryDialog() {
         val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val saved = prefs.getStringSet(KEY, emptySet()) ?: emptySet()
-
-        if (saved.size >= MAX_CATEGORIES) {
-            ToastHelper.showToast(this, "Maximum 7 categories allowed")
-            return
-        }
 
         val density = resources.displayMetrics.density
         val box = LinearLayout(this).apply {

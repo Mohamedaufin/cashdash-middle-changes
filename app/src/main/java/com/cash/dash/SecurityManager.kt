@@ -32,16 +32,8 @@ object SecurityManager {
                 }
             }
 
-        // 2. Monitor if the main user document itself is deleted (now under email)
-        userDocListener = db.collection("users").document(email)
-            .addSnapshotListener { snapshot, e ->
-                if (isTriggering) return@addSnapshotListener
-                
-                // If the main document is gone, it means the account was wiped from the database
-                if (snapshot != null && !snapshot.exists()) {
-                    triggerLogout(appContext)
-                }
-            }
+        // 2. We no longer treat missing documents as admin_deleted to prevent false lockouts
+        // if a document hasn't synced yet.
     }
 
     private fun triggerLogout(context: Context) {

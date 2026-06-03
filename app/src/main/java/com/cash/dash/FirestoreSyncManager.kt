@@ -60,7 +60,7 @@ object FirestoreSyncManager {
                 val batch = db.batch()
 
                 // 1. App Settings / User Config
-                val userConfigData = hashMapOf(
+                val userConfigData = hashMapOf<String, Any>(
                     "name" to (userPrefs.getString("user_name", "User") ?: "User"),
                     "email" to email,
                     "phone" to (userPrefs.getString("user_phone", "") ?: ""),
@@ -69,8 +69,18 @@ object FirestoreSyncManager {
                     "account_creation_time" to userPrefs.getLong("account_creation_time", 0L),
                     "account_status" to "active"
                 )
+                val lastActiveStr = userPrefs.getString("lastActiveTime", "") ?: ""
+                if (lastActiveStr.isNotEmpty()) {
+                    userConfigData["lastActiveTime"] = lastActiveStr
+                }
                 batch.set(configColl.document("profile"), userConfigData, SetOptions.merge())
-                batch.set(userDocRef, hashMapOf("email" to email), SetOptions.merge())
+                
+                val rootData = if (lastActiveStr.isNotEmpty()) {
+                    hashMapOf<String, Any>("email" to email, "lastActiveTime" to lastActiveStr)
+                } else {
+                    hashMapOf<String, Any>("email" to email)
+                }
+                batch.set(userDocRef, rootData, SetOptions.merge())
 
                 // 2. Wallet Data
                 val initialBalance = walletPrefs.getInt("initial_balance", 0)

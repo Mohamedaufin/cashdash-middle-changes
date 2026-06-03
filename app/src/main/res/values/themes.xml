@@ -19,7 +19,7 @@
         <item name="healthYellow">#FFC107</item>
         <item name="healthRed">#B71C1C</item>
         <item name="progressTrackColor">#262626</item>
-        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
     </style>
 
 
@@ -163,13 +163,13 @@
 
     <!-- Splash Screen Theme: dark bg + custom icon (Android 12+) -->
     <style name="Theme.Cashdash.Splash" parent="Theme.Cashdash">
-        <item name="android:windowSplashScreenBackground">@color/app_bg</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_round</item>
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">@color/app_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@mipmap/ic_launcher_round</item>
     </style>
 
     <style name="Theme.Cashdash.Blue.Splash" parent="Theme.Cashdash.Blue">
-        <item name="android:windowSplashScreenBackground">@color/app_bg</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_round</item>
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">@color/app_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@mipmap/ic_launcher_round</item>
     </style>
 
     <!-- 3D POPUP MENU STYLES -->

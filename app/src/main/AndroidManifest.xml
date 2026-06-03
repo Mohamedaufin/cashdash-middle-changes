@@ -151,6 +151,12 @@
             </intent-filter>
         </service>
 
+        <!-- 🔥 Service to detect app swipe-kill -->
+        <service
+            android:name=".AppKillService"
+            android:exported="false"
+            android:stopWithTask="false" />
+
     </application>
 
 </manifest>

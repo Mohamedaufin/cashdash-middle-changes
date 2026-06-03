@@ -50,6 +50,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+@androidx.annotation.OptIn(androidx.camera.core.ExperimentalGetImage::class)
 class ScannerActivity : ThemedActivity(), SensorEventListener {
 
     private val CAMERA_REQUEST = 101
@@ -116,6 +117,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
     @Deprecated("Deprecated in Java", ReplaceWith("startActivity(Intent(this, MainActivity::class.java)); finish()"))
     override fun onBackPressed() {
+        super.onBackPressed()
         startActivity(Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         })
@@ -461,8 +463,8 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             val status = getParam("Status", "status")
 
             val isSuccess = status.equals("SUCCESS", ignoreCase = true) || 
-                            rawResponse.contains("SUCCESS", ignoreCase = true) || 
-                            res == Activity.RESULT_OK
+                            status.equals("SUBMITTED", ignoreCase = true) || 
+                            (status.isEmpty() && rawResponse.contains("SUCCESS", ignoreCase = true))
 
             if (isSuccess) {
                 redirectSuccess()
@@ -698,7 +700,17 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 setPadding(20, 20, 20, 20)
             })
         } else {
-            for (cat in categories) {
+            val recentCatsStr = getSharedPreferences("ScannerPrefs", MODE_PRIVATE).getString("recent_scanner_allocations", "") ?: ""
+            val recentCats = if (recentCatsStr.isNotEmpty()) recentCatsStr.split("|").toMutableList() else mutableListOf()
+
+            val sortedList = mutableListOf<String>()
+            for (r in recentCats) {
+                if (categories.contains(r)) sortedList.add(r)
+            }
+            val remainingSorted = categories.filter { !sortedList.contains(it) }.sortedBy { it.lowercase() }
+            sortedList.addAll(remainingSorted)
+
+            for (cat in sortedList) {
                 val row = layoutInflater.inflate(R.layout.item_rigor_category, container, false)
                 val txtName = row.findViewById<TextView>(R.id.categoryName)
                 val spentBar = row.findViewById<View>(R.id.spentBar)
@@ -735,7 +747,14 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 }
 
                 row.setOnClickListener {
-                    pendingCategory = cat
+                    val sPrefs = getSharedPreferences("ScannerPrefs", MODE_PRIVATE)
+                    val historyStr = sPrefs.getString("recent_scanner_allocations", "") ?: ""
+                    val history = if (historyStr.isNotEmpty()) historyStr.split("|").toMutableList() else mutableListOf()
+                    history.remove(cat)
+                    history.add(0, cat)
+                    if (history.size > 3) history.subList(3, history.size).clear()
+                    sPrefs.edit().putString("recent_scanner_allocations", history.joinToString("|")).apply()
+                                        pendingCategory = cat
                     allocationHandled = true
                     label.text = "Allocated to: $cat"
                     label.visibility = View.VISIBLE

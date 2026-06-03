@@ -90,7 +90,6 @@ class MainActivity : ThemedActivity() {
         }
 
         ensureAccountCreationTime()
-
         if (intent.extras?.containsKey("google.message_id") == true) {
             val notifIntent = Intent(this, NotificationActivity::class.java)
             startActivity(notifIntent)
@@ -101,6 +100,7 @@ class MainActivity : ThemedActivity() {
         registerFCMToken()
 
         FirestoreSyncManager.startRealTimeSync(this)
+        updateUserMetadata()
         
         // 🔄 MIGRATION TRIGGER: Ensure existing logged-in users have their data pushed to the new Email-based document ID
         val migrationPrefs = getSharedPreferences("MigrationPrefs", MODE_PRIVATE)
@@ -360,5 +360,19 @@ class MainActivity : ThemedActivity() {
             ToastHelper.showCustomToast(this, toastMsg, 800L)
             intent.removeExtra("toast_msg")
         }
+    }
+
+    private fun updateUserMetadata() {
+        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+        
+        val sdf = java.text.SimpleDateFormat("dd/MM/yyyy, hh:mm a", java.util.Locale.ENGLISH)
+        sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
+        val lastActive = sdf.format(java.util.Date())
+        
+        val editor = prefs.edit()
+        editor.putString("lastActiveTime", lastActive)
+        editor.apply()
+        
+        FirestoreSyncManager.pushAllDataToCloud(this)
     }
 }

@@ -20,7 +20,7 @@
             android:background="?attr/roundBackground"
             android:src="@drawable/ic_back_arrow1"
             android:padding="10dp"
-            android:tint="?attr/textPrimaryColor"
+            app:tint="?attr/textPrimaryColor"
             android:layout_marginTop="20dp" />
 
         <!-- Main Title -->
@@ -59,7 +59,7 @@
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:src="@drawable/ic_edit"
-                android:tint="?attr/textPrimaryColor"
+                app:tint="?attr/textPrimaryColor"
                 android:padding="2dp"
                 android:layout_marginStart="12dp"
                 android:background="@null"
@@ -157,7 +157,7 @@
                 android:layout_height="36dp"
                 android:background="@drawable/bg_white_circle"
                 android:src="@drawable/ic_i_symbol"
-                android:tint="#000000"
+                app:tint="#000000"
                 android:padding="3dp"
                 android:layout_marginEnd="15dp" />
 
