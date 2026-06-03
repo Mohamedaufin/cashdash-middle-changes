@@ -22,7 +22,6 @@ class AllocatorFragment : Fragment() {
     private lateinit var categoryContainer: LinearLayout
     private val PREFS = "CategoryPrefs"
     private val KEY = "categories"
-    private val MAX_CATEGORIES = 7
 
     private val syncReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -64,23 +63,6 @@ class AllocatorFragment : Fragment() {
         if (!::categoryContainer.isInitialized) return
         categoryContainer.removeAllViews()
 
-        // Category counter label
-        val prefs = requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val count = (prefs.getStringSet(KEY, emptySet()) ?: emptySet()).size
-        val density = requireContext().resources.displayMetrics.density
-        val counterTv = android.widget.TextView(requireContext()).apply {
-            text = "$count of $MAX_CATEGORIES allocations used"
-            textSize = 12f
-            setTextColor(ThemeHelper.resolveColorAttr(requireContext(), R.attr.textMutedColor))
-            gravity = android.view.Gravity.CENTER
-            setPadding(0, (8 * density).toInt(), 0, (4 * density).toInt())
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-        categoryContainer.addView(counterTv)
-
         loadCategories()
         addAddNewButton()
     }
@@ -88,7 +70,8 @@ class AllocatorFragment : Fragment() {
     private fun loadCategories() {
         val prefs = requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val savedList = HashSet(prefs.getStringSet(KEY, emptySet()) ?: emptySet())
-        for (name in savedList) addCategoryCard(name)
+        val sortedList = savedList.sortedBy { it.lowercase() }
+        for (name in sortedList) addCategoryCard(name)
     }
 
     private fun addAddNewButton() {
@@ -115,11 +98,6 @@ class AllocatorFragment : Fragment() {
     private fun showAddCategoryDialog() {
         val prefs = requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val saved = prefs.getStringSet(KEY, emptySet()) ?: emptySet()
-
-        if (saved.size >= MAX_CATEGORIES) {
-            ToastHelper.showToast(requireContext(), "Maximum 7 categories allowed")
-            return
-        }
 
         val density = requireContext().resources.displayMetrics.density
         val box = LinearLayout(requireContext()).apply {

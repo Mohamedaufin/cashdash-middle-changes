@@ -73,7 +73,8 @@ We retain your personal and financial data only for as long as your account is a
 ### B. Account and Data Deletion (Your Rights)
 You have the right to request the deletion of your account and all associated data at any time. 
 - **In-App Deletion:** You can permanently delete your account directly within the App by navigating to **Profile → Delete Account**.
-- **Effect of Deletion:** Completing this action immediately signs you out and triggers a permanent wipe of your Firebase Authentication record, your profile data, and your entire transaction/financial history from our active servers. This action is irreversible.
+- **Web/Email Deletion Request:** If you no longer have the app installed, you can request account and data deletion by sending an email to **support@cashdash.co.in** from the email address registered to your account, with the subject line "Account Deletion Request".
+- **Effect of Deletion:** Completing this action (or upon processing your email request) triggers a permanent wipe of your Firebase Authentication record, your profile data, and your entire transaction/financial history from our active servers within 7 days. This action is irreversible. No historical data is retained.
 
 ---
 

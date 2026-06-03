@@ -138,6 +138,9 @@ class EntryActivity : ThemedActivity() {
     }
 
     private fun showAuthForm(isLogin: Boolean, selection: View, form: View, edtName: EditText, edtPhone: EditText, edtEmail: EditText, edtPassword: EditText, btnAction: Button, tvForgot: View) {
+        val autofillManager = getSystemService(AutofillManager::class.java)
+        autofillManager?.cancel() // Force Samsung Pass to drop its cached UI state
+
         edtName.text.clear()
         edtPhone.text.clear()
         edtEmail.text.clear()
@@ -155,22 +158,31 @@ class EntryActivity : ThemedActivity() {
             btnAction.text = "Login"
             tvForgot.visibility = View.VISIBLE
 
-            // 🟢 Restore working Login Autofill
+            // 🟢 Proper Login Autofill hints
             edtEmail.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
             edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
-            edtEmail.setAutofillHints(View.AUTOFILL_HINT_USERNAME)
+            edtEmail.setAutofillHints(View.AUTOFILL_HINT_EMAIL_ADDRESS)
             edtPassword.setAutofillHints(View.AUTOFILL_HINT_PASSWORD)
+            
+            edtName.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+            edtPhone.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
         } else {
             edtName.visibility = View.VISIBLE
             edtPhone.visibility = View.VISIBLE
             btnAction.text = "Register"
             tvForgot.visibility = View.GONE
 
-            // 🔴 Disable for Register
-            edtEmail.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
-            edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
-            edtEmail.setAutofillHints(null)
-            edtPassword.setAutofillHints(null)
+            // 🟢 Explicitly define every field so Samsung Pass doesn't guess
+            edtEmail.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+            edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+            edtName.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+            edtPhone.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+
+            // Tell Samsung exactly what these fields are so it doesn't think Name is a Username
+            edtName.setAutofillHints("personName")
+            edtPhone.setAutofillHints("phone")
+            edtEmail.setAutofillHints(View.AUTOFILL_HINT_EMAIL_ADDRESS)
+            edtPassword.setAutofillHints("newPassword")
         }
 
         // Apply theme-specific button colors (especially for White Theme Register)
@@ -240,6 +252,9 @@ class EntryActivity : ThemedActivity() {
         }
     }
 
+    private var failedLoginAttempts = 0
+    private var isLockedOut = false
+
     private fun handleAuth(
         isLogin: Boolean,
         edtName: EditText,
@@ -252,6 +267,11 @@ class EntryActivity : ThemedActivity() {
         tvStatus: TextView,
         prefs: android.content.SharedPreferences
     ) {
+        if (isLockedOut) {
+            tvStatus.text = "Too many failed attempts. Please wait 30 seconds."
+            return
+        }
+
         val email = edtEmail.text.toString().trim()
         val pass = edtPassword.text.toString().trim()
         val name = edtName.text.toString().trim()
@@ -283,9 +303,30 @@ class EntryActivity : ThemedActivity() {
             auth.signInWithEmailAndPassword(email, pass)
                 .addOnCompleteListener(this) { task ->
                     if (task.isSuccessful) {
+                        failedLoginAttempts = 0
                         savePrefsAndContinue(prefs, name, phone, email, pass, isLogin = true, btnAction, tvForgotPassword, progressBar, tvStatus)
                     } else {
-                        resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "Login Failed: ${task.exception?.message}", "Login")
+                        failedLoginAttempts++
+                        var errorMsg = task.exception?.message ?: "Unknown error"
+                        
+                        if (errorMsg.contains("blocked all requests", ignoreCase = true) || errorMsg.contains("unusual activity", ignoreCase = true)) {
+                            errorMsg = "Account temporarily locked by security. Please reset password or wait 15 mins."
+                        } else if (failedLoginAttempts >= 5) {
+                            isLockedOut = true
+                            errorMsg = "Too many failed attempts. Please wait 30 seconds."
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                isLockedOut = false
+                                failedLoginAttempts = 0
+                                if (tvStatus.text.contains("wait 30 seconds")) {
+                                    tvStatus.text = "You can try logging in again."
+                                    tvStatus.setTextColor(Color.parseColor("#8BF7E6"))
+                                }
+                            }, 30000)
+                        } else {
+                            errorMsg = "Incorrect Email or Password. (${5 - failedLoginAttempts} tries left)"
+                        }
+                        
+                        resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "Login Failed: $errorMsg", "Login")
                     }
                 }
         } else {

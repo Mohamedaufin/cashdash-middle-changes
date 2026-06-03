@@ -6,8 +6,7 @@
     android:orientation="vertical"
     android:padding="28dp"
     android:gravity="center"
-    android:background="?attr/mainBackground"
-    android:importantForAutofill="no">
+    android:background="?attr/mainBackground">
 
     <!-- Header Section -->
     <TextView
@@ -73,8 +72,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:visibility="gone"
-        android:importantForAutofill="no">
+        android:visibility="gone">
 
         <!-- FULL NAME -->
         <EditText
@@ -86,7 +84,7 @@
             android:textColor="?attr/textPrimaryColor"
             android:textColorHint="@color/text_dim"
             android:padding="16dp"
-            android:inputType="textPersonName"
+            android:inputType="textPersonName|textCapWords"
             android:autofillHints="personName"
             android:importantForAutofill="no"
             android:layout_marginBottom="16dp"/>

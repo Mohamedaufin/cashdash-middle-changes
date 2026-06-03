@@ -148,7 +148,7 @@
                     android:layout_width="28dp"
                     android:layout_height="28dp"
                     android:src="@drawable/ic_search"
-                    android:tint="?attr/textPrimaryColor"
+                    app:tint="?attr/textPrimaryColor"
                     android:layout_marginBottom="8dp"/>
 
                 <TextView
