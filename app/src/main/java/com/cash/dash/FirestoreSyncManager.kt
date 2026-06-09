@@ -271,7 +271,7 @@ object FirestoreSyncManager {
                         walletPrefs.edit().clear().apply()
                         schedulePrefs.edit().clear().apply()
 
-                        walletPrefs.edit()
+                        val wEdit = walletPrefs.edit()
                             .putInt("initial_balance", walletDoc.getLong("initial_balance")?.toInt() ?: 0)
                             .putInt("wallet_balance", walletDoc.getLong("current_balance")?.toInt() ?: 0)
                             .putString("balance_bar_mode", walletDoc.getString("balance_bar_mode") ?: "gradient")
@@ -279,11 +279,11 @@ object FirestoreSyncManager {
                             
                         val nextCycleBal = walletDoc.getLong("next_cycle_initial_balance")?.toInt() ?: -1
                         if (nextCycleBal != -1) {
-                            walletPrefs.edit().putInt("next_cycle_initial_balance", nextCycleBal).apply()
+                            wEdit.putInt("next_cycle_initial_balance", nextCycleBal)
                         } else {
-                            walletPrefs.edit().remove("next_cycle_initial_balance").apply()
+                            wEdit.remove("next_cycle_initial_balance")
                         }
-                        walletPrefs.edit().apply()
+                        wEdit.apply()
                         schedulePrefs.edit()
                             .putLong("next_date", walletDoc.getLong("next_date_ms") ?: 0L)
                             .putInt("frequency", walletDoc.getLong("frequency")?.toInt() ?: 30)
@@ -529,7 +529,7 @@ object FirestoreSyncManager {
             val walletPrefs = appContext.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
             val schedulePrefs = appContext.getSharedPreferences("MoneySchedulePrefs", Context.MODE_PRIVATE)
 
-            walletPrefs.edit()
+            val wEdit = walletPrefs.edit()
                 .putInt("initial_balance", snapshot.getLong("initial_balance")?.toInt() ?: 0)
                 .putInt("wallet_balance", snapshot.getLong("current_balance")?.toInt() ?: 0)
                 .putString("balance_bar_mode", snapshot.getString("balance_bar_mode") ?: "gradient")
@@ -537,11 +537,11 @@ object FirestoreSyncManager {
             
             val nextCycleBal2 = snapshot.getLong("next_cycle_initial_balance")?.toInt() ?: -1
             if (nextCycleBal2 != -1) {
-                walletPrefs.edit().putInt("next_cycle_initial_balance", nextCycleBal2).apply()
+                wEdit.putInt("next_cycle_initial_balance", nextCycleBal2)
             } else {
-                walletPrefs.edit().remove("next_cycle_initial_balance").apply()
+                wEdit.remove("next_cycle_initial_balance")
             }
-            walletPrefs.edit().apply()
+            wEdit.apply()
 
             schedulePrefs.edit()
                 .putLong("next_date", snapshot.getLong("next_date_ms") ?: 0L)
