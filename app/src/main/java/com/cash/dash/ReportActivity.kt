@@ -23,22 +23,26 @@ import kotlinx.coroutines.withContext
 class ReportActivity : ThemedActivity() {
 
     private lateinit var layoutContent: LinearLayout
-    private lateinit var layoutLoading: View
-    private lateinit var lottieLoading: LottieAnimationView
-    private lateinit var tvAITimer: TextView
 
     private lateinit var btnPeriodSelect: Button
     private lateinit var toggleMode: MaterialButtonToggleGroup
+    private lateinit var layoutCustomDates: View
+    private lateinit var btnCustomStart: Button
+    private lateinit var btnCustomEnd: Button
 
     private var currentMonth = Calendar.getInstance().get(Calendar.MONTH)
     private var currentYear = Calendar.getInstance().get(Calendar.YEAR)
     private var selectedWeekIndex = 0
     private var isMonthlyMode = true
+    private var isCustomMode = false
+    private var customStartMillis = 0L
+    private var customEndMillis = 0L
     private var isGenerating = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_report)
+
         WindowCompat.setDecorFitsSystemWindows(window, false)
         val topBar = findViewById<View>(R.id.topBar)
 
@@ -54,9 +58,8 @@ class ReportActivity : ThemedActivity() {
 
             // Sticky Download Button (Absolute Edge-to-Edge)
             val btnDownload = findViewById<View>(R.id.btnDownloadFinal)
-            btnDownload.setPadding(0, 0, 0, navBarHeight)
-            val btnParams = btnDownload.layoutParams
-            btnParams.height = (64 * resources.displayMetrics.density).toInt() + navBarHeight
+            val btnParams = btnDownload.layoutParams as android.view.ViewGroup.MarginLayoutParams
+            btnParams.bottomMargin = navBarHeight
             btnDownload.layoutParams = btnParams
 
             insets
@@ -64,35 +67,46 @@ class ReportActivity : ThemedActivity() {
 
 
         layoutContent = findViewById(R.id.reportContent)
-        layoutLoading = findViewById(R.id.layoutAILoading)
-        lottieLoading = findViewById(R.id.lottieLoading)
-        tvAITimer = findViewById(R.id.tvAITimer)
         btnPeriodSelect = findViewById(R.id.btnPeriodSelect)
         toggleMode = findViewById(R.id.toggleMode)
+        layoutCustomDates = findViewById(R.id.layoutCustomDates)
+        btnCustomStart = findViewById(R.id.btnCustomStart)
+        btnCustomEnd = findViewById(R.id.btnCustomEnd)
 
         // White Theme UI Refinement
         if (ThemeHelper.isWhiteTheme(this)) {
             btnPeriodSelect.compoundDrawableTintList = android.content.res.ColorStateList.valueOf(Color.BLACK)
         }
 
-        try {
-            lottieLoading.setAnimation(R.raw.financial_analysis)
-        } catch (e: Exception) { e.printStackTrace() }
-
         findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
         findViewById<View>(R.id.btnDownloadFinal).setOnClickListener { generateDownload() }
+
+        btnCustomStart.setOnClickListener { showDatePicker(true) }
+        btnCustomEnd.setOnClickListener { showDatePicker(false) }
 
         toggleMode.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) {
                 isMonthlyMode = (checkedId == R.id.btnMonthly)
+                isCustomMode = (checkedId == R.id.btnCustom)
                 
-                lifecycleScope.launch(Dispatchers.IO) {
-                    if (!isMonthlyMode) {
-                        selectedWeekIndex = getWeekIndexForNow()
-                    }
-                    withContext(Dispatchers.Main) {
-                        updatePeriodLabel()
+                if (isCustomMode) {
+                    btnPeriodSelect.visibility = View.GONE
+                    layoutCustomDates.visibility = View.VISIBLE
+                    layoutContent.removeAllViews() // wait for dates
+                    if (customStartMillis > 0 && customEndMillis > 0) {
                         loadReport()
+                    }
+                } else {
+                    btnPeriodSelect.visibility = View.VISIBLE
+                    layoutCustomDates.visibility = View.GONE
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        if (!isMonthlyMode) {
+                            selectedWeekIndex = getWeekIndexForNow()
+                        }
+                        withContext(Dispatchers.Main) {
+                            updatePeriodLabel()
+                            loadReport()
+                        }
                     }
                 }
             }
@@ -102,6 +116,39 @@ class ReportActivity : ThemedActivity() {
 
         updatePeriodLabel()
         loadReport()
+    }
+
+    private fun showDatePicker(isStart: Boolean) {
+        val cal = Calendar.getInstance()
+        val currentMillis = if (isStart) (if (customStartMillis > 0) customStartMillis else cal.timeInMillis) 
+                            else (if (customEndMillis > 0) customEndMillis else cal.timeInMillis)
+        cal.timeInMillis = currentMillis
+        
+        android.app.DatePickerDialog(this, { _, year, month, day ->
+            val sel = Calendar.getInstance().apply { 
+                set(year, month, day, if(isStart) 0 else 23, if(isStart) 0 else 59, if(isStart) 0 else 59) 
+            }.timeInMillis
+            
+            if (isStart) {
+                if (customEndMillis > 0 && sel > customEndMillis) {
+                    ToastHelper.showToast(this, "Start date cannot be after end date")
+                    return@DatePickerDialog
+                }
+                customStartMillis = sel
+                btnCustomStart.text = SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(sel))
+            } else {
+                if (customStartMillis > 0 && sel < customStartMillis) {
+                    ToastHelper.showToast(this, "End date cannot be before start date")
+                    return@DatePickerDialog
+                }
+                customEndMillis = sel
+                btnCustomEnd.text = SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(sel))
+            }
+            
+            if (customStartMillis > 0 && customEndMillis > 0) {
+                loadReport()
+            }
+        }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
     }
 
     private fun updatePeriodLabel() {
@@ -204,37 +251,25 @@ class ReportActivity : ThemedActivity() {
         if (isGenerating) return
         isGenerating = true
         
-        layoutLoading.visibility = View.VISIBLE
         layoutContent.removeAllViews()
-        // Note: pie chart is now injected dynamically into layoutContent, no separate container needed
         
-        object : android.os.CountDownTimer(2800, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                val sec = (millisUntilFinished / 1000).toInt() + 1
-                tvAITimer.text = "Curating report using deep algorithm. \n Ready in ${sec}s"
-            }
-            override fun onFinish() {
-                isGenerating = false
-                layoutLoading.visibility = View.GONE
-                
-                // Fix: Move DB-heavy report generation to IO thread
-                lifecycleScope.launch(Dispatchers.IO) {
-                    try {
-                        val insights = FinancialInsightsManager.generateReport(
-                            this@ReportActivity, isMonthlyMode, currentMonth, currentYear, if (isMonthlyMode) -1 else selectedWeekIndex
-                        )
-                        withContext(Dispatchers.Main) {
-                            renderReport(insights)
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        withContext(Dispatchers.Main) {
-                            addCard("Advisory Offline", "Error", "Quantum engine error: ${e.localizedMessage}", R.drawable.ic_glass_menu_vector)
-                        }
-                    }
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val insights = FinancialInsightsManager.generateReport(
+                    this@ReportActivity, isMonthlyMode, isCustomMode, customStartMillis, customEndMillis, currentMonth, currentYear, if (isMonthlyMode) -1 else selectedWeekIndex
+                )
+                withContext(Dispatchers.Main) {
+                    isGenerating = false
+                    renderReport(insights)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    isGenerating = false
+                    addCard("Advisory Offline", "Error", "Quantum engine error: ${e.localizedMessage}", R.drawable.ic_glass_menu_vector)
                 }
             }
-        }.start()
+        }
     }
 
     private fun renderReport(insights: FinancialInsightsManager.AdvisoryInsights) {
@@ -250,9 +285,10 @@ class ReportActivity : ThemedActivity() {
             }
 
             // 1. Summary
-            addCard("${if (isMonthlyMode) "Monthly" else "Weekly"} Spending Summary", 
+            val modeLabel = if (insights.isCustomMode) "Custom" else if (isMonthlyMode) "Monthly" else "Weekly"
+            addCard("$modeLabel Spending Summary", 
                 "₹${insights.totalSpent.toInt()}", 
-                "${if (insights.changePercent >= 0) "↑" else "↓"}${abs(insights.changePercent).toInt()}% vs last ${if (isMonthlyMode) "month" else "week"}",
+                "${if (insights.changePercent >= 0) "↑" else "↓"}${abs(insights.changePercent).toInt()}% vs previous period",
                 R.drawable.ic_glass_menu_vector) {
                 addInfoRow("Daily Average", "₹${insights.dailyAverage.toInt()}")
             }
@@ -270,7 +306,16 @@ class ReportActivity : ThemedActivity() {
             }
 
             // 3. Weekly/Daily Patterns
-            if (isMonthlyMode) {
+            if (insights.isCustomMode) {
+                addCard("Dominant Spending Dates", 
+                    if (insights.dailyPatterns.isNotEmpty()) insights.dailyPatterns[0].dayLabel else "N/A", 
+                    "Highest consumption dates in range",
+                    R.drawable.ic_glass_menu_vector) {
+                    insights.dailyPatterns.forEach { 
+                        addInfoRow(it.dayLabel, "₹${it.amount.toInt()}")
+                    }
+                }
+            } else if (isMonthlyMode) {
                 val topWeek = insights.topWeeks.firstOrNull()
                 addCard("Weekly Spending Pattern", 
                     topWeek?.weekLabel ?: "N/A", 
@@ -311,13 +356,7 @@ class ReportActivity : ThemedActivity() {
                 }
             }
 
-            // 5. Savings & Improvement Opportunities
-            addCard("Savings Optimization", 
-                "₹ Efficiency Strategy", 
-                "Actionable reduction targets",
-                R.drawable.ic_glass_menu_vector) {
-                addInsightBullet(insights.savingsOpportunity)
-            }
+
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -383,7 +422,13 @@ class ReportActivity : ThemedActivity() {
 
         val colorPalette = intArrayOf(
             Color.parseColor("#7C5CFC"), Color.parseColor("#FCA311"), 
-            Color.parseColor("#00F5FF"), Color.parseColor("#FF4D6D"), Color.parseColor("#70E000")
+            Color.parseColor("#00F5FF"), Color.parseColor("#FF4D6D"), 
+            Color.parseColor("#70E000"), Color.parseColor("#3D5AFE"),
+            Color.parseColor("#FF1744"), Color.parseColor("#00E5FF"),
+            Color.parseColor("#76FF03"), Color.parseColor("#D500F9"),
+            Color.parseColor("#1DE9B6"), Color.parseColor("#FF9100"),
+            Color.parseColor("#F50057"), Color.parseColor("#00B0FF"),
+            Color.parseColor("#C6FF00"), Color.parseColor("#651FFF")
         )
 
         summaries.forEachIndexed { index, summary ->
@@ -496,13 +541,24 @@ class ReportActivity : ThemedActivity() {
     }
 
     private fun generateDownload() {
-        val cal = Calendar.getInstance().apply { set(currentYear, currentMonth, 1) }
-        val start = cal.timeInMillis
-        cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH))
-        val end = cal.timeInMillis
+        val start: Long
+        val end: Long
+        if (isCustomMode) {
+            if (customStartMillis == 0L || customEndMillis == 0L) {
+                ToastHelper.showToast(this, "Select start and end dates first")
+                return
+            }
+            start = customStartMillis
+            end = customEndMillis
+        } else {
+            val cal = Calendar.getInstance().apply { set(currentYear, currentMonth, 1) }
+            start = cal.timeInMillis
+            cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH))
+            end = cal.timeInMillis
+        }
         
         lifecycleScope.launch(Dispatchers.IO) {
-            PdfReportManager.generateAndSavePremiumReport(this@ReportActivity, start, end, isMonthlyMode, selectedWeekIndex)
+            PdfReportManager.generateAndSavePremiumReport(this@ReportActivity, start, end, isMonthlyMode, selectedWeekIndex, isCustomMode)
         }
     }
 }

@@ -27,11 +27,14 @@ class ThreeDPieChartView @JvmOverloads constructor(
     }
 
     internal val colorPalette = intArrayOf(
-        Color.parseColor("#7C5CFC"), // Primary Purple
-        Color.parseColor("#FCA311"), // Vibrant Gold
-        Color.parseColor("#00F5FF"), // Cyan
-        Color.parseColor("#FF4D6D"), // Crimson
-        Color.parseColor("#70E000")  // Lime
+        Color.parseColor("#7C5CFC"), Color.parseColor("#FCA311"), 
+        Color.parseColor("#00F5FF"), Color.parseColor("#FF4D6D"), 
+        Color.parseColor("#70E000"), Color.parseColor("#3D5AFE"),
+        Color.parseColor("#FF1744"), Color.parseColor("#00E5FF"),
+        Color.parseColor("#76FF03"), Color.parseColor("#D500F9"),
+        Color.parseColor("#1DE9B6"), Color.parseColor("#FF9100"),
+        Color.parseColor("#F50057"), Color.parseColor("#00B0FF"),
+        Color.parseColor("#C6FF00"), Color.parseColor("#651FFF")
     )
 
     private val pieRect = RectF()
@@ -53,7 +56,13 @@ class ThreeDPieChartView @JvmOverloads constructor(
 
         val colorPalette = intArrayOf(
             Color.parseColor("#7C5CFC"), Color.parseColor("#FCA311"), 
-            Color.parseColor("#00F5FF"), Color.parseColor("#FF4D6D"), Color.parseColor("#70E000")
+            Color.parseColor("#00F5FF"), Color.parseColor("#FF4D6D"), 
+            Color.parseColor("#70E000"), Color.parseColor("#3D5AFE"),
+            Color.parseColor("#FF1744"), Color.parseColor("#00E5FF"),
+            Color.parseColor("#76FF03"), Color.parseColor("#D500F9"),
+            Color.parseColor("#1DE9B6"), Color.parseColor("#FF9100"),
+            Color.parseColor("#F50057"), Color.parseColor("#00B0FF"),
+            Color.parseColor("#C6FF00"), Color.parseColor("#651FFF")
         )
 
         val rect = RectF(centerX - radiusX, centerY - radiusY, centerX + radiusX, centerY + radiusY)

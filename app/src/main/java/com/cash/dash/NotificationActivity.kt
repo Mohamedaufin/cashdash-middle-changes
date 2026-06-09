@@ -22,6 +22,8 @@ class NotificationActivity : ThemedActivity() {
 
     private var allNotifications = listOf<NotificationModel>()
     private var filteredNotifications = listOf<NotificationModel>()
+    private var rawUserNotifications = listOf<NotificationEntity>()
+    private var rawAnnouncements = listOf<NotificationEntity>()
     private var currentFilter = "all" // "all", "responded", "pending"
     private lateinit var adapter: NotificationAdapter
     private var notificationListener: com.google.firebase.firestore.ListenerRegistration? = null
@@ -101,13 +103,40 @@ class NotificationActivity : ThemedActivity() {
     }
 
     private fun loadNotifications() {
+        loadFromRoomAndRender()
+        fetchAnnouncementsAndListen()
+    }
+
+    private fun fetchAnnouncementsAndListen() {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("announcements")
+            .get()
+            .addOnSuccessListener { adminDocs ->
+                rawAnnouncements = adminDocs.map { doc ->
+                    NotificationEntity(
+                        id = doc.id,
+                        subject = doc.getString("subject") ?: "Announcement",
+                        query = doc.getString("query") ?: "No query",
+                        reply = doc.getString("reply") ?: "[ANNOUNCEMENT]",
+                        timestamp = doc.getLong("timestamp") ?: 0L,
+                        status = "resolved",
+                        read = doc.getBoolean("read") ?: true,
+                        imageUrl = doc.getString("imageUrl")
+                    )
+                }
+                listenToUserNotifications()
+            }
+            .addOnFailureListener {
+                listenToUserNotifications()
+            }
+    }
+
+    private fun listenToUserNotifications() {
         val user = FirebaseAuth.getInstance().currentUser ?: return
-        val email = user.email ?: return
+        val email = user.email ?: getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_email", null) ?: return
         val db = FirebaseFirestore.getInstance()
         val tvEmpty = findViewById<TextView>(R.id.tvEmptyNotifications)
         val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
-
-        loadFromRoomAndRender()
 
         notificationListener?.remove()
         notificationListener = db.collection("users").document(email).collection("notifications")
@@ -124,41 +153,14 @@ class NotificationActivity : ThemedActivity() {
 
                 if (docs == null || docs.isEmpty) {
                     val prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
-                    if (!prefs.getBoolean("migrated_notifications_uid", false)) {
-                        // 🔄 LEGACY MIGRATION: Check if there are old notifications under UID and copy them over
-                        db.collection("users").document(user.uid).collection("notifications")
-                            .get()
-                            .addOnSuccessListener { legacyDocs ->
-                                if (!legacyDocs.isEmpty) {
-                                    val batch = db.batch()
-                                    for (legacyDoc in legacyDocs) {
-                                        val newRef = db.collection("users").document(email).collection("notifications").document(legacyDoc.id)
-                                        batch.set(newRef, legacyDoc.data)
-                                        batch.delete(legacyDoc.reference) // Permanently remove old ones to prevent resurrection
-                                    }
-                                    batch.commit().addOnSuccessListener {
-                                        prefs.edit().putBoolean("migrated_notifications_uid", true).apply()
-                                    }
-                                } else {
-                                    prefs.edit().putBoolean("migrated_notifications_uid", true).apply()
-                                    tvEmpty.text = "No notifications yet.\n\nWe'll notify you when your support\nqueries are resolved!"
-                                    tvEmpty.visibility = View.VISIBLE
-                                    findViewById<LinearLayout>(R.id.filterBar).visibility = View.VISIBLE
-                                    rv.visibility = View.GONE
-                                    allNotifications = emptyList()
-                                    saveToRoom(emptyList())
-                                }
-                            }
-                        return@addSnapshotListener
-                    } else {
-                        tvEmpty.text = "No notifications yet.\n\nWe'll notify you when your support\nqueries are resolved!"
-                        tvEmpty.visibility = View.VISIBLE
-                        findViewById<LinearLayout>(R.id.filterBar).visibility = View.VISIBLE
-                        rv.visibility = View.GONE
-                        allNotifications = emptyList()
-                        saveToRoom(emptyList())
-                        return@addSnapshotListener
-                    }
+                    prefs.edit().putBoolean("migrated_notifications_uid", true).apply()
+                    rawUserNotifications = emptyList()
+                    val allEntities = (rawUserNotifications + rawAnnouncements).sortedByDescending { it.timestamp }
+                    saveToRoom(allEntities)
+                    val models = mapEntitiesToModels(allEntities)
+                    allNotifications = models
+                    applyFilter()
+                    return@addSnapshotListener
                 }
 
                 // 1. Silent cleanup for duplicates
@@ -192,14 +194,17 @@ class NotificationActivity : ThemedActivity() {
                             reply = doc.getString("reply") ?: "Waiting for reply...",
                             timestamp = doc.getLong("timestamp") ?: 0L,
                             status = doc.getString("status") ?: "",
-                            read = doc.getBoolean("read") ?: true
+                            read = doc.getBoolean("read") ?: true,
+                            imageUrl = doc.getString("imageUrl")
                         )
                     }
                     
-                    saveToRoom(entities)
+                    rawUserNotifications = entities
+                    val allEntities = (rawUserNotifications + rawAnnouncements).sortedByDescending { it.timestamp }
+                    saveToRoom(allEntities)
 
                     // 2. Heavy CPU computation: String replacement + HTML interpolation
-                    val models = mapEntitiesToModels(entities)
+                    val models = mapEntitiesToModels(allEntities)
                     
                     // 3. Push results to UI
                     withContext(Dispatchers.Main) {
@@ -292,7 +297,8 @@ class NotificationActivity : ThemedActivity() {
                 isResolved = isResolved,
                 originalSubject = subject,
                 originalQuery = query,
-                originalReply = reply
+                originalReply = reply,
+                imageUrl = entity.imageUrl
             )
         }
     }
@@ -470,6 +476,65 @@ class NotificationActivity : ThemedActivity() {
                 holder.tvReply.visibility = View.GONE
             }
 
+            if (item.imageUrl != null) {
+                holder.tvAttachmentLabel.visibility = View.VISIBLE
+                holder.imgAttachment.visibility = View.VISIBLE
+                com.bumptech.glide.Glide.with(holder.itemView.context)
+                    .load(item.imageUrl)
+                    .into(holder.imgAttachment)
+                
+                holder.imgAttachment.setOnClickListener {
+                    val dialog = android.app.Dialog(this@NotificationActivity, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+                    
+                    val container = android.widget.FrameLayout(this@NotificationActivity)
+                    container.layoutParams = android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+
+                    val imgView = com.github.chrisbanes.photoview.PhotoView(this@NotificationActivity)
+                    imgView.layoutParams = android.widget.FrameLayout.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    imgView.scaleType = ImageView.ScaleType.FIT_CENTER
+                    com.bumptech.glide.Glide.with(this@NotificationActivity).load(item.imageUrl).into(imgView)
+
+                    val closeBtn = ImageButton(this@NotificationActivity)
+                    val btnParams = android.widget.FrameLayout.LayoutParams(
+                        (56 * resources.displayMetrics.density).toInt(),
+                        (56 * resources.displayMetrics.density).toInt()
+                    )
+                    btnParams.gravity = android.view.Gravity.TOP or android.view.Gravity.END
+                    btnParams.topMargin = (24 * resources.displayMetrics.density).toInt()
+                    btnParams.marginEnd = (24 * resources.displayMetrics.density).toInt()
+                    closeBtn.layoutParams = btnParams
+                    
+                    val glassBg = android.graphics.drawable.GradientDrawable()
+                    glassBg.shape = android.graphics.drawable.GradientDrawable.OVAL
+                    glassBg.setColor(android.graphics.Color.parseColor("#66000000")) // Translucent dark
+                    glassBg.setStroke(3, android.graphics.Color.parseColor("#80FFFFFF")) // Translucent white border
+                    closeBtn.background = glassBg
+                    
+                    closeBtn.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+                    closeBtn.setColorFilter(android.graphics.Color.RED)
+                    closeBtn.scaleType = ImageView.ScaleType.FIT_CENTER
+                    val padding = (14 * resources.displayMetrics.density).toInt()
+                    closeBtn.setPadding(padding, padding, padding, padding)
+                    
+                    closeBtn.setOnClickListener { dialog.dismiss() }
+
+                    container.addView(imgView)
+                    container.addView(closeBtn)
+
+                    dialog.setContentView(container)
+                    dialog.show()
+                }
+            } else {
+                holder.tvAttachmentLabel.visibility = View.GONE
+                holder.imgAttachment.visibility = View.GONE
+            }
+
             // Status & Action Visibility Logic
             if (item.isResolved) {
                 holder.layoutReplyBox.visibility = View.GONE
@@ -516,7 +581,7 @@ class NotificationActivity : ThemedActivity() {
                         isSwiping = false
                         // If it's the root item, claim the touch stream so we get MOVE events
                         // If it's a child button/input, return false to let it handle its own click stream
-                        v == holder.itemView || (v !is EditText && v !is Button && v !is ImageButton)
+                        v == holder.itemView || (v !is EditText && v !is Button && v !is ImageButton && v.id != R.id.imgNotificationAttachment)
                     }
                     android.view.MotionEvent.ACTION_MOVE -> {
                         val dX = event.rawX - startRawX
@@ -710,6 +775,8 @@ class NotificationActivity : ThemedActivity() {
             val edtReply = v.findViewById<EditText>(R.id.edtReply)
             val btnSendReply = v.findViewById<ImageButton>(R.id.btnSendReply)
             val tvResolvedStatus = v.findViewById<TextView>(R.id.tvResolvedStatus)
+            val tvAttachmentLabel = v.findViewById<TextView>(R.id.tvAttachmentLabel)
+            val imgAttachment = v.findViewById<ImageView>(R.id.imgNotificationAttachment)
         }
     }
 }

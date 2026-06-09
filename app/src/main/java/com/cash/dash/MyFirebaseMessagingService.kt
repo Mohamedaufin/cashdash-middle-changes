@@ -65,7 +65,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setVibrate(longArrayOf(0, 500, 200, 500))
             .setOnlyAlertOnce(true)                           // Master fix for sound persistence
-            .setFullScreenIntent(pendingIntent, true)         // Mandatory for background popup breakthrough
             .setStyle(NotificationCompat.BigTextStyle().bigText(messageBody))
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

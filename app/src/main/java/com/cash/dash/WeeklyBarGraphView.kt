@@ -133,9 +133,19 @@ class WeeklyBarGraphView(context: Context, attrs: AttributeSet?) : View(context,
                 
                 textPaint.textSize = unifiedLabelSize
                 
-                textPaint.color = if (ThemeHelper.isWhiteTheme(context)) 
-                    ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor) 
-                    else ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor)
+                val themeName = com.cash.dash.ThemeHelper.getCurrentTheme(context)
+                val color1 = when(themeName) {
+                    "White" -> Color.parseColor("#1A73E8") // Vibrant Blue
+                    "Blue" -> Color.parseColor("#64B5F6")
+                    else -> Color.parseColor("#4DB6AC")
+                }
+                val color2 = when(themeName) {
+                    "White" -> Color.parseColor("#8E24AA") // Vibrant Purple
+                    "Blue" -> Color.parseColor("#CE93D8")
+                    else -> Color.parseColor("#7986CB")
+                }
+                textPaint.color = if (i % 2 == 0) color1 else color2
+                
                 canvas.drawText(labelStr, center, height - 30f, textPaint)
                 continue
             }
@@ -188,7 +198,18 @@ class WeeklyBarGraphView(context: Context, attrs: AttributeSet?) : View(context,
             val labelStr = if (i < weekLabels.size) weekLabels[i] else "W${i+1}"
             textPaint.textSize = unifiedLabelSize
             textPaint.typeface = Typeface.DEFAULT
-            textPaint.color = ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor)
+            val themeName = com.cash.dash.ThemeHelper.getCurrentTheme(context)
+            val color1 = when(themeName) {
+                "White" -> Color.parseColor("#1A73E8") // Vibrant Blue
+                "Blue" -> Color.parseColor("#64B5F6")
+                else -> Color.parseColor("#4DB6AC")
+            }
+            val color2 = when(themeName) {
+                "White" -> Color.parseColor("#8E24AA") // Vibrant Purple
+                "Blue" -> Color.parseColor("#CE93D8")
+                else -> Color.parseColor("#7986CB")
+            }
+            textPaint.color = if (i % 2 == 0) color1 else color2
             canvas.drawText(labelStr, center, height - 30f, textPaint)
         }
     }

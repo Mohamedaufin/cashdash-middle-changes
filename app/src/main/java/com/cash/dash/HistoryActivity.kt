@@ -45,6 +45,13 @@ class HistoryActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_history)
 
+        TutorialManager.showTutorialIfNeeded(
+            this,
+            "tut_history",
+            "History",
+            "1. View all your past transactions chronologically\n\n2. Use the search bar to find specific expenses quickly\n\n3. Tap the 'Statements' button to generate cumulative reports for any period"
+        )
+
         val btnDate = findViewById<Button>(R.id.btnDate)
         val graph = findViewById<DayBarGraphView>(R.id.dayGraph)
         val title = findViewById<TextView>(R.id.tvGraphTitle)

@@ -404,6 +404,7 @@ class EntryActivity : ThemedActivity() {
         if (isLogin) {
             FirestoreSyncManager.pullDataFromCloud(this) { success, _, isAdminDeleted, profileData ->
                 if (success && isAdminDeleted) {
+                    CashDashApplication.setOfflineImmediate(this@EntryActivity)
                     auth.signOut()
                     prefs.edit().clear().apply()
                     showAdminDeletionDialog()
@@ -416,6 +417,7 @@ class EntryActivity : ThemedActivity() {
                         .putBoolean(KEY_FIRST, false)
                         .commit() // 🚀 Mandatory commit for SplashActivity immediate read
                         
+                    CashDashApplication.setupRealtimePresence(this@EntryActivity)
                     startActivity(Intent(this, SplashActivity::class.java))
                     finish()
                 } else {
@@ -424,6 +426,7 @@ class EntryActivity : ThemedActivity() {
             }
         } else {
             FirestoreSyncManager.pushAllDataToCloud(this)
+            CashDashApplication.setupRealtimePresence(this@EntryActivity)
             startActivity(Intent(this, SplashActivity::class.java))
             finish()
         }

@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.cash.dash
 
 import android.app.Dialog
@@ -47,28 +48,78 @@ class ProfileActivity : ThemedActivity() {
             showChangePasswordDialog()
         }
 
+        btnSave.setOnLongClickListener {
+            val user = FirebaseAuth.getInstance().currentUser
+            val email = user?.email
+            val adminEmails = listOf("mohamedaufin64@gmail.com", "arunbhalaji200904@gmail.com")
+            
+            if (email != null && adminEmails.contains(email.lowercase())) {
+                startActivity(Intent(this@ProfileActivity, AdminActivity::class.java))
+            }
+            true
+        }
+
         btnSave.setOnClickListener {
             val name = edtName.text.toString().trim()
             val phone = edtPhone.text.toString().trim()
-            val email = edtEmail.text.toString().trim()
+            val newEmail = edtEmail.text.toString().trim()
+            val user = FirebaseAuth.getInstance().currentUser
 
             if(name.isEmpty()){
                 ToastHelper.showToast(this@ProfileActivity, "Enter name")
                 return@setOnClickListener
             }
 
-            prefs.edit().apply {
-                putString(KEY_NAME, name)
-                putString(KEY_PHONE, phone)
-                putString(KEY_EMAIL, email)
-                apply()
+            if (newEmail.isEmpty()) {
+                ToastHelper.showToast(this@ProfileActivity, "Enter email")
+                return@setOnClickListener
             }
 
-            // Sync these updated preferences straight to the newly created Firestore
-            FirestoreSyncManager.pushAllDataToCloud(this@ProfileActivity)
+        if (user != null && user.email != null && newEmail != user.email) {
+            val oldEmail = user.email!!
+            btnSave.isEnabled = false
+            btnSave.text = "Checking..."
 
-            ToastHelper.showToast(this@ProfileActivity, "Profile Updated ✔")
-            finish()
+            user.updateEmail(newEmail).addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    prefs.edit().apply {
+                        putString(KEY_NAME, name)
+                        putString(KEY_PHONE, phone)
+                        putString(KEY_EMAIL, newEmail)
+                        apply()
+                    }
+                    
+                    // Wipe old firestore document so we don't leave orphaned data
+                    wipeUserFirestoreData(user.uid, oldEmail)
+
+                    FirestoreSyncManager.pushAllDataToCloud(this@ProfileActivity)
+                    ToastHelper.showToast(this@ProfileActivity, "Profile Updated ✔")
+                    finish()
+                    } else {
+                        btnSave.isEnabled = true
+                        btnSave.text = "Save"
+                        val error = task.exception?.message ?: "Unknown error"
+                        if (error.contains("already in use", ignoreCase = true) || error.contains("collision", ignoreCase = true)) {
+                            ToastHelper.showToast(this@ProfileActivity, "This Email ID already exists!")
+                        } else if (error.contains("recent login", ignoreCase = true) || error.contains("recent authentication", ignoreCase = true)) {
+                            ToastHelper.showToast(this@ProfileActivity, "Security: Please logout and login again to change email.")
+                        } else {
+                            ToastHelper.showToast(this@ProfileActivity, "Failed: $error")
+                        }
+                    }
+                }
+            } else {
+                prefs.edit().apply {
+                    putString(KEY_NAME, name)
+                    putString(KEY_PHONE, phone)
+                    putString(KEY_EMAIL, newEmail)
+                    apply()
+                }
+
+                FirestoreSyncManager.pushAllDataToCloud(this@ProfileActivity)
+                ToastHelper.showToast(this@ProfileActivity, "Profile Updated ✔")
+                finish()
+            }
         }
 
         btnLogout.setOnClickListener {
@@ -90,7 +141,8 @@ class ProfileActivity : ThemedActivity() {
                     getSharedPreferences(name, MODE_PRIVATE).edit().clear().apply()
                 }
 
-                // 2. Sign out
+                // 2. Sign out & mark offline immediately
+                CashDashApplication.setOfflineImmediate(this@ProfileActivity)
                 FirebaseAuth.getInstance().signOut()
 
                 // 3. Navigate back to login

@@ -22,8 +22,8 @@ android {
         applicationId = "com.cash.dash"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.3.0"
+        versionCode = 4
+        versionName = "0.3.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -80,9 +80,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-process:2.7.0")
 
-    implementation("androidx.camera:camera-camera2:1.3.1")
-    implementation("androidx.camera:camera-lifecycle:1.3.1")
-    implementation("androidx.camera:camera-view:1.3.1")
+    implementation("androidx.camera:camera-camera2:1.4.1")
+    implementation("androidx.camera:camera-lifecycle:1.4.1")
+    implementation("androidx.camera:camera-view:1.4.1")
 
     implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.0")
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
@@ -93,8 +93,15 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-messaging")
+    implementation("com.google.firebase:firebase-database")
+    implementation("com.google.firebase:firebase-storage")
 
     implementation("com.airbnb.android:lottie:6.1.0")
+    
+    // Image Loading
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    kapt("com.github.bumptech.glide:compiler:4.16.0")
+    implementation("com.github.chrisbanes:PhotoView:2.3.0")
 
     // Room Database
     val roomVersion = "2.6.1"
@@ -105,4 +112,7 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    
+    // WorkManager for delayed tasks
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 }

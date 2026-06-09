@@ -10,7 +10,7 @@
         android:layout_width="32dp"
         android:layout_height="32dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="64dp"
+        android:layout_marginTop="40dp"
         android:src="@drawable/ic_glass_menu_vector"
         android:background="@android:color/transparent"
         android:scaleType="fitCenter"
@@ -54,17 +54,33 @@
             android:textSize="@dimen/text_title"
             android:textStyle="bold" />
     </LinearLayout>
-    <!-- Profile button -->
+    <!-- Smart Assistant button -->
     <ImageView
-        android:id="@+id/btnProfile"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginEnd="16dp"
+        android:id="@+id/btnSmartAssistant"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
         android:padding="4dp"
-        android:src="@drawable/ic_profile"
+        android:layout_marginEnd="8dp"
+        android:src="@drawable/ic_taptrack_icon"
+        app:tint="?attr/textPrimaryColor"
         android:clickable="true"
         android:focusable="true"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnMenu"
+        app:layout_constraintBottom_toBottomOf="@id/btnMenu"/>
+
+    <!-- Help button -->
+    <ImageView
+        android:id="@+id/btnHelp"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:padding="5dp"
+        android:layout_marginEnd="4dp"
+        android:src="@drawable/ic_info_outline"
+        app:tint="?attr/textPrimaryColor"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintEnd_toStartOf="@id/btnSmartAssistant"
         app:layout_constraintTop_toTopOf="@id/btnMenu"
         app:layout_constraintBottom_toBottomOf="@id/btnMenu"/>
     <TextView
@@ -91,28 +107,32 @@
         android:textColor="?attr/textMutedColor"
         android:textSize="@dimen/text_subhead"
         android:gravity="center"
+        android:padding="8dp"
+        android:clickable="true"
+        android:focusable="true"
         app:layout_constraintBottom_toTopOf="@id/tvResetPending"
-        android:layout_marginBottom="4dp"
+        android:layout_marginBottom="12dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
     <!-- WALLET CIRCLE -->
     <FrameLayout
         android:id="@+id/walletContainer"
-        android:layout_width="340dp"
-        android:layout_height="340dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintWidth_max="340dp"
+        app:layout_constraintHeight_max="340dp"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintTop_toBottomOf="@id/layoutHomeGreeting"
         app:layout_constraintBottom_toTopOf="@id/cardScanner"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="65dp"
-        android:layout_marginBottom="40dp">
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="24dp">
 
         <com.cash.dash.GradientCircularProgressView
             android:id="@+id/walletProgress"
-            android:layout_width="340dp"
-            android:layout_height="340dp"
-
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:layout_gravity="center" />
         <LinearLayout
             android:layout_width="match_parent"
@@ -142,15 +162,15 @@
         android:id="@+id/cardScanner"
         android:layout_width="120dp"
         android:layout_height="110dp"
-        android:layout_marginTop="35dp"
         android:layout_marginStart="32dp"
+        android:layout_marginBottom="32dp"
         android:orientation="vertical"
         android:gravity="center"
         android:background="?attr/cardBackground"
         android:clickable="true"
         android:focusable="true"
         app:layout_constraintTop_toBottomOf="@id/walletContainer"
-
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent">
         <ImageView
             android:id="@+id/iconScanner"
@@ -171,15 +191,14 @@
         android:id="@+id/cardRigor"
         android:layout_width="120dp"
         android:layout_height="110dp"
-        android:layout_marginTop="35dp"
         android:layout_marginEnd="32dp"
         android:orientation="vertical"
         android:gravity="center"
         android:background="?attr/cardBackground"
         android:clickable="true"
         android:focusable="true"
-        app:layout_constraintTop_toBottomOf="@id/walletContainer"
-
+        app:layout_constraintTop_toTopOf="@id/cardScanner"
+        app:layout_constraintBottom_toBottomOf="@id/cardScanner"
         app:layout_constraintEnd_toEndOf="parent">
         <ImageView
             android:id="@+id/iconRigorTracker"

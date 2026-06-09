@@ -20,6 +20,8 @@ class BalanceSetupActivity : ThemedActivity() {
     private val KEY_BALANCE = "wallet_balance"
 
     private lateinit var tvAmount: TextView
+    private lateinit var tvAddHint: TextView
+    private lateinit var tvReplaceHint: TextView
     private var currentAmount: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,6 +29,8 @@ class BalanceSetupActivity : ThemedActivity() {
         setContentView(R.layout.activity_balance_setup)
 
         tvAmount = findViewById(R.id.tvAmount)
+        tvAddHint = findViewById(R.id.tvAddHint)
+        tvReplaceHint = findViewById(R.id.tvReplaceHint)
         val tvCurrentBalance = findViewById<TextView>(R.id.tvCurrentBalance)
 
         val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -54,6 +58,7 @@ class BalanceSetupActivity : ThemedActivity() {
             ivEdit.visibility = View.GONE
             btnReplace.visibility = View.GONE
             findViewById<TextView>(R.id.tvChooseLabel).visibility = View.GONE
+            findViewById<View>(R.id.hintRow).visibility = View.GONE
             
             btnAdd.text = "Add amount to wallet balance"
             val params = btnAdd.layoutParams as android.widget.LinearLayout.LayoutParams
@@ -63,11 +68,23 @@ class BalanceSetupActivity : ThemedActivity() {
         }
 
         btnAdd.setOnClickListener {
-            handleBalanceUpdate(isReplace = false, isFirstTime = isFirstTime)
+            if (isFirstTime) {
+                handleBalanceUpdate(isReplace = false, isPermanent = true, isFirstTime = true)
+            } else {
+                val schedulePrefs = getSharedPreferences("MoneySchedulePrefs", Context.MODE_PRIVATE)
+                val isScheduleSet = schedulePrefs.getInt("schedule_days", -1) > 0
+
+                if (!isScheduleSet) {
+                    // No money schedule set, just add permanently without asking about cycles
+                    handleBalanceUpdate(isReplace = false, isPermanent = true, isFirstTime = false)
+                } else {
+                    showAddTypeDialog()
+                }
+            }
         }
 
         btnReplace.setOnClickListener {
-            handleBalanceUpdate(isReplace = true, isFirstTime = false)
+            handleBalanceUpdate(isReplace = true, isPermanent = true, isFirstTime = false)
         }
 
         // Apply WindowInsets for edge-to-edge support
@@ -78,6 +95,76 @@ class BalanceSetupActivity : ThemedActivity() {
             numpadContainer.setPadding(numpadContainer.paddingLeft, numpadContainer.paddingTop, numpadContainer.paddingRight, systemBars.bottom)
             insets
         }
+    }
+
+    private fun showAddTypeDialog() {
+        val amount = currentAmount.toIntOrNull() ?: 0
+        if (amount <= 0) {
+            ToastHelper.showToast(this, "Please enter an amount")
+            return
+        }
+
+        val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val oldBalance = prefs.getInt("initial_balance", 0)
+        val newBalance = oldBalance + amount
+        
+        val actualNextCycle = prefs.getInt("next_cycle_initial_balance", oldBalance)
+
+        val density = resources.displayMetrics.density
+        val box = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            val p = (28 * density).toInt()
+            setPadding(p, p, p, (24 * density).toInt())
+            setBackgroundResource(ThemeHelper.getDrawable(this.context, R.drawable.bg_transaction))
+        }
+
+        val titleView = android.widget.TextView(this).apply {
+            text = "Update Budget?"
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_title))
+            setTextColor(ThemeHelper.resolveColorAttr(this@BalanceSetupActivity, R.attr.textPrimaryColor))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, 0, 0, (20 * density).toInt())
+        }
+        box.addView(titleView)
+
+        val introView = android.widget.TextView(this).apply {
+            text = "Your total wallet balance will be upgraded from $oldBalance to ₹$newBalance.\n\nShould this upgrade apply to all future money reset schedules?"
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_body))
+            setTextColor(ThemeHelper.resolveColorAttr(this@BalanceSetupActivity, R.attr.textPrimaryColor))
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, 0, 0, (32 * density).toInt())
+            setLineSpacing(8f, 1f)
+        }
+        box.addView(introView)
+
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this).setView(box).create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        fun createButton(textStr: String, colorStr: String, action: () -> Unit): android.widget.Button {
+            return android.widget.Button(this).apply {
+                text = textStr
+                isAllCaps = false
+                setTextColor(if (colorStr == "primary") ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor) else android.graphics.Color.parseColor(colorStr))
+                val tv = android.util.TypedValue(); context.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+                background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+                stateListAnimator = null
+                elevation = 0f
+                layoutParams = android.widget.LinearLayout.LayoutParams(android.widget.LinearLayout.LayoutParams.MATCH_PARENT, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 0, (12 * density).toInt()) }
+                minHeight = 150
+                setPadding(30, 30, 30, 30)
+                setOnClickListener {
+                    action()
+                    dialog.dismiss()
+                }
+            }
+        }
+
+        box.addView(createButton("Yes (Next cycle total wallet balance - $newBalance)", "primary") { handleBalanceUpdate(isReplace = false, isPermanent = true, isFirstTime = false) })
+        box.addView(createButton("No (Next cycle total wallet balance - $actualNextCycle)", "primary") { handleBalanceUpdate(isReplace = false, isPermanent = false, isFirstTime = false) })
+        box.addView(createButton("Cancel", "primary") { })
+
+        dialog.show()
     }
 
     private fun setupNumpad() {
@@ -119,9 +206,27 @@ class BalanceSetupActivity : ThemedActivity() {
 
     private fun updateAmountDisplay() {
         tvAmount.text = if (currentAmount.isEmpty()) "0" else currentAmount
+        
+        val amount = currentAmount.toIntOrNull() ?: 0
+        if (amount > 0) {
+            val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val oldBalance = prefs.getInt(KEY_BALANCE, 0)
+            val oldInitial = prefs.getInt("initial_balance", oldBalance)
+            
+            val newAddBal = oldBalance + amount
+            val newAddInit = oldInitial + amount
+            tvAddHint.text = "₹$newAddBal / ₹$newAddInit"
+            tvReplaceHint.text = "₹$amount / ₹$amount"
+            
+            tvAddHint.visibility = View.VISIBLE
+            tvReplaceHint.visibility = View.VISIBLE
+        } else {
+            tvAddHint.visibility = View.INVISIBLE
+            tvReplaceHint.visibility = View.INVISIBLE
+        }
     }
 
-    private fun handleBalanceUpdate(isReplace: Boolean, isFirstTime: Boolean = false) {
+    private fun handleBalanceUpdate(isReplace: Boolean, isPermanent: Boolean, isFirstTime: Boolean = false) {
         val amount = currentAmount.toIntOrNull() ?: 0
         if (amount <= 0) {
             ToastHelper.showToast(this, "Please enter an amount")
@@ -135,10 +240,18 @@ class BalanceSetupActivity : ThemedActivity() {
         val newBalance = if (isReplace) amount else (oldBalance + amount)
         val newInitial = if (isReplace) amount else (oldInitial + amount)
 
-        prefs.edit()
-            .putInt(KEY_BALANCE, newBalance)
-            .putInt("initial_balance", newInitial)
-            .apply()
+        val editor = prefs.edit().putInt(KEY_BALANCE, newBalance)
+        
+        editor.putInt("initial_balance", newInitial)
+        if (isPermanent) {
+            editor.remove("next_cycle_initial_balance")
+        } else {
+            val existingNextCycle = prefs.getInt("next_cycle_initial_balance", -1)
+            if (existingNextCycle == -1) {
+                editor.putInt("next_cycle_initial_balance", oldInitial)
+            }
+        }
+        editor.apply()
 
         // Sync to Firestore
         FirestoreSyncManager.pushAllDataToCloud(this)
