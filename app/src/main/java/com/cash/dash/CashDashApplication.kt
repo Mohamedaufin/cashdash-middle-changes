@@ -22,13 +22,6 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
         
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
         
-        // Start service to handle app swipe-kill safely (try-catch for Android 12+ background restrictions)
-        try {
-            startService(android.content.Intent(this, AppKillService::class.java))
-        } catch (e: Exception) {
-            // Ignore if OS blocks background service start
-        }
-        
         // Start Security Monitoring globally
         SecurityManager.startListening(this)
         
@@ -36,6 +29,7 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
         MigrationManager.checkAndMigrate(this)
         
         createNotificationChannel()
+        com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("all_users")
     }
 
     private fun createNotificationChannel() {
@@ -68,45 +62,91 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
 
     override fun onStart(owner: LifecycleOwner) {
         super.onStart(owner)
-        updateUserStatus("Online")
+        setupRealtimePresence(this)
     }
 
     override fun onStop(owner: LifecycleOwner) {
         super.onStop(owner)
-        updateUserStatus("Offline")
+        setOfflineImmediate(this)
     }
 
-    private fun updateUserStatus(status: String) {
-        val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser ?: return
-        val email = user.email ?: return
-        val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level == TRIM_MEMORY_UI_HIDDEN) {
+            setOfflineImmediate(this)
+        }
+    }
 
-        val updates = hashMapOf<String, Any>()
-        if (status == "Online") {
-            updates["status"] = "Online"
-        } else {
+    companion object {
+        var presenceListener: com.google.firebase.database.ValueEventListener? = null
+
+        fun setupRealtimePresence(context: Context) {
+            val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser ?: return
+            val email = user.email ?: return
+            val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            
+            val safeEmail = email.replace(".", ",")
+            val rtdbStatusRef = com.google.firebase.database.FirebaseDatabase.getInstance().getReference("status").child(safeEmail)
+            val connectedRef = com.google.firebase.database.FirebaseDatabase.getInstance().getReference(".info/connected")
+            
+            // Clean up any lingering listener from a previous session
+            presenceListener?.let { connectedRef.removeEventListener(it) }
+            
+            presenceListener = object : com.google.firebase.database.ValueEventListener {
+                override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                    val connected = snapshot.getValue(Boolean::class.java) ?: false
+                    if (connected) {
+                        val disconnectData = mapOf(
+                            "state" to "Offline",
+                            "last_changed" to com.google.firebase.database.ServerValue.TIMESTAMP
+                        )
+                        rtdbStatusRef.onDisconnect().setValue(disconnectData)
+                        
+                        val onlineData = mapOf(
+                            "state" to "Online",
+                            "last_changed" to com.google.firebase.database.ServerValue.TIMESTAMP
+                        )
+                        rtdbStatusRef.setValue(onlineData)
+                    }
+                }
+                override fun onCancelled(error: com.google.firebase.database.DatabaseError) {}
+            }
+            connectedRef.addValueEventListener(presenceListener!!)
+
+            // Also immediately sync to Firestore directly as a fallback
+            val updates = hashMapOf<String, Any>("status" to "Online")
+            db.collection("users").document(email).update(updates).addOnFailureListener { }
+            db.collection("users").document(email).collection("config").document("profile").update(updates).addOnFailureListener { }
+        }
+
+        fun setOfflineImmediate(context: Context) {
+            val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser ?: return
+            val email = user.email ?: return
+            val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+
+            val safeEmail = email.replace(".", ",")
+            val rtdbStatusRef = com.google.firebase.database.FirebaseDatabase.getInstance().getReference("status").child(safeEmail)
+            val connectedRef = com.google.firebase.database.FirebaseDatabase.getInstance().getReference(".info/connected")
+
+            // IMPORTANT: Tear down the listener so it doesn't accidentally mark this user online later!
+            presenceListener?.let { connectedRef.removeEventListener(it) }
+            presenceListener = null
+
+            val updates = hashMapOf<String, Any>()
             val sdf = java.text.SimpleDateFormat("dd/MM/yyyy, hh:mm a", java.util.Locale.ENGLISH)
             sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
             val lastActive = sdf.format(java.util.Date())
             updates["status"] = "Offline"
             updates["lastActiveTime"] = lastActive
 
-            val prefs = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+            val prefs = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
             prefs.edit().putString("lastActiveTime", lastActive).apply()
-        }
 
-        db.collection("users").document(email).update(updates).addOnFailureListener { }
-        db.collection("users").document(email).collection("config").document("profile").update(updates).addOnFailureListener { }
-    }
+            rtdbStatusRef.setValue(mapOf("state" to "Offline", "last_changed" to com.google.firebase.database.ServerValue.TIMESTAMP))
+            rtdbStatusRef.onDisconnect().cancel()
 
-    override fun onTrimMemory(level: Int) {
-        super.onTrimMemory(level)
-        // TRIM_MEMORY_UI_HIDDEN fires INSTANTLY the exact millisecond the user 
-        // presses the Home button or opens the Recents menu. 
-        // This gives the app a crucial head-start to send the 'Offline' signal 
-        // before they can physically swipe to kill the app.
-        if (level == TRIM_MEMORY_UI_HIDDEN) {
-            updateUserStatus("Offline")
+            db.collection("users").document(email).update(updates).addOnFailureListener { }
+            db.collection("users").document(email).collection("config").document("profile").update(updates).addOnFailureListener { }
         }
     }
 }

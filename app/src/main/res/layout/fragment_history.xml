@@ -1,14 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-xmlns:app="http://schemas.android.com/apk/res-auto"
-android:layout_width="match_parent"
-android:layout_height="match_parent"
-android:fillViewport="true"
-android:scrollbars="none">
-
 <LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
     android:paddingTop="45dp"
     android:paddingBottom="20dp">
@@ -65,8 +60,8 @@ android:scrollbars="none">
         android:layout_width="match_parent"
         android:layout_height="55dp"
         android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="5dp"
-        android:background="?attr/searchBackground"
+        android:layout_marginTop="10dp"
+        android:background="?attr/inputBackground"
         android:clickable="true"
         android:focusable="true"
         android:gravity="center_vertical"
@@ -89,8 +84,8 @@ android:scrollbars="none">
     <com.cash.dash.DayBarGraphView
         android:id="@+id/dayGraph"
         android:layout_width="match_parent"
-        android:layout_height="314dp"
-
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:layout_marginTop="15dp" />
     <!-- GRAPH TITLE -->
     <TextView
@@ -161,7 +156,7 @@ android:scrollbars="none">
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="View Statement"
+                android:text="Generate Statement"
                 android:textColor="?attr/textPrimaryColor"
                 android:textSize="12sp"
                 android:textStyle="bold"
@@ -169,5 +164,3 @@ android:scrollbars="none">
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>
-</ScrollView>
-

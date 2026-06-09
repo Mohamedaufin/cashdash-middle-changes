@@ -195,7 +195,7 @@ class CategoryAnalysisActivity : ThemedActivity() {
         
         val labels = mutableListOf<String>()
         val cal = Calendar.getInstance()
-        val sdf = java.text.SimpleDateFormat("dd/MM", java.util.Locale.getDefault())
+        val sdf = java.text.SimpleDateFormat("d/M", java.util.Locale.getDefault())
 
         for (i in 0..3) {
             val absoluteWeekIndex = startWeekIndex + i

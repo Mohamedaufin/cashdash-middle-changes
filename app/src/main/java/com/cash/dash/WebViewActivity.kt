@@ -1,4 +1,4 @@
-@file:Suppress("DEPRECATION")
+@file:Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
 package com.cash.dash
 
 import android.annotation.SuppressLint

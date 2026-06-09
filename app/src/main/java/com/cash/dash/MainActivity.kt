@@ -65,6 +65,9 @@ class MainActivity : ThemedActivity() {
         }
     }
 
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -95,12 +98,20 @@ class MainActivity : ThemedActivity() {
             startActivity(notifIntent)
         }
 
+
         SecurityManager.startListening(this)
         requestNotificationPermission()
         registerFCMToken()
 
         FirestoreSyncManager.startRealTimeSync(this)
         updateUserMetadata()
+        
+        // Start Usage Tracker if enabled
+        val smartPrefs = getSharedPreferences("SmartAssistantPrefs", MODE_PRIVATE)
+        if (smartPrefs.getBoolean("tracking_enabled", false)) {
+            val serviceIntent = Intent(this, AppUsageTrackerService::class.java)
+            androidx.core.content.ContextCompat.startForegroundService(this, serviceIntent)
+        }
         
         // 🔄 MIGRATION TRIGGER: Ensure existing logged-in users have their data pushed to the new Email-based document ID
         val migrationPrefs = getSharedPreferences("MigrationPrefs", MODE_PRIVATE)

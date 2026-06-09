@@ -31,6 +31,13 @@ class AllocatorActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_allocator)
 
+        TutorialManager.showTutorialIfNeeded(
+            this,
+            "tut_allocator",
+            "Money Allocator",
+            "Here, you can set new allocations (Shopping, Food, etc.) and set limits for the category.\n\n1. Tap '+ Add New' to create a new category\n\n2. Press done and set an optional spending limit for it\n\n3. Swipe right to left to delete an allocation\n\n4. Press and hold allocation to rename it\n\n5. Tap on allocation to view insights of its spending trend"
+        )
+
         categoryContainer = findViewById(R.id.categoryContainer)
 
         // HOME NAVIGATION

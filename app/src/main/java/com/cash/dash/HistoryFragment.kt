@@ -109,6 +109,14 @@ class HistoryFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+
+        TutorialManager.showTutorialIfNeeded(
+            requireActivity(),
+            "tut_history",
+            "History",
+            "View all your recorded transactions\n\nGeneral tutorial for this page:\n\n1. Use the search bar to find specific expenses quickly\n2. Tap daily button to switch over weekly/monthly graphs\n3. Tap overall to change allocation and view specific category's expense\n\n*(Note: You can revisit these instructions anytime in the 'Help' section! Tap the Menu icon located next to 'Hello' on your Home dashboard to find it.)*"
+        )
+
         forcedHighlightDay = -1
         fetchCategories()
         view?.findViewById<DayBarGraphView>(R.id.dayGraph)?.let {

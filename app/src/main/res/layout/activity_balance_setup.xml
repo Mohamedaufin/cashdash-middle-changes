@@ -136,6 +136,39 @@
             android:elevation="0dp" />
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/hintRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:layout_marginHorizontal="25dp"
+        android:orientation="horizontal"
+        android:weightSum="2"
+        app:layout_constraintTop_toBottomOf="@id/actionRow">
+
+        <TextView
+            android:id="@+id/tvAddHint"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text=""
+            android:textColor="?attr/textMutedColor"
+            android:textSize="11sp"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/tvReplaceHint"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text=""
+            android:textColor="?attr/textMutedColor"
+            android:textSize="11sp"
+            android:gravity="center" />
+    </LinearLayout>
+
     <TextView
         android:id="@+id/tvChooseLabel"
         android:layout_width="match_parent"
@@ -145,7 +178,7 @@
         android:gravity="center"
         android:textSize="@dimen/text_body"
         android:layout_marginTop="12dp"
-        app:layout_constraintTop_toBottomOf="@id/actionRow"/>
+        app:layout_constraintTop_toBottomOf="@id/hintRow"/>
 
     <!-- NUMPAD CONTAINER -->
     <FrameLayout

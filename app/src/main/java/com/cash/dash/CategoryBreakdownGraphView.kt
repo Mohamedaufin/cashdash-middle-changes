@@ -23,11 +23,61 @@ class CategoryBreakdownGraphView(context: Context, attrs: AttributeSet?) : View(
     }
 
     private val barRadius = 40f
+    
+    private var currentPage = 0
+    private val ITEMS_PER_PAGE = 4
 
     fun setData(catList: List<String>, valueList: List<Float>) {
         categories = catList
         values = valueList
+        currentPage = 0
         invalidate()
+    }
+
+    private var initialX = 0f
+    private val SWIPE_THRESHOLD = 150f
+
+    override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
+        val totalPages = Math.ceil(categories.size / ITEMS_PER_PAGE.toDouble()).toInt()
+
+        when (event.action) {
+            android.view.MotionEvent.ACTION_DOWN -> {
+                initialX = event.x
+                return true
+            }
+            android.view.MotionEvent.ACTION_UP -> {
+                val deltaX = event.x - initialX
+
+                // Swipe Right (Go back to previous page)
+                if (deltaX > SWIPE_THRESHOLD && currentPage > 0) {
+                    currentPage--
+                    invalidate()
+                    return true
+                }
+
+                // Swipe Left (Go forward to next page)
+                if (deltaX < -SWIPE_THRESHOLD && currentPage < totalPages - 1) {
+                    currentPage++
+                    invalidate()
+                    return true
+                }
+
+                // Tap on arrows
+                if (Math.abs(deltaX) < 50f) {
+                    if (currentPage > 0 && event.x < 120f) {
+                        currentPage--
+                        invalidate()
+                        return true
+                    }
+                    if (currentPage < totalPages - 1 && event.x > width - 120f) {
+                        currentPage++
+                        invalidate()
+                        return true
+                    }
+                }
+            }
+        }
+        return super.onTouchEvent(event)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -35,7 +85,14 @@ class CategoryBreakdownGraphView(context: Context, attrs: AttributeSet?) : View(
 
         if (categories.isEmpty() || values.isEmpty()) return
 
-        val count = values.size
+        val totalPages = Math.ceil(categories.size / ITEMS_PER_PAGE.toDouble()).toInt()
+        val pageStart = currentPage * ITEMS_PER_PAGE
+        val pageEnd = Math.min(pageStart + ITEMS_PER_PAGE, categories.size)
+
+        val pageCategories = categories.subList(pageStart, pageEnd)
+        val pageValues = values.subList(pageStart, pageEnd)
+
+        val count = pageValues.size
         val maxVal = values.maxOrNull()?.takeIf { it > 0 } ?: 1f
 
         val barWidth = width / 14f
@@ -43,17 +100,31 @@ class CategoryBreakdownGraphView(context: Context, attrs: AttributeSet?) : View(
 
         val bottom = height - 140f
         val graphHeight = height - 220f
+        
+        // Draw pagination arrows
+        val arrowY = height / 2f
+        val arrowPaint = Paint(textPaint).apply {
+            textSize = context.resources.getDimension(R.dimen.text_title) * 1.5f
+            color = ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor)
+        }
+        
+        if (currentPage > 0) {
+            canvas.drawText("<", 60f, arrowY, arrowPaint)
+        }
+        if (currentPage < totalPages - 1) {
+            canvas.drawText(">", width - 60f, arrowY, arrowPaint)
+        }
 
-        for (i in values.indices) {
+        for (i in pageValues.indices) {
 
-            val value = values[i]
+            val value = pageValues[i]
             val center = spacing * (i + 1)
 
             if (value == 0f) {
                 textPaint.color = ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor)
                 canvas.drawText("₹0", center, bottom - 25f, textPaint)
                 
-                val rawLabel = categories[i]
+                val rawLabel = pageCategories[i]
                 val labelStr = if (rawLabel.equals("no choice", ignoreCase = true)) "No Allocation" else rawLabel
                 textPaint.color = if (ThemeHelper.isWhiteTheme(context)) 
                     ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor) 
@@ -97,7 +168,7 @@ class CategoryBreakdownGraphView(context: Context, attrs: AttributeSet?) : View(
             canvas.drawText(amountStr, center, top - 20f, textPaint)
 
             textPaint.color = ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor)
-            val rawLabel = categories[i]
+            val rawLabel = pageCategories[i]
             val labelStr = if (rawLabel.equals("no choice", ignoreCase = true)) "No Allocation" else rawLabel
             var labelSize = context.resources.getDimension(R.dimen.graph_text_body)
             textPaint.textSize = labelSize

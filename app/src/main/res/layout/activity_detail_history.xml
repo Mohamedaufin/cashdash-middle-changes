@@ -38,7 +38,23 @@
         android:textColor="?attr/textPrimaryColor"
         android:textSize="@dimen/text_title"
         android:layout_marginTop="15dp"
-        android:layout_marginBottom="25dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:text="Tap any scanned transaction to view its receipt"
+        android:textColor="?attr/textMutedColor"
+        android:textSize="12sp"
+        android:layout_marginTop="6dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:text="Press &amp; hold on any transaction to edit it"
+        android:textColor="?attr/textMutedColor"
+        android:textSize="12sp"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="20dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 

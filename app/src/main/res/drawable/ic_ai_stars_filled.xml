@@ -1,0 +1,22 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Big Center Star -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,3.5 Q12,12 20.5,12 Q12,12 12,20.5 Q12,12 3.5,12 Q12,12 12,3.5 Z" />
+
+    <!-- Top Right Star -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M17,3.5 Q17,7 20.5,7 Q17,7 17,10.5 Q17,7 13.5,7 Q17,7 17,3.5 Z" />
+
+    <!-- Bottom Left Star -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M7,13.5 Q7,17 10.5,17 Q7,17 7,20.5 Q7,17 3.5,17 Q7,17 7,13.5 Z" />
+
+</vector>

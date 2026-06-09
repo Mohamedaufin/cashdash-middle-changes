@@ -125,9 +125,146 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
     }
 
+    override fun onResume() {
+        super.onResume()
+        checkPendingTransactions()
+    }
+
+    private fun checkPendingTransactions() {
+        val prefs = getSharedPreferences("PendingTransactionPrefs", Context.MODE_PRIVATE)
+        if (prefs.getBoolean("has_pending", false)) {
+            androidx.core.app.NotificationManagerCompat.from(this).cancel(999)
+            androidx.work.WorkManager.getInstance(this).cancelUniqueWork("RecoveryNotification")
+
+            val amountStr = prefs.getString("pending_amount", "0") ?: "0"
+            val upiId = prefs.getString("pending_upi", "") ?: ""
+            val amount = amountStr.toDoubleOrNull()?.toInt() ?: 0
+            val category = prefs.getString("pending_category", "no choice") ?: "no choice"
+            val title = prefs.getString("pending_title", "") ?: ""
+            selectedPaymentApp = prefs.getString("pending_app", "Google Pay") ?: "Google Pay"
+
+            val density = resources.displayMetrics.density
+            val box = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                val p = (28 * density).toInt()
+                setPadding(p, p, p, (24 * density).toInt())
+                setBackgroundResource(ThemeHelper.getDrawable(this.context, R.drawable.bg_transaction))
+            }
+
+            val titleView = android.widget.TextView(this).apply {
+                text = "Payment Interrupted?"
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_subhead))
+                setTextColor(ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                gravity = android.view.Gravity.CENTER
+                setPadding(0, 0, 0, (16 * density).toInt())
+            }
+            box.addView(titleView)
+
+            val introView = android.widget.TextView(this).apply {
+                text = "Please confirm the final status of the transaction mentioned below:"
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_body))
+                setTextColor(ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
+                gravity = android.view.Gravity.CENTER
+                setPadding(0, 0, 0, (16 * density).toInt())
+                setLineSpacing(8f, 1f)
+            }
+            box.addView(introView)
+
+            val detailsBox = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                gravity = android.view.Gravity.CENTER
+                setPadding(0, 0, 0, (32 * density).toInt())
+            }
+
+            val amountView = android.widget.TextView(this).apply {
+                val formattedTitle = title.replace("(?i)^To:\\s*".toRegex(), "").split(" ").joinToString(" ") { word -> word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() } }
+                text = "₹$amount ➔ $formattedTitle"
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_subhead))
+                setTextColor(ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                gravity = android.view.Gravity.CENTER
+                setPadding(0, 0, 0, (4 * density).toInt())
+            }
+            detailsBox.addView(amountView)
+
+            val categoryView = android.widget.TextView(this).apply {
+                text = "Allocation: $category"
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_body))
+                setTextColor(ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
+                gravity = android.view.Gravity.CENTER
+            }
+            detailsBox.addView(categoryView)
+            box.addView(detailsBox)
+
+            val buttonContainer = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                clipChildren = false
+                clipToPadding = false
+            }
+
+            val dialog = androidx.appcompat.app.AlertDialog.Builder(this).setView(box).setCancelable(false).create()
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+            val btnNo = android.widget.Button(this).apply {
+                text = "Payment Failed"
+                isAllCaps = false
+                setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                val tv = android.util.TypedValue(); context.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+                background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+                stateListAnimator = null
+                elevation = 0f
+                layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(0, 0, 15, 0) }
+                minHeight = 150
+                setPadding(30, 30, 30, 30)
+                setOnClickListener {
+                    prefs.edit().clear().apply()
+                    androidx.core.app.NotificationManagerCompat.from(this@ScannerActivity).cancel(999)
+                    dialog.dismiss()
+                }
+            }
+
+            val btnYes = android.widget.Button(this).apply {
+                text = "Payment Success"
+                isAllCaps = false
+                setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                val tv = android.util.TypedValue(); context.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+                background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+                stateListAnimator = null
+                elevation = 0f
+                layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(15, 0, 0, 0) }
+                minHeight = 150
+                setPadding(30, 30, 30, 30)
+                setOnClickListener {
+                    if (amount > 0) {
+                        HistoryDataManager.saveTransaction(this@ScannerActivity, title, amount.toFloat(), category, System.currentTimeMillis())
+                        FirestoreSyncManager.pushAllDataToCloud(this@ScannerActivity)
+                        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this@ScannerActivity).sendBroadcast(android.content.Intent(FirestoreSyncManager.ACTION_SYNC_UPDATE))
+                    }
+                    prefs.edit().clear().apply()
+                    androidx.core.app.NotificationManagerCompat.from(this@ScannerActivity).cancel(999)
+                    dialog.dismiss()
+                }
+            }
+
+            buttonContainer.addView(btnNo)
+            buttonContainer.addView(btnYes)
+            box.addView(buttonContainer)
+
+            dialog.show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_scanner)
+
+        TutorialManager.showTutorialIfNeeded(
+            this,
+            "tut_scanner",
+            "QR Scanner",
+            "Scan from CashDash directly and record your payments\n\n1. Scan any UPI QR code\n2. Enter the amount and select an allocation\n3. Choose your payment app (Cred, GPay)\n4. Complete the payment in your UPI app and wait for 2-3 seconds\n5. We will automatically bring you back to CashDash and record the transaction\n\nGeneral tutorial for this page:\n\n1. Tap Undo button to pay again to the last scanned receiver\n2. Swipe right to left to go home page or use exit button at top\n\n*(Note: You can revisit these instructions anytime in the 'Help' section! Tap the Menu icon located next to 'Hello' on your Home dashboard to find it.)*"
+        )
 
         previewView = findViewById(R.id.previewView)
         cameraExecutor = Executors.newSingleThreadExecutor()
@@ -465,6 +602,12 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             val isSuccess = status.equals("SUCCESS", ignoreCase = true) || 
                             status.equals("SUBMITTED", ignoreCase = true) || 
                             (status.isEmpty() && rawResponse.contains("SUCCESS", ignoreCase = true))
+                            
+            // Regardless of success/failure, if the intent returned, we clear the pending state 
+            // since we have a definitive answer.
+            getSharedPreferences("PendingTransactionPrefs", Context.MODE_PRIVATE).edit().clear().apply()
+            androidx.core.app.NotificationManagerCompat.from(this).cancel(999)
+            androidx.work.WorkManager.getInstance(this).cancelUniqueWork("upi_recovery_notification_work")
 
             if (isSuccess) {
                 redirectSuccess()
@@ -948,10 +1091,39 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         }
     }
 
+    private fun scheduleRecoveryNotification(amount: String, upiId: String) {
+        val workRequest = androidx.work.OneTimeWorkRequestBuilder<RecoveryNotificationWorker>()
+            .setInitialDelay(1, java.util.concurrent.TimeUnit.MINUTES)
+            .addTag("upi_recovery_notification")
+            .build()
+            
+        androidx.work.WorkManager.getInstance(this).enqueueUniqueWork(
+            "upi_recovery_notification_work",
+            androidx.work.ExistingWorkPolicy.REPLACE,
+            workRequest
+        )
+    }
+
+    private fun logPendingTransaction(amount: String, upiId: String) {
+        val prefs = getSharedPreferences("PendingTransactionPrefs", Context.MODE_PRIVATE)
+        prefs.edit()
+            .putBoolean("has_pending", true)
+            .putString("pending_amount", amount)
+            .putString("pending_upi", upiId)
+            .putLong("pending_time", System.currentTimeMillis())
+            .putString("pending_category", pendingCategory ?: "no choice")
+            .putString("pending_title", pendingTitle)
+            .putString("pending_app", selectedPaymentApp)
+            .apply()
+            
+        scheduleRecoveryNotification(amount, upiId)
+    }
+
     private fun payUPI(upi: String, amt: String, pkg: String) {
         try {
             val paMatch = Regex("[?&]pa=([^&]+)").find(upi)?.groupValues?.get(1)
             if (paMatch == null || paMatch.isEmpty()) { toast("Invalid QR: Missing UPI ID"); return }
+            val cleanPaMatch = decode(paMatch) ?: paMatch
 
             val p2pUriString = updateUpiAmount(upi, amt)
 
@@ -961,16 +1133,19 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             }
 
             if (packageManager.resolveActivity(baseIntent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
+                logPendingTransaction(amt, cleanPaMatch)
                 startActivityForResult(baseIntent, PAYMENT_REQ)
             } else {
                 packageManager.getLaunchIntentForPackage(pkg)?.let {
                     it.action = Intent.ACTION_VIEW
                     it.data = Uri.parse(p2pUriString)
+                    logPendingTransaction(amt, cleanPaMatch)
                     startActivityForResult(it, PAYMENT_REQ)
                 } ?: toast("App not installed on this device")
             }
         } catch (e: Exception) { toast("Failed to launch payment app") }
     }
+
 
     private fun redirectSuccess() {
         if (pendingAmount > 0) {
@@ -1051,7 +1226,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             set(Calendar.MILLISECOND, 0)
         }
 
-        if (today.after(next)) {
+        if (!today.before(next)) {
             val postponeUntil = prefs.getLong("postpone_until", 0L)
             val now = System.currentTimeMillis()
 

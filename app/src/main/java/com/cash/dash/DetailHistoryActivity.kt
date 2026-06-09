@@ -102,7 +102,18 @@ class DetailHistoryActivity : ThemedActivity() {
                     else -> "Details"
                 }
 
-                graph.setData(data.categories, data.values)
+                val combined = data.categories.zip(data.values)
+                val sortedCombined = combined.sortedWith(Comparator { a, b ->
+                    if (a.second != b.second) {
+                        b.second.compareTo(a.second)
+                    } else {
+                        a.first.compareTo(b.first, ignoreCase = true)
+                    }
+                })
+                val sortedCategories = sortedCombined.map { it.first }
+                val sortedValues = sortedCombined.map { it.second }
+
+                graph.setData(sortedCategories, sortedValues)
 
                 recycler.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
                 val sortedTransactions = data.transactions.sortedByDescending { item ->

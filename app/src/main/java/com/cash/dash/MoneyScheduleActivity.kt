@@ -27,6 +27,8 @@ class MoneyScheduleActivity : ThemedActivity() {
         try {
             setContentView(R.layout.activity_moneyschedule)
 
+
+
             val rgFrequency = findViewById<RadioGroup>(R.id.rgFrequency)
             val calendarView = findViewById<CalendarView>(R.id.calendarView)
             val btnSave = findViewById<Button>(R.id.btnSaveSchedule)
@@ -50,6 +52,11 @@ class MoneyScheduleActivity : ThemedActivity() {
             }
             tvCyclePreview = findViewById(R.id.tvCyclePreview)
             etCustomDays = findViewById(R.id.etCustomDays)
+            
+            val tvCycleSubTitle = findViewById<TextView>(R.id.tvCycleSubTitle)
+            val wPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
+            val budget = wPrefs.getInt("initial_balance", 0)
+            tvCycleSubTitle.text = "Select when your current budget (₹$budget) should expire"
 
             val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
 
@@ -157,8 +164,7 @@ class MoneyScheduleActivity : ThemedActivity() {
                     .putBoolean("cycle_initialized", true)
                     .apply()
 
-                executeManualReset()
-                ToastHelper.showToast(this, "Schedule updated & Cycle Reset!")
+                ToastHelper.showToast(this, "Schedule updated")
                 finish()
             }
 
@@ -197,7 +203,13 @@ class MoneyScheduleActivity : ThemedActivity() {
 
         // Replenish wallet balance to initial limit
         val wPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
-        val initialBal = wPrefs.getInt("initial_balance", 0)
+        val nextCycleBal = wPrefs.getInt("next_cycle_initial_balance", -1)
+        val initialBal = if (nextCycleBal != -1) {
+            wPrefs.edit().putInt("initial_balance", nextCycleBal).remove("next_cycle_initial_balance").apply()
+            nextCycleBal
+        } else {
+            wPrefs.getInt("initial_balance", 0)
+        }
         wPrefs.edit().putInt("wallet_balance", initialBal).apply()
 
         // Sync to Firestore

@@ -46,9 +46,8 @@ class StatementActivity : ThemedActivity() {
 
             // Sticky Download Bar (Absolute Edge-to-Edge)
             val btnDownload = findViewById<View>(R.id.btnDownload)
-            btnDownload.setPadding(0, 0, 0, navBarHeight)
-            val btnParams = btnDownload.layoutParams
-            btnParams.height = (64 * resources.displayMetrics.density).toInt() + navBarHeight
+            val btnParams = btnDownload.layoutParams as android.view.ViewGroup.MarginLayoutParams
+            btnParams.bottomMargin = navBarHeight
             btnDownload.layoutParams = btnParams
 
             insets

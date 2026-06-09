@@ -37,43 +37,20 @@
                     android:scaleType="fitCenter"
                     app:tint="?attr/textPrimaryColor"
                     android:layout_alignParentStart="true"/>
-
-                <RelativeLayout
-                    android:id="@+id/btnNotifications"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:layout_alignParentEnd="true"
-                    android:background="?attr/borderedRoundBackground">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_centerInParent="true"
-                        android:src="@drawable/ic_bell"
-                        app:tint="?attr/textPrimaryColor"/>
-
-                    <View
-                        android:id="@+id/notificationBadge"
-                        android:layout_width="12dp"
-                        android:layout_height="12dp"
-                        android:layout_alignParentTop="true"
-                        android:layout_alignParentEnd="true"
-                        android:layout_marginTop="8dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="?attr/glass3dRedBackground"
-                        android:visibility="gone"/>
-                </RelativeLayout>
             </RelativeLayout>
 
             <!-- PROFILE HEADER -->
             <LinearLayout
+                android:id="@+id/layoutProfileHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:padding="20dp"
                 android:background="?attr/cardBackground"
-                android:layout_marginBottom="35dp">
+                android:layout_marginBottom="35dp"
+                android:clickable="true"
+                android:focusable="true">
 
                 <ImageView
                     android:id="@+id/imgProfile"
@@ -85,8 +62,9 @@
                     android:padding="5dp" />
 
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:orientation="vertical"
                     android:layout_marginStart="20dp">
 
@@ -107,6 +85,14 @@
                         android:textSize="@dimen/text_title"
                         android:textStyle="bold" />
                 </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/btnProfileOptions"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_more_vert"
+                    app:tint="?attr/textMutedColor" />
             </LinearLayout>
 
             <!-- MENU ITEMS -->
@@ -205,34 +191,7 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Help -->
-                <LinearLayout
-                    android:id="@+id/btnHelp"
-                    android:layout_width="match_parent"
-                    android:layout_height="80dp"
-                    android:layout_marginBottom="15dp"
-                    android:background="?attr/transactionBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingHorizontal="20dp">
 
-                    <ImageView
-                        android:layout_width="30dp"
-                        android:layout_height="30dp"
-                        android:src="@drawable/ic_info_vector"
-                        app:tint="?attr/textPrimaryColor" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="20dp"
-                        android:text="Help &amp; Support"
-                        android:textColor="?attr/textPrimaryColor"
-                        android:textSize="@dimen/text_subhead"
-                        android:textStyle="bold" />
-                </LinearLayout>
 
                 <!-- Privacy Policy -->
                 <LinearLayout
@@ -262,6 +221,9 @@
                         android:textSize="@dimen/text_subhead"
                         android:textStyle="bold" />
                 </LinearLayout>
+
+                <!-- Smart Assistant -->
+
 
             </LinearLayout>
 

@@ -40,6 +40,13 @@ class RigorActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_rigor)
 
+        TutorialManager.showTutorialIfNeeded(
+            this,
+            "tut_rigor",
+            "Rigor Tracker",
+            "This helps to manually record your expenses\n\n1. Enter expense title and amount\n2. Choose date of expense from calendar\n3. Tap Next and choose an allocation\n4. Thats it, Your expense has been recorded manually and wallet has been detucted\n\n*(Note: You can revisit these instructions anytime in the 'Help' section! Tap the Menu icon located next to 'Hello' on your Home dashboard to find it.)*"
+        )
+
         inputTitle = findViewById(R.id.Title)
         val inputAmount = findViewById<EditText>(R.id.inputAmount)
         val btnNext = findViewById<Button>(R.id.btnNext)
@@ -361,7 +368,7 @@ class RigorActivity : ThemedActivity() {
             cal.set(Calendar.MILLISECOND, now.get(Calendar.MILLISECOND))
 
             HistoryDataManager.saveTransaction(this, titleText, enteredAmount.toFloat(), category, cal.timeInMillis)
-            ToastHelper.showCustomToast(this, "Expense recorded successfully!", 1000L)
+            ToastHelper.showCustomToast(this, "Expense recorded successfully!", 1600L)
             finish()
         } catch (e: Exception) {
             ToastHelper.showToast(this, "⚠ Error saving expense")

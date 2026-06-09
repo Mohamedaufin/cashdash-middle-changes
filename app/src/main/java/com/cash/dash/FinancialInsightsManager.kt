@@ -17,7 +17,8 @@ object FinancialInsightsManager {
         val dailyPatterns: List<DayStat>,
         val savingsOpportunity: String,
         val isMonthlyMode: Boolean,
-        val topWeeks: List<WeeklyTrend> // Used in monthly mode
+        val topWeeks: List<WeeklyTrend>, // Used in monthly mode
+        val isCustomMode: Boolean = false
     )
 
     data class WeeklyTrend(val weekLabel: String, val amount: Float, val dates: String)
@@ -25,7 +26,7 @@ object FinancialInsightsManager {
     data class CategoryBudget(val category: String, val budget: Int, val spent: Float, val percent: Float)
     data class DayStat(val dayLabel: String, val amount: Float, val isPeak: Boolean, val isLow: Boolean)
 
-    suspend fun generateReport(context: Context, isMonthly: Boolean, month: Int, year: Int, weekIndex: Int = -1): AdvisoryInsights = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    suspend fun generateReport(context: Context, isMonthly: Boolean, isCustomMode: Boolean = false, customStartMillis: Long = 0, customEndMillis: Long = 0, month: Int, year: Int, weekIndex: Int = -1): AdvisoryInsights = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val cal = Calendar.getInstance().apply { 
             firstDayOfWeek = Calendar.MONDAY
             set(year, month, 1, 0, 0, 0)
@@ -39,7 +40,18 @@ object FinancialInsightsManager {
         val label: String
         var topWeeksList = emptyList<WeeklyTrend>()
 
-        if (isMonthly) {
+        if (isCustomMode) {
+            startMillis = customStartMillis
+            endMillis = customEndMillis
+            
+            val diff = endMillis - startMillis
+            prevStartMillis = startMillis - diff - 1000L
+            prevEndMillis = startMillis - 1000L
+            
+            val sdf = java.text.SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+            label = "${sdf.format(Date(startMillis))} - ${sdf.format(Date(endMillis))}"
+            
+        } else if (isMonthly) {
             startMillis = cal.timeInMillis
             cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH))
             cal.set(Calendar.HOUR_OF_DAY, 23); cal.set(Calendar.MINUTE, 59); cal.set(Calendar.SECOND, 59)
@@ -109,20 +121,37 @@ object FinancialInsightsManager {
         }
         
         // Daily Patterns (Date-wise or Day-wise based on mode)
-        val dayLabels = if (isMonthly) listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat") else listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
         val dailyStats = mutableListOf<DayStat>()
-        val maxVal = dowMap.values.maxOrNull() ?: 1f
-        val minVal = dowMap.values.minOrNull() ?: 0f
         
-        // Correct DOW mapping based on locale/mode
-        for (i in (if (isMonthly) 1..7 else listOf(2,3,4,5,6,7,1))) {
-            val amt = dowMap[i as Int] ?: 0f
-            dailyStats.add(DayStat(
-                dayLabels[if (isMonthly) (i-1) else (if (i==1) 6 else i-2)], 
-                amt, 
-                amt == maxVal && amt > 0, 
-                amt == minVal && totalSpent > 0
-            ))
+        if (isCustomMode) {
+            val dateMap = mutableMapOf<String, Float>()
+            val sdf = java.text.SimpleDateFormat("MMM d", Locale.getDefault())
+            currentBreakdown.transactions.forEach { trans ->
+                val p = trans.rawEntry.split("|")
+                val ts = if (p.size >= 2) p[1].toLongOrNull() ?: 0L else 0L
+                val dateStr = sdf.format(Date(ts))
+                dateMap[dateStr] = (dateMap[dateStr] ?: 0f) + trans.amount.toFloat()
+            }
+            
+            val sortedDates = dateMap.entries.sortedByDescending { it.value }
+            val dominantCount = if (days >= 10) 2 else 1
+            sortedDates.take(dominantCount).forEach { entry ->
+                dailyStats.add(DayStat(entry.key, entry.value, true, false))
+            }
+        } else {
+            val dayLabels = if (isMonthly) listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat") else listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+            val maxVal = dowMap.values.maxOrNull() ?: 1f
+            val minVal = dowMap.values.minOrNull() ?: 0f
+            
+            for (i in (if (isMonthly) 1..7 else listOf(2,3,4,5,6,7,1))) {
+                val amt = dowMap[i as Int] ?: 0f
+                dailyStats.add(DayStat(
+                    dayLabels[if (isMonthly) (i-1) else (if (i==1) 6 else i-2)], 
+                    amt, 
+                    amt == maxVal && amt > 0, 
+                    amt == minVal && totalSpent > 0
+                ))
+            }
         }
 
         // Budget Status
@@ -140,7 +169,7 @@ object FinancialInsightsManager {
 
         AdvisoryInsights(
             label, totalSpent, prevTotal, changePer, dailyAvg, summaries, budgetStatus,
-            dailyStats, savingsOpp, isMonthly, topWeeksList
+            dailyStats, savingsOpp, isMonthly, topWeeksList, isCustomMode
         )
     }
 

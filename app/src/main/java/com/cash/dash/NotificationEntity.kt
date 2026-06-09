@@ -11,5 +11,6 @@ data class NotificationEntity(
     val reply: String,
     val timestamp: Long,
     val status: String,
-    val read: Boolean
+    val read: Boolean,
+    val imageUrl: String? = null
 )

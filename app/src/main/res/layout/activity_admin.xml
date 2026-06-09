@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/mainBackground">
+
+    <!-- Header -->
+    <LinearLayout
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="50dp"
+        android:paddingBottom="20dp"
+        android:paddingStart="25dp"
+        android:paddingEnd="25dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:background="?attr/roundBackground"
+            android:src="@drawable/ic_back_arrow1"
+            app:tint="?attr/textPrimaryColor"
+            android:padding="10dp"
+            android:scaleType="fitCenter"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Admin Center"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="20dp"/>
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@id/header"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="25dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Global Announcements"
+                android:textSize="@dimen/text_title"
+                android:textColor="?attr/textPrimaryColor"
+                android:textStyle="bold"
+                android:layout_marginBottom="10dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Publishing an announcement here will immediately push it to all users' Notification feeds."
+                android:textSize="@dimen/text_body"
+                android:textColor="?attr/textMutedColor"
+                android:layout_marginBottom="25dp"/>
+
+            <EditText
+                android:id="@+id/edtAnnouncementTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/inputBackground"
+                android:padding="15dp"
+                android:hint="Announcement Title"
+                android:textColorHint="?attr/textMutedColor"
+                android:textColor="?attr/textPrimaryColor"
+                android:textSize="@dimen/text_body"
+                android:layout_marginBottom="15dp"
+                android:inputType="textCapSentences"
+                android:singleLine="true"/>
+
+            <EditText
+                android:id="@+id/edtAnnouncementBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/inputBackground"
+                android:padding="15dp"
+                android:hint="Write your announcement content here..."
+                android:textColorHint="?attr/textMutedColor"
+                android:textColor="?attr/textPrimaryColor"
+                android:textSize="@dimen/text_body"
+                android:layout_marginBottom="25dp"
+                android:gravity="top|start"
+                android:inputType="textCapSentences|textMultiLine"
+                android:minLines="5"/>
+
+            <Button
+                android:id="@+id/btnPublishAnnouncement"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:text="Publish Announcement"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#008000"
+                android:textStyle="bold"
+                android:layout_marginBottom="40dp"
+                android:textSize="@dimen/text_subhead"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Global Push Notifications"
+                android:textSize="@dimen/text_title"
+                android:textColor="?attr/textPrimaryColor"
+                android:textStyle="bold"
+                android:layout_marginBottom="10dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Sending a push notification will instantly ring all users' devices with a custom popup alert."
+                android:textSize="@dimen/text_body"
+                android:textColor="?attr/textMutedColor"
+                android:layout_marginBottom="25dp"/>
+
+            <EditText
+                android:id="@+id/edtPushTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/inputBackground"
+                android:padding="15dp"
+                android:hint="Push Title (e.g. Server Update)"
+                android:textColorHint="?attr/textMutedColor"
+                android:textColor="?attr/textPrimaryColor"
+                android:textSize="@dimen/text_body"
+                android:layout_marginBottom="15dp"
+                android:inputType="textCapSentences"
+                android:singleLine="true"/>
+
+            <EditText
+                android:id="@+id/edtPushBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/inputBackground"
+                android:padding="15dp"
+                android:hint="Push Message body..."
+                android:textColorHint="?attr/textMutedColor"
+                android:textColor="?attr/textPrimaryColor"
+                android:textSize="@dimen/text_body"
+                android:layout_marginBottom="25dp"
+                android:gravity="top|start"
+                android:inputType="textCapSentences|textMultiLine"
+                android:minLines="3"/>
+
+            <Button
+                android:id="@+id/btnSendPush"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:text="Send Global Push"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#FF4D4D"
+                android:textStyle="bold"
+                android:textSize="@dimen/text_subhead"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

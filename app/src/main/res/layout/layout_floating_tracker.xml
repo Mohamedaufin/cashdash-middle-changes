@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="320dp"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="10dp"
+    android:layout_margin="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="#0a0a1a">
+
+        <!-- Header with Close Button -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp">
+            
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@mipmap/ic_launcher"
+                android:layout_centerVertical="true"/>
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CashDash Tracker"
+                android:textColor="#e0e0ff"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginStart="32dp"
+                android:layout_centerVertical="true"/>
+
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/btnClose"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="#1a1a2e"
+                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                app:tint="#8888aa"/>
+        </RelativeLayout>
+
+        <!-- Toggle Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="#151525"
+            android:padding="12dp"
+            android:gravity="center_vertical">
+            
+            <androidx.appcompat.widget.AppCompatTextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Taptrack"
+                android:textColor="#e0e0ff"
+                android:textStyle="bold"/>
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switchTracking"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- Tracker Body (Hidden if toggle is off) -->
+        <LinearLayout
+            android:id="@+id/trackerBody"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginTop="16dp">
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/tvWalletHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Wallet: ₹0 / ₹0"
+                android:textColor="#8888aa"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:gravity="end"
+                android:layout_marginBottom="4dp"/>
+
+            <androidx.appcompat.widget.AppCompatEditText
+                android:id="@+id/edtTitle"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:hint="Expense Title (e.g. Swiggy Order)"
+                android:textColorHint="#8888aa"
+                android:textColor="#e0e0ff"
+                android:background="@drawable/bg_input_field_tracker"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:layout_marginBottom="12dp"
+                android:singleLine="true"/>
+
+            <androidx.appcompat.widget.AppCompatEditText
+                android:id="@+id/edtAmount"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:hint="Amount"
+                android:inputType="numberDecimal"
+                android:textColorHint="#8888aa"
+                android:textColor="#e0e0ff"
+                android:background="@drawable/bg_input_field_tracker"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:layout_marginBottom="12dp"
+                android:singleLine="true"/>
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Allocation"
+                android:textColor="#8888aa"
+                android:textSize="12sp"
+                android:layout_marginBottom="4dp"/>
+
+            <androidx.appcompat.widget.AppCompatSpinner
+                android:id="@+id/spinnerAllocation"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_input_field_tracker"
+                android:popupBackground="#151525"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:id="@+id/btnSave"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="SAVE EXPENSE"
+                android:textColor="#e0e0ff"
+                android:background="#151525"
+                android:gravity="center"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

@@ -16,6 +16,13 @@ class SetLimitActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_set_limit)
 
+        TutorialManager.showTutorialIfNeeded(
+            this,
+            "tut_setlimit",
+            "Allocation Limits",
+            "Set a strict spending limit on a specific allocation. If you spend more than this limit, the bar will turn red to warn you!"
+        )
+
         input = findViewById(R.id.txtInput)
 
         val numberPad: GridLayout = findViewById(R.id.numberPad)

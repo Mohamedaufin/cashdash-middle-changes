@@ -53,6 +53,7 @@ class StatementSelectionActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_statement_selection)
 
+
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         val topBar = findViewById<View>(R.id.topBar)

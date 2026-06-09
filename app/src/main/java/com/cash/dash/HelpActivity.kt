@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.cash.dash
 
 import android.app.Dialog
@@ -22,15 +23,40 @@ import org.json.JSONObject
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import androidx.activity.result.contract.ActivityResultContracts
+import com.google.firebase.storage.FirebaseStorage
 
 
 class HelpActivity : ThemedActivity() {
+
+    private var selectedImageUri: Uri? = null
+    private var activeDialog: Dialog? = null
+
+    private val imagePickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null) {
+            selectedImageUri = uri
+            val imgPreview = activeDialog?.findViewById<ImageView>(R.id.imgPreview)
+            imgPreview?.visibility = android.view.View.VISIBLE
+            imgPreview?.setImageURI(uri)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_help)
 
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
+
+        val btnNotifications = findViewById<android.view.View>(R.id.btnNotifications)
+        val notificationBadge = findViewById<android.view.View>(R.id.notificationBadge)
+        
+        btnNotifications.setOnClickListener {
+            notificationBadge.visibility = android.view.View.GONE
+            startActivity(Intent(this, NotificationActivity::class.java))
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+        }
+        
+        setupNotificationListener(notificationBadge)
 
         findViewById<TextView>(R.id.btnContactUs).setOnClickListener {
             showContactDialog()
@@ -57,12 +83,20 @@ class HelpActivity : ThemedActivity() {
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
 
+        activeDialog = dialog
+
         val tvName = dialog.findViewById<TextView>(R.id.tvContactName)
         val tvTime = dialog.findViewById<TextView>(R.id.tvContactTime)
         val tvEmail = dialog.findViewById<TextView>(R.id.tvContactEmail)
         val edtSubject = dialog.findViewById<EditText>(R.id.edtContactSubject)
         val edtQuery = dialog.findViewById<EditText>(R.id.edtContactQuery)
+        val btnAddImage = dialog.findViewById<Button>(R.id.btnAddImage)
+        val imgPreview = dialog.findViewById<ImageView>(R.id.imgPreview)
         val btnSubmit = dialog.findViewById<Button>(R.id.btnContactSubmit)
+        
+        btnAddImage.setOnClickListener {
+            imagePickerLauncher.launch("image/*")
+        }
 
         // Load User Data
         val prefs = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
@@ -95,14 +129,41 @@ class HelpActivity : ThemedActivity() {
             btnSubmit.isEnabled = false
             btnSubmit.text = "Submitting..."
 
-            submitQueryToFirestore(name, currentTime, email, subject, query)
-            dialog.dismiss()
+            if (selectedImageUri != null) {
+                btnSubmit.text = "Uploading Image..."
+                val storageRef = FirebaseStorage.getInstance().reference
+                val imageRef = storageRef.child("support_attachments/${System.currentTimeMillis()}.jpg")
+                imageRef.putFile(selectedImageUri!!)
+                    .addOnProgressListener { taskSnapshot ->
+                        val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
+                        btnSubmit.text = "Uploading Image... $progress%"
+                    }
+                    .addOnSuccessListener {
+                        imageRef.downloadUrl.addOnSuccessListener { uri ->
+                            submitQueryToFirestore(name, currentTime, email, subject, query, uri.toString())
+                            dialog.dismiss()
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        ToastHelper.showToast(this@HelpActivity, "Failed to upload image: ${e.message}")
+                        btnSubmit.isEnabled = true
+                        btnSubmit.text = "Submit"
+                    }
+            } else {
+                submitQueryToFirestore(name, currentTime, email, subject, query, null)
+                dialog.dismiss()
+            }
+        }
+        
+        dialog.setOnDismissListener {
+            selectedImageUri = null
+            activeDialog = null
         }
 
         dialog.show()
     }
 
-    private fun submitQueryToFirestore(name: String, time: String, email: String, subject: String, query: String) {
+    private fun submitQueryToFirestore(name: String, time: String, email: String, subject: String, query: String, imageUrl: String?) {
         val user = FirebaseAuth.getInstance().currentUser ?: return
 
         val timestamp = System.currentTimeMillis()
@@ -110,7 +171,7 @@ class HelpActivity : ThemedActivity() {
         // Also save to Firestore for persistence and display in NotificationActivity
         // 🔥 offline-first queueing: we set needs_admin_email to true so the cloud function catches it when internet returns
         val db = FirebaseFirestore.getInstance()
-        val notificationData = hashMapOf(
+        val notificationData = hashMapOf<String, Any>(
             "name" to name,
             "email" to email,
             "time" to time,
@@ -123,8 +184,12 @@ class HelpActivity : ThemedActivity() {
             "reply" to "Waiting for reply...",
             "needs_admin_email" to true
         )
+        if (imageUrl != null) {
+            notificationData["imageUrl"] = imageUrl
+        }
         // Use the explicit timestamp as the document ID so the backend can update it on reply
-        val userEmail = user.email ?: return
+        val userEmail = user.email ?: getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).getString("user_email", null) ?: return
+        
         db.collection("users").document(userEmail).collection("notifications")
             .document(timestamp.toString())
             .set(notificationData)
@@ -138,10 +203,32 @@ class HelpActivity : ThemedActivity() {
 
         // 🚀 ASYNC DIRECT WEBHOOK INJECTION:
         // Parallel direct push to circumvent Firestore trigger cold-starts and send instant email!
-        triggerImmediateWebhook(user.uid, name, userEmail, time, subject, query, timestamp)
+        triggerImmediateWebhook(user.uid, name, userEmail, time, subject, query, timestamp, imageUrl)
     }
 
-    private fun triggerImmediateWebhook(uid: String, name: String, email: String, time: String, subject: String, query: String, timestamp: Long) {
+    private fun setupNotificationListener(badge: android.view.View) {
+        val user = FirebaseAuth.getInstance().currentUser ?: return
+        val email = user.email ?: getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).getString("user_email", null) ?: return
+        val db = FirebaseFirestore.getInstance()
+
+        db.collection("users").document(email).collection("notifications")
+            .whereEqualTo("read", false)
+            .addSnapshotListener { snapshot, _ ->
+                var hasUnreadReply = false
+                if (snapshot != null) {
+                    for (doc in snapshot.documents) {
+                        val reply = doc.getString("reply")?.trim()
+                        if (!reply.isNullOrEmpty() && reply != "Waiting for reply...") {
+                            hasUnreadReply = true
+                            break
+                        }
+                    }
+                }
+                badge.visibility = if (hasUnreadReply) android.view.View.VISIBLE else android.view.View.GONE
+            }
+    }
+
+    private fun triggerImmediateWebhook(uid: String, name: String, email: String, time: String, subject: String, query: String, timestamp: Long, imageUrl: String?) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val webhookUrl = "https://cashdashwebhook-khhfw7mtba-uc.a.run.app"
@@ -160,6 +247,9 @@ class HelpActivity : ThemedActivity() {
                     put("subject", subject)
                     put("query", query)
                     put("timestamp", timestamp)
+                    if (imageUrl != null) {
+                        put("imageUrl", imageUrl)
+                    }
                 }
 
                 val os = conn.outputStream

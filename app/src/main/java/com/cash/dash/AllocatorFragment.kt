@@ -38,6 +38,7 @@ class AllocatorFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         categoryContainer = view.findViewById(R.id.categoryContainer)
         refreshUI()
     }
@@ -56,6 +57,14 @@ class AllocatorFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+
+        TutorialManager.showTutorialIfNeeded(
+            requireActivity(),
+            "tut_allocator",
+            "Category Allocator",
+            "Here, you can set new allocations (Shopping, Food, etc.) and set limits for the category.\n\n1. Tap '+ Add New' to create a new category\n2. Press done and set an optional spending limit for it\n\nGeneral tutorial for this page:\n\n1. Swipe right to left to delete an allocation\n2. Press and hold allocation to rename it\n3. Tap on allocation to view insights of its spending trend\n\n*(Note: You can revisit these instructions anytime in the 'Help' section! Tap the Menu icon located next to 'Hello' on your Home dashboard to find it.)*"
+        )
+
         refreshUI()
     }
 

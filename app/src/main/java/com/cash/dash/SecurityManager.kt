@@ -56,6 +56,7 @@ object SecurityManager {
         }
 
         // 2. Sign out
+        CashDashApplication.setOfflineImmediate(context)
         FirebaseAuth.getInstance().signOut()
 
         // 3. Redirect to EntryActivity with security notice

@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.cash.dash
 
 import android.content.Intent
@@ -73,7 +74,7 @@ class HomeFragment : Fragment() {
         view.findViewById<ImageView>(R.id.btnMenu)?.setImageResource(ThemeHelper.getDrawable(requireContext(), R.drawable.ic_glass_menu_vector))
         view.findViewById<ImageView>(R.id.iconScanner)?.setImageResource(ThemeHelper.getDrawable(requireContext(), R.drawable.ic_scanner))
         view.findViewById<ImageView>(R.id.iconRigorTracker)?.setImageResource(ThemeHelper.getDrawable(requireContext(), R.drawable.ic_rigor_tracker))
-        view.findViewById<ImageView>(R.id.btnProfile)?.setImageResource(ThemeHelper.getDrawable(requireContext(), R.drawable.ic_profile))
+        view.findViewById<ImageView>(R.id.btnHelp)?.setImageResource(ThemeHelper.getDrawable(requireContext(), R.drawable.ic_info_outline))
 
         view.findViewById<LinearLayout>(R.id.cardScanner).setOnClickListener {
             animateAndStart(view.findViewById<ImageView>(R.id.iconScanner)) {
@@ -85,8 +86,36 @@ class HomeFragment : Fragment() {
             startActivity(Intent(requireContext(), MenuActivity::class.java))
         }
 
-        view.findViewById<ImageView>(R.id.btnProfile).setOnClickListener {
-            startActivity(Intent(requireContext(), ProfileActivity::class.java))
+        view.findViewById<ImageView>(R.id.btnHelp).setOnClickListener {
+            startActivity(Intent(requireContext(), HelpActivity::class.java))
+        }
+
+        view.findViewById<ImageView>(R.id.btnSmartAssistant)?.setOnClickListener {
+            startActivity(Intent(requireContext(), TaptrackActivity::class.java))
+        }
+
+        view.findViewById<ImageView>(R.id.btnSmartAssistant)?.setOnLongClickListener {
+            val smartPrefs = requireContext().getSharedPreferences("SmartAssistantPrefs", android.content.Context.MODE_PRIVATE)
+            val isTrackingOn = smartPrefs.getBoolean("tracking_enabled", false)
+            if (isTrackingOn) {
+                smartPrefs.edit().putBoolean("tracking_enabled", false).apply()
+                requireContext().stopService(Intent(requireContext(), AppUsageTrackerService::class.java))
+                android.widget.Toast.makeText(requireContext(), "Taptrack is off", android.widget.Toast.LENGTH_SHORT).show()
+                refreshUI()
+                true
+            } else {
+                if (!hasUsageStatsPermission() || !android.provider.Settings.canDrawOverlays(requireContext())) {
+                    android.widget.Toast.makeText(requireContext(), "Please finish setup in Taptrack first", android.widget.Toast.LENGTH_SHORT).show()
+                    startActivity(Intent(requireContext(), TaptrackActivity::class.java))
+                } else {
+                    smartPrefs.edit().putBoolean("tracking_enabled", true).apply()
+                    val serviceIntent = Intent(requireContext(), AppUsageTrackerService::class.java)
+                    androidx.core.content.ContextCompat.startForegroundService(requireContext(), serviceIntent)
+                    android.widget.Toast.makeText(requireContext(), "Taptrack is on", android.widget.Toast.LENGTH_SHORT).show()
+                    refreshUI()
+                }
+                true
+            }
         }
 
         val walletContainer = view.findViewById<View>(R.id.walletContainer)
@@ -121,6 +150,10 @@ class HomeFragment : Fragment() {
             animateAndStart(view.findViewById<ImageView>(R.id.iconRigorTracker)) {
                 startActivity(Intent(requireContext(), RigorActivity::class.java))
             }
+        }
+
+        view.findViewById<TextView>(R.id.tvNextMoney)?.setOnClickListener {
+            startActivity(Intent(requireContext(), MoneyScheduleActivity::class.java))
         }
 
 
@@ -219,6 +252,25 @@ class HomeFragment : Fragment() {
             loadUserName(it)
             loadBalance(it)
             updateNextMoneyDays(it)
+            
+            // Update smart assistant icon tint based on tracking status
+            val smartPrefs = requireContext().getSharedPreferences("SmartAssistantPrefs", android.content.Context.MODE_PRIVATE)
+            var isTrackingOn = smartPrefs.getBoolean("tracking_enabled", false)
+            
+            if (isTrackingOn) {
+                if (!hasUsageStatsPermission() || !android.provider.Settings.canDrawOverlays(requireContext())) {
+                    isTrackingOn = false
+                    smartPrefs.edit().putBoolean("tracking_enabled", false).apply()
+                    requireContext().stopService(Intent(requireContext(), AppUsageTrackerService::class.java))
+                }
+            }
+
+            val iconSmartAssistant = it.findViewById<ImageView>(R.id.btnSmartAssistant)
+            if (isTrackingOn) {
+                iconSmartAssistant?.setColorFilter(android.graphics.Color.parseColor("#1DD15D")) // Vibrant Proper Green
+            } else {
+                iconSmartAssistant?.setColorFilter(ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor)) // Original Color
+            }
         }
     }
 
@@ -265,7 +317,7 @@ class HomeFragment : Fragment() {
         val tvResetPending = view.findViewById<TextView>(R.id.tvResetPending) ?: return
 
         if (nextDate <= 0L || freq == -1) {
-            textView.text = "Next money: schedule not set"
+            textView.text = "Money schedule not set. Tap text to set"
             tvResetPending.visibility = View.GONE
             return
         }
@@ -562,7 +614,13 @@ class HomeFragment : Fragment() {
             graphEditor.apply()
 
             val wPrefs = context.getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
-            val initialBal = wPrefs.getInt("initial_balance", 0)
+            val nextCycleBal = wPrefs.getInt("next_cycle_initial_balance", -1)
+            val initialBal = if (nextCycleBal != -1) {
+                wPrefs.edit().putInt("initial_balance", nextCycleBal).remove("next_cycle_initial_balance").apply()
+                nextCycleBal
+            } else {
+                wPrefs.getInt("initial_balance", 0)
+            }
             wPrefs.edit().putInt("wallet_balance", initialBal).apply()
 
             FirestoreSyncManager.pushAllDataToCloud(context)
@@ -599,5 +657,86 @@ class HomeFragment : Fragment() {
                     .start()
             }
             .start()
+    }
+
+    private fun showDisclosureDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_disclosure, null)
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        dialogView.findViewById<Button>(R.id.btnCancelDisclosure).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogView.findViewById<Button>(R.id.btnAgreeDisclosure).setOnClickListener {
+            dialog.dismiss()
+            requestPermissionsForAssistant()
+        }
+
+        dialog.show()
+    }
+
+    private fun requestPermissionsForAssistant() {
+        if (!android.provider.Settings.canDrawOverlays(requireContext())) {
+            ToastHelper.showCustomToast(requireContext(), "Please enable 'Draw over other apps'", 1500L)
+            val intent = Intent(
+                android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                android.net.Uri.parse("package:${requireContext().packageName}")
+            )
+            try {
+                startActivity(intent)
+            } catch (e: Exception) {
+                ToastHelper.showCustomToast(requireContext(), "Unable to open settings. Please enable manually.", 2000L)
+            }
+            return
+        }
+
+        // Check usage stats permission
+        if (hasUsageStatsPermission()) {
+            val prefs = requireContext().getSharedPreferences("SmartAssistantPrefs", android.content.Context.MODE_PRIVATE)
+            prefs.edit().putBoolean("tracking_enabled", true).apply()
+            
+            // Start the foreground service
+            val serviceIntent = Intent(requireContext(), AppUsageTrackerService::class.java)
+            androidx.core.content.ContextCompat.startForegroundService(requireContext(), serviceIntent)
+            
+            ToastHelper.showCustomToast(requireContext(), "Smart Shopping Assistant is Active!", 1500L)
+            refreshUI()
+            return
+        }
+
+        // Show Prominent Disclosure Dialog
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Data Collection Disclosure")
+            .setMessage("CashDash collects data about which apps you open to detect when you are using supported shopping applications. This enables the Taptrack widget to appear automatically while you shop. This data is kept strictly on your device and never shared.")
+            .setPositiveButton("I Agree") { _, _ ->
+                val prefs = requireContext().getSharedPreferences("SmartAssistantPrefs", android.content.Context.MODE_PRIVATE)
+                prefs.edit().putBoolean("tracking_enabled", true).apply()
+                
+                val intent = Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS)
+                try {
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    ToastHelper.showCustomToast(requireContext(), "Unable to open usage settings.", 2000L)
+                }
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun hasUsageStatsPermission(): Boolean {
+        val appOps = requireContext().getSystemService(android.content.Context.APP_OPS_SERVICE) as android.app.AppOpsManager
+        val mode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            appOps.unsafeCheckOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), requireContext().packageName)
+        } else {
+            appOps.checkOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), requireContext().packageName)
+        }
+        return mode == android.app.AppOpsManager.MODE_ALLOWED
     }
 }

@@ -1,10 +1,19 @@
 @file:Suppress("DEPRECATION")
 package com.cash.dash
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
+import android.text.TextUtils
+import android.view.View
+import android.view.accessibility.AccessibilityManager
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.view.animation.AlphaAnimation
 import android.view.animation.ScaleAnimation
 import android.view.inputmethod.InputMethodManager
@@ -19,7 +28,7 @@ import android.os.Build
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.view.View
+
 import androidx.core.app.NotificationCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentChange
@@ -45,10 +54,8 @@ class MenuActivity : ThemedActivity() {
         val btnBalance = findViewById<View>(R.id.btnBalanceBar)
         val btnUpdateSchedule = findViewById<View>(R.id.btnUpdateSchedule)
         val btnTheme = findViewById<View>(R.id.btnTheme)
-        val btnHelp = findViewById<View>(R.id.btnHelp)
         val btnPrivacyPolicy = findViewById<View>(R.id.btnPrivacyPolicy)
-        val btnNotifications = findViewById<View>(R.id.btnNotifications)
-        val notificationBadge = findViewById<View>(R.id.notificationBadge)
+        val layoutProfileHeader = findViewById<View>(R.id.layoutProfileHeader)
 
         btnClose.setOnClickListener { finish() }
 
@@ -69,8 +76,15 @@ class MenuActivity : ThemedActivity() {
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
 
-        btnHelp.setOnClickListener {
-            startActivity(Intent(this, HelpActivity::class.java))
+        val btnProfileOptions = findViewById<View>(R.id.btnProfileOptions)
+
+        layoutProfileHeader.setOnClickListener {
+            startActivity(Intent(this, ProfileActivity::class.java))
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+        }
+
+        btnProfileOptions.setOnClickListener {
+            startActivity(Intent(this, ProfileActivity::class.java))
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
 
@@ -81,41 +95,19 @@ class MenuActivity : ThemedActivity() {
             startActivity(intent)
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
-
-        btnNotifications.setOnClickListener {
-            notificationBadge.visibility = View.GONE
-            startActivity(Intent(this, NotificationActivity::class.java))
-            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
-        }
-
-        setupNotificationListener(notificationBadge)
     }
+
+
 
     override fun finish() {
         super.finish()
         overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
     }
 
-    private fun setupNotificationListener(badge: View) {
-        val user = FirebaseAuth.getInstance().currentUser ?: return
-        val email = user.email ?: return
-        val db = FirebaseFirestore.getInstance()
+    override fun onResume() {
+        super.onResume()
+        
 
-        db.collection("users").document(email).collection("notifications")
-            .whereEqualTo("read", false)
-            .addSnapshotListener { snapshot, _ ->
-                var hasUnreadReply = false
-                if (snapshot != null) {
-                    for (doc in snapshot.documents) {
-                        val reply = doc.getString("reply")?.trim()
-                        if (!reply.isNullOrEmpty() && reply != "Waiting for reply...") {
-                            hasUnreadReply = true
-                            break
-                        }
-                    }
-                }
-                badge.visibility = if (hasUnreadReply) View.VISIBLE else View.GONE
-            }
     }
 
     private fun animateDialog(view: android.view.View) {

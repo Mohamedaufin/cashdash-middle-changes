@@ -25,10 +25,12 @@
             android:src="@drawable/ic_back_arrow1"
             app:tint="?attr/textPrimaryColor"
             android:padding="10dp"
+            android:layout_gravity="center_vertical"
             android:scaleType="fitCenter"/>
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
             android:text="Help Center"
             android:textColor="?attr/textPrimaryColor"
@@ -36,6 +38,34 @@
             android:textStyle="bold"
             android:layout_gravity="center_vertical"
             android:layout_marginStart="20dp"/>
+
+        <RelativeLayout
+            android:id="@+id/btnNotifications"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_gravity="center_vertical"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/borderedRoundBackground">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_centerInParent="true"
+                android:src="@drawable/ic_bell"
+                app:tint="?attr/textPrimaryColor"/>
+
+            <View
+                android:id="@+id/notificationBadge"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentEnd="true"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="10dp"
+                android:background="?attr/glass3dRedBackground"
+                android:visibility="gone"/>
+        </RelativeLayout>
     </LinearLayout>
 
     <ScrollView
@@ -146,6 +176,37 @@
                 android:background="?attr/cardBackground"
                 android:padding="15dp"
                 android:layout_marginBottom="25dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Q: How do I use the QR Scanner (Tutorial)?"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textStyle="bold"
+                    android:textSize="@dimen/text_body"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="A: Scan from CashDash directly and record your payments:\n1. Scan any UPI QR code\n2. Enter the amount and select an allocation\n3. Choose your payment app (Cred, GPay)\n4. Complete the payment in your UPI app and wait for 2-3 seconds\n5. We will automatically bring you back to CashDash and record the transaction\n\nGeneral shortcuts:\n1. Tap Undo button to pay again to the last scanned receiver\n2. Swipe right to left to go home page or use exit button at top"
+                    android:textColor="?attr/textMutedColor"
+                    android:textSize="@dimen/text_body"
+                    android:layout_marginBottom="12dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Q: How do I use the Rigor Tracker (Tutorial)?"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textStyle="bold"
+                    android:textSize="@dimen/text_body"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="A: This helps to manually record your expenses:\n1. Enter expense title and amount\n2. Choose date of expense from calendar\n3. Tap Next and choose an allocation\n4. Thats it, Your expense has been recorded manually and wallet has been deducted"
+                    android:textColor="?attr/textMutedColor"
+                    android:textSize="@dimen/text_body"
+                    android:layout_marginBottom="12dp"/>
+
 
                 <TextView
                     android:layout_width="match_parent"
@@ -293,6 +354,22 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:text="Q: How do I use the Category Allocator (Tutorial)?"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textStyle="bold"
+                    android:textSize="@dimen/text_body"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="A: Here, you can set new allocations (Shopping, Food, etc.) and set limits for the category:\n1. Tap '+ Add New' to create a new category\n2. Press done and set an optional spending limit for it\n\nGeneral shortcuts:\n1. Swipe right to left to delete an allocation\n2. Press and hold allocation to rename it\n3. Tap on allocation to view insights of its spending trend"
+                    android:textColor="?attr/textMutedColor"
+                    android:textSize="@dimen/text_body"
+                    android:layout_marginBottom="12dp"/>
+
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:text="Q: How do I set a sub-budget?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
@@ -400,6 +477,22 @@
                 android:background="?attr/cardBackground"
                 android:padding="15dp"
                 android:layout_marginBottom="25dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Q: How do I use the History page (Tutorial)?"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textStyle="bold"
+                    android:textSize="@dimen/text_body"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="A: View all your recorded transactions:\n1. Use the search bar to find specific expenses quickly\n2. Tap daily button to switch over weekly/monthly graphs\n3. Tap overall to change allocation and view specific category's expense"
+                    android:textColor="?attr/textMutedColor"
+                    android:textSize="@dimen/text_body"
+                    android:layout_marginBottom="12dp"/>
+
 
                 <TextView
                     android:layout_width="match_parent"

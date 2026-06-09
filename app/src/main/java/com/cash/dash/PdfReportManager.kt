@@ -19,11 +19,11 @@ import java.util.Locale
 
 object PdfReportManager {
 
-    suspend fun generateAndSavePremiumReport(context: Context, startMillis: Long, endMillis: Long, isMonthly: Boolean, weekIndex: Int = -1) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    suspend fun generateAndSavePremiumReport(context: Context, startMillis: Long, endMillis: Long, isMonthly: Boolean, weekIndex: Int = -1, isCustomMode: Boolean = false) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val cal = Calendar.getInstance().apply { timeInMillis = startMillis }
         val month = cal.get(Calendar.MONTH)
         val year = cal.get(Calendar.YEAR)
-        val insights = FinancialInsightsManager.generateReport(context, isMonthly, month, year, weekIndex)
+        val insights = FinancialInsightsManager.generateReport(context, isMonthly, isCustomMode, startMillis, endMillis, month, year, weekIndex)
         
         val document = PdfDocument()
         var pageNum = 1
@@ -93,25 +93,16 @@ object PdfReportManager {
         // 3D Chart Embed (Filter for > 0)
         draw3DPieChart(canvas, insights.topCategories.filter { it.amount > 0 }, 420f, 310f, 90f)
 
-        // Patterns & Optimization
+        // Patterns
         yPos = 440f
         paint.textSize = 14f
         paint.color = accentColor
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        canvas.drawText("Strategic Optimization", 40f, yPos, paint)
+        canvas.drawText("Strategic Patterns", 40f, yPos, paint)
         
         yPos += 30f
         paint.textSize = 11f
         paint.typeface = Typeface.DEFAULT
-        
-        // Savings Opp Card
-        canvas.drawRoundRect(40f, yPos, 555f, yPos + 60f, 8f, 8f, cardPaint)
-        paint.color = Color.WHITE
-        val oppLines = insights.savingsOpportunity.chunked(70)
-        oppLines.forEachIndexed { i, line ->
-            canvas.drawText(line, 55f, yPos + 25f + (i * 15f), paint)
-        }
-        yPos += 80f
 
         // Pattern Card
         if (isMonthly) {
@@ -135,7 +126,7 @@ object PdfReportManager {
         document.finishPage(page)
 
         val monthName = java.text.DateFormatSymbols().months[month]
-        val fileName = if (isMonthly) "Cashdash_${monthName}_Report.pdf" else "CashDash_Weekly_Report.pdf"
+        val fileName = if (isCustomMode) "CashDash_Custom_Report.pdf" else if (isMonthly) "Cashdash_${monthName}_Report.pdf" else "CashDash_Weekly_Report.pdf"
         savePdfToDownloads(context, document, fileName)
     }
 
