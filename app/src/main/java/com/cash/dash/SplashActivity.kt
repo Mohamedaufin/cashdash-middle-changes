@@ -23,10 +23,8 @@ class SplashActivity : ThemedActivity() {
 
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         val isFirstLaunch = prefs.getBoolean(KEY_FIRST, true)
-        val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-
-        if (isFirstLaunch || currentUser == null) {
-            // New user or corrupted/expired session -> Go straight to Entry form
+        if (isFirstLaunch) {
+            // New user -> Go straight to Entry form
             startActivity(Intent(this, EntryActivity::class.java))
             finish()
         } else {

@@ -208,7 +208,7 @@ class FloatingWidgetService : Service() {
 
         trackerView?.setOnTouchListener { v, event ->
             if (event.action == MotionEvent.ACTION_OUTSIDE) {
-                showBubble()
+                hideAll()
                 true
             } else {
                 false
@@ -291,7 +291,7 @@ class FloatingWidgetService : Service() {
 
             withContext(Dispatchers.Main) {
                 Toast.makeText(this@FloatingWidgetService, "Saved Successfully!", Toast.LENGTH_SHORT).show()
-                hideAll()
+                showBubble()
                 // Broadcast to update UI
                 androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this@FloatingWidgetService)
                     .sendBroadcast(Intent(FirestoreSyncManager.ACTION_SYNC_UPDATE))
