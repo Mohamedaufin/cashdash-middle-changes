@@ -17,10 +17,18 @@ class PaymentRecoveryReceiver : BroadcastReceiver() {
             val category = prefs.getString("pending_category", "no choice") ?: "no choice"
             val title = prefs.getString("pending_title", "") ?: ""
             val upiId = prefs.getString("pending_upi", "") ?: ""
+            val paymentApp = prefs.getString("pending_app", "Google Pay") ?: "Google Pay"
             
             if (amount > 0) {
+                val ts = System.currentTimeMillis()
                 // Write to History (This also deducts wallet balance internally)
-                HistoryDataManager.saveTransaction(context, title, amount.toFloat(), category, System.currentTimeMillis())
+                HistoryDataManager.saveTransaction(context, title, amount.toFloat(), category, ts)
+                
+                // Save Scanner Metadata so it shows correctly in Detail History
+                context.getSharedPreferences("ScannerMetadataPrefs", Context.MODE_PRIVATE).edit()
+                    .putString("UPI_$ts", upiId)
+                    .putString("APP_$ts", paymentApp)
+                    .apply()
                 
                 // Sync to Cloud
                 FirestoreSyncManager.pushAllDataToCloud(context)

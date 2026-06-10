@@ -142,6 +142,11 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             val category = prefs.getString("pending_category", "no choice") ?: "no choice"
             val title = prefs.getString("pending_title", "") ?: ""
             selectedPaymentApp = prefs.getString("pending_app", "Google Pay") ?: "Google Pay"
+            
+            // Restore global variables so redirectSuccess() saves correctly
+            pendingAmount = amount
+            pendingCategory = category
+            pendingTitle = title
 
             val density = resources.displayMetrics.density
             val box = android.widget.LinearLayout(this).apply {
@@ -603,9 +608,16 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                             status.equals("SUBMITTED", ignoreCase = true) || 
                             (status.isEmpty() && rawResponse.contains("SUCCESS", ignoreCase = true))
                             
-            // Regardless of success/failure, if the intent returned, we clear the pending state 
-            // since we have a definitive answer.
-            getSharedPreferences("PendingTransactionPrefs", Context.MODE_PRIVATE).edit().clear().apply()
+            // Restore globals if the activity was recreated
+            val prefs = getSharedPreferences("PendingTransactionPrefs", Context.MODE_PRIVATE)
+            if (pendingAmount == 0) {
+                pendingAmount = prefs.getString("pending_amount", "0")?.toDoubleOrNull()?.toInt() ?: 0
+                pendingCategory = prefs.getString("pending_category", "no choice")
+                pendingTitle = prefs.getString("pending_title", "") ?: ""
+                selectedPaymentApp = prefs.getString("pending_app", "Google Pay") ?: "Google Pay"
+            }
+
+            prefs.edit().clear().apply()
             androidx.core.app.NotificationManagerCompat.from(this).cancel(999)
             androidx.work.WorkManager.getInstance(this).cancelUniqueWork("upi_recovery_notification_work")
 

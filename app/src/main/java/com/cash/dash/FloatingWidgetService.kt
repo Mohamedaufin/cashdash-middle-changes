@@ -161,27 +161,52 @@ class FloatingWidgetService : Service() {
                 // If Usage Stats isn't enabled, we can ask for it
                 if (!hasUsageStatsPermission()) {
                     switchTracking.isChecked = false
+                    val dialogView = LayoutInflater.from(getThemedContext()).inflate(R.layout.dialog_confirm_action, null)
                     val dialog = androidx.appcompat.app.AlertDialog.Builder(getThemedContext())
-                        .setTitle("Data Collection Disclosure")
-                        .setMessage("CashDash collects data about which apps you open to detect when you are using supported shopping applications. This enables the Taptrack widget to appear automatically while you shop. This data is kept strictly on your device and never shared.")
-                        .setPositiveButton("I Agree") { _, _ ->
-                            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            startActivity(intent)
-                            hideAll()
-                        }
-                        .setNegativeButton("Cancel") { d, _ ->
-                            d.dismiss()
-                        }
+                        .setView(dialogView)
                         .setCancelable(false)
                         .create()
-                        
+
+                    dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+                    val tvTitle = dialogView.findViewById<TextView>(R.id.tvConfirmTitle)
+                    val tvMessage = dialogView.findViewById<TextView>(R.id.tvConfirmMessage)
+                    val btnPositive = dialogView.findViewById<Button>(R.id.btnConfirmAction)
+                    val btnNegative = dialogView.findViewById<Button>(R.id.btnConfirmCancel)
+
+                    tvTitle.text = "Data Collection Disclosure"
+                    tvMessage.text = "CashDash collects data about which apps you open to detect when you are using supported shopping applications. This enables the Taptrack widget to appear automatically while you shop. This data is kept strictly on your device and never shared."
+                    tvTitle.gravity = android.view.Gravity.CENTER
+                    tvMessage.gravity = android.view.Gravity.START
+                    tvTitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
+                    tvMessage.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
+                    tvTitle.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
+                    btnPositive.text = "I Agree"
+                    btnPositive.setTextColor(android.graphics.Color.WHITE)
+                    btnNegative.text = "Cancel"
+                    btnNegative.visibility = View.VISIBLE
+
+                    btnPositive.setOnClickListener {
+                        dialog.dismiss()
+                        val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(intent)
+                        hideAll()
+                    }
+
+                    btnNegative.setOnClickListener {
+                        dialog.dismiss()
+                    }
+
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                         dialog.window?.setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
                     } else {
                         dialog.window?.setType(WindowManager.LayoutParams.TYPE_PHONE)
                     }
                     dialog.show()
+
+                    val width = (resources.displayMetrics.widthPixels * 0.9).toInt()
+                    dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
                     return@setOnCheckedChangeListener
                 }
                 

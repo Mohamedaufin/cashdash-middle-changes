@@ -79,16 +79,21 @@ class TaptrackActivity : ThemedActivity() {
         }
 
         switchUsage.setOnClickListener {
-            androidx.appcompat.app.AlertDialog.Builder(this)
+            AlertDialogHelper.createFlatDialogBuilder(this)
                 .setTitle("Data Collection Disclosure")
                 .setMessage("CashDash collects data about which apps you open to detect when you are using supported shopping applications. This enables the Taptrack widget to appear automatically while you shop. This data is kept strictly on your device and never shared.")
-                .setPositiveButton("I Agree") { _, _ ->
+                .setTitleGravity(android.view.Gravity.CENTER)
+                .setMessageGravity(android.view.Gravity.START)
+                .setTitleTextSize(16f)
+                .setMessageTextSize(14f)
+                .setTitleTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL))
+                .setPositiveTextColor(android.graphics.Color.WHITE)
+                .setPositiveButton("I Agree") {
                     val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
                     startActivity(intent)
                 }
-                .setNegativeButton("Cancel") { dialog, _ ->
+                .setNegativeButton("Cancel") {
                     switchUsage.isChecked = false
-                    dialog.dismiss()
                 }
                 .setCancelable(false)
                 .show()

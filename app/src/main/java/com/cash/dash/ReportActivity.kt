@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.widget.*
 import android.widget.FrameLayout
 import androidx.core.content.ContextCompat
@@ -124,7 +125,7 @@ class ReportActivity : ThemedActivity() {
                             else (if (customEndMillis > 0) customEndMillis else cal.timeInMillis)
         cal.timeInMillis = currentMillis
         
-        android.app.DatePickerDialog(this, { _, year, month, day ->
+        android.app.DatePickerDialog(this, ThemeHelper.getDatePickerTheme(this), { _, year, month, day ->
             val sel = Calendar.getInstance().apply { 
                 set(year, month, day, if(isStart) 0 else 23, if(isStart) 0 else 59, if(isStart) 0 else 59) 
             }.timeInMillis
@@ -209,6 +210,25 @@ class ReportActivity : ThemedActivity() {
 
     private fun showPeriodPicker() {
         val months = arrayOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+        
+        val pad = (24 * resources.displayMetrics.density).toInt()
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(pad, pad, pad, pad)
+            val bgResId = ThemeHelper.getDrawable(this@ReportActivity, R.drawable.bg_transaction)
+            setBackgroundResource(bgResId)
+        }
+
+        val titleView = TextView(this).apply {
+            text = if (isMonthlyMode) "Select Month" else "Select Month First"
+            setTextColor(ThemeHelper.resolveColorAttr(this@ReportActivity, R.attr.textPrimaryColor))
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_subhead))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, 0, 0, (20 * resources.displayMetrics.density).toInt())
+        }
+        container.addView(titleView)
+
         val picker = NumberPicker(this).apply {
             minValue = 0
             maxValue = 11
@@ -216,10 +236,37 @@ class ReportActivity : ThemedActivity() {
             displayedValues = months
         }
         
-        android.app.AlertDialog.Builder(this)
-            .setTitle(if (isMonthlyMode) "Select Month" else "Select Month First")
-            .setView(picker)
-            .setPositiveButton("OK") { _, _ ->
+        val pickerContainer = FrameLayout(this).apply {
+            val params = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = android.view.Gravity.CENTER
+            }
+            layoutParams = params
+            addView(picker)
+        }
+        container.addView(pickerContainer)
+
+        val actionsContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.END
+            setPadding(0, (20 * resources.displayMetrics.density).toInt(), 0, 0)
+        }
+
+        val dialogBuilder = androidx.appcompat.app.AlertDialog.Builder(this)
+        dialogBuilder.setView(container)
+        val dialog = dialogBuilder.create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        val btnOk = Button(this).apply {
+            text = "OK"
+            setTextColor(Color.WHITE)
+            setBackgroundColor(Color.TRANSPARENT)
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setOnClickListener {
+                dialog.dismiss()
                 currentMonth = picker.value
                 if (isMonthlyMode) {
                     updatePeriodLabel()
@@ -227,7 +274,14 @@ class ReportActivity : ThemedActivity() {
                 } else {
                     showWeekPicker()
                 }
-            }.show()
+            }
+        }
+        actionsContainer.addView(btnOk)
+        container.addView(actionsContainer)
+
+        dialog.show()
+        val width = (resources.displayMetrics.widthPixels * 0.85).toInt()
+        dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 
     private fun showWeekPicker() {
@@ -236,13 +290,66 @@ class ReportActivity : ThemedActivity() {
             val weekLabels = weeks.map { "${it.weekLabel} (${it.dates})" }.toTypedArray()
             
             withContext(Dispatchers.Main) {
-                android.app.AlertDialog.Builder(this@ReportActivity)
-                    .setTitle("Select Week for ${java.text.DateFormatSymbols().months[currentMonth]}")
-                    .setItems(weekLabels) { _, which ->
-                        selectedWeekIndex = which
-                        updatePeriodLabel()
-                        loadReport()
-                    }.show()
+                val pad = (24 * resources.displayMetrics.density).toInt()
+                val container = LinearLayout(this@ReportActivity).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(pad, pad, pad, pad)
+                    val bgResId = ThemeHelper.getDrawable(this@ReportActivity, R.drawable.bg_transaction)
+                    setBackgroundResource(bgResId)
+                }
+
+                val titleView = TextView(this@ReportActivity).apply {
+                    text = "Select Week for ${java.text.DateFormatSymbols().months[currentMonth]}"
+                    setTextColor(ThemeHelper.resolveColorAttr(this@ReportActivity, R.attr.textPrimaryColor))
+                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_subhead))
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    gravity = android.view.Gravity.CENTER
+                    setPadding(0, 0, 0, (20 * resources.displayMetrics.density).toInt())
+                }
+                container.addView(titleView)
+
+                val listView = ListView(this@ReportActivity).apply {
+                    val layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                    this.layoutParams = layoutParams
+                    divider = null
+                    dividerHeight = 0
+                }
+                container.addView(listView)
+
+                val dialogBuilder = androidx.appcompat.app.AlertDialog.Builder(this@ReportActivity)
+                dialogBuilder.setView(container)
+                val dialog = dialogBuilder.create()
+                dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+                val listAdapter = object : ArrayAdapter<String>(this@ReportActivity, android.R.layout.simple_list_item_1, weekLabels) {
+                    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                        val view = super.getView(position, convertView, parent) as TextView
+                        view.setTextColor(ThemeHelper.resolveColorAttr(this@ReportActivity, R.attr.textPrimaryColor))
+                        view.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
+                        view.setPadding(
+                            (12 * resources.displayMetrics.density).toInt(),
+                            (14 * resources.displayMetrics.density).toInt(),
+                            (12 * resources.displayMetrics.density).toInt(),
+                            (14 * resources.displayMetrics.density).toInt()
+                        )
+                        return view
+                    }
+                }
+                listView.adapter = listAdapter
+
+                listView.setOnItemClickListener { _, _, position, _ ->
+                    dialog.dismiss()
+                    selectedWeekIndex = position
+                    updatePeriodLabel()
+                    loadReport()
+                }
+
+                dialog.show()
+                val width = (resources.displayMetrics.widthPixels * 0.85).toInt()
+                dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
             }
         }
     }

@@ -7,36 +7,48 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.email == emailId;
     }
 
+    // Helper function to check if the user is a whitelisted admin
+    function isAdmin() {
+      return request.auth != null && (request.auth.token.email == "mohamedaufin64@gmail.com" || request.auth.token.email == "arunbhalaji200904@gmail.com");
+    }
+
     // Match the users collection and the specific user's document
     match /users/{userEmail} {
-      allow read, write: if isOwner(userEmail);
+      allow read, write: if isOwner(userEmail) || isAdmin();
 
       // Match all subcollections under the user's document
       match /{subcollection=**} {
-        allow read, write: if isOwner(userEmail);
+        allow read, write: if isOwner(userEmail) || isAdmin();
       }
     }
 
     // Match the deleted_accounts collection
     match /deleted_accounts/{userEmail} {
-      allow read, write: if isOwner(userEmail);
+      allow read, write: if isOwner(userEmail) || isAdmin();
     }
 
-    // 🚀 NEW: Match the Admin Announcements collection
+    // 🚀 Match the Admin Announcements collection
     match /announcements/{document=**} {
       // Allow any logged-in user to read the announcements
       allow read: if request.auth != null;
-      
-      // ONLY allow your specific admin emails to publish or edit announcements
-      allow write: if request.auth != null && (request.auth.token.email == "mohamedaufin64@gmail.com" || request.auth.token.email == "arunbhalaji200904@gmail.com");
+      allow write: if isAdmin();
     }
 
-    // 🚀 NEW: Match the Global Pushes collection
+    // 🚀 Match the Global Pushes collection
     match /global_pushes/{document=**} {
       allow read: if request.auth != null;
-      
-      // ONLY allow your specific admin emails to send global push notifications
-      allow write: if request.auth != null && (request.auth.token.email == "mohamedaufin64@gmail.com" || request.auth.token.email == "arunbhalaji200904@gmail.com");
+      allow write: if isAdmin();
+    }
+
+    // 🚀 Match the User Pushes collection
+    match /user_pushes/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // 🚀 Match the Admin Logs collection
+    match /admin_logs/{document=**} {
+      allow read, write: if isAdmin();
     }
   }
 }

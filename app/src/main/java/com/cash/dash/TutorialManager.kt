@@ -32,6 +32,18 @@ object TutorialManager {
             setBackgroundResource(ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
         }
 
+        val scrollBox = android.widget.ScrollView(activity).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+        }
+
+        val innerBox = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+
         val titleView = TextView(activity).apply {
             text = title
             setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20f)
@@ -40,7 +52,7 @@ object TutorialManager {
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, (20 * density).toInt())
         }
-        box.addView(titleView)
+        innerBox.addView(titleView)
 
         val introView = TextView(activity).apply {
             text = message
@@ -50,7 +62,9 @@ object TutorialManager {
             setPadding(0, 0, 0, (32 * density).toInt())
             setLineSpacing(8f, 1f)
         }
-        box.addView(introView)
+        innerBox.addView(introView)
+        scrollBox.addView(innerBox)
+        box.addView(scrollBox)
 
         val dialog = AlertDialog.Builder(activity).setView(box).create()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)

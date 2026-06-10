@@ -72,6 +72,29 @@ class MainActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // ONE-TIME FIX: Recover missing metadata for past scanner transactions
+        Thread {
+            try {
+                val prefs = getSharedPreferences("GraphData", Context.MODE_PRIVATE)
+                val historyList = prefs.getStringSet("HISTORY_LIST", emptySet()) ?: emptySet()
+                val metaPrefs = getSharedPreferences("ScannerMetadataPrefs", Context.MODE_PRIVATE)
+                
+                for (raw in historyList) {
+                    val parts = raw.split("|")
+                    if (parts.size >= 9) {
+                        val title = parts[2]
+                        val ts = parts[1].toLongOrNull() ?: 0L
+                        if (title.startsWith("To: ", ignoreCase = true)) {
+                            if (!metaPrefs.contains("APP_$ts")) {
+                                // Defaulting lost metadata to CRED as requested
+                                metaPrefs.edit().putString("APP_$ts", "CRED").apply()
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) { e.printStackTrace() }
+        }.start()
+
         if (intent.getBooleanExtra("from_splash", false)) {
             supportPostponeEnterTransition()
         }

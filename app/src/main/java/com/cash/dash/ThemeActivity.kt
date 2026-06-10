@@ -43,6 +43,7 @@ class ThemeActivity : ThemedActivity() {
     private var selectedAppTheme = "Black"
     private var selectedBBMode = "gradient"
     private var selectedBBType = "gradient1"
+    private var activeTabMode = "gradient"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,6 +91,7 @@ class ThemeActivity : ThemedActivity() {
         initialBBType = bbPrefs.getString("balance_bar_type", "gradient1") ?: "gradient1"
         selectedBBMode = initialBBMode
         selectedBBType = initialBBType
+        activeTabMode = initialBBMode
 
         initClickListeners()
         updateUI(this) 
@@ -108,42 +110,37 @@ class ThemeActivity : ThemedActivity() {
         themeWhite.setOnClickListener { selectedAppTheme = "White"; applyThemePreview("White") }
 
         btnModeGradient.setOnClickListener {
-            selectedBBMode = "gradient"
-            if (selectedBBType != "gradient1" && selectedBBType != "gradient2") {
-                selectedBBType = "gradient1"
-            }
-            updatePreviewUI()
+            activeTabMode = "gradient"
+            updatePreviewUI(animate = false)
         }
 
         btnModeSingle.setOnClickListener {
-            selectedBBMode = "single"
-            val validSingleTypes = listOf("purple", "yellow", "red", "green", "black", "white")
-            if (selectedBBType !in validSingleTypes) {
-                selectedBBType = "purple"
-            }
-            updatePreviewUI()
+            activeTabMode = "single"
+            updatePreviewUI(animate = false)
         }
 
-        btnGradient1.setOnClickListener { selectedBBType = "gradient1"; updatePreviewUI() }
-        btnGradient2.setOnClickListener { selectedBBType = "gradient2"; updatePreviewUI() }
+        btnGradient1.setOnClickListener { selectedBBMode = "gradient"; selectedBBType = "gradient1"; updatePreviewUI() }
+        btnGradient2.setOnClickListener { selectedBBMode = "gradient"; selectedBBType = "gradient2"; updatePreviewUI() }
 
-        findViewById<View>(R.id.colorPurple).setOnClickListener { selectedBBType = "purple"; updatePreviewUI() }
-        findViewById<View>(R.id.colorYellow).setOnClickListener { selectedBBType = "yellow"; updatePreviewUI() }
-        findViewById<View>(R.id.colorRed).setOnClickListener { selectedBBType = "red"; updatePreviewUI() }
-        findViewById<View>(R.id.colorGreen).setOnClickListener { selectedBBType = "green"; updatePreviewUI() }
-        findViewById<View>(R.id.colorBlack).setOnClickListener { selectedBBType = "black"; updatePreviewUI() }
-        findViewById<View>(R.id.colorWhite).setOnClickListener { selectedBBType = "white"; updatePreviewUI() }
+        findViewById<View>(R.id.colorPurple).setOnClickListener { selectedBBMode = "single"; selectedBBType = "purple"; updatePreviewUI() }
+        findViewById<View>(R.id.colorYellow).setOnClickListener { selectedBBMode = "single"; selectedBBType = "yellow"; updatePreviewUI() }
+        findViewById<View>(R.id.colorRed).setOnClickListener { selectedBBMode = "single"; selectedBBType = "red"; updatePreviewUI() }
+        findViewById<View>(R.id.colorGreen).setOnClickListener { selectedBBMode = "single"; selectedBBType = "green"; updatePreviewUI() }
+        findViewById<View>(R.id.colorBlack).setOnClickListener { selectedBBMode = "single"; selectedBBType = "black"; updatePreviewUI() }
+        findViewById<View>(R.id.colorWhite).setOnClickListener { selectedBBMode = "single"; selectedBBType = "white"; updatePreviewUI() }
 
         btnApply.setOnClickListener {
             handleApplyAction()
         }
     }
 
-    private fun updatePreviewUI() {
+    private fun updatePreviewUI(animate: Boolean = true) {
         val themeRes = getThemeResId(selectedAppTheme)
         val wrapper = ContextThemeWrapper(this, themeRes)
         updateUI(wrapper)
-        previewProgress.startLoadingAnimation()
+        if (animate) {
+            previewProgress.startLoadingAnimation()
+        }
     }
 
     private fun updateUI(ctx: Context) {
@@ -154,10 +151,10 @@ class ThemeActivity : ThemedActivity() {
         updateCardSelection(ctx, themeBlue, selectedAppTheme == "Blue", activeText, mutedText)
         updateCardSelection(ctx, themeWhite, selectedAppTheme == "White", activeText, mutedText)
 
-        updateModeButton(ctx, btnModeGradient, selectedBBMode == "gradient", activeText, mutedText)
-        updateModeButton(ctx, btnModeSingle, selectedBBMode == "single", activeText, mutedText)
+        updateModeButton(ctx, btnModeGradient, activeTabMode == "gradient", activeText, mutedText)
+        updateModeButton(ctx, btnModeSingle, activeTabMode == "single", activeText, mutedText)
 
-        if (selectedBBMode == "gradient") {
+        if (activeTabMode == "gradient") {
             layoutGradientOptions.visibility = View.VISIBLE
             layoutSingleOptions.visibility = View.GONE
             updateModeButton(ctx, btnGradient1, selectedBBType == "gradient1", activeText, mutedText)

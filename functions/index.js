@@ -116,12 +116,37 @@ ${replyUrl}
 `.trim();
         }
 
+        const attachments = [];
+        if (newData.imageUrl) {
+            attachments.push({
+                filename: "attachment_0.jpg",
+                path: newData.imageUrl
+            });
+        }
+        if (newData.imageUrls && Array.isArray(newData.imageUrls)) {
+            newData.imageUrls.forEach((url, i) => {
+                if (url !== newData.imageUrl) {
+                    attachments.push({
+                        filename: `attachment_${attachments.length}.jpg`,
+                        path: url
+                    });
+                }
+            });
+        }
+        if (attachments.length > 0) {
+            emailBody += `\n\n-----------------------------------\n${attachments.length} supported attachment${attachments.length > 1 ? "s" : ""} below\n-----------------------------------`;
+        }
+
         const mailOptions = {
             from: `"CashDash Support" <${GMAIL_USER}>`,
             to: ADMIN_EMAIL,
             subject: emailSubject,
             text: emailBody,
         };
+
+        if (attachments.length > 0) {
+            mailOptions.attachments = attachments;
+        }
 
         try {
             await createTransporter().sendMail(mailOptions);
@@ -391,7 +416,7 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
                         android: {
                             priority: "high",
                             notification: {
-                                channelId: "cashdash_v6_urgent",
+                                channelId: "cashdash_urgent_heads_up_v10",
                                 icon: "ic_bell",
                                 color: "#4ADE80",
                                 clickAction: "NotificationActivity",
@@ -482,9 +507,12 @@ exports.onGlobalPush = onDocumentWritten({
     
     if (!message) return;
 
+    const adminOnly = newData.adminOnly === true;
+    const targetTopic = adminOnly ? "admins" : "all_users";
+
     try {
         await admin.messaging().send({
-            topic: "all_users",
+            topic: targetTopic,
             notification: {
                 title: title,
                 body: message,
@@ -492,14 +520,64 @@ exports.onGlobalPush = onDocumentWritten({
             android: {
                 priority: "high",
                 notification: {
-                    channelId: "cashdash_v6_urgent",
+                    channelId: "cashdash_urgent_heads_up_v10",
                     icon: "ic_bell",
                     color: "#4ADE80"
                 },
             }
         });
-        console.log(`Successfully sent global push: ${title}`);
+        console.log(`Successfully sent push notification to ${targetTopic}: ${title}`);
     } catch (error) {
-        console.error("Error sending global push:", error);
+        console.error(`Error sending push notification to ${targetTopic}:`, error);
     }
 });
+
+// ─────────────────────────────────────────────
+// FUNCTION 5: onUserPush
+// ─────────────────────────────────────────────
+exports.onUserPush = onDocumentWritten({
+    document: "user_pushes/{pushId}",
+    region: "us-central1"
+}, async (event) => {
+    const newData = event.data.after.data();
+    if (!newData) return; // Document was deleted, ignore
+
+    const email = newData.email;
+    const title = newData.title || "Support Alert";
+    const message = newData.message || "";
+
+    if (!email || !message) return;
+
+    try {
+        const userDoc = await db.collection("users").doc(email).get();
+        const fcmToken = userDoc.data()?.fcmToken;
+
+        if (fcmToken) {
+            await admin.messaging().send({
+                token: fcmToken,
+                notification: {
+                    title: title,
+                    body: message,
+                },
+                android: {
+                    priority: "high",
+                    notification: {
+                        channelId: "cashdash_urgent_heads_up_v10",
+                        icon: "ic_bell",
+                        color: "#4ADE80",
+                        clickAction: "NotificationActivity"
+                    },
+                },
+                data: {
+                    userSpecificPush: "true"
+                }
+            });
+            console.log(`Successfully sent user-specific push to ${email}: ${title}`);
+        } else {
+            console.log(`No FCM token found for user ${email}`);
+        }
+    } catch (error) {
+        console.error(`Error sending user-specific push to ${email}:`, error);
+    }
+});
+
