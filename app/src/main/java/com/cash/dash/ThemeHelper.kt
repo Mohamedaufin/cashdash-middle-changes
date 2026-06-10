@@ -111,7 +111,7 @@ object ThemeHelper {
     fun getDatePickerTheme(context: Context): Int {
         return when (getCurrentTheme(context)) {
             "White" -> R.style.DatePickerThemeWhite
-            else -> 0 // Use default for others
+            else -> R.style.DatePickerThemeDark
         }
     }
 

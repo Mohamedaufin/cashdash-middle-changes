@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_marginBottom="16dp"
+    android:background="?attr/cardBackground">
+
+    <!-- Top accent bar + title row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="18dp"
+        android:paddingBottom="12dp">
+
+        <!-- Colored left accent bar -->
+        <View
+            android:id="@+id/viewAccentBar"
+            android:layout_width="4dp"
+            android:layout_height="36dp"
+            android:background="#4E5DFF"
+            android:layout_marginEnd="14dp"/>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!-- Action type badge (e.g. GLOBAL PUSH, USER SPECIFIC PUSH) -->
+            <TextView
+                android:id="@+id/tvLogActionType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Action Type"
+                android:textColor="#4E5DFF"
+                android:textSize="@dimen/text_caption"
+                android:textStyle="bold"
+                android:textAllCaps="false"
+                android:letterSpacing="0.08"
+                android:layout_marginBottom="3dp"/>
+
+            <!-- Timestamp -->
+            <TextView
+                android:id="@+id/tvLogTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="10 Jun, 10:30 PM"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="@dimen/text_caption"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Thin separator below header -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#15808080"
+        android:layout_marginStart="18dp"
+        android:layout_marginEnd="18dp"/>
+
+    <!-- Content / Detail text -->
+    <TextView
+        android:id="@+id/tvLogDetails"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Title: —\nMessage: —"
+        android:textColor="?attr/textPrimaryColor"
+        android:textSize="@dimen/text_caption"
+        android:lineSpacingMultiplier="1.4"
+        android:padding="18dp"
+        android:paddingBottom="14dp"/>
+
+    <!-- Separator before trigger info -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#15808080"
+        android:layout_marginStart="18dp"
+        android:layout_marginEnd="18dp"/>
+
+    <!-- Triggered by Admin info -->
+    <TextView
+        android:id="@+id/tvLogTriggeredBy"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="This action is triggered by: —"
+        android:textColor="#4ADE80"
+        android:textSize="@dimen/text_caption"
+        android:textStyle="bold"
+        android:padding="18dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"/>
+
+</LinearLayout>

@@ -24,6 +24,12 @@ object AlertDialogHelper {
         private var positiveListener: (() -> Unit)? = null
         private var negativeListener: (() -> Unit)? = null
         private var cancelable: Boolean = true
+        private var titleGravity: Int = android.view.Gravity.CENTER
+        private var messageGravity: Int = android.view.Gravity.CENTER
+        private var messageTextSizeSp: Float? = null
+        private var titleTextSizeSp: Float? = null
+        private var titleTypeface: android.graphics.Typeface? = null
+        private var positiveTextColor: Int? = null
 
         fun setTitle(title: String) = apply { this.title = title }
         fun setMessage(message: String) = apply { this.message = message }
@@ -36,6 +42,12 @@ object AlertDialogHelper {
             this.negativeListener = listener
         }
         fun setCancelable(cancelable: Boolean) = apply { this.cancelable = cancelable }
+        fun setTitleGravity(gravity: Int) = apply { this.titleGravity = gravity }
+        fun setMessageGravity(gravity: Int) = apply { this.messageGravity = gravity }
+        fun setMessageTextSize(sp: Float) = apply { this.messageTextSizeSp = sp }
+        fun setTitleTextSize(sp: Float) = apply { this.titleTextSizeSp = sp }
+        fun setTitleTypeface(typeface: android.graphics.Typeface) = apply { this.titleTypeface = typeface }
+        fun setPositiveTextColor(color: Int) = apply { this.positiveTextColor = color }
 
         fun show(): AlertDialog {
             val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_confirm_action, null)
@@ -54,6 +66,13 @@ object AlertDialogHelper {
             tvTitle.text = title ?: "Notice"
             tvMessage.text = message ?: ""
             btnPositive.text = positiveText
+
+            tvTitle.gravity = titleGravity
+            tvMessage.gravity = messageGravity
+            titleTextSizeSp?.let { tvTitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, it) }
+            messageTextSizeSp?.let { tvMessage.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, it) }
+            titleTypeface?.let { tvTitle.typeface = it }
+            positiveTextColor?.let { btnPositive.setTextColor(it) }
             
             if (negativeText != null) {
                 btnNegative.text = negativeText

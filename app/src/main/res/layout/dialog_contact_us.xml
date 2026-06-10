@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/dialogRootLayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -9,6 +10,7 @@
     android:gravity="center_horizontal">
 
     <TextView
+        android:id="@+id/tvContactTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Contact Support"
@@ -90,37 +92,307 @@
         android:textSize="@dimen/text_body"
         android:layout_marginBottom="15dp"/>
 
-    <!-- Image Attachment Options -->
+    <!-- Supporting Images Header -->
+    <TextView
+        android:id="@+id/tvAddImagesHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add supporting images (optional):"
+        android:textColor="?attr/textPrimaryColor"
+        android:textSize="@dimen/text_body"
+        android:layout_gravity="start"
+        android:layout_marginBottom="12dp"/>
+
+    <!-- Horizontal Images Container -->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:id="@+id/layoutImagesContainer"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="25dp">
+        android:gravity="top"
+        android:layout_marginBottom="35dp"
+        android:layout_gravity="start"
+        android:layout_marginStart="4dp">
 
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btnAddImage"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="60dp"
-            android:text="Add supporting images (optional)"
-            android:textAllCaps="false"
-            android:textSize="14sp"
-            android:textColor="?attr/textMutedColor"
-            android:background="?attr/inputBackground"
-            android:backgroundTint="@null"
-            android:stateListAnimator="@null"
-            android:elevation="0dp"
-            android:layout_marginEnd="10dp"/>
+        <!-- Slot 1 -->
+        <LinearLayout
+            android:id="@+id/slotImage1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:layout_marginEnd="16dp">
 
-        <ImageView
-            android:id="@+id/imgPreview"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:scaleType="centerCrop"
-            android:visibility="gone"
-            android:background="?attr/borderedRoundBackground"
-            android:clipToOutline="true"/>
+            <FrameLayout
+                android:layout_width="61dp"
+                android:layout_height="61dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <FrameLayout
+                    android:id="@+id/frameImage1"
+                    android:layout_width="55dp"
+                    android:layout_height="55dp"
+                    android:layout_gravity="bottom|start"
+                    android:background="?attr/inputBackground"
+                    android:clipToOutline="true"
+                    android:clipChildren="true"
+                    android:clipToPadding="true">
+
+                    <ImageView
+                        android:id="@+id/imgPreview1"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:clipToOutline="true" />
+
+                    <ImageView
+                        android:id="@+id/imgPlus1"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_plus_vector"
+                        android:contentDescription="Add image" />
+                </FrameLayout>
+
+                <ImageButton
+                    android:id="@+id/btnTrash1"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="top|end"
+                    android:background="@android:color/transparent"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_trash"
+                    android:contentDescription="Delete image" />
+            </FrameLayout>
+
+            <ImageView
+                android:id="@+id/imgEye1"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginTop="10dp"
+                android:src="@drawable/ic_eye"
+                android:contentDescription="View image" />
+
+            <TextView
+                android:id="@+id/tvView1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="view"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="10sp"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- Slot 2 -->
+        <LinearLayout
+            android:id="@+id/slotImage2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:layout_marginEnd="16dp">
+
+            <FrameLayout
+                android:layout_width="61dp"
+                android:layout_height="61dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <FrameLayout
+                    android:id="@+id/frameImage2"
+                    android:layout_width="55dp"
+                    android:layout_height="55dp"
+                    android:layout_gravity="bottom|start"
+                    android:background="?attr/inputBackground"
+                    android:clipToOutline="true"
+                    android:clipChildren="true"
+                    android:clipToPadding="true">
+
+                    <ImageView
+                        android:id="@+id/imgPreview2"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:clipToOutline="true" />
+
+                    <ImageView
+                        android:id="@+id/imgPlus2"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_plus_vector"
+                        android:contentDescription="Add image" />
+                </FrameLayout>
+
+                <ImageButton
+                    android:id="@+id/btnTrash2"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="top|end"
+                    android:background="@android:color/transparent"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_trash"
+                    android:contentDescription="Delete image" />
+            </FrameLayout>
+
+            <ImageView
+                android:id="@+id/imgEye2"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginTop="10dp"
+                android:src="@drawable/ic_eye"
+                android:contentDescription="View image" />
+
+            <TextView
+                android:id="@+id/tvView2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="view"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="10sp"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- Slot 3 -->
+        <LinearLayout
+            android:id="@+id/slotImage3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:layout_marginEnd="16dp">
+
+            <FrameLayout
+                android:layout_width="61dp"
+                android:layout_height="61dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <FrameLayout
+                    android:id="@+id/frameImage3"
+                    android:layout_width="55dp"
+                    android:layout_height="55dp"
+                    android:layout_gravity="bottom|start"
+                    android:background="?attr/inputBackground"
+                    android:clipToOutline="true"
+                    android:clipChildren="true"
+                    android:clipToPadding="true">
+
+                    <ImageView
+                        android:id="@+id/imgPreview3"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:clipToOutline="true" />
+
+                    <ImageView
+                        android:id="@+id/imgPlus3"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_plus_vector"
+                        android:contentDescription="Add image" />
+                </FrameLayout>
+
+                <ImageButton
+                    android:id="@+id/btnTrash3"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="top|end"
+                    android:background="@android:color/transparent"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_trash"
+                    android:contentDescription="Delete image" />
+            </FrameLayout>
+
+            <ImageView
+                android:id="@+id/imgEye3"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginTop="10dp"
+                android:src="@drawable/ic_eye"
+                android:contentDescription="View image" />
+
+            <TextView
+                android:id="@+id/tvView3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="view"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="10sp"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- Slot 4 -->
+        <LinearLayout
+            android:id="@+id/slotImage4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <FrameLayout
+                android:layout_width="61dp"
+                android:layout_height="61dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <FrameLayout
+                    android:id="@+id/frameImage4"
+                    android:layout_width="55dp"
+                    android:layout_height="55dp"
+                    android:layout_gravity="bottom|start"
+                    android:background="?attr/inputBackground"
+                    android:clipToOutline="true"
+                    android:clipChildren="true"
+                    android:clipToPadding="true">
+
+                    <ImageView
+                        android:id="@+id/imgPreview4"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:clipToOutline="true" />
+
+                    <ImageView
+                        android:id="@+id/imgPlus4"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_plus_vector"
+                        android:contentDescription="Add image" />
+                </FrameLayout>
+
+                <ImageButton
+                    android:id="@+id/btnTrash4"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="top|end"
+                    android:background="@android:color/transparent"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_trash"
+                    android:contentDescription="Delete image" />
+            </FrameLayout>
+
+            <ImageView
+                android:id="@+id/imgEye4"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginTop="10dp"
+                android:src="@drawable/ic_eye"
+                android:contentDescription="View image" />
+
+            <TextView
+                android:id="@+id/tvView4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="view"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="10sp"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
     </LinearLayout>
 
     <androidx.appcompat.widget.AppCompatButton

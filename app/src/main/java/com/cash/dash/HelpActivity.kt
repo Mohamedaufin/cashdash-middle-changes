@@ -27,17 +27,68 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.google.firebase.storage.FirebaseStorage
 
 
+private data class DialogDimensions(
+    val padding: Int,
+    val fieldHeight: Int,
+    val fieldMargin: Int,
+    val queryHeight: Int,
+    val submitHeight: Int,
+    val headerMargin: Int,
+    val titleMargin: Int,
+    val textBodySize: Float,
+    val textTitleSize: Float,
+    val imagesBottomMargin: Int
+)
+
+private data class ImageSlotViews(
+    val slot: ViewGroup,
+    val frame: ViewGroup,
+    val preview: ImageView,
+    val plus: ImageView,
+    val trash: ImageButton,
+    val eye: ImageView,
+    val viewText: TextView
+)
+
 class HelpActivity : ThemedActivity() {
 
-    private var selectedImageUri: Uri? = null
+    private val selectedImageUris = mutableListOf<Uri>()
     private var activeDialog: Dialog? = null
+    private var queriesListener: com.google.firebase.firestore.ListenerRegistration? = null
+    private var announcementsListener: com.google.firebase.firestore.ListenerRegistration? = null
 
-    private val imagePickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        if (uri != null) {
-            selectedImageUri = uri
-            val imgPreview = activeDialog?.findViewById<ImageView>(R.id.imgPreview)
-            imgPreview?.visibility = android.view.View.VISIBLE
-            imgPreview?.setImageURI(uri)
+    override fun onDestroy() {
+        super.onDestroy()
+        queriesListener?.remove()
+        announcementsListener?.remove()
+    }
+
+    private val pickerChooserLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val intentData = result.data
+            val selectedUri = intentData?.data
+            if (selectedUri != null) {
+                if (selectedImageUris.size < 4) {
+                    selectedImageUris.add(selectedUri)
+                    updateDialogImageSlots()
+                }
+            } else {
+                val bitmap = intentData?.extras?.get("data") as? android.graphics.Bitmap
+                if (bitmap != null && selectedImageUris.size < 4) {
+                    try {
+                        val file = java.io.File(externalCacheDir, "support_img_${System.currentTimeMillis()}.jpg")
+                        val out = java.io.FileOutputStream(file)
+                        bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
+                        out.flush()
+                        out.close()
+                        val uri = Uri.fromFile(file)
+                        selectedImageUris.add(uri)
+                        updateDialogImageSlots()
+                    } catch (e: Exception) {
+                        ToastHelper.showToast(this, "Failed to save camera image: ${e.message}")
+                    }
+                }
+            }
         }
     }
 
@@ -84,19 +135,18 @@ class HelpActivity : ThemedActivity() {
         )
 
         activeDialog = dialog
+        selectedImageUris.clear()
+
+        adjustDialogLayoutForScreenSize(dialog)
 
         val tvName = dialog.findViewById<TextView>(R.id.tvContactName)
         val tvTime = dialog.findViewById<TextView>(R.id.tvContactTime)
         val tvEmail = dialog.findViewById<TextView>(R.id.tvContactEmail)
         val edtSubject = dialog.findViewById<EditText>(R.id.edtContactSubject)
         val edtQuery = dialog.findViewById<EditText>(R.id.edtContactQuery)
-        val btnAddImage = dialog.findViewById<Button>(R.id.btnAddImage)
-        val imgPreview = dialog.findViewById<ImageView>(R.id.imgPreview)
         val btnSubmit = dialog.findViewById<Button>(R.id.btnContactSubmit)
         
-        btnAddImage.setOnClickListener {
-            imagePickerLauncher.launch("image/*")
-        }
+        updateDialogImageSlots()
 
         // Load User Data
         val prefs = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
@@ -129,41 +179,257 @@ class HelpActivity : ThemedActivity() {
             btnSubmit.isEnabled = false
             btnSubmit.text = "Submitting..."
 
-            if (selectedImageUri != null) {
-                btnSubmit.text = "Uploading Image..."
+            val uploadedUrls = mutableListOf<String>()
+            
+            fun uploadNext(index: Int) {
+                if (index >= selectedImageUris.size) {
+                    // All images uploaded!
+                    val primaryUrl = uploadedUrls.firstOrNull()
+                    submitQueryToFirestore(name, currentTime, email, subject, query, primaryUrl, uploadedUrls)
+                    dialog.dismiss()
+                    return
+                }
+
+                val uri = selectedImageUris[index]
+                btnSubmit.text = "Uploading Image ${index + 1}/${selectedImageUris.size}... 0%"
                 val storageRef = FirebaseStorage.getInstance().reference
-                val imageRef = storageRef.child("support_attachments/${System.currentTimeMillis()}.jpg")
-                imageRef.putFile(selectedImageUri!!)
+                val imageRef = storageRef.child("support_attachments/${System.currentTimeMillis()}_$index.jpg")
+                imageRef.putFile(uri)
                     .addOnProgressListener { taskSnapshot ->
                         val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
-                        btnSubmit.text = "Uploading Image... $progress%"
+                        btnSubmit.text = "Uploading Image ${index + 1}/${selectedImageUris.size}... $progress%"
                     }
                     .addOnSuccessListener {
-                        imageRef.downloadUrl.addOnSuccessListener { uri ->
-                            submitQueryToFirestore(name, currentTime, email, subject, query, uri.toString())
-                            dialog.dismiss()
+                        imageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                            uploadedUrls.add(downloadUri.toString())
+                            uploadNext(index + 1)
                         }
                     }
                     .addOnFailureListener { e ->
-                        ToastHelper.showToast(this@HelpActivity, "Failed to upload image: ${e.message}")
+                        ToastHelper.showToast(this@HelpActivity, "Failed to upload image ${index + 1}: ${e.message}")
                         btnSubmit.isEnabled = true
                         btnSubmit.text = "Submit"
                     }
+            }
+
+            if (selectedImageUris.isNotEmpty()) {
+                uploadNext(0)
             } else {
-                submitQueryToFirestore(name, currentTime, email, subject, query, null)
+                submitQueryToFirestore(name, currentTime, email, subject, query, null, emptyList())
                 dialog.dismiss()
             }
         }
         
         dialog.setOnDismissListener {
-            selectedImageUri = null
+            selectedImageUris.clear()
             activeDialog = null
         }
 
         dialog.show()
     }
 
-    private fun submitQueryToFirestore(name: String, time: String, email: String, subject: String, query: String, imageUrl: String?) {
+    private fun updateDialogImageSlots() {
+        val dialog = activeDialog ?: return
+        
+        val slotViews = listOf(
+            ImageSlotViews(
+                dialog.findViewById(R.id.slotImage1),
+                dialog.findViewById(R.id.frameImage1),
+                dialog.findViewById(R.id.imgPreview1),
+                dialog.findViewById(R.id.imgPlus1),
+                dialog.findViewById(R.id.btnTrash1),
+                dialog.findViewById(R.id.imgEye1),
+                dialog.findViewById(R.id.tvView1)
+            ),
+            ImageSlotViews(
+                dialog.findViewById(R.id.slotImage2),
+                dialog.findViewById(R.id.frameImage2),
+                dialog.findViewById(R.id.imgPreview2),
+                dialog.findViewById(R.id.imgPlus2),
+                dialog.findViewById(R.id.btnTrash2),
+                dialog.findViewById(R.id.imgEye2),
+                dialog.findViewById(R.id.tvView2)
+            ),
+            ImageSlotViews(
+                dialog.findViewById(R.id.slotImage3),
+                dialog.findViewById(R.id.frameImage3),
+                dialog.findViewById(R.id.imgPreview3),
+                dialog.findViewById(R.id.imgPlus3),
+                dialog.findViewById(R.id.btnTrash3),
+                dialog.findViewById(R.id.imgEye3),
+                dialog.findViewById(R.id.tvView3)
+            ),
+            ImageSlotViews(
+                dialog.findViewById(R.id.slotImage4),
+                dialog.findViewById(R.id.frameImage4),
+                dialog.findViewById(R.id.imgPreview4),
+                dialog.findViewById(R.id.imgPlus4),
+                dialog.findViewById(R.id.btnTrash4),
+                dialog.findViewById(R.id.imgEye4),
+                dialog.findViewById(R.id.tvView4)
+            )
+        )
+
+        for (i in 0..3) {
+            val views = slotViews[i]
+            if (i < selectedImageUris.size) {
+                views.slot.visibility = android.view.View.VISIBLE
+                views.preview.visibility = android.view.View.VISIBLE
+                views.preview.setImageURI(selectedImageUris[i])
+                views.preview.clipToOutline = true
+                views.frame.clipToOutline = true
+                views.plus.visibility = android.view.View.GONE
+                views.trash.visibility = android.view.View.VISIBLE
+                views.eye.visibility = android.view.View.VISIBLE
+                views.viewText.visibility = android.view.View.VISIBLE
+
+                views.trash.setOnClickListener {
+                    selectedImageUris.removeAt(i)
+                    updateDialogImageSlots()
+                }
+                views.frame.setOnClickListener {
+                    showFullscreenImagePreview(selectedImageUris[i])
+                }
+                views.eye.setOnClickListener {
+                    showFullscreenImagePreview(selectedImageUris[i])
+                }
+                views.viewText.setOnClickListener {
+                    showFullscreenImagePreview(selectedImageUris[i])
+                }
+            } else if (i == selectedImageUris.size) {
+                views.slot.visibility = android.view.View.VISIBLE
+                views.preview.visibility = android.view.View.GONE
+                views.plus.visibility = android.view.View.VISIBLE
+                views.trash.visibility = android.view.View.GONE
+                views.eye.visibility = android.view.View.GONE
+                views.viewText.visibility = android.view.View.GONE
+
+                views.frame.setOnClickListener {
+                    val galleryIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                        type = "image/*"
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                    }
+                    val cameraIntent = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
+                    val chooserIntent = Intent.createChooser(galleryIntent, "Select Image Source").apply {
+                        putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(cameraIntent))
+                    }
+                    pickerChooserLauncher.launch(chooserIntent)
+                }
+            } else {
+                views.slot.visibility = android.view.View.GONE
+            }
+        }
+    }
+
+    private fun showFullscreenImagePreview(uri: Uri) {
+        val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val container = FrameLayout(this)
+        container.layoutParams = ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
+
+        val imgView = com.github.chrisbanes.photoview.PhotoView(this)
+        imgView.layoutParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        )
+        imgView.scaleType = ImageView.ScaleType.FIT_CENTER
+        com.bumptech.glide.Glide.with(this).load(uri).into(imgView)
+
+        val closeBtn = ImageButton(this)
+        val btnParams = FrameLayout.LayoutParams(
+            (56 * resources.displayMetrics.density).toInt(),
+            (56 * resources.displayMetrics.density).toInt()
+        )
+        btnParams.gravity = android.view.Gravity.TOP or android.view.Gravity.END
+        btnParams.topMargin = (24 * resources.displayMetrics.density).toInt()
+        btnParams.marginEnd = (24 * resources.displayMetrics.density).toInt()
+        closeBtn.layoutParams = btnParams
+
+        val glassBg = android.graphics.drawable.GradientDrawable()
+        glassBg.shape = android.graphics.drawable.GradientDrawable.OVAL
+        glassBg.setColor(Color.parseColor("#66000000"))
+        glassBg.setStroke(3, Color.parseColor("#80FFFFFF"))
+        closeBtn.background = glassBg
+
+        closeBtn.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+        closeBtn.setColorFilter(Color.RED)
+        closeBtn.scaleType = ImageView.ScaleType.FIT_CENTER
+        val padding = (14 * resources.displayMetrics.density).toInt()
+        closeBtn.setPadding(padding, padding, padding, padding)
+
+        closeBtn.setOnClickListener { dialog.dismiss() }
+
+        container.addView(imgView)
+        container.addView(closeBtn)
+
+        dialog.setContentView(container)
+        dialog.show()
+    }
+
+    private fun adjustDialogLayoutForScreenSize(dialog: Dialog) {
+        val displayMetrics = resources.displayMetrics
+        val density = displayMetrics.density
+        val screenHeightPx = displayMetrics.heightPixels
+        val screenHeightDp = screenHeightPx / density
+
+        val rootLayout = dialog.findViewById<LinearLayout>(R.id.dialogRootLayout)
+        val tvTitle = dialog.findViewById<TextView>(R.id.tvContactTitle)
+        val tvName = dialog.findViewById<TextView>(R.id.tvContactName)
+        val tvTime = dialog.findViewById<TextView>(R.id.tvContactTime)
+        val tvEmail = dialog.findViewById<TextView>(R.id.tvContactEmail)
+        val edtSubject = dialog.findViewById<EditText>(R.id.edtContactSubject)
+        val edtQuery = dialog.findViewById<EditText>(R.id.edtContactQuery)
+        val tvAddImagesHeader = dialog.findViewById<TextView>(R.id.tvAddImagesHeader)
+        val layoutImagesContainer = dialog.findViewById<LinearLayout>(R.id.layoutImagesContainer)
+        val btnSubmit = dialog.findViewById<Button>(R.id.btnContactSubmit)
+
+        // Set dimensions based on screen height to prevent scrollbars and overflow
+        val dims = when {
+            screenHeightDp < 600 -> {
+                DialogDimensions(12, 38, 6, 75, 45, 6, 12, 12f, 16f, 18)
+            }
+            screenHeightDp < 720 -> {
+                DialogDimensions(16, 44, 8, 90, 50, 8, 16, 13f, 18f, 24)
+            }
+            else -> {
+                DialogDimensions(22, 52, 10, 115, 55, 10, 22, 14f, 20f, 35)
+            }
+        }
+
+        // Apply margins/paddings
+        val padPx = (dims.padding * density).toInt()
+        rootLayout?.setPadding(padPx, padPx, padPx, padPx)
+
+        fun applyParams(view: android.view.View?, height: Int, bottomMargin: Int) {
+            val params = view?.layoutParams as? ViewGroup.MarginLayoutParams ?: return
+            params.height = if (height >= 0) (height * density).toInt() else height
+            params.bottomMargin = (bottomMargin * density).toInt()
+            view.layoutParams = params
+        }
+
+        applyParams(tvTitle, ViewGroup.LayoutParams.WRAP_CONTENT, dims.titleMargin)
+        applyParams(tvName, dims.fieldHeight, dims.fieldMargin)
+        applyParams(tvTime, dims.fieldHeight, dims.fieldMargin)
+        applyParams(tvEmail, dims.fieldHeight, dims.fieldMargin)
+        applyParams(edtSubject, dims.fieldHeight, dims.fieldMargin)
+        applyParams(edtQuery, dims.queryHeight, dims.fieldMargin)
+        applyParams(tvAddImagesHeader, ViewGroup.LayoutParams.WRAP_CONTENT, dims.headerMargin)
+        applyParams(layoutImagesContainer, ViewGroup.LayoutParams.WRAP_CONTENT, dims.imagesBottomMargin)
+        applyParams(btnSubmit, dims.submitHeight, 0)
+
+        // Apply text sizes
+        tvTitle?.textSize = dims.textTitleSize
+        tvName?.textSize = dims.textBodySize
+        tvTime?.textSize = dims.textBodySize
+        tvEmail?.textSize = dims.textBodySize
+        edtSubject?.textSize = dims.textBodySize
+        edtQuery?.textSize = dims.textBodySize
+        tvAddImagesHeader?.textSize = dims.textBodySize
+    }
+
+    private fun submitQueryToFirestore(name: String, time: String, email: String, subject: String, query: String, imageUrl: String?, imageUrls: List<String>) {
         val user = FirebaseAuth.getInstance().currentUser ?: return
 
         val timestamp = System.currentTimeMillis()
@@ -187,6 +453,9 @@ class HelpActivity : ThemedActivity() {
         if (imageUrl != null) {
             notificationData["imageUrl"] = imageUrl
         }
+        if (imageUrls.isNotEmpty()) {
+            notificationData["imageUrls"] = imageUrls
+        }
         // Use the explicit timestamp as the document ID so the backend can update it on reply
         val userEmail = user.email ?: getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).getString("user_email", null) ?: return
         
@@ -203,7 +472,7 @@ class HelpActivity : ThemedActivity() {
 
         // 🚀 ASYNC DIRECT WEBHOOK INJECTION:
         // Parallel direct push to circumvent Firestore trigger cold-starts and send instant email!
-        triggerImmediateWebhook(user.uid, name, userEmail, time, subject, query, timestamp, imageUrl)
+        triggerImmediateWebhook(user.uid, name, userEmail, time, subject, query, timestamp, imageUrl, imageUrls)
     }
 
     private fun setupNotificationListener(badge: android.view.View) {
@@ -211,10 +480,18 @@ class HelpActivity : ThemedActivity() {
         val email = user.email ?: getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).getString("user_email", null) ?: return
         val db = FirebaseFirestore.getInstance()
 
-        db.collection("users").document(email).collection("notifications")
+        var hasUnreadReply = false
+        var hasUnreadAnnouncement = false
+
+        fun updateBadgeVisibility() {
+            badge.visibility = if (hasUnreadReply || hasUnreadAnnouncement) android.view.View.VISIBLE else android.view.View.GONE
+        }
+
+        queriesListener?.remove()
+        queriesListener = db.collection("users").document(email).collection("notifications")
             .whereEqualTo("read", false)
             .addSnapshotListener { snapshot, _ ->
-                var hasUnreadReply = false
+                hasUnreadReply = false
                 if (snapshot != null) {
                     for (doc in snapshot.documents) {
                         val reply = doc.getString("reply")?.trim()
@@ -224,11 +501,47 @@ class HelpActivity : ThemedActivity() {
                         }
                     }
                 }
-                badge.visibility = if (hasUnreadReply) android.view.View.VISIBLE else android.view.View.GONE
+                updateBadgeVisibility()
+            }
+
+        val adminEmails = listOf("mohamedaufin64@gmail.com", "arunbhalaji200904@gmail.com")
+        val isAdmin = adminEmails.contains(email.lowercase())
+
+        announcementsListener?.remove()
+        announcementsListener = db.collection("announcements")
+            .addSnapshotListener { snapshot, _ ->
+                hasUnreadAnnouncement = false
+                if (snapshot != null) {
+                    val deletedPrefs = getSharedPreferences("DeletedAnnouncements", Context.MODE_PRIVATE)
+                    val readPrefs = getSharedPreferences("ReadAnnouncements", Context.MODE_PRIVATE)
+                    for (doc in snapshot.documents) {
+                        val id = doc.id
+                        if (deletedPrefs.contains(id) || readPrefs.contains(id)) {
+                            continue
+                        }
+                        val adminOnly = doc.getBoolean("adminOnly") ?: false
+                        if (adminOnly && !isAdmin) {
+                            continue
+                        }
+                        hasUnreadAnnouncement = true
+                        break
+                    }
+                }
+                updateBadgeVisibility()
             }
     }
 
-    private fun triggerImmediateWebhook(uid: String, name: String, email: String, time: String, subject: String, query: String, timestamp: Long, imageUrl: String?) {
+    private fun triggerImmediateWebhook(
+        uid: String,
+        name: String,
+        email: String,
+        time: String,
+        subject: String,
+        query: String,
+        timestamp: Long,
+        imageUrl: String?,
+        imageUrls: List<String>
+    ) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val webhookUrl = "https://cashdashwebhook-khhfw7mtba-uc.a.run.app"
@@ -249,6 +562,9 @@ class HelpActivity : ThemedActivity() {
                     put("timestamp", timestamp)
                     if (imageUrl != null) {
                         put("imageUrl", imageUrl)
+                    }
+                    if (imageUrls.isNotEmpty()) {
+                        put("imageUrls", org.json.JSONArray(imageUrls))
                     }
                 }
 

@@ -709,10 +709,16 @@ class HomeFragment : Fragment() {
         }
 
         // Show Prominent Disclosure Dialog
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+        AlertDialogHelper.createFlatDialogBuilder(requireContext())
             .setTitle("Data Collection Disclosure")
             .setMessage("CashDash collects data about which apps you open to detect when you are using supported shopping applications. This enables the Taptrack widget to appear automatically while you shop. This data is kept strictly on your device and never shared.")
-            .setPositiveButton("I Agree") { _, _ ->
+            .setTitleGravity(android.view.Gravity.CENTER)
+            .setMessageGravity(android.view.Gravity.START)
+            .setTitleTextSize(16f)
+            .setMessageTextSize(14f)
+            .setTitleTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL))
+            .setPositiveTextColor(android.graphics.Color.WHITE)
+            .setPositiveButton("I Agree") {
                 val prefs = requireContext().getSharedPreferences("SmartAssistantPrefs", android.content.Context.MODE_PRIVATE)
                 prefs.edit().putBoolean("tracking_enabled", true).apply()
                 
@@ -723,8 +729,8 @@ class HomeFragment : Fragment() {
                     ToastHelper.showCustomToast(requireContext(), "Unable to open usage settings.", 2000L)
                 }
             }
-            .setNegativeButton("Cancel") { dialog, _ ->
-                dialog.dismiss()
+            .setNegativeButton("Cancel") {
+                // Dimissed automatically
             }
             .setCancelable(false)
             .show()

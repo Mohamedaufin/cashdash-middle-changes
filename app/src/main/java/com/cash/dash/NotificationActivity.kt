@@ -27,6 +27,7 @@ class NotificationActivity : ThemedActivity() {
     private var currentFilter = "all" // "all", "responded", "pending"
     private lateinit var adapter: NotificationAdapter
     private var notificationListener: com.google.firebase.firestore.ListenerRegistration? = null
+    private var hasScrolledToUnread = false
 
     override fun onDestroy() {
         super.onDestroy()
@@ -41,7 +42,6 @@ class NotificationActivity : ThemedActivity() {
         setupRecyclerView()
         setupFilters()
         
-        markAllAsRead()
         loadNotifications()
     }
 
@@ -84,6 +84,8 @@ class NotificationActivity : ThemedActivity() {
         val user = FirebaseAuth.getInstance().currentUser ?: return
         val email = user.email ?: return
         val db = FirebaseFirestore.getInstance()
+        
+        // 1. Mark user support queries as read in Firestore and Room
         db.collection("users").document(email).collection("notifications")
             .whereEqualTo("read", false)
             .get()
@@ -100,6 +102,26 @@ class NotificationActivity : ThemedActivity() {
                     }
                 }
             }
+
+        // 2. Mark announcements as read locally
+        db.collection("announcements")
+            .get()
+            .addOnSuccessListener { adminDocs ->
+                val readPrefs = getSharedPreferences("ReadAnnouncements", MODE_PRIVATE)
+                val editor = readPrefs.edit()
+                for (doc in adminDocs) {
+                    editor.putBoolean(doc.id, true)
+                }
+                editor.apply()
+
+                // Sync to Room so they persist as read locally
+                CoroutineScope(Dispatchers.IO).launch {
+                    val dao = AppDatabase.getDatabase(this@NotificationActivity).notificationDao()
+                    for (doc in adminDocs) {
+                        dao.updateReadStatus(doc.id, true)
+                    }
+                }
+            }
     }
 
     private fun loadNotifications() {
@@ -112,17 +134,36 @@ class NotificationActivity : ThemedActivity() {
         db.collection("announcements")
             .get()
             .addOnSuccessListener { adminDocs ->
-                rawAnnouncements = adminDocs.map { doc ->
-                    NotificationEntity(
-                        id = doc.id,
-                        subject = doc.getString("subject") ?: "Announcement",
-                        query = doc.getString("query") ?: "No query",
-                        reply = doc.getString("reply") ?: "[ANNOUNCEMENT]",
-                        timestamp = doc.getLong("timestamp") ?: 0L,
-                        status = "resolved",
-                        read = doc.getBoolean("read") ?: true,
-                        imageUrl = doc.getString("imageUrl")
-                    )
+                val user = FirebaseAuth.getInstance().currentUser
+                val email = user?.email?.lowercase() ?: ""
+                val adminEmails = listOf("mohamedaufin64@gmail.com", "arunbhalaji200904@gmail.com")
+                val isAdmin = adminEmails.contains(email)
+
+                val deletedPrefs = getSharedPreferences("DeletedAnnouncements", MODE_PRIVATE)
+                val readAnnPrefs = getSharedPreferences("ReadAnnouncements", MODE_PRIVATE)
+
+                rawAnnouncements = adminDocs.mapNotNull { doc ->
+                    if (deletedPrefs.contains(doc.id)) {
+                        null
+                    } else {
+                        val adminOnly = doc.getBoolean("adminOnly") ?: false
+                        if (adminOnly && !isAdmin) {
+                            null
+                        } else {
+                            val isRead = readAnnPrefs.contains(doc.id)
+                            NotificationEntity(
+                                id = doc.id,
+                                subject = doc.getString("subject") ?: "Announcement",
+                                query = doc.getString("query") ?: "No query",
+                                reply = doc.getString("reply") ?: "[ANNOUNCEMENT]",
+                                timestamp = doc.getLong("timestamp") ?: 0L,
+                                status = "resolved",
+                                read = isRead,
+                                imageUrl = doc.getString("imageUrl"),
+                                imageUrls = (doc.get("imageUrls") as? List<*>)?.mapNotNull { it as? String }?.let { org.json.JSONArray(it).toString() }
+                            )
+                        }
+                    }
                 }
                 listenToUserNotifications()
             }
@@ -195,7 +236,8 @@ class NotificationActivity : ThemedActivity() {
                             timestamp = doc.getLong("timestamp") ?: 0L,
                             status = doc.getString("status") ?: "",
                             read = doc.getBoolean("read") ?: true,
-                            imageUrl = doc.getString("imageUrl")
+                            imageUrl = doc.getString("imageUrl"),
+                            imageUrls = (doc.get("imageUrls") as? List<*>)?.mapNotNull { it as? String }?.let { org.json.JSONArray(it).toString() }
                         )
                     }
                     
@@ -227,7 +269,29 @@ class NotificationActivity : ThemedActivity() {
         CoroutineScope(Dispatchers.IO).launch {
             val db = AppDatabase.getDatabase(this@NotificationActivity)
             val entities = db.notificationDao().getAll()
-            val models = mapEntitiesToModels(entities)
+            
+            val deletedPrefs = getSharedPreferences("DeletedAnnouncements", MODE_PRIVATE)
+            val readAnnPrefs = getSharedPreferences("ReadAnnouncements", MODE_PRIVATE)
+            
+            val user = FirebaseAuth.getInstance().currentUser
+            val email = user?.email?.lowercase() ?: ""
+            val adminEmails = listOf("mohamedaufin64@gmail.com", "arunbhalaji200904@gmail.com")
+            val isAdmin = adminEmails.contains(email)
+
+            val filteredEntities = entities.filter { !deletedPrefs.contains(it.id) }.mapNotNull { entity ->
+                if (entity.reply == "[ANNOUNCEMENT]") {
+                    val isSubjectAdminOnly = entity.subject.startsWith("🛡️ [Admin Only]")
+                    if (isSubjectAdminOnly && !isAdmin) {
+                        null
+                    } else {
+                        entity.copy(read = readAnnPrefs.contains(entity.id))
+                    }
+                } else {
+                    entity
+                }
+            }
+            
+            val models = mapEntitiesToModels(filteredEntities)
             
             withContext(Dispatchers.Main) {
                 allNotifications = models
@@ -265,29 +329,45 @@ class NotificationActivity : ThemedActivity() {
             }
 
             val isPending = (reply == "Waiting for reply...")
+            val isAnnouncement = (reply == "[ANNOUNCEMENT]")
             val queryTitle = when {
+                isAnnouncement -> "ANNOUNCEMENT"
                 isResolved -> "Query resolved"
                 isPending -> "Waiting for response"
                 else -> "Query responded"
             }
 
             val color = Color.parseColor(when {
+                isAnnouncement -> colorTeam
                 isResolved -> "#606880"
                 isPending -> colorPending
                 else -> colorTeam
             })
 
-            val displayQuery = query
-                .replace("User Reply \\(\\d+\\):".toRegex(), userFormat)
-                .replace("User:".toRegex(), userFormat)
-                .replace("$userName:".toRegex(), userFormat)
-                .replace("Team Cashdash:".toRegex(), "<font color='$colorTeam'><b>Team Cashdash:</b></font>")
-                .replace("\n", "<br>")
+            val displayQuery = if (isAnnouncement) {
+                query.replace("\n", "<br>")
+            } else {
+                query
+                    .replace("User Reply \\(\\d+\\):".toRegex(), userFormat)
+                    .replace("User:".toRegex(), userFormat)
+                    .replace("$userName:".toRegex(), userFormat)
+                    .replace("Team Cashdash:".toRegex(), "<font color='$colorTeam'><b>Team Cashdash:</b></font>")
+                    .replace("\n", "<br>")
+            }
 
             NotificationModel(
                 id = entity.id,
-                queryFormatted = android.text.Html.fromHtml("<b>Subject:</b> $subject<br><b>Question:</b> $displayQuery", android.text.Html.FROM_HTML_MODE_LEGACY),
-                replyFormatted = if (isPending) null else android.text.Html.fromHtml("<font color='$colorTeam'><b>Response</b></font><br><font color='$colorContent'>${reply.replace("\n", "<br>")}</font>", android.text.Html.FROM_HTML_MODE_LEGACY),
+                queryFormatted = if (isAnnouncement) {
+                    val cleanSubject = subject
+                        .replace("🛡️ [Admin Only] ", "")
+                        .replace("[Admin Only] ", "")
+                        .replace("📣 ", "")
+                        .trim()
+                    android.text.Html.fromHtml("<b>Title:</b> $cleanSubject<br><br>${displayQuery}", android.text.Html.FROM_HTML_MODE_LEGACY)
+                } else {
+                    android.text.Html.fromHtml("<b>Subject:</b> $subject<br><b>Question:</b> $displayQuery", android.text.Html.FROM_HTML_MODE_LEGACY)
+                },
+                replyFormatted = if (isPending || isAnnouncement) null else android.text.Html.fromHtml("<font color='$colorTeam'><b>Response</b></font><br><font color='$colorContent'>${reply.replace("\n", "<br>")}</font>", android.text.Html.FROM_HTML_MODE_LEGACY),
                 timestamp = ts,
                 title = queryTitle,
                 timeFormatted = if (ts > 0) sdf.format(Date(ts)) else "",
@@ -298,7 +378,11 @@ class NotificationActivity : ThemedActivity() {
                 originalSubject = subject,
                 originalQuery = query,
                 originalReply = reply,
-                imageUrl = entity.imageUrl
+                imageUrl = entity.imageUrl,
+                imageUrls = entity.imageUrls?.let {
+                    try { val arr = org.json.JSONArray(it); (0 until arr.length()).map { i -> arr.getString(i) } }
+                    catch (e: Exception) { emptyList() }
+                } ?: emptyList()
             )
         }
     }
@@ -333,6 +417,17 @@ class NotificationActivity : ThemedActivity() {
             tvEmpty.visibility = View.GONE
             rv.visibility = View.VISIBLE
             adapter.updateList(filteredNotifications)
+
+            if (!hasScrolledToUnread) {
+                hasScrolledToUnread = true
+                val firstUnreadIndex = filteredNotifications.indexOfFirst { it.isUnread }
+                if (firstUnreadIndex != -1) {
+                    rv.post {
+                        rv.scrollToPosition(firstUnreadIndex)
+                    }
+                }
+                markAllAsRead()
+            }
         }
     }
 
@@ -420,9 +515,14 @@ class NotificationActivity : ThemedActivity() {
 
                 applyFilter() // Redraws RecyclerView instantaneously
                 
-                // Process the deletion with Firestore sequentially
-                FirebaseFirestore.getInstance().collection("users").document(email)
-                    .collection("notifications").document(model.id).delete()
+                // Process the deletion with Firestore/SharedPreferences sequentially
+                if (model.originalReply == "[ANNOUNCEMENT]") {
+                    val prefs = getSharedPreferences("DeletedAnnouncements", MODE_PRIVATE)
+                    prefs.edit().putBoolean(model.id, true).apply()
+                } else {
+                    FirebaseFirestore.getInstance().collection("users").document(email)
+                        .collection("notifications").document(model.id).delete()
+                }
             }
             btnContainer.addView(this)
         }
@@ -454,11 +554,24 @@ class NotificationActivity : ThemedActivity() {
             // Reset view state (crucial for Cancel or recycling)
             holder.itemView.translationX = 0f
             holder.itemView.alpha = 1f
-            holder.tvTitle.text = item.title
-            holder.tvTitle.setTextColor(item.statusColor)
             holder.viewAccentBar.setBackgroundColor(item.statusColor)
-            holder.tvQuery.text = item.queryFormatted
             holder.tvTime.text = item.timeFormatted
+
+            if (item.originalReply == "[ANNOUNCEMENT]") {
+                val cleanSubject = item.originalSubject.replace("🛡️ [Admin Only] ", "").replace("📣 ", "")
+                val isWhite = ThemeHelper.isWhiteTheme(this@NotificationActivity)
+                val colorTeam = if (isWhite) "#008000" else "#4ADE80"
+                val colorPrimary = ThemeHelper.resolveColorAttr(holder.itemView.context, R.attr.textPrimaryColor)
+                val colorTitle = String.format("#%06X", 0xFFFFFF and colorPrimary)
+
+                val titleHtml = "<font color='$colorTeam'><b>ANNOUNCEMENT</b></font>"
+                holder.tvTitle.text = android.text.Html.fromHtml(titleHtml, android.text.Html.FROM_HTML_MODE_LEGACY)
+                holder.tvQuery.text = item.queryFormatted
+            } else {
+                holder.tvTitle.text = item.title
+                holder.tvTitle.setTextColor(item.statusColor)
+                holder.tvQuery.text = item.queryFormatted
+            }
 
             // 🔥 Eliminate smudge glow in Blue Theme explicitly
             if (ThemeHelper.getCurrentTheme(this@NotificationActivity) == "Blue") {
@@ -476,67 +589,106 @@ class NotificationActivity : ThemedActivity() {
                 holder.tvReply.visibility = View.GONE
             }
 
-            if (item.imageUrl != null) {
+            // Collect all attachment URLs: merge imageUrls list + legacy single imageUrl
+            val allUrls = item.imageUrls.toMutableList()
+            if (item.imageUrl != null && !allUrls.contains(item.imageUrl)) allUrls.add(0, item.imageUrl)
+
+            if (allUrls.isNotEmpty()) {
                 holder.tvAttachmentLabel.visibility = View.VISIBLE
-                holder.imgAttachment.visibility = View.VISIBLE
-                com.bumptech.glide.Glide.with(holder.itemView.context)
-                    .load(item.imageUrl)
-                    .into(holder.imgAttachment)
-                
-                holder.imgAttachment.setOnClickListener {
-                    val dialog = android.app.Dialog(this@NotificationActivity, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
-                    
-                    val container = android.widget.FrameLayout(this@NotificationActivity)
-                    container.layoutParams = android.view.ViewGroup.LayoutParams(
-                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
-                    )
+                holder.layoutAttachments.visibility = View.VISIBLE
+                holder.layoutAttachments.removeAllViews()
 
-                    val imgView = com.github.chrisbanes.photoview.PhotoView(this@NotificationActivity)
-                    imgView.layoutParams = android.widget.FrameLayout.LayoutParams(
-                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-                    imgView.scaleType = ImageView.ScaleType.FIT_CENTER
-                    com.bumptech.glide.Glide.with(this@NotificationActivity).load(item.imageUrl).into(imgView)
+                val density = holder.itemView.context.resources.displayMetrics.density
+                // Card size: 110dp × 160dp reduced by 15% → 94dp × 136dp
+                val cardW = (94 * density).toInt()
+                val cardH = (136 * density).toInt()
+                val gap = (8 * density).toInt()
+                val rowGap = (8 * density).toInt()
 
-                    val closeBtn = ImageButton(this@NotificationActivity)
-                    val btnParams = android.widget.FrameLayout.LayoutParams(
-                        (56 * resources.displayMetrics.density).toInt(),
-                        (56 * resources.displayMetrics.density).toInt()
-                    )
-                    btnParams.gravity = android.view.Gravity.TOP or android.view.Gravity.END
-                    btnParams.topMargin = (24 * resources.displayMetrics.density).toInt()
-                    btnParams.marginEnd = (24 * resources.displayMetrics.density).toInt()
-                    closeBtn.layoutParams = btnParams
-                    
-                    val glassBg = android.graphics.drawable.GradientDrawable()
-                    glassBg.shape = android.graphics.drawable.GradientDrawable.OVAL
-                    glassBg.setColor(android.graphics.Color.parseColor("#66000000")) // Translucent dark
-                    glassBg.setStroke(3, android.graphics.Color.parseColor("#80FFFFFF")) // Translucent white border
-                    closeBtn.background = glassBg
-                    
-                    closeBtn.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-                    closeBtn.setColorFilter(android.graphics.Color.RED)
-                    closeBtn.scaleType = ImageView.ScaleType.FIT_CENTER
-                    val padding = (14 * resources.displayMetrics.density).toInt()
-                    closeBtn.setPadding(padding, padding, padding, padding)
-                    
-                    closeBtn.setOnClickListener { dialog.dismiss() }
+                fun makeCard(url: String): androidx.cardview.widget.CardView {
+                    val card = androidx.cardview.widget.CardView(holder.itemView.context).apply {
+                        radius = (8 * density)
+                        cardElevation = 0f
+                        setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
+                        tag = "attachment_card"  // ← exclude from swipe listener
+                        layoutParams = android.widget.LinearLayout.LayoutParams(cardW, cardH).apply {
+                            setMargins(0, 0, gap, 0)
+                        }
+                    }
+                    val imgView = ImageView(holder.itemView.context).apply {
+                        scaleType = ImageView.ScaleType.CENTER_CROP
+                        layoutParams = android.view.ViewGroup.LayoutParams(
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                        )
+                    }
+                    com.bumptech.glide.Glide.with(holder.itemView.context).load(url).into(imgView)
+                    card.addView(imgView)
+                    card.setOnClickListener {
+                        val dialog = android.app.Dialog(this@NotificationActivity, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+                        val container = android.widget.FrameLayout(this@NotificationActivity)
+                        container.layoutParams = android.view.ViewGroup.LayoutParams(
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                        )
+                        val fullImg = com.github.chrisbanes.photoview.PhotoView(this@NotificationActivity)
+                        fullImg.layoutParams = android.widget.FrameLayout.LayoutParams(
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                        )
+                        fullImg.scaleType = ImageView.ScaleType.FIT_CENTER
+                        com.bumptech.glide.Glide.with(this@NotificationActivity).load(url).into(fullImg)
+                        val closeBtn = ImageButton(this@NotificationActivity)
+                        val btnParams = android.widget.FrameLayout.LayoutParams(
+                            (56 * resources.displayMetrics.density).toInt(),
+                            (56 * resources.displayMetrics.density).toInt()
+                        )
+                        btnParams.gravity = android.view.Gravity.TOP or android.view.Gravity.END
+                        btnParams.topMargin = (24 * resources.displayMetrics.density).toInt()
+                        btnParams.marginEnd = (24 * resources.displayMetrics.density).toInt()
+                        closeBtn.layoutParams = btnParams
+                        val glassBg = android.graphics.drawable.GradientDrawable()
+                        glassBg.shape = android.graphics.drawable.GradientDrawable.OVAL
+                        glassBg.setColor(android.graphics.Color.parseColor("#66000000"))
+                        glassBg.setStroke(3, android.graphics.Color.parseColor("#80FFFFFF"))
+                        closeBtn.background = glassBg
+                        closeBtn.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+                        closeBtn.setColorFilter(android.graphics.Color.RED)
+                        closeBtn.scaleType = ImageView.ScaleType.FIT_CENTER
+                        val p = (14 * resources.displayMetrics.density).toInt()
+                        closeBtn.setPadding(p, p, p, p)
+                        closeBtn.setOnClickListener { dialog.dismiss() }
+                        container.addView(fullImg)
+                        container.addView(closeBtn)
+                        dialog.setContentView(container)
+                        dialog.show()
+                    }
+                    return card
+                }
 
-                    container.addView(imgView)
-                    container.addView(closeBtn)
-
-                    dialog.setContentView(container)
-                    dialog.show()
+                // Build 2-per-row grid
+                val chunks = allUrls.chunked(2)
+                for ((rowIdx, chunk) in chunks.withIndex()) {
+                    val row = android.widget.LinearLayout(holder.itemView.context).apply {
+                        orientation = android.widget.LinearLayout.HORIZONTAL
+                        layoutParams = android.widget.LinearLayout.LayoutParams(
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                        ).apply { if (rowIdx > 0) topMargin = rowGap }
+                    }
+                    for (url in chunk) row.addView(makeCard(url))
+                    holder.layoutAttachments.addView(row)
                 }
             } else {
                 holder.tvAttachmentLabel.visibility = View.GONE
-                holder.imgAttachment.visibility = View.GONE
+                holder.layoutAttachments.visibility = View.GONE
             }
 
             // Status & Action Visibility Logic
-            if (item.isResolved) {
+            if (item.originalReply == "[ANNOUNCEMENT]") {
+                holder.layoutReplyBox.visibility = View.GONE
+                holder.tvResolvedStatus.visibility = View.GONE
+            } else if (item.isResolved) {
                 holder.layoutReplyBox.visibility = View.GONE
                 holder.tvResolvedStatus.visibility = View.VISIBLE
             } else {
@@ -581,7 +733,7 @@ class NotificationActivity : ThemedActivity() {
                         isSwiping = false
                         // If it's the root item, claim the touch stream so we get MOVE events
                         // If it's a child button/input, return false to let it handle its own click stream
-                        v == holder.itemView || (v !is EditText && v !is Button && v !is ImageButton && v.id != R.id.imgNotificationAttachment)
+                        v == holder.itemView || (v !is EditText && v !is Button && v !is ImageButton)
                     }
                     android.view.MotionEvent.ACTION_MOVE -> {
                         val dX = event.rawX - startRawX
@@ -755,6 +907,8 @@ class NotificationActivity : ThemedActivity() {
 
 
         private fun applySwipeRecursively(view: View, listener: View.OnTouchListener) {
+            // Skip attachment cards and their children — they need their own click listeners
+            if (view.tag == "attachment_card") return
             view.setOnTouchListener(listener)
             if (view is android.view.ViewGroup) {
                 for (i in 0 until view.childCount) {
@@ -776,7 +930,7 @@ class NotificationActivity : ThemedActivity() {
             val btnSendReply = v.findViewById<ImageButton>(R.id.btnSendReply)
             val tvResolvedStatus = v.findViewById<TextView>(R.id.tvResolvedStatus)
             val tvAttachmentLabel = v.findViewById<TextView>(R.id.tvAttachmentLabel)
-            val imgAttachment = v.findViewById<ImageView>(R.id.imgNotificationAttachment)
+            val layoutAttachments = v.findViewById<android.widget.LinearLayout>(R.id.layoutAttachments)
         }
     }
 }

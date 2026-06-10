@@ -262,4 +262,13 @@
     <style name="DatePickerButtonWhite" parent="Widget.Material3.Button.TextButton">
         <item name="android:textColor">#1A1A1A</item>
     </style>
+
+    <style name="DatePickerThemeDark" parent="ThemeOverlay.Material3.Dialog">
+        <item name="android:buttonBarPositiveButtonStyle">@style/DatePickerButtonDark</item>
+        <item name="android:buttonBarNegativeButtonStyle">@style/DatePickerButtonDark</item>
+    </style>
+
+    <style name="DatePickerButtonDark" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">#FFFFFF</item>
+    </style>
 </resources>

@@ -16,5 +16,6 @@ data class NotificationModel(
     val originalSubject: String = "",
     val originalQuery: String = "",
     val originalReply: String = "",
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val imageUrls: List<String> = emptyList()
 )

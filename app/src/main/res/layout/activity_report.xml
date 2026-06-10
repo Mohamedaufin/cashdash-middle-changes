@@ -110,7 +110,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="18dp"
+            android:layout_marginBottom="18dp"
             android:visibility="gone">
 
             <LinearLayout
@@ -126,7 +127,7 @@
                     android:text="Start Date"
                     android:textColor="?attr/textMutedColor"
                     android:textSize="12sp"
-                    android:layout_marginBottom="4dp"
+                    android:layout_marginBottom="8dp"
                     android:layout_marginStart="4dp"/>
                 
                 <androidx.appcompat.widget.AppCompatButton
@@ -154,7 +155,7 @@
                     android:text="End Date"
                     android:textColor="?attr/textMutedColor"
                     android:textSize="12sp"
-                    android:layout_marginBottom="4dp"
+                    android:layout_marginBottom="8dp"
                     android:layout_marginStart="4dp"/>
                 
                 <androidx.appcompat.widget.AppCompatButton

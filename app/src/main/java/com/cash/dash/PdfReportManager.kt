@@ -132,8 +132,8 @@ object PdfReportManager {
 
     suspend fun generateStandaloneStatement(context: Context, startMillis: Long, endMillis: Long, categoryFilter: String = "Overall") = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val breakdown = HistoryDataManager.getCategoryBreakdownForRange(context, startMillis, endMillis, categoryFilter)
-        // Ascending to descending order (newest first as per common usage, or sort descending by timestamp)
-        val transactions = breakdown.transactions.sortedByDescending { entry ->
+        // Ascending order (oldest first, then descending per transaction within that)
+        val transactions = breakdown.transactions.sortedBy { entry ->
             val p = entry.rawEntry.split("|")
             if (p.size >= 2) p[1].toLongOrNull() ?: 0L else 0L
         }
@@ -149,58 +149,114 @@ object PdfReportManager {
         var page = document.startPage(pageInfo)
         var canvas = page.canvas
 
-        val paint = Paint().apply { isAntiAlias = true; color = Color.BLACK }
-        val linePaint = Paint().apply { color = Color.parseColor("#CCCCCC"); strokeWidth = 1f }
-        val boxPaint = Paint().apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = 1.5f }
+        val normalFont = Typeface.create("sans-serif", Typeface.NORMAL)
+        val boldFont = Typeface.create("sans-serif", Typeface.BOLD)
+
+        val paint = Paint().apply { isAntiAlias = true; color = Color.BLACK; typeface = normalFont }
+        val linePaint = Paint().apply { color = Color.parseColor("#CCCCCC"); strokeWidth = 1f; isAntiAlias = true }
+        val boxPaint = Paint().apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = 1.2f; isAntiAlias = true }
 
         fun drawHeaderAndMid() {
-            // White background
+            // Full white background
             canvas.drawColor(Color.WHITE)
-            
-            // Logo
-            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            paint.textSize = 28f
-            canvas.drawText("CashDash", 40f, 60f, paint)
 
-            paint.typeface = Typeface.DEFAULT
-            paint.textSize = 12f
-            canvas.drawText("Name: ${userName.uppercase(Locale.getDefault())}", 40f, 90f, paint)
-            canvas.drawText("Registered email address: ${userEmail.lowercase(Locale.getDefault())}", 40f, 110f, paint)
+            // Silky white header box — no border, just a soft fill
+            val headerFill = Paint().apply { color = Color.parseColor("#F7F7F9"); style = Paint.Style.FILL; isAntiAlias = true }
+            canvas.drawRect(0f, 0f, 595f, 80f, headerFill)
 
-            canvas.drawText("Mobile No: $userPhone", 350f, 90f, paint)
+            // Logo — high resolution for crispness
+            try {
+                val drawable = androidx.core.content.ContextCompat.getDrawable(context, R.mipmap.ic_launcher)
+                if (drawable != null) {
+                    val hiResSize = 256
+                    val bitmap = android.graphics.Bitmap.createBitmap(hiResSize, hiResSize, android.graphics.Bitmap.Config.ARGB_8888)
+                    val bmpCanvas = android.graphics.Canvas(bitmap)
+                    
+                    // Force a perfect circle clip to remove any adaptive icon background square corners
+                    val path = android.graphics.Path()
+                    path.addCircle(hiResSize / 2f, hiResSize / 2f, hiResSize / 2f, android.graphics.Path.Direction.CW)
+                    bmpCanvas.clipPath(path)
+                    
+                    // Scale the canvas up slightly so the adaptive icon's flat bounds are pushed outside the circle clip
+                    bmpCanvas.scale(1.15f, 1.15f, hiResSize / 2f, hiResSize / 2f)
+                    
+                    drawable.setBounds(0, 0, hiResSize, hiResSize)
+                    drawable.draw(bmpCanvas)
+                    val logoPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+                    val destRect = android.graphics.RectF(30f, 18f, 70f, 58f) // 40x40 square for perfect circle
+                    canvas.drawBitmap(bitmap, null, destRect, logoPaint)
+                }
+            } catch (e: Exception) { e.printStackTrace() }
 
+            // CashDash text next to logo
+            paint.color = Color.parseColor("#1C1C1E")
+            paint.typeface = boldFont
+            paint.textSize = 26f
+            canvas.drawText("CashDash", 80f, 48f, paint)
+
+            // User details below header box — left aligned, clean
+            paint.typeface = normalFont
+            paint.color = Color.parseColor("#1C1C1E")
+            paint.textSize = 11f
+            val displayUserName = userName.split(" ").joinToString(" ") { it.lowercase(Locale.getDefault()).replaceFirstChar { c -> c.uppercase() } }
+            canvas.drawText("Name: $displayUserName", 30f, 105f, paint)
+            canvas.drawText("Registered Mobile Number: $userPhone", 30f, 122f, paint)
+            canvas.drawText("Registered Email Address: ${userEmail.lowercase(Locale.getDefault())}", 30f, 139f, paint)
+
+            // Statement Period — centered and bold
             val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
             val startStr = sdf.format(Date(startMillis))
             val endStr = sdf.format(Date(endMillis))
+            paint.typeface = boldFont
+            paint.textSize = 12f
+            paint.textAlign = Paint.Align.CENTER
+            canvas.drawText("Statement Period: $startStr - $endStr", 297.5f, 175f, paint)
+            paint.textAlign = Paint.Align.LEFT
 
-            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            canvas.drawText("Statement from $startStr to $endStr", 40f, 150f, paint)
-            canvas.drawText("Allocation choosed: $categoryFilter", 40f, 170f, paint)
-            paint.typeface = Typeface.DEFAULT
-            
+            val isOverall = categoryFilter == "Overall"
+            paint.typeface = normalFont
+            paint.color = Color.parseColor("#1C1C1E")
+            paint.textSize = 11f
+            val displayCatName = if (isOverall) "Overall" else categoryFilter.lowercase(Locale.getDefault()).replaceFirstChar { it.uppercase() }
+            canvas.drawText("Allocation choosed: $displayCatName", 30f, 205f, paint)
+
             // Table Header
-            canvas.drawLine(40f, 190f, 555f, 190f, linePaint)
-            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            paint.textSize = 10f
-            canvas.drawText("Transaction", 45f, 205f, paint)
-            canvas.drawText("Date", 45f, 218f, paint)
+            paint.typeface = boldFont
+            paint.textSize = 9.5f
+            paint.color = Color.parseColor("#3A3A3C")
             
-            canvas.drawText("Description", 130f, 218f, paint)
-            canvas.drawText("Amount", 280f, 218f, paint)
-            canvas.drawText("Allocation", 360f, 218f, paint)
-            canvas.drawText("Type of Entry", 450f, 218f, paint)
+            canvas.drawLine(30f, 230f, 565f, 230f, linePaint)
             
-            canvas.drawLine(40f, 225f, 555f, 225f, linePaint)
-            
-            // Draw Vertical Lines for Header
-            canvas.drawLine(40f, 190f, 40f, 225f, linePaint)
-            canvas.drawLine(125f, 190f, 125f, 225f, linePaint)
-            canvas.drawLine(275f, 190f, 275f, 225f, linePaint)
-            canvas.drawLine(355f, 190f, 355f, 225f, linePaint)
-            canvas.drawLine(445f, 190f, 445f, 225f, linePaint)
-            canvas.drawLine(555f, 190f, 555f, 225f, linePaint)
-            
-            paint.typeface = Typeface.DEFAULT
+            if (isOverall) {
+                canvas.drawText("Date", 38f, 245f, paint)
+                canvas.drawText("Description", 128f, 245f, paint)
+                canvas.drawText("Amount", 278f, 245f, paint)
+                canvas.drawText("Allocation", 358f, 245f, paint)
+                canvas.drawText("Entry Type", 448f, 245f, paint)
+                canvas.drawLine(30f, 252f, 565f, 252f, linePaint)
+
+                canvas.drawLine(30f, 230f, 30f, 252f, linePaint)
+                canvas.drawLine(120f, 230f, 120f, 252f, linePaint)
+                canvas.drawLine(270f, 230f, 270f, 252f, linePaint)
+                canvas.drawLine(350f, 230f, 350f, 252f, linePaint)
+                canvas.drawLine(440f, 230f, 440f, 252f, linePaint)
+                canvas.drawLine(565f, 230f, 565f, 252f, linePaint)
+            } else {
+                canvas.drawText("Date", 38f, 245f, paint)
+                canvas.drawText("Description", 128f, 245f, paint)
+                canvas.drawText("Amount", 358f, 245f, paint)
+                canvas.drawText("Entry Type", 458f, 245f, paint)
+                canvas.drawLine(30f, 252f, 565f, 252f, linePaint)
+
+                canvas.drawLine(30f, 230f, 30f, 252f, linePaint)
+                canvas.drawLine(120f, 230f, 120f, 252f, linePaint)
+                canvas.drawLine(350f, 230f, 350f, 252f, linePaint)
+                canvas.drawLine(450f, 230f, 450f, 252f, linePaint)
+                canvas.drawLine(565f, 230f, 565f, 252f, linePaint)
+            }
+
+            paint.typeface = normalFont
+            paint.color = Color.BLACK
         }
 
         fun startNextPage() {
@@ -213,49 +269,72 @@ object PdfReportManager {
         }
 
         drawHeaderAndMid()
-        var yTable = 240f
+        var yTable = 267f
+        val isOverall = categoryFilter == "Overall"
 
         val sdfShort = java.text.SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
         
         transactions.forEach { item ->
             if (yTable > 720) {
                 // close table bottom
-                canvas.drawLine(40f, yTable - 15f, 555f, yTable - 15f, linePaint)
+                canvas.drawLine(30f, yTable - 15f, 565f, yTable - 15f, linePaint)
                 startNextPage()
-                yTable = 240f
+                yTable = 267f
             }
             
             val p = item.rawEntry.split("|")
-            val typeStr = if (p.isNotEmpty() && p[0] == "SCAN") "Scanner" else "Piggybank"
             val ts = if (p.size >= 2) p[1].toLongOrNull() ?: 0L else 0L
+            val metaPrefs = context.getSharedPreferences("ScannerMetadataPrefs", android.content.Context.MODE_PRIVATE)
+            val isScanner = metaPrefs.contains("APP_$ts") || metaPrefs.contains("UPI_$ts")
+            val typeStr = if (isScanner) "Scanner" else "Rigor tracker"
             
-            paint.textSize = 10f
+            paint.textSize = 9.5f
+            paint.color = Color.BLACK
             val dateStr = sdfShort.format(Date(ts))
-            canvas.drawText(dateStr, 45f, yTable, paint)
+            canvas.drawText(dateStr, 38f, yTable, paint)
             
-            val displayTitle = if (item.title.length > 25) item.title.take(22) + "..." else item.title
-            canvas.drawText(displayTitle, 130f, yTable, paint)
+            val cleanTitle = item.title.removePrefix("To: ").removePrefix("to: ").trim()
             
-            canvas.drawText("₹${item.amount}", 280f, yTable, paint)
-            canvas.drawText(item.category.uppercase(), 360f, yTable, paint)
-            canvas.drawText(typeStr, 450f, yTable, paint)
-            
-            // Draw Vertical Lines for Row
-            canvas.drawLine(40f, yTable - 15f, 40f, yTable + 10f, linePaint)
-            canvas.drawLine(125f, yTable - 15f, 125f, yTable + 10f, linePaint)
-            canvas.drawLine(275f, yTable - 15f, 275f, yTable + 10f, linePaint)
-            canvas.drawLine(355f, yTable - 15f, 355f, yTable + 10f, linePaint)
-            canvas.drawLine(445f, yTable - 15f, 445f, yTable + 10f, linePaint)
-            canvas.drawLine(555f, yTable - 15f, 555f, yTable + 10f, linePaint)
+            if (isOverall) {
+                val displayTitle = if (cleanTitle.length > 25) cleanTitle.take(22) + "..." else cleanTitle
+                canvas.drawText(displayTitle, 128f, yTable, paint)
+                
+                canvas.drawText("₹${item.amount}", 278f, yTable, paint)
+                val displayCat = item.category.replace("(", "").replace(")", "").trim()
+                    .lowercase(Locale.getDefault()).replaceFirstChar { it.uppercase() }
+                canvas.drawText(displayCat, 358f, yTable, paint)
+                canvas.drawText(typeStr, 448f, yTable, paint)
+                
+                // Draw Vertical Lines for Row
+                canvas.drawLine(30f, yTable - 15f, 30f, yTable + 10f, linePaint)
+                canvas.drawLine(120f, yTable - 15f, 120f, yTable + 10f, linePaint)
+                canvas.drawLine(270f, yTable - 15f, 270f, yTable + 10f, linePaint)
+                canvas.drawLine(350f, yTable - 15f, 350f, yTable + 10f, linePaint)
+                canvas.drawLine(440f, yTable - 15f, 440f, yTable + 10f, linePaint)
+                canvas.drawLine(565f, yTable - 15f, 565f, yTable + 10f, linePaint)
+            } else {
+                val displayTitle = if (cleanTitle.length > 40) cleanTitle.take(37) + "..." else cleanTitle
+                canvas.drawText(displayTitle, 128f, yTable, paint)
+                
+                canvas.drawText("₹${item.amount}", 358f, yTable, paint)
+                canvas.drawText(typeStr, 458f, yTable, paint)
+                
+                // Draw Vertical Lines for Row
+                canvas.drawLine(30f, yTable - 15f, 30f, yTable + 10f, linePaint)
+                canvas.drawLine(120f, yTable - 15f, 120f, yTable + 10f, linePaint)
+                canvas.drawLine(350f, yTable - 15f, 350f, yTable + 10f, linePaint)
+                canvas.drawLine(450f, yTable - 15f, 450f, yTable + 10f, linePaint)
+                canvas.drawLine(565f, yTable - 15f, 565f, yTable + 10f, linePaint)
+            }
             
             // Draw Horizontal Line for Row Bottom
-            canvas.drawLine(40f, yTable + 10f, 555f, yTable + 10f, linePaint)
+            canvas.drawLine(30f, yTable + 10f, 565f, yTable + 10f, linePaint)
 
             yTable += 25f
         }
 
         // Draw Footer
-        yTable += 20f
+        yTable += 50f // 2 lines gap
         if (yTable > 740) {
             startNextPage()
             yTable = 260f
@@ -264,22 +343,27 @@ object PdfReportManager {
         val totalSpent = transactions.sumOf { it.amount.toDouble() }.toInt()
         val totalText = "Total expense : ₹$totalSpent"
         
-        paint.textSize = 14f
-        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        paint.textSize = 13f
+        paint.typeface = boldFont
         val textWidth = paint.measureText(totalText)
         
-        // Draw Box for total
-        val boxLeft = 555f - textWidth - 60f
+        // Center the box on the 595pt wide page
+        val boxWidth = textWidth + 60f
+        val boxLeft = (595f - boxWidth) / 2f
         val boxTop = yTable - 20f
-        val boxRight = 555f
+        val boxRight = boxLeft + boxWidth
         val boxBottom = yTable + 15f
-        canvas.drawRect(boxLeft, boxTop, boxRight, boxBottom, boxPaint)
-        canvas.drawText(totalText, boxLeft + 30f, boxBottom - 10f, paint)
 
-        yTable += 60f
-        paint.typeface = Typeface.DEFAULT
-        paint.textSize = 12f
-        canvas.drawText("Thank you for using CashDash!", boxLeft, yTable, paint)
+        val fillPaint = Paint().apply { color = Color.parseColor("#F9F9F9"); style = Paint.Style.FILL; isAntiAlias = true }
+        canvas.drawRect(boxLeft, boxTop, boxRight, boxBottom, fillPaint)
+        canvas.drawRect(boxLeft, boxTop, boxRight, boxBottom, boxPaint)
+
+        paint.color = Color.BLACK
+        paint.textAlign = Paint.Align.CENTER
+        canvas.drawText(totalText, (boxLeft + boxRight) / 2f, boxBottom - 11f, paint)
+        paint.textAlign = Paint.Align.LEFT
+
+
 
         document.finishPage(page)
         val formattedCategory = categoryFilter.replace(" ", "_")
@@ -287,7 +371,12 @@ object PdfReportManager {
         savePdfToDownloads(context, document, fileName)
     }
 
-    private fun savePdfToDownloads(context: Context, document: PdfDocument, fileName: String) {
+    private fun savePdfToDownloads(context: Context, document: PdfDocument, baseFileName: String) {
+        // Append a timestamp to the filename to guarantee it is absolutely unique
+        // This prevents the MediaStore "Failed to build unique file" crash when too many exist
+        val timestampStr = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
+        val fileName = baseFileName.replace(".pdf", "_$timestampStr.pdf")
+
         try {
             val resolver = context.contentResolver
             val contentValues = ContentValues().apply {
@@ -334,7 +423,9 @@ object PdfReportManager {
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(context, "Report export failed", Toast.LENGTH_SHORT).show()
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                android.widget.Toast.makeText(context, "Report export failed", android.widget.Toast.LENGTH_SHORT).show()
+            }
         } finally {
             document.close()
         }
