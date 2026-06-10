@@ -34,7 +34,7 @@ object TutorialManager {
 
         val titleView = TextView(activity).apply {
             text = title
-            setTextSize(TypedValue.COMPLEX_UNIT_PX, activity.resources.getDimension(R.dimen.text_title))
+            setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20f)
             setTextColor(ThemeHelper.resolveColorAttr(activity, R.attr.textPrimaryColor))
             setTypeface(null, Typeface.BOLD)
             gravity = Gravity.CENTER
@@ -44,7 +44,7 @@ object TutorialManager {
 
         val introView = TextView(activity).apply {
             text = message
-            setTextSize(TypedValue.COMPLEX_UNIT_PX, activity.resources.getDimension(R.dimen.text_body))
+            setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14f)
             setTextColor(ThemeHelper.resolveColorAttr(activity, R.attr.textPrimaryColor))
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, (32 * density).toInt())
@@ -59,6 +59,7 @@ object TutorialManager {
         val btnUnderstood = Button(activity).apply {
             text = "Understood"
             isAllCaps = false
+            setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14f)
             setTextColor(ThemeHelper.resolveColorAttr(activity, R.attr.textPrimaryColor))
             val tv = TypedValue()
             activity.theme.resolveAttribute(R.attr.cardBackground, tv, true)
