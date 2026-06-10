@@ -123,7 +123,8 @@ object FirestoreSyncManager {
                 ))
 
                 // 4. Transaction History
-                val historySet = graphPrefs.getStringSet("HISTORY_LIST", emptySet()) ?: emptySet()
+                val dao = AppDatabase.getDatabase(appContext).transactionDao()
+                val historySet = dao.getTransactionsInRange(0, Long.MAX_VALUE).map { it.rawEntry }.toSet()
                 val detailedTransactions = mutableListOf<Map<String, Any>>()
 
                 historySet.forEach { entry ->
@@ -340,6 +341,9 @@ object FirestoreSyncManager {
 
                             val finalTransactions = mutableSetOf<String>()
                             finalTransactions.addAll(rawList)
+                            val dSums = mutableMapOf<String, Float>()
+                            val wSums = mutableMapOf<String, Float>()
+                            val mSums = mutableMapOf<String, Float>()
 
                             for (entry in rawList) {
                                 val p = entry.split("|")
@@ -355,9 +359,9 @@ object FirestoreSyncManager {
                                     val weekKey = "WEEK_${hWeek}_${hMonth}_${hYear}"
                                     val monthKey = "MONTH_${hMonth}_${hYear}"
 
-                                    gRestore.putFloat(dayKey, graphPrefs.getFloat(dayKey, 0f) + amount)
-                                    gRestore.putFloat(weekKey, graphPrefs.getFloat(weekKey, 0f) + amount)
-                                    gRestore.putFloat(monthKey, graphPrefs.getFloat(monthKey, 0f) + amount)
+                                    dSums[dayKey] = (dSums[dayKey] ?: 0f) + amount
+                                    wSums[weekKey] = (wSums[weekKey] ?: 0f) + amount
+                                    mSums[monthKey] = (mSums[monthKey] ?: 0f) + amount
 
                                     gRestore.putString("TRANS_${timestamp}_TITLE", p[2])
                                     gRestore.putString("TRANS_${timestamp}_CATEGORY", p[3])
@@ -368,6 +372,9 @@ object FirestoreSyncManager {
                                     gRestore.putInt("TRANS_${timestamp}_YEAR", hYear)
                                 }
                             }
+                            dSums.forEach { (k, v) -> gRestore.putFloat(k, v) }
+                            wSums.forEach { (k, v) -> gRestore.putFloat(k, v) }
+                            mSums.forEach { (k, v) -> gRestore.putFloat(k, v) }
                             gRestore.putStringSet("HISTORY_LIST", finalTransactions)
                             gRestore.apply()
 
@@ -601,6 +608,9 @@ object FirestoreSyncManager {
             val finalTransactions = mutableSetOf<String>()
 
             if (detailed != null) {
+                val dSums = mutableMapOf<String, Float>()
+                val wSums = mutableMapOf<String, Float>()
+                val mSums = mutableMapOf<String, Float>()
                 for (map in detailed) {
                     val pType = map["type"] as? String ?: "EXP"
                     val pTs = map["timestamp"]?.toString() ?: "0"
@@ -631,9 +641,9 @@ object FirestoreSyncManager {
                     val dKey = "DAY_${hWeek}_${hDay}_${hMonth}_${hYear}"
                     val wKey = "WEEK_${hWeek}_${hMonth}_${hYear}"
                     val mKey = "MONTH_${hMonth}_${hYear}"
-                    gRestore.putFloat(dKey, graphPrefs.getFloat(dKey, 0f) + pAmt)
-                    gRestore.putFloat(wKey, graphPrefs.getFloat(wKey, 0f) + pAmt)
-                    gRestore.putFloat(mKey, graphPrefs.getFloat(mKey, 0f) + pAmt)
+                    dSums[dKey] = (dSums[dKey] ?: 0f) + pAmt
+                    wSums[wKey] = (wSums[wKey] ?: 0f) + pAmt
+                    mSums[mKey] = (mSums[mKey] ?: 0f) + pAmt
 
                     gRestore.putString("TRANS_${pTs}_TITLE", pMerchant)
                     gRestore.putString("TRANS_${pTs}_CATEGORY", pCat)
@@ -643,7 +653,13 @@ object FirestoreSyncManager {
                     gRestore.putInt("TRANS_${pTs}_MONTH", hMonth)
                     gRestore.putInt("TRANS_${pTs}_YEAR", hYear)
                 }
+                dSums.forEach { (k, v) -> gRestore.putFloat(k, v) }
+                wSums.forEach { (k, v) -> gRestore.putFloat(k, v) }
+                mSums.forEach { (k, v) -> gRestore.putFloat(k, v) }
             } else if (rawList != null) {
+                val dSums = mutableMapOf<String, Float>()
+                val wSums = mutableMapOf<String, Float>()
+                val mSums = mutableMapOf<String, Float>()
                 finalTransactions.addAll(rawList)
                 for (entry in rawList) {
                     val p = entry.split("|")
@@ -657,9 +673,9 @@ object FirestoreSyncManager {
                         val dKey = "DAY_${hWeek}_${hDay}_${hMonth}_${hYear}"
                         val wKey = "WEEK_${hWeek}_${hMonth}_${hYear}"
                         val mKey = "MONTH_${hMonth}_${hYear}"
-                        gRestore.putFloat(dKey, graphPrefs.getFloat(dKey, 0f) + amount)
-                        gRestore.putFloat(wKey, graphPrefs.getFloat(wKey, 0f) + amount)
-                        gRestore.putFloat(mKey, graphPrefs.getFloat(mKey, 0f) + amount)
+                        dSums[dKey] = (dSums[dKey] ?: 0f) + amount
+                        wSums[wKey] = (wSums[wKey] ?: 0f) + amount
+                        mSums[mKey] = (mSums[mKey] ?: 0f) + amount
 
                         val timestamp = p[1]
                         gRestore.putString("TRANS_${timestamp}_TITLE", p[2])
@@ -671,6 +687,9 @@ object FirestoreSyncManager {
                         gRestore.putInt("TRANS_${timestamp}_YEAR", hYear)
                     }
                 }
+                dSums.forEach { (k, v) -> gRestore.putFloat(k, v) }
+                wSums.forEach { (k, v) -> gRestore.putFloat(k, v) }
+                mSums.forEach { (k, v) -> gRestore.putFloat(k, v) }
             }
             gRestore.putStringSet("HISTORY_LIST", finalTransactions)
             gRestore.apply()
