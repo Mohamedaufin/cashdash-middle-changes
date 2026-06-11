@@ -186,7 +186,7 @@ object PdfReportManager {
                     val destRect = android.graphics.RectF(30f, 18f, 70f, 58f) // 40x40 square for perfect circle
                     canvas.drawBitmap(bitmap, null, destRect, logoPaint)
                 }
-            } catch (e: Exception) { e.printStackTrace() }
+            } catch (e: Exception) { android.util.Log.e("PdfReportManager", "Error drawing logo in PDF header", e) }
 
             // CashDash text next to logo
             paint.color = Color.parseColor("#1C1C1E")
@@ -422,7 +422,7 @@ object PdfReportManager {
                 notificationManager.notify(System.currentTimeMillis().toInt(), notification)
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("PdfReportManager", "PDF generation failed", e)
             android.os.Handler(android.os.Looper.getMainLooper()).post {
                 android.widget.Toast.makeText(context, "Report export failed", android.widget.Toast.LENGTH_SHORT).show()
             }

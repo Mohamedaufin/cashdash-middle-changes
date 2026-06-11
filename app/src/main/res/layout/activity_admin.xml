@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:paddingTop="50dp"
+        android:paddingTop="20dp"
         android:paddingBottom="20dp"
         android:paddingStart="25dp"
         android:paddingEnd="25dp"
@@ -61,12 +61,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="25dp">
+            android:paddingStart="25dp"
+            android:paddingEnd="25dp"
+            android:paddingBottom="25dp"
+            android:paddingTop="5dp">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Global Announcements"
+                android:text="Announcements"
                 android:textSize="@dimen/text_title"
                 android:textColor="?attr/textPrimaryColor"
                 android:textStyle="bold"
@@ -113,14 +116,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="40dp">
+                android:layout_marginBottom="10dp">
 
                 <Button
                     android:id="@+id/btnPublishGlobalAnnouncement"
                     android:layout_width="0dp"
                     android:layout_height="55dp"
                     android:layout_weight="1"
-                    android:text="Publish Global"
+                    android:text="Send Globally"
                     android:textColor="@android:color/white"
                     android:backgroundTint="#008000"
                     android:textStyle="bold"
@@ -132,17 +135,28 @@
                     android:layout_width="0dp"
                     android:layout_height="55dp"
                     android:layout_weight="1"
-                    android:text="Publish Admin"
+                    android:text="Send to Admin"
                     android:textColor="@android:color/white"
-                    android:backgroundTint="#4E5DFF"
+                    android:backgroundTint="#FF4D4D"
                     android:textStyle="bold"
                     android:textSize="14sp"/>
             </LinearLayout>
 
+            <Button
+                android:id="@+id/btnPublishUserAnnouncement"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:text="Send User Specific Announcements"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#FFA500"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:layout_marginBottom="40dp"/>
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Global Push Notifications"
+                android:text="Push Notifications"
                 android:textSize="@dimen/text_title"
                 android:textColor="?attr/textPrimaryColor"
                 android:textStyle="bold"
@@ -196,9 +210,9 @@
                     android:layout_width="0dp"
                     android:layout_height="55dp"
                     android:layout_weight="1"
-                    android:text="Send Global Push"
+                    android:text="Send Globally"
                     android:textColor="@android:color/white"
-                    android:backgroundTint="#FF4D4D"
+                    android:backgroundTint="#008000"
                     android:textStyle="bold"
                     android:textSize="14sp"
                     android:layout_marginEnd="10dp"/>
@@ -208,9 +222,9 @@
                     android:layout_width="0dp"
                     android:layout_height="55dp"
                     android:layout_weight="1"
-                    android:text="Send Admin Push"
+                    android:text="Send to Admin"
                     android:textColor="@android:color/white"
-                    android:backgroundTint="#4E5DFF"
+                    android:backgroundTint="#FF4D4D"
                     android:textStyle="bold"
                     android:textSize="14sp"/>
             </LinearLayout>
@@ -219,7 +233,7 @@
                 android:id="@+id/btnSendUserPush"
                 android:layout_width="match_parent"
                 android:layout_height="55dp"
-                android:text="Send User Specific Push"
+                android:text="Send User Specific Notifications"
                 android:textColor="@android:color/white"
                 android:backgroundTint="#FFA500"
                 android:textStyle="bold"

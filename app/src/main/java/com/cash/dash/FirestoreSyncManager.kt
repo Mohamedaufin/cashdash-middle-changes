@@ -550,11 +550,25 @@ object FirestoreSyncManager {
             }
             wEdit.apply()
 
-            schedulePrefs.edit()
-                .putLong("next_date", snapshot.getLong("next_date_ms") ?: 0L)
-                .putInt("frequency", snapshot.getLong("frequency")?.toInt() ?: 30)
-                .putBoolean("cycle_initialized", snapshot.getBoolean("cycle_initialized") ?: false)
-                .apply()
+            val cloudNextDate = snapshot.getLong("next_date_ms") ?: 0L
+            val localNextDate = schedulePrefs.getLong("next_date", 0L)
+
+            if (cloudNextDate > localNextDate) {
+                schedulePrefs.edit()
+                    .putLong("next_date", cloudNextDate)
+                    .putInt("frequency", snapshot.getLong("frequency")?.toInt() ?: 30)
+                    .putBoolean("cycle_initialized", snapshot.getBoolean("cycle_initialized") ?: false)
+                    .apply()
+            } else if (localNextDate > cloudNextDate) {
+                isSyncingFromCloud = false
+                pushAllDataToCloud(appContext)
+                isSyncingFromCloud = true
+            } else {
+                schedulePrefs.edit()
+                    .putInt("frequency", snapshot.getLong("frequency")?.toInt() ?: 30)
+                    .putBoolean("cycle_initialized", snapshot.getBoolean("cycle_initialized") ?: false)
+                    .apply()
+            }
             isSyncingFromCloud = false
             notifyUI(appContext)
         })

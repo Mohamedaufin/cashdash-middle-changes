@@ -110,6 +110,7 @@
         android:padding="8dp"
         android:clickable="true"
         android:focusable="true"
+        android:translationY="12dp"
         app:layout_constraintBottom_toTopOf="@id/tvResetPending"
         android:layout_marginBottom="12dp"
         app:layout_constraintStart_toStartOf="parent"

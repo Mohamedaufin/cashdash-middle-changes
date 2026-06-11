@@ -92,7 +92,7 @@ class MainActivity : ThemedActivity() {
                         }
                     }
                 }
-            } catch (e: Exception) { e.printStackTrace() }
+            } catch (e: Exception) { android.util.Log.e("MainActivity", "Error assigning metadata default fallback", e) }
         }.start()
 
         if (intent.getBooleanExtra("from_splash", false)) {

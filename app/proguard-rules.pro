@@ -23,6 +23,20 @@
 # 🔒 CashDash Custom Models (Firestore serialization)
 -keep class com.cash.dash.NotificationModel { *; }
 
+# 🗄 Room Entities (must NOT be mangled by R8)
+-keep class com.cash.dash.NotificationEntity { *; }
+-keep class com.cash.dash.TransactionEntity { *; }
+-keep class * extends androidx.room.RoomDatabase { *; }
+-keep @androidx.room.Entity class * { *; }
+
+# 🖼 Glide
+-keep public class * implements com.bumptech.glide.module.GlideModule
+-keep class com.bumptech.glide.GeneratedAppGlideModuleImpl
+
+# 🎬 Lottie
+-dontwarn com.airbnb.lottie.**
+-keep class com.airbnb.lottie.** { *; }
+
 # ✂️ Strip Debug Logs from Release Builds
 -assumenosideeffects class android.util.Log {
     public static int d(...);

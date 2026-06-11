@@ -20,12 +20,12 @@ class AdminActivity : ThemedActivity() {
 
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
 
-        val root = findViewById<android.view.View>(android.R.id.content)
+        val root = (findViewById<android.view.View>(android.R.id.content) as android.view.ViewGroup).getChildAt(0)
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
             val systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
             val ime = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime())
             val bottomPadding = Math.max(systemBars.bottom, ime.bottom)
-            view.setPadding(0, 0, 0, bottomPadding)
+            view.setPadding(0, systemBars.top, 0, bottomPadding)
             insets
         }
 
@@ -61,7 +61,7 @@ class AdminActivity : ThemedActivity() {
 
             val db = FirebaseFirestore.getInstance()
             val timestamp = System.currentTimeMillis()
-            val subjectStr = if (adminOnly) "🛡️ [Admin Only] $title" else "📣 $title"
+            val subjectStr = title
             val data = hashMapOf(
                 "subject" to subjectStr,
                 "query" to body,
@@ -74,7 +74,7 @@ class AdminActivity : ThemedActivity() {
 
             db.collection("announcements").document(timestamp.toString()).set(data)
                 .addOnSuccessListener {
-                    ToastHelper.showToast(this, "Announcement Published!")
+                    ToastHelper.showToast(this, "Announcement Sent")
                     val logType = if (adminOnly) "Admin Announcement" else "Global Announcement"
                     logAdminAction(logType, title, body)
                     edtTitle.text.clear()
@@ -131,7 +131,7 @@ class AdminActivity : ThemedActivity() {
 
             db.collection("global_pushes").document(timestamp.toString()).set(data)
                 .addOnSuccessListener {
-                    ToastHelper.showToast(this, "Push Notification Sent!")
+                    ToastHelper.showToast(this, "Notification Sent")
                     val logType = if (adminOnly) "Admin Push" else "Global Push"
                     logAdminAction(logType, title, body)
                     edtPushTitle.text.clear()
@@ -148,48 +148,89 @@ class AdminActivity : ThemedActivity() {
         btnSendAdminPush.setOnClickListener { sendPushNotification(true) }
 
         val btnSendUserPush = findViewById<Button>(R.id.btnSendUserPush)
+        val btnPublishUserAnnouncement = findViewById<Button>(R.id.btnPublishUserAnnouncement)
 
-        fun sendUserPushNotification(targetEmail: String) {
-            val title = edtPushTitle.text.toString().trim()
-            val body = edtPushBody.text.toString().trim()
-
+        fun sendBatchUserPushes(targetEmails: List<String>, title: String, body: String) {
             setPushButtonsEnabled(false, "Sending...")
             btnSendUserPush.isEnabled = false
             btnSendUserPush.text = "Sending..."
 
             val db = FirebaseFirestore.getInstance()
+            val batch = db.batch()
             val timestamp = System.currentTimeMillis()
-            val data = hashMapOf(
-                "email" to targetEmail,
-                "title" to title,
-                "message" to body,
-                "timestamp" to timestamp
-            )
 
-            db.collection("user_pushes").document(timestamp.toString()).set(data)
+            targetEmails.forEachIndexed { index, email ->
+                val data = hashMapOf(
+                    "email" to email,
+                    "title" to title,
+                    "message" to body,
+                    "timestamp" to timestamp + index
+                )
+                val docRef = db.collection("user_pushes").document()
+                batch.set(docRef, data)
+            }
+
+            batch.commit()
                 .addOnSuccessListener {
-                    ToastHelper.showToast(this, "Push Sent to $targetEmail!")
-                    logAdminAction("User Specific Push", title, body, targetEmail)
+                    ToastHelper.showToast(this, "Notification Sent")
+                    logAdminAction("User Specific Notification", title, body, targetEmails.joinToString(", "))
                     edtPushTitle.text.clear()
                     edtPushBody.text.clear()
                     setPushButtonsEnabled(true, "")
                     btnSendUserPush.isEnabled = true
-                    btnSendUserPush.text = "Send User Specific Push"
+                    btnSendUserPush.text = "Send User Specific Notifications"
                 }
-                .addOnFailureListener {
-                    ToastHelper.showToast(this, "Failed to send user push")
+                .addOnFailureListener { e ->
+                    ToastHelper.showToast(this, "Failed to send: ${e.message}")
                     setPushButtonsEnabled(true, "")
                     btnSendUserPush.isEnabled = true
-                    btnSendUserPush.text = "Send User Specific Push"
+                    btnSendUserPush.text = "Send User Specific Notifications"
                 }
         }
 
-        fun showUserSelectionDialog() {
-            val title = edtPushTitle.text.toString().trim()
-            val body = edtPushBody.text.toString().trim()
+        fun sendSelectedUserAnnouncement(targetEmails: List<String>, title: String, body: String) {
+            setAnnouncementButtonsEnabled(false, "Publishing...")
+            btnPublishUserAnnouncement.isEnabled = false
+            btnPublishUserAnnouncement.text = "Sending..."
+
+            val db = FirebaseFirestore.getInstance()
+            val timestamp = System.currentTimeMillis()
+            val data = hashMapOf(
+                "subject" to title,
+                "query" to body,
+                "reply" to "[ANNOUNCEMENT]",
+                "status" to "resolved",
+                "timestamp" to timestamp,
+                "read" to false,
+                "adminOnly" to false,
+                "targetEmails" to targetEmails
+            )
+
+            db.collection("announcements").document(timestamp.toString()).set(data)
+                .addOnSuccessListener {
+                    ToastHelper.showToast(this, "Announcement Sent")
+                    logAdminAction("User Specific Announcement", title, body, targetEmails.joinToString(", "))
+                    edtTitle.text.clear()
+                    edtBody.text.clear()
+                    setAnnouncementButtonsEnabled(true, "")
+                    btnPublishUserAnnouncement.isEnabled = true
+                    btnPublishUserAnnouncement.text = "Send User Specific Announcements"
+                }
+                .addOnFailureListener { e ->
+                    ToastHelper.showToast(this, "Failed: ${e.message}")
+                    setAnnouncementButtonsEnabled(true, "")
+                    btnPublishUserAnnouncement.isEnabled = true
+                    btnPublishUserAnnouncement.text = "Send User Specific Announcements"
+                }
+        }
+
+        fun showUserSelectionDialog(isAnnouncement: Boolean) {
+            val title = if (isAnnouncement) edtTitle.text.toString().trim() else edtPushTitle.text.toString().trim()
+            val body = if (isAnnouncement) edtBody.text.toString().trim() else edtPushBody.text.toString().trim()
 
             if (title.isEmpty() || body.isEmpty()) {
-                ToastHelper.showToast(this, "Please fill in push title and body first")
+                val typeStr = if (isAnnouncement) "announcement" else "push"
+                ToastHelper.showToast(this, "Please fill in $typeStr title and body first")
                 return
             }
 
@@ -245,6 +286,9 @@ class AdminActivity : ThemedActivity() {
                         return@addOnSuccessListener
                     }
 
+                    // Keep track of selected emails
+                    val selectedEmails = mutableSetOf<String>()
+
                     // Create searchable dialog
                     val dialogBuilder = androidx.appcompat.app.AlertDialog.Builder(this)
                     
@@ -258,7 +302,7 @@ class AdminActivity : ThemedActivity() {
 
                     // Title
                     val titleView = android.widget.TextView(this).apply {
-                        text = "Select Target User"
+                        text = "Select Target Users"
                         setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textPrimaryColor))
                         setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_subhead))
                         setTypeface(null, android.graphics.Typeface.BOLD)
@@ -304,26 +348,202 @@ class AdminActivity : ThemedActivity() {
                     val originalList = emails.toMutableList()
                     val filteredList = emails.toMutableList()
                     
-                    // Styled custom adapter
-                    val listAdapter = object : android.widget.ArrayAdapter<String>(this@AdminActivity, android.R.layout.simple_list_item_1, filteredList) {
+                    // Styled custom adapter with Checkboxes
+                    val listAdapter = object : android.widget.ArrayAdapter<String>(this@AdminActivity, 0, filteredList) {
                         override fun getView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
-                            val view = super.getView(position, convertView, parent) as android.widget.TextView
-                            view.setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textPrimaryColor))
-                            view.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
-                            // Clean item padding
-                            view.setPadding(
-                                (12 * resources.displayMetrics.density).toInt(),
-                                (14 * resources.displayMetrics.density).toInt(),
-                                (12 * resources.displayMetrics.density).toInt(),
-                                (14 * resources.displayMetrics.density).toInt()
-                            )
-                            return view
+                            val context = this@AdminActivity
+                            val density = context.resources.displayMetrics.density
+                            
+                            val layout = (convertView as? android.widget.LinearLayout) ?: android.widget.LinearLayout(context).apply {
+                                orientation = android.widget.LinearLayout.HORIZONTAL
+                                gravity = android.view.Gravity.CENTER_VERTICAL
+                                setPadding(
+                                    (16 * density).toInt(),
+                                    (12 * density).toInt(),
+                                    (16 * density).toInt(),
+                                    (12 * density).toInt()
+                                )
+                                
+                                val cb = android.widget.CheckBox(context).apply {
+                                    buttonTintList = android.content.res.ColorStateList.valueOf(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                                    isFocusable = false
+                                    isClickable = false
+                                }
+                                val tv = android.widget.TextView(context).apply {
+                                    setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
+                                    setPadding((12 * density).toInt(), 0, 0, 0)
+                                }
+                                addView(cb)
+                                addView(tv)
+                            }
+                            
+                            val cb = layout.getChildAt(0) as android.widget.CheckBox
+                            val tv = layout.getChildAt(1) as android.widget.TextView
+                            
+                            val email = filteredList[position]
+                            tv.text = email
+                            cb.isChecked = selectedEmails.contains(email)
+                            
+                            return layout
                         }
                     }
                     listView.adapter = listAdapter
 
+                    // Action buttons container at bottom
+                    val buttonContainer = android.widget.LinearLayout(this@AdminActivity).apply {
+                        orientation = android.widget.LinearLayout.HORIZONTAL
+                        gravity = android.view.Gravity.CENTER
+                        setPadding(0, (16 * resources.displayMetrics.density).toInt(), 0, 0)
+                        layoutParams = android.widget.LinearLayout.LayoutParams(
+                            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                        )
+                    }
+
+                    val btnCancel = android.widget.Button(this@AdminActivity).apply {
+                        text = "Cancel"
+                        isAllCaps = false
+                        setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textPrimaryColor))
+                        background = androidx.core.content.ContextCompat.getDrawable(this@AdminActivity, ThemeHelper.getDrawable(this@AdminActivity, R.drawable.bg_3d_card))
+                        layoutParams = android.widget.LinearLayout.LayoutParams(
+                            0,
+                            (48 * resources.displayMetrics.density).toInt(),
+                            1f
+                        ).apply {
+                            rightMargin = (8 * resources.displayMetrics.density).toInt()
+                        }
+                    }
+
+                    val btnSendSelectedPush = android.widget.Button(this@AdminActivity).apply {
+                        text = "Send"
+                        isAllCaps = false
+                        setTextColor(android.graphics.Color.WHITE)
+                        background = androidx.core.content.ContextCompat.getDrawable(this@AdminActivity, ThemeHelper.getDrawable(this@AdminActivity, R.drawable.bg_3d_card))
+                        layoutParams = android.widget.LinearLayout.LayoutParams(
+                            0,
+                            (48 * resources.displayMetrics.density).toInt(),
+                            1.2f
+                        ).apply {
+                            rightMargin = (8 * resources.displayMetrics.density).toInt()
+                        }
+                    }
+
+                    val btnSendSelectedAnnounce = android.widget.Button(this@AdminActivity).apply {
+                        text = "Send"
+                        isAllCaps = false
+                        setTextColor(android.graphics.Color.WHITE)
+                        background = androidx.core.content.ContextCompat.getDrawable(this@AdminActivity, ThemeHelper.getDrawable(this@AdminActivity, R.drawable.bg_3d_card))
+                        layoutParams = android.widget.LinearLayout.LayoutParams(
+                            0,
+                            (48 * resources.displayMetrics.density).toInt(),
+                            1.2f
+                        )
+                    }
+
+                    if (isAnnouncement) {
+                        btnSendSelectedPush.visibility = android.view.View.GONE
+                    } else {
+                        btnSendSelectedAnnounce.visibility = android.view.View.GONE
+                        // adjust margin since only 2 buttons visible now
+                        val params = btnSendSelectedPush.layoutParams as android.widget.LinearLayout.LayoutParams
+                        params.rightMargin = 0
+                        btnSendSelectedPush.layoutParams = params
+                    }
+
+                    buttonContainer.addView(btnCancel)
+                    buttonContainer.addView(btnSendSelectedPush)
+                    buttonContainer.addView(btnSendSelectedAnnounce)
+                    container.addView(buttonContainer)
+
                     val dialog = dialogBuilder.create()
                     dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+                    btnCancel.setOnClickListener { dialog.dismiss() }
+
+                    btnSendSelectedPush.setOnClickListener {
+                        if (selectedEmails.isEmpty()) {
+                            ToastHelper.showToast(this@AdminActivity, "Please select at least one user")
+                            return@setOnClickListener
+                        }
+                        dialog.dismiss()
+
+                        // Ask for confirmation
+                        val dialogView = layoutInflater.inflate(R.layout.dialog_confirm_action, null)
+                        val confirmDialog = androidx.appcompat.app.AlertDialog.Builder(this@AdminActivity)
+                            .setView(dialogView)
+                            .create()
+                        confirmDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+                        dialogView.findViewById<android.widget.TextView>(R.id.tvConfirmTitle).text = "Confirm Notification"
+                        val msgSuffix = if (selectedEmails.size == 1) "user?" else "users?"
+                        dialogView.findViewById<android.widget.TextView>(R.id.tvConfirmMessage).text = "Send notification to the selected $msgSuffix"
+                        
+                        val tvUsers = dialogView.findViewById<android.widget.TextView>(R.id.tvTargetUsers)
+                        if (tvUsers != null) {
+                            val usersText = if (selectedEmails.size == 1) {
+                                "• ${selectedEmails.first()}"
+                            } else {
+                                selectedEmails.joinToString("\n") { "• $it" }
+                            }
+                            tvUsers.text = usersText
+                            tvUsers.visibility = android.view.View.VISIBLE
+                        }
+                        
+                        val btnYes = dialogView.findViewById<android.widget.Button>(R.id.btnConfirmAction)
+                        val btnNo = dialogView.findViewById<android.widget.Button>(R.id.btnConfirmCancel)
+
+                        btnYes.text = "Send"
+                        btnYes.setTextColor(android.graphics.Color.WHITE)
+                        btnYes.setOnClickListener {
+                            confirmDialog.dismiss()
+                            sendBatchUserPushes(selectedEmails.toList(), title, body)
+                        }
+                        btnNo.setOnClickListener { confirmDialog.dismiss() }
+                        confirmDialog.show()
+                    }
+
+                    btnSendSelectedAnnounce.setOnClickListener {
+                        if (selectedEmails.isEmpty()) {
+                            ToastHelper.showToast(this@AdminActivity, "Please select at least one user")
+                            return@setOnClickListener
+                        }
+                        dialog.dismiss()
+
+                        // Ask for confirmation
+                        val dialogView = layoutInflater.inflate(R.layout.dialog_confirm_action, null)
+                        val confirmDialog = androidx.appcompat.app.AlertDialog.Builder(this@AdminActivity)
+                            .setView(dialogView)
+                            .create()
+                        confirmDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+                        dialogView.findViewById<android.widget.TextView>(R.id.tvConfirmTitle).text = "Confirm Announcement"
+                        val msgSuffix = if (selectedEmails.size == 1) "user?" else "users?"
+                        dialogView.findViewById<android.widget.TextView>(R.id.tvConfirmMessage).text = "Send announcement to the selected $msgSuffix"
+                        
+                        val tvUsers = dialogView.findViewById<android.widget.TextView>(R.id.tvTargetUsers)
+                        if (tvUsers != null) {
+                            val usersText = if (selectedEmails.size == 1) {
+                                "• ${selectedEmails.first()}"
+                            } else {
+                                selectedEmails.joinToString("\n") { "• $it" }
+                            }
+                            tvUsers.text = usersText
+                            tvUsers.visibility = android.view.View.VISIBLE
+                        }
+                        
+                        val btnYes = dialogView.findViewById<android.widget.Button>(R.id.btnConfirmAction)
+                        val btnNo = dialogView.findViewById<android.widget.Button>(R.id.btnConfirmCancel)
+
+                        btnYes.text = "Publish"
+                        btnYes.setTextColor(android.graphics.Color.WHITE)
+                        btnYes.setOnClickListener {
+                            confirmDialog.dismiss()
+                            sendSelectedUserAnnouncement(selectedEmails.toList(), title, body)
+                        }
+                        btnNo.setOnClickListener { confirmDialog.dismiss() }
+                        confirmDialog.show()
+                    }
 
                     searchInput.addTextChangedListener(object : android.text.TextWatcher {
                         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -341,33 +561,13 @@ class AdminActivity : ThemedActivity() {
                     })
 
                     listView.setOnItemClickListener { _, _, position, _ ->
-                        val selectedEmail = filteredList[position]
-                        dialog.dismiss()
-
-                        // Ask for confirmation using dialog_confirm_action custom dialog layout
-                        val dialogView = layoutInflater.inflate(R.layout.dialog_confirm_action, null)
-                        val confirmDialog = androidx.appcompat.app.AlertDialog.Builder(this@AdminActivity)
-                            .setView(dialogView)
-                            .create()
-                        
-                        confirmDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-                        dialogView.findViewById<android.widget.TextView>(R.id.tvConfirmTitle).text = "Confirm Send"
-                        dialogView.findViewById<android.widget.TextView>(R.id.tvConfirmMessage).text = "Send this push notification to $selectedEmail?"
-                        
-                        val btnYes = dialogView.findViewById<android.widget.Button>(R.id.btnConfirmAction)
-                        val btnNo = dialogView.findViewById<android.widget.Button>(R.id.btnConfirmCancel)
-
-                        btnYes.text = "Send"
-                        btnYes.setTextColor(android.graphics.Color.WHITE)
-                        btnYes.setOnClickListener {
-                            confirmDialog.dismiss()
-                            sendUserPushNotification(selectedEmail)
+                        val email = filteredList[position]
+                        if (selectedEmails.contains(email)) {
+                            selectedEmails.remove(email)
+                        } else {
+                            selectedEmails.add(email)
                         }
-                        
-                        btnNo.setOnClickListener { confirmDialog.dismiss() }
-                        
-                        confirmDialog.show()
+                        listAdapter.notifyDataSetChanged()
                     }
 
                     dialog.show()
@@ -378,7 +578,8 @@ class AdminActivity : ThemedActivity() {
                 }
         }
 
-        btnSendUserPush.setOnClickListener { showUserSelectionDialog() }
+        btnSendUserPush.setOnClickListener { showUserSelectionDialog(false) }
+        btnPublishUserAnnouncement.setOnClickListener { showUserSelectionDialog(true) }
 
         val btnHistory = findViewById<ImageButton>(R.id.btnHistory)
         btnHistory.setOnClickListener {

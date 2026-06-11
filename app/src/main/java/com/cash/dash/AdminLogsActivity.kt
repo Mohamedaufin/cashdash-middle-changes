@@ -36,7 +36,7 @@ class AdminLogsActivity : ThemedActivity() {
         rvLogs.adapter = adapter
 
         // Apply window insets for status bar padding and notch styling
-        val root = findViewById<View>(android.R.id.content)
+        val root = (findViewById<android.view.View>(android.R.id.content) as android.view.ViewGroup).getChildAt(0)
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
             val systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
             view.setPadding(0, systemBars.top, 0, systemBars.bottom)
@@ -72,17 +72,29 @@ class AdminLogsActivity : ThemedActivity() {
                         "arunbhalaji200904@gmail.com" -> "Arun Bhalaji"
                         else -> email
                     }
-                    val type = doc.getString("actionType") ?: "Action"
+                    val rawType = doc.getString("actionType") ?: "Action"
+                    var type = if (rawType == "Targeted Announcement") "User Specific Announcement" else rawType
+                    type = type.replace(" (Batch)", "")
+                    if (type == "User Specific Push") {
+                        type = "User Specific Notification"
+                    }
                     val title = doc.getString("title") ?: ""
                     val message = doc.getString("message") ?: ""
                     val ts = doc.getLong("timestamp") ?: 0L
                     val details = doc.getString("details")
                     val timeStr = if (ts > 0) sdf.format(Date(ts)) else ""
 
-                    val actionDesc = if (type == "User Specific Push" && details != null) {
-                        "$type (to: $details)"
-                    } else {
-                        type
+                    val emails = if (!details.isNullOrEmpty()) details.split(",").map { it.trim() }.filter { it.isNotEmpty() } else emptyList()
+
+                    var finalActionDesc = type
+                    var targetedUsersText: String? = null
+                    
+                    if (type.contains("User Specific") && emails.isNotEmpty()) {
+                        if (emails.size == 1) {
+                            targetedUsersText = "Targeted user :\n• ${emails[0]}"
+                        } else {
+                            targetedUsersText = "Targeted users :\n" + emails.joinToString("\n") { "• $it" }
+                        }
                     }
 
                     // Formatted content text
@@ -100,11 +112,12 @@ class AdminLogsActivity : ThemedActivity() {
 
                     logsList.add(
                         AdminLogModel(
-                            actionType = actionDesc,
+                            actionType = finalActionDesc,
                             time = timeStr,
                             details = formattedDetails,
                             triggeredBy = "This action is triggered by: $name",
-                            rawActionType = type
+                            rawActionType = type,
+                            targetedUsers = targetedUsersText
                         )
                     )
                 }
@@ -125,7 +138,8 @@ class AdminLogsActivity : ThemedActivity() {
         val time: String,
         val details: String,
         val triggeredBy: String,
-        val rawActionType: String
+        val rawActionType: String,
+        val targetedUsers: String?
     )
 
     inner class LogsAdapter(private val items: List<AdminLogModel>) :
@@ -145,26 +159,22 @@ class AdminLogsActivity : ThemedActivity() {
 
             // Color-code the left accent bar and the badge text based on rawActionType
             val color = when {
-                item.rawActionType.contains("Announcement", ignoreCase = true) -> {
-                    // Green for announcements
-                    android.graphics.Color.parseColor("#4ADE80")
-                }
-                item.rawActionType.contains("User Specific", ignoreCase = true) -> {
-                    // Orange for user specific push
-                    android.graphics.Color.parseColor("#FFA500")
-                }
-                item.rawActionType.contains("Push", ignoreCase = true) -> {
-                    // Red for other push notifications
-                    android.graphics.Color.parseColor("#FF4D4D")
-                }
-                else -> {
-                    // Default blue
-                    android.graphics.Color.parseColor("#4E5DFF")
-                }
+                item.rawActionType.contains("Global", ignoreCase = true) -> android.graphics.Color.parseColor("#4ADE80") // Green
+                item.rawActionType.contains("Admin", ignoreCase = true) -> android.graphics.Color.parseColor("#FF4D4D") // Red
+                item.rawActionType.contains("User Specific", ignoreCase = true) -> android.graphics.Color.parseColor("#FFA500") // Yellow
+                else -> android.graphics.Color.parseColor("#4ADE80")
+            }
+            
+            if (item.targetedUsers != null) {
+                holder.tvTargetedUsers.visibility = View.VISIBLE
+                holder.tvTargetedUsers.text = item.targetedUsers
+            } else {
+                holder.tvTargetedUsers.visibility = View.GONE
             }
 
             holder.viewAccentBar.setBackgroundColor(color)
             holder.tvActionType.setTextColor(color)
+            holder.tvTriggeredBy.setTextColor(color)
         }
 
         override fun getItemCount(): Int = items.size
@@ -175,6 +185,7 @@ class AdminLogsActivity : ThemedActivity() {
             val tvTime: TextView = itemView.findViewById(R.id.tvLogTime)
             val tvDetails: TextView = itemView.findViewById(R.id.tvLogDetails)
             val tvTriggeredBy: TextView = itemView.findViewById(R.id.tvLogTriggeredBy)
+            val tvTargetedUsers: TextView = itemView.findViewById(R.id.tvLogTargetedUsers)
         }
     }
 }

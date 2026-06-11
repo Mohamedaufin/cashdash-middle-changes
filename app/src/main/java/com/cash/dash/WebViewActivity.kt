@@ -44,6 +44,14 @@ class WebViewActivity : ThemedActivity() {
         settings.displayZoomControls = false
 
         webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                val uri = request?.url?.toString() ?: ""
+                if (uri.startsWith("mailto:")) {
+                    return true // Disable email clicks
+                }
+                return super.shouldOverrideUrlLoading(view, request)
+            }
+
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
                 progressBar.visibility = View.VISIBLE
