@@ -121,9 +121,17 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
             connectedRef.addValueEventListener(presenceListener!!)
 
             // Also immediately sync to Firestore directly as a fallback
-            val updates = hashMapOf<String, Any>("status" to "Online")
-            db.collection("users").document(email).update(updates).addOnFailureListener { }
-            db.collection("users").document(email).collection("config").document("profile").update(updates).addOnFailureListener { }
+            val appVersion = try {
+                context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
+            } catch (e: Exception) { "unknown" }
+
+            val updates = hashMapOf<String, Any>(
+                "status" to "Online",
+                "appVersion" to appVersion
+            )
+            val mergeOptions = com.google.firebase.firestore.SetOptions.merge()
+            db.collection("users").document(email).set(updates, mergeOptions).addOnFailureListener { }
+            db.collection("users").document(email).collection("config").document("profile").set(updates, mergeOptions).addOnFailureListener { }
         }
 
         fun setOfflineImmediate(context: Context) {

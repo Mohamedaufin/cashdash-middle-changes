@@ -93,6 +93,19 @@
         android:textStyle="bold"
         android:padding="18dp"
         android:paddingTop="12dp"
-        android:paddingBottom="12dp"/>
+        android:paddingBottom="4dp"/>
+
+    <!-- Targeted Users info -->
+    <TextView
+        android:id="@+id/tvLogTargetedUsers"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Targeted users :\n• user@gmail.com"
+        android:textColor="?attr/textMutedColor"
+        android:textSize="13sp"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        android:paddingBottom="12dp"
+        android:visibility="gone"/>
 
 </LinearLayout>

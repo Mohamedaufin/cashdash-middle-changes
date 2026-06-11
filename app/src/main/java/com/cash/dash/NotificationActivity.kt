@@ -147,7 +147,10 @@ class NotificationActivity : ThemedActivity() {
                         null
                     } else {
                         val adminOnly = doc.getBoolean("adminOnly") ?: false
+                        val targetEmails = doc.get("targetEmails") as? List<String>
                         if (adminOnly && !isAdmin) {
+                            null
+                        } else if (targetEmails != null && !targetEmails.map { it.lowercase() }.contains(email)) {
                             null
                         } else {
                             val isRead = readAnnPrefs.contains(doc.id)

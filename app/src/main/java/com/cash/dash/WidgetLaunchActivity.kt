@@ -17,7 +17,7 @@ class WidgetLaunchActivity : Activity() {
         try {
             startService(serviceIntent)
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("WidgetLaunchActivity", "Failed to start FloatingWidgetService", e)
         }
         
         // Finish instantly so it acts completely invisibly

@@ -184,7 +184,7 @@ class MoneyScheduleActivity : ThemedActivity() {
             }
         } catch (e: Exception) {
             ToastHelper.showToast(this, "Error starting Schedule: ${e.message}")
-            e.printStackTrace()
+            android.util.Log.e("MoneyScheduleActivity", "Error during onCreate", e)
             finish()
         }
     }

@@ -370,7 +370,7 @@ class ReportActivity : ThemedActivity() {
                     renderReport(insights)
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("ReportActivity", "Error generating advisory report", e)
                 withContext(Dispatchers.Main) {
                     isGenerating = false
                     addCard("Advisory Offline", "Error", "Quantum engine error: ${e.localizedMessage}", R.drawable.ic_glass_menu_vector)
@@ -466,7 +466,7 @@ class ReportActivity : ThemedActivity() {
 
 
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("ReportActivity", "Error rendering advisory report", e)
             addCard("Advisory Offline", "Error", "Quantum engine error: ${e.localizedMessage}", R.drawable.ic_glass_menu_vector)
         }
     }

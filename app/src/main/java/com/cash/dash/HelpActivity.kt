@@ -512,6 +512,8 @@ class HelpActivity : ThemedActivity() {
             .addSnapshotListener { snapshot, _ ->
                 hasUnreadAnnouncement = false
                 if (snapshot != null) {
+                    val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                    val email = user?.email?.lowercase() ?: ""
                     val deletedPrefs = getSharedPreferences("DeletedAnnouncements", Context.MODE_PRIVATE)
                     val readPrefs = getSharedPreferences("ReadAnnouncements", Context.MODE_PRIVATE)
                     for (doc in snapshot.documents) {
@@ -520,7 +522,11 @@ class HelpActivity : ThemedActivity() {
                             continue
                         }
                         val adminOnly = doc.getBoolean("adminOnly") ?: false
+                        val targetEmails = doc.get("targetEmails") as? List<String>
                         if (adminOnly && !isAdmin) {
+                            continue
+                        }
+                        if (targetEmails != null && !targetEmails.map { it.lowercase() }.contains(email)) {
                             continue
                         }
                         hasUnreadAnnouncement = true

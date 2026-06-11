@@ -335,7 +335,7 @@ class FloatingWidgetService : Service() {
                 trackerView = null
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("FloatingWidgetService", "Error removing widget view", e)
         }
         isWidgetShowing = false
     }

@@ -215,7 +215,7 @@ class ProfileActivity : ThemedActivity() {
             // Finally delete the root document itself
             db.collection("users").document(email).delete()
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("ProfileActivity", "Error during account delete logging / sub-collection wipe", e)
         }
     }
 
