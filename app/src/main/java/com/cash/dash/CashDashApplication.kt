@@ -124,19 +124,10 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
             val appVersion = try {
                 context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
             } catch (e: Exception) { "unknown" }
-            val versionCode = try {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                    context.packageManager.getPackageInfo(context.packageName, 0).longVersionCode
-                } else {
-                    @Suppress("DEPRECATION")
-                    context.packageManager.getPackageInfo(context.packageName, 0).versionCode.toLong()
-                }
-            } catch (e: Exception) { 0L }
 
             val updates = hashMapOf<String, Any>(
                 "status" to "Online",
-                "appVersion" to appVersion,
-                "versionCode" to versionCode
+                "appVersion" to appVersion
             )
             val mergeOptions = com.google.firebase.firestore.SetOptions.merge()
             db.collection("users").document(email).set(updates, mergeOptions).addOnFailureListener { }
