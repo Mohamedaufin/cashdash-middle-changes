@@ -32,7 +32,7 @@
             android:layout_centerInParent="true"
             android:text="Appearance"
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="20sp"
+            android:textSize="20dp"
             android:textStyle="bold" />
     </RelativeLayout>
 
@@ -58,7 +58,7 @@
                 android:layout_height="wrap_content"
                 android:text="App Theme"
                 android:textColor="?attr/textPrimaryColor"
-                android:textSize="18sp"
+                android:textSize="18dp"
                 android:textStyle="bold"
                 android:layout_marginBottom="15dp" />
 
@@ -91,7 +91,7 @@
                         android:layout_height="wrap_content"
                         android:text="Black"
                         android:textColor="?attr/textPrimaryColor"
-                        android:textSize="14sp"
+                        android:textSize="14dp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -118,7 +118,7 @@
                         android:layout_height="wrap_content"
                         android:text="Blue"
                         android:textColor="?attr/textMutedColor"
-                        android:textSize="14sp" />
+                        android:textSize="14dp" />
                 </LinearLayout>
 
                 <!-- White Card -->
@@ -145,7 +145,7 @@
                         android:layout_height="wrap_content"
                         android:text="White"
                         android:textColor="?attr/textMutedColor"
-                        android:textSize="14sp" />
+                        android:textSize="14dp" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -162,7 +162,7 @@
                 android:layout_height="wrap_content"
                 android:text="Balance Bar Style"
                 android:textColor="?attr/textPrimaryColor"
-                android:textSize="18sp"
+                android:textSize="18dp"
                 android:textStyle="bold"
                 android:layout_marginBottom="15dp" />
 
@@ -181,7 +181,7 @@
                     android:layout_height="wrap_content"
                     android:text="Live Preview"
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="12sp"
+                    android:textSize="12dp"
                     android:layout_marginBottom="20dp" />
 
                 <com.cash.dash.GradientCircularProgressView
@@ -207,7 +207,7 @@
                     android:gravity="center"
                     android:text="Gradient"
                     android:textColor="?attr/textPrimaryColor"
-                    android:textSize="15sp"
+                    android:textSize="15dp"
                     android:textStyle="bold" />
 
                 <TextView
@@ -220,7 +220,7 @@
                     android:gravity="center"
                     android:text="Single Colour"
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="15sp" />
+                    android:textSize="15dp" />
             </LinearLayout>
 
             <!-- Gradient Options -->
@@ -241,7 +241,7 @@
                     android:gravity="center"
                     android:text="Gradient 1"
                     android:textColor="?attr/textPrimaryColor"
-                    android:textSize="14sp"
+                    android:textSize="14dp"
                     android:textStyle="bold" />
 
                 <TextView
@@ -254,7 +254,7 @@
                     android:gravity="center"
                     android:text="Gradient 2"
                     android:textColor="?attr/textMutedColor"
-                    android:textSize="14sp" />
+                    android:textSize="14dp" />
             </LinearLayout>
 
             <!-- Single Colour Options -->
@@ -277,37 +277,37 @@
                     android:gravity="center"
                     android:layout_margin="8dp">
                     <View android:layout_width="45dp" android:layout_height="45dp" android:background="@drawable/bg_color_purple" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Purple" android:textColor="?attr/textMutedColor" android:textSize="11sp" android:layout_marginTop="6dp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Purple" android:textColor="?attr/textMutedColor" android:textSize="11dp" android:layout_marginTop="6dp" />
                 </LinearLayout>
 
                 <!-- Item 2: Yellow -->
                 <LinearLayout android:id="@+id/colorYellow" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:orientation="vertical" android:gravity="center" android:layout_margin="8dp">
                     <View android:layout_width="45dp" android:layout_height="45dp" android:background="@drawable/bg_color_yellow" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Yellow" android:textColor="?attr/textMutedColor" android:textSize="11sp" android:layout_marginTop="6dp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Yellow" android:textColor="?attr/textMutedColor" android:textSize="11dp" android:layout_marginTop="6dp" />
                 </LinearLayout>
 
                 <!-- Item 3: Red -->
                 <LinearLayout android:id="@+id/colorRed" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:orientation="vertical" android:gravity="center" android:layout_margin="8dp">
                     <View android:layout_width="45dp" android:layout_height="45dp" android:background="@drawable/bg_color_red" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Red" android:textColor="?attr/textMutedColor" android:textSize="11sp" android:layout_marginTop="6dp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Red" android:textColor="?attr/textMutedColor" android:textSize="11dp" android:layout_marginTop="6dp" />
                 </LinearLayout>
 
                 <!-- Item 4: Green -->
                 <LinearLayout android:id="@+id/colorGreen" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:orientation="vertical" android:gravity="center" android:layout_margin="8dp">
                     <View android:layout_width="45dp" android:layout_height="45dp" android:background="@drawable/bg_color_green" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Green" android:textColor="?attr/textMutedColor" android:textSize="11sp" android:layout_marginTop="6dp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Green" android:textColor="?attr/textMutedColor" android:textSize="11dp" android:layout_marginTop="6dp" />
                 </LinearLayout>
 
                 <!-- Item 5: Black -->
                 <LinearLayout android:id="@+id/colorBlack" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:orientation="vertical" android:gravity="center" android:layout_margin="8dp">
                     <View android:layout_width="45dp" android:layout_height="45dp" android:background="@drawable/bg_color_black" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Black" android:textColor="?attr/textMutedColor" android:textSize="11sp" android:layout_marginTop="6dp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Black" android:textColor="?attr/textMutedColor" android:textSize="11dp" android:layout_marginTop="6dp" />
                 </LinearLayout>
 
                 <!-- Item 6: White -->
                 <LinearLayout android:id="@+id/colorWhite" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:orientation="vertical" android:gravity="center" android:layout_margin="8dp">
                     <View android:layout_width="45dp" android:layout_height="45dp" android:background="@drawable/bg_color_white" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="White" android:textColor="?attr/textMutedColor" android:textSize="11sp" android:layout_marginTop="6dp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="White" android:textColor="?attr/textMutedColor" android:textSize="11dp" android:layout_marginTop="6dp" />
                 </LinearLayout>
             </GridLayout>
 
@@ -317,7 +317,7 @@
                 android:layout_height="65dp"
                 android:text="Apply Appearance"
                 android:textAllCaps="false"
-                android:textSize="18sp"
+                android:textSize="18dp"
                 android:textStyle="bold"
                 android:textColor="?attr/textPrimaryColor"
                 android:background="?attr/cardBackground"

@@ -399,7 +399,7 @@ class MainActivity : ThemedActivity() {
     private fun updateUserMetadata() {
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         
-        val sdf = java.text.SimpleDateFormat("dd/MM/yyyy, hh:mm a", java.util.Locale.ENGLISH)
+        val sdf = java.text.SimpleDateFormat("dd/MM/yyyy, h:mm a", java.util.Locale.ENGLISH)
         sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
         val lastActive = sdf.format(java.util.Date())
         
