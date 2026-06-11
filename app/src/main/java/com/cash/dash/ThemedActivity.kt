@@ -21,4 +21,14 @@ open class ThemedActivity : AppCompatActivity() {
             window.statusBarColor = android.graphics.Color.TRANSPARENT
         }
     }
+    override fun attachBaseContext(newBase: android.content.Context) {
+        val configuration = android.content.res.Configuration(newBase.resources.configuration)
+        if (configuration.fontScale > 1.0f) {
+            configuration.fontScale = 1.0f
+            val context = newBase.createConfigurationContext(configuration)
+            super.attachBaseContext(context)
+        } else {
+            super.attachBaseContext(newBase)
+        }
+    }
 }

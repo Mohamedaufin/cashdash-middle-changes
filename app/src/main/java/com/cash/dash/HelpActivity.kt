@@ -154,7 +154,7 @@ class HelpActivity : ThemedActivity() {
         val email = prefs.getString("user_email", "No Email") ?: "No Email"
 
         // Get Formatted Time
-        val sdf = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+        val sdf = SimpleDateFormat("dd MMM yyyy, h:mm a", Locale.getDefault())
         val currentTime = sdf.format(Date())
 
         tvName.text = "Name: $name"

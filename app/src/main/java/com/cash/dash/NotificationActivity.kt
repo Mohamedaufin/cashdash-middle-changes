@@ -304,7 +304,7 @@ class NotificationActivity : ThemedActivity() {
     }
 
     private fun mapEntitiesToModels(entities: List<NotificationEntity>): List<NotificationModel> {
-        val sdf = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
+        val sdf = SimpleDateFormat("dd MMM, h:mm a", Locale.getDefault())
         val now = System.currentTimeMillis()
         val fortyEightHours = 48 * 60 * 60 * 1000L
 

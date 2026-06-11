@@ -63,7 +63,7 @@ class AdminLogsActivity : ThemedActivity() {
                 }
 
                 logsList.clear()
-                val sdf = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+                val sdf = SimpleDateFormat("dd MMM yyyy, h:mm a", Locale.getDefault())
 
                 for (doc in querySnapshot.documents) {
                     val email = doc.getString("adminEmail") ?: "Unknown"
