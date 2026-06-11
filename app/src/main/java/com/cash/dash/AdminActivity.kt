@@ -61,6 +61,7 @@ class AdminActivity : ThemedActivity() {
 
             val db = FirebaseFirestore.getInstance()
             val timestamp = System.currentTimeMillis()
+            val timeStr = java.text.SimpleDateFormat("dd MMM yyyy, h:mm a", java.util.Locale.getDefault()).format(java.util.Date(timestamp))
             val subjectStr = title
             val data = hashMapOf(
                 "subject" to subjectStr,
@@ -68,6 +69,7 @@ class AdminActivity : ThemedActivity() {
                 "reply" to "[ANNOUNCEMENT]",
                 "status" to "resolved",
                 "timestamp" to timestamp,
+                "time" to timeStr,
                 "read" to false,
                 "adminOnly" to adminOnly
             )
@@ -122,10 +124,12 @@ class AdminActivity : ThemedActivity() {
 
             val db = FirebaseFirestore.getInstance()
             val timestamp = System.currentTimeMillis()
+            val timeStr = java.text.SimpleDateFormat("dd MMM yyyy, h:mm a", java.util.Locale.getDefault()).format(java.util.Date(timestamp))
             val data = hashMapOf(
                 "title" to title,
                 "message" to body,
                 "timestamp" to timestamp,
+                "time" to timeStr,
                 "adminOnly" to adminOnly
             )
 
@@ -195,12 +199,14 @@ class AdminActivity : ThemedActivity() {
 
             val db = FirebaseFirestore.getInstance()
             val timestamp = System.currentTimeMillis()
+            val timeStr = java.text.SimpleDateFormat("dd MMM yyyy, h:mm a", java.util.Locale.getDefault()).format(java.util.Date(timestamp))
             val data = hashMapOf(
                 "subject" to title,
                 "query" to body,
                 "reply" to "[ANNOUNCEMENT]",
                 "status" to "resolved",
                 "timestamp" to timestamp,
+                "time" to timeStr,
                 "read" to false,
                 "adminOnly" to false,
                 "targetEmails" to targetEmails
