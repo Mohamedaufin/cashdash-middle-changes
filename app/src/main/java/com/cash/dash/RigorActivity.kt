@@ -40,12 +40,7 @@ class RigorActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_rigor)
 
-        TutorialManager.showTutorialIfNeeded(
-            this,
-            "tut_rigor",
-            "Rigor Tracker",
-            "This helps to manually record your expenses\n\n1. Enter expense title and amount\n2. Choose date of expense from calendar\n3. Tap Next and choose an allocation\n4. Thats it, Your expense has been recorded manually and wallet has been detucted\n\n*(Note: You can revisit these instructions anytime in the 'Help' section! Tap the Menu icon located next to 'Hello' on your Home dashboard to find it.)*"
-        )
+
 
         inputTitle = findViewById(R.id.Title)
         val inputAmount = findViewById<EditText>(R.id.inputAmount)
@@ -243,7 +238,7 @@ class RigorActivity : ThemedActivity() {
 
         val inputName = EditText(this).apply {
             hint = "Category Name (e.g. Travel)"
-            inputType = android.text.InputType.TYPE_CLASS_TEXT
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textPrimaryColor))
             setHintTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textMutedColor))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
@@ -253,7 +248,7 @@ class RigorActivity : ThemedActivity() {
         box.addView(inputName)
 
         val inputLimit = EditText(this).apply {
-            hint = "Monthly Limit (Optional)"
+            hint = "Enter limit (optional)"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textPrimaryColor))
             setHintTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textMutedColor))

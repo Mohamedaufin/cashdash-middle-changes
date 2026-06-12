@@ -170,14 +170,18 @@ class HistoryActivity : ThemedActivity() {
             startActivity(intent)
         }
 
-        findViewById<View>(R.id.cardReport).setOnClickListener {
-            val intent = Intent(this, ReportActivity::class.java)
-            startActivity(intent)
+        val cardReport = findViewById<View>(R.id.cardReport)
+        cardReport.setOnClickListener {
+            animateAndStart(cardReport) {
+                startActivity(Intent(this, ReportActivity::class.java))
+            }
         }
 
-        findViewById<View>(R.id.cardStatement).setOnClickListener {
-            val intent = Intent(this, StatementSelectionActivity::class.java)
-            startActivity(intent)
+        val cardStatement = findViewById<View>(R.id.cardStatement)
+        cardStatement.setOnClickListener {
+            animateAndStart(cardStatement) {
+                startActivity(Intent(this, StatementSelectionActivity::class.java))
+            }
         }
     }
 
@@ -539,6 +543,20 @@ class HistoryActivity : ThemedActivity() {
         animateGraph(graph)
     }
 
+
+    private fun animateAndStart(view: View, action: () -> Unit) {
+        view.animate()
+            .scaleX(0.85f).scaleY(0.85f)
+            .setDuration(7)
+            .withEndAction {
+                view.animate()
+                    .scaleX(1f).scaleY(1f)
+                    .setDuration(8)
+                    .withEndAction { action() }
+                    .start()
+            }
+            .start()
+    }
 
     private fun animateGraph(graph: View) {
         graph.alpha = 0f

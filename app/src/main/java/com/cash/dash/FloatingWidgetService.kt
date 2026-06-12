@@ -233,7 +233,21 @@ class FloatingWidgetService : Service() {
 
         trackerView?.setOnTouchListener { v, event ->
             if (event.action == MotionEvent.ACTION_OUTSIDE) {
-                hideAll()
+                showBubble()
+                true
+            } else {
+                false
+            }
+        }
+
+        trackerView?.isFocusable = true
+        trackerView?.isFocusableInTouchMode = true
+        trackerView?.requestFocus()
+        trackerView?.setOnKeyListener { _, keyCode, event ->
+            if (keyCode == KeyEvent.KEYCODE_BACK) {
+                if (event.action == KeyEvent.ACTION_UP) {
+                    showBubble()
+                }
                 true
             } else {
                 false
@@ -264,19 +278,23 @@ class FloatingWidgetService : Service() {
             val prefsCat = getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
             val savedCategories = prefsCat.getStringSet("categories", emptySet()) ?: emptySet()
             val categoriesList = savedCategories.toMutableList()
-            if (!categoriesList.contains("Food")) categoriesList.add("Food")
-            if (!categoriesList.contains("Shopping")) categoriesList.add("Shopping")
-            if (!categoriesList.contains("no choice")) categoriesList.add("no choice")
+            if (categoriesList.isEmpty()) {
+                categoriesList.add("Create new allocation")
+            }
 
             val displayList = mutableListOf<String>()
             for (cat in categoriesList) {
-                val limitObj = prefsCat.all["LIMIT_$cat"]
-                val limit = limitObj?.toString()?.toFloatOrNull()?.toInt() ?: -1
-                val spent = getSpentForCategory(db, cat).toInt()
-                if (limit > 0) {
-                    displayList.add("$cat - ₹$spent / ₹$limit")
-                } else {
+                if (cat == "Create new allocation") {
                     displayList.add(cat)
+                } else {
+                    val limitObj = prefsCat.all["LIMIT_$cat"]
+                    val limit = limitObj?.toString()?.toFloatOrNull()?.toInt() ?: -1
+                    val spent = getSpentForCategory(db, cat).toInt()
+                    if (limit > 0) {
+                        displayList.add("$cat - ₹$spent / ₹$limit")
+                    } else {
+                        displayList.add(cat)
+                    }
                 }
             }
 
@@ -295,12 +313,123 @@ class FloatingWidgetService : Service() {
                     }
                     val amount = amountStr.toFloatOrNull() ?: 0f
                     val selectedIdx = spinner?.selectedItemPosition ?: 0
-                    val rawCategory = categoriesList.getOrNull(selectedIdx) ?: "no choice"
+                    val rawCategory = categoriesList.getOrNull(selectedIdx) ?: "Create new allocation"
 
-                    saveExpense(edtTitle?.text.toString().trim(), amount, rawCategory)
+                    if (rawCategory == "Create new allocation") {
+                        showCreateAllocationDialog(edtTitle?.text.toString().trim(), amount)
+                    } else {
+                        saveExpense(edtTitle?.text.toString().trim(), amount, rawCategory)
+                    }
                 }
             }
         }
+    }
+
+    private fun showCreateAllocationDialog(expenseTitle: String, expenseAmount: Float) {
+        val density = resources.displayMetrics.density
+        val inputContainer = LinearLayout(getThemedContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            val p = (20 * density).toInt()
+            setPadding(p, p, p, p)
+            setBackgroundResource(ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
+        }
+
+        val titleView = TextView(getThemedContext()).apply {
+            text = "Create New Allocation"
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, 18f)
+            setTextColor(ThemeHelper.resolveColorAttr(this@FloatingWidgetService, R.attr.textPrimaryColor))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, (16 * density).toInt())
+        }
+        inputContainer.addView(titleView)
+
+        val edtName = EditText(getThemedContext()).apply {
+            hint = "Allocation Name (e.g. Shopping)"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            setHintTextColor(ThemeHelper.resolveColorAttr(this@FloatingWidgetService, R.attr.textMutedColor))
+            setTextColor(ThemeHelper.resolveColorAttr(this@FloatingWidgetService, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+            setPadding((12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt())
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = (24 * density).toInt()
+            }
+        }
+        inputContainer.addView(edtName)
+
+        val btnContainer = LinearLayout(getThemedContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+
+        val btnCancel = Button(getThemedContext()).apply {
+            text = "Cancel"
+            isAllCaps = false
+            setTextColor(ThemeHelper.resolveColorAttr(this@FloatingWidgetService, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginEnd = (8 * density).toInt()
+            }
+        }
+        btnContainer.addView(btnCancel)
+
+        val btnCreate = Button(getThemedContext()).apply {
+            text = "Create"
+            isAllCaps = false
+            setTextColor(ThemeHelper.resolveColorAttr(this@FloatingWidgetService, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        btnContainer.addView(btnCreate)
+        inputContainer.addView(btnContainer)
+
+        val allocDialog = androidx.appcompat.app.AlertDialog.Builder(getThemedContext())
+            .setView(inputContainer)
+            .setCancelable(true)
+            .create()
+
+        allocDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            allocDialog.window?.setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
+        } else {
+            allocDialog.window?.setType(WindowManager.LayoutParams.TYPE_PHONE)
+        }
+
+        btnCancel.setOnClickListener {
+            allocDialog.dismiss()
+        }
+
+        btnCreate.setOnClickListener {
+            val name = edtName.text.toString().trim()
+            if (name.isEmpty()) {
+                Toast.makeText(this@FloatingWidgetService, "Please enter a name", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (name.equals("Overall", ignoreCase = true)) {
+                Toast.makeText(this@FloatingWidgetService, "'Overall' is a reserved name", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val prefs = getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
+            val savedList = prefs.getStringSet("categories", emptySet()) ?: emptySet()
+            val newSet = savedList.toMutableSet()
+            newSet.add(name)
+            prefs.edit().putStringSet("categories", newSet).apply()
+
+            FirestoreSyncManager.pushAllDataToCloud(this@FloatingWidgetService)
+
+            allocDialog.dismiss()
+            Toast.makeText(this@FloatingWidgetService, "Allocation created!", Toast.LENGTH_SHORT).show()
+
+            populateTrackerData()
+            saveExpense(expenseTitle, expenseAmount, name)
+        }
+
+        allocDialog.show()
+        val width = (resources.displayMetrics.widthPixels * 0.9).toInt()
+        allocDialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 
     private suspend fun getSpentForCategory(db: AppDatabase, category: String): Float {
@@ -344,6 +473,12 @@ class FloatingWidgetService : Service() {
         super.onDestroy()
         hideAll()
         serviceScope.cancel()
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        // Aggressive swipe-to-close on Samsung devices
+        CashDashApplication.setOfflineImmediate(this)
     }
 
     // Helper to check if usage stats permission is enabled

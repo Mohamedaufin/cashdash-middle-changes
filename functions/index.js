@@ -64,6 +64,14 @@ exports.onSupportQuery = onDocumentWritten({
             emailQuery = `User (${userName}): ` + emailQuery;
         }
 
+        // Remove attachment links/tags from the email body
+        let cleanEmailQuery = emailQuery.replace(/\[Attachment:\s*(https?:\/\/[^\s\]]+)\]/g, "").trim();
+        
+        // If the query is just the prefix, it means only an attachment was sent
+        if (cleanEmailQuery.trim() === `User (${userName}):`) {
+            cleanEmailQuery = `User (${userName}): (Sent an Attachment)`;
+        }
+
         const dateStr = newData.time || new Date(newData.timestamp || Date.now()).toLocaleString("en-US", {
             month: "short", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false
         });
@@ -85,7 +93,7 @@ Time: ${dateStr}
 -----------------------------------
 CONVERSATION THREAD:
 -----------------------------------
-${emailQuery || "No query text found."}
+${cleanEmailQuery || "No query text found."}
 -----------------------------------
 
 REPLY TO THIS QUERY:
@@ -106,7 +114,7 @@ Subject: ${subject || "General Help"}
 -----------------------------------
 MESSAGE:
 -----------------------------------
-${emailQuery || "No query text found."}
+${cleanEmailQuery || "No query text found."}
 -----------------------------------
 
 REPLY TO THIS QUERY:
@@ -116,37 +124,12 @@ ${replyUrl}
 `.trim();
         }
 
-        const attachments = [];
-        if (newData.imageUrl) {
-            attachments.push({
-                filename: "attachment_0.jpg",
-                path: newData.imageUrl
-            });
-        }
-        if (newData.imageUrls && Array.isArray(newData.imageUrls)) {
-            newData.imageUrls.forEach((url, i) => {
-                if (url !== newData.imageUrl) {
-                    attachments.push({
-                        filename: `attachment_${attachments.length}.jpg`,
-                        path: url
-                    });
-                }
-            });
-        }
-        if (attachments.length > 0) {
-            emailBody += `\n\n-----------------------------------\n${attachments.length} supported attachment${attachments.length > 1 ? "s" : ""} below\n-----------------------------------`;
-        }
-
         const mailOptions = {
             from: `"CashDash Support" <${GMAIL_USER}>`,
             to: ADMIN_EMAIL,
             subject: emailSubject,
             text: emailBody,
         };
-
-        if (attachments.length > 0) {
-            mailOptions.attachments = attachments;
-        }
 
         try {
             await createTransporter().sendMail(mailOptions);
@@ -172,7 +155,7 @@ exports.cashdashWebhook = onRequest({ cors: true, region: "us-central1", secrets
     const targetUser = email || uid;
     try {
         if (!is_reply) {
-            await db.collection("users").doc(targetUser).collection("notifications").doc(String(id)).set({
+            const docData = {
                 name: name || "",
                 email: email || "",
                 time: time || "",
@@ -183,10 +166,43 @@ exports.cashdashWebhook = onRequest({ cors: true, region: "us-central1", secrets
                 read: false,
                 status: "pending",
                 reply: "Waiting for reply...",
-            });
+            };
+            // Save attachment URLs if provided in the body
+            const bodyImageUrl = req.body.imageUrl;
+            const bodyImageUrls = req.body.imageUrls;
+            if (bodyImageUrl) docData.imageUrl = bodyImageUrl;
+            if (Array.isArray(bodyImageUrls) && bodyImageUrls.length > 0) docData.imageUrls = bodyImageUrls;
+            await db.collection("users").doc(targetUser).collection("notifications").doc(String(id)).set(docData);
         }
 
         const replyUrl = `https://adminreply-khhfw7mtba-uc.a.run.app?uid=${uid}&id=${id}&email=${email || ""}`;
+
+        // Helper: strip [Attachment: url] markers and replace empty lines with "(Sent an Attachment)"
+        function cleanTextForEmail(text) {
+            if (!text) return "";
+            // Per-line fix: if a line is just "Name: " with nothing after, add (Sent an Attachment)
+            const lines = text.split('\n');
+            const fixedLines = lines.map(line => {
+                const stripped = line.replace(/\[Attachment:\s*(https?:\/\/[^\s\]]+)\]/g, '').trim();
+                const hasAttachment = /\[Attachment:/.test(line);
+                if (hasAttachment && stripped === '') return '(Sent an Attachment)';
+                if (hasAttachment && /^[A-Za-z0-9 ]+:\s*$/.test(stripped)) return stripped + ' (Sent an Attachment)';
+                return stripped;
+            });
+            return fixedLines.filter((l, i, arr) => !(l === '' && arr[i-1] === '')).join('\n').trim();
+        }
+
+        let cleanOriginalQuery = cleanTextForEmail(originalQuery);
+        if (!cleanOriginalQuery && (originalQuery || "").includes("[Attachment:")) cleanOriginalQuery = "(Sent an Attachment)";
+
+        let cleanTeamReply = cleanTextForEmail(teamReply);
+        if (!cleanTeamReply && (teamReply || "").includes("[Attachment:")) cleanTeamReply = "(Sent an Attachment)";
+
+        let cleanUserFollowup = cleanTextForEmail(userFollowup);
+        if (!cleanUserFollowup && (userFollowup || "").includes("[Attachment:")) cleanUserFollowup = "(Sent an Attachment)";
+
+        let cleanQuery = cleanTextForEmail(rawQuery || query);
+        if (!cleanQuery && (rawQuery || query || "").includes("[Attachment:")) cleanQuery = "(Sent an Attachment)";
 
         let emailBody = "";
         if (is_reply && userFollowup) {
@@ -200,11 +216,11 @@ Time: ${time || "Just now"}
 -----------------------------------
 CONVERSATION THREAD:
 -----------------------------------
-User (${name || "User"}): ${originalQuery || "No original message found."}
+User (${name || "User"}): ${cleanOriginalQuery || "No original message found."}
 
-Team Cashdash: ${teamReply || "No team reply found."}
+Team Cashdash: ${cleanTeamReply || "No team reply found."}
 
-User (${name || "User"}): ${userFollowup}
+User (${name || "User"}): ${cleanUserFollowup}
 -----------------------------------
 
 REPLY TO THIS QUERY:
@@ -224,7 +240,7 @@ Subject: ${subject || "General Help"}
 -----------------------------------
 MESSAGE:
 -----------------------------------
-User (${name || "User"}): ${rawQuery || query || "No query text found."}
+User (${name || "User"}): ${cleanQuery || "No query text found."}
 -----------------------------------
 
 REPLY TO THIS QUERY:
@@ -250,20 +266,38 @@ ${replyUrl}
 
 // ─────────────────────────────────────────────
 exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EMAIL_PASS_SECRET] }, async (req, res) => {
+    const Busboy = require("busboy");
+    const path = require("path");
+    const os = require("os");
+    const fs = require("fs");
+
     if (req.method === "GET") {
         const { uid, id, email } = req.query;
         let queryText = "Loading...";
         let subjectText = "Support Query";
         const targetUser = email || uid;
+        let hasPreviousReply = false;
+        let legacyImages = [];
+
         try {
             const doc = await db.collection("users").doc(targetUser).collection("notifications").doc(String(id)).get();
             if (doc.exists) {
                 const data = doc.data();
+                legacyImages = [];
+                if (data.imageUrl) {
+                    legacyImages.push(data.imageUrl);
+                }
+                if (Array.isArray(data.imageUrls)) {
+                    data.imageUrls.forEach(url => {
+                        if (url !== data.imageUrl) {
+                            legacyImages.push(url);
+                        }
+                    });
+                }
                 const userName = data.name || "User";
                 queryText = data.query || "No query text found.";
                 subjectText = data.subject || "Support Query";
 
-                // Prefix labeling: use "Question:" for initial query, and "Username:" for follow-up thread starts
                 if (data.is_reply) {
                     if (!queryText.startsWith(userName + ":") && !queryText.startsWith("User (") && !queryText.startsWith("Team Cashdash:")) {
                         queryText = userName + ": " + queryText;
@@ -277,9 +311,11 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
                 const currentReply = data.reply || "";
                 if (currentReply && currentReply !== "Waiting for reply...") {
                     queryText = queryText + "\n\nTeam Cashdash: " + currentReply;
+                    if (currentReply !== "This query has been marked as resolved by the admin.") {
+                        hasPreviousReply = true;
+                    }
                 }
 
-                // Add dynamic context tags for the admin web panel ONLY
                 if (data.status === "resolved") {
                     if (!currentReply || currentReply === "This query has been marked as resolved by the admin.") {
                         queryText += "\n\n(Marked resolved without reply)";
@@ -292,76 +328,256 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
             queryText = "Could not load query.";
         }
 
+        // Collect which URLs are already referenced via [Attachment:] markers in the query text
+        const referencedInText = new Set();
+        const refScanRegex = /\[Attachment:\s*(https?:\/\/[^\s\]]+)\]/g;
+        let refMatch;
+        while ((refMatch = refScanRegex.exec(queryText)) !== null) {
+            referencedInText.add(refMatch[1]);
+        }
+
+        // Legacy image URLs that are NOT already embedded as [Attachment:] markers
+        // These come from the original imageUrl/imageUrls fields (pre-[Attachment:] era)
+        const unreferencedLegacy = Array.isArray(legacyImages)
+            ? legacyImages.filter(url => !referencedInText.has(url))
+            : [];
+
+        let escapedQueryText = queryText.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const attachmentRegex = /\[Attachment:\s*(https?:\/\/[^\s\]]+)\]/g;
+        let hasNewMarkers = false;
+        escapedQueryText = escapedQueryText.replace(attachmentRegex, (match, url) => {
+            hasNewMarkers = true;
+            return `<div style="margin: 8px 0;"><img src="${url}" style="max-width: 100%; max-height: 250px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); cursor: pointer;" onclick="window.open('${url}', '_blank')"></div>`;
+        });
+
+        // Fix: if a speaker line ("Name: ") has no text before an image, insert "(Sent an Attachment)"
+        // Case 1: "Name: \n<div" — newline between colon and image
+        escapedQueryText = escapedQueryText.replace(/([A-Za-z0-9 ]+:)[ \t]*\n(<div style)/g, '$1 (Sent an Attachment)\n$2');
+        // Case 2: "Name: <div" — image immediately after colon with no text
+        escapedQueryText = escapedQueryText.replace(/([A-Za-z0-9 ]+:)[ \t]*(<div style)/g, '$1 (Sent an Attachment)\n$2');
+
+        // Inject unreferenced legacy images after the FIRST block (the original user message)
+        // so they always appear attached to the first message, not dumped at the end
+        if (unreferencedLegacy.length > 0) {
+            const legacyImgHtml = unreferencedLegacy.map(url =>
+                `<div style="margin: 8px 0;"><img src="${url}" style="max-width: 100%; max-height: 250px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); cursor: pointer;" onclick="window.open('${url}', '_blank')"></div>`
+            ).join('');
+            // Find the end of the first \n\n separated block
+            const firstDoubleBreak = escapedQueryText.indexOf('\n\n');
+            if (firstDoubleBreak !== -1) {
+                // Insert images between first block and the rest
+                escapedQueryText = escapedQueryText.slice(0, firstDoubleBreak) + '\n' + legacyImgHtml + escapedQueryText.slice(firstDoubleBreak);
+            } else {
+                // Only one block — append at end
+                escapedQueryText = escapedQueryText + '\n' + legacyImgHtml;
+            }
+        }
+
+
         return res.status(200).send(`
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CashDash Admin Reply</title>
+  <title>CashDash Support Reply</title>
   <style>
     body { font-family: -apple-system, sans-serif; background: #0a0a1a; color: #e0e0ff; margin: 0; padding: 20px; }
     .card { background: rgba(255,255,255,0.07); border-radius: 16px; padding: 24px; max-width: 600px; margin: 40px auto; }
-    h2 { color: #7c83ff; margin-top: 0; }
+    h2 { color: #7c83ff; margin-top: 0; display: flex; align-items: center; gap: 8px; }
     .query-box { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 16px; margin-bottom: 20px; font-size: 14px; white-space: pre-wrap; border-left: 3px solid #7c83ff; }
     textarea { width: 100%; min-height: 120px; padding: 12px; border-radius: 8px; border: 1px solid #7c83ff; background: rgba(0,0,0,0.4); color: #e0e0ff; font-size: 15px; resize: vertical; box-sizing: border-box; }
     .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
     button { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: opacity 0.2s; }
     .btn-reply { background: linear-gradient(135deg, #7c83ff, #4f46e5); color: white; }
-    .btn-resolve { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; } /* 🔥 This is the line that sets the color for Mark Resolved button! */
+    .btn-resolve { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
     .btn-both { background: linear-gradient(135deg, #4ade80, #22c55e); color: white; }
     button:hover { opacity: 0.9; }
+    button:disabled { opacity: 0.25; cursor: not-allowed; pointer-events: none; }
     #error-msg { color: #f87171; font-size: 13px; margin-top: 5px; display: none; text-align: center; font-weight: bold; }
+    .attach-label { display: block; font-weight: bold; margin-bottom: 10px; font-size: 14px; color: #aab; }
+    .img-slots { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+    .img-slot-wrapper { display: flex; flex-direction: column; align-items: center; }
+    .img-slot { width: 80px; height: 80px; border-radius: 10px; border: 2px dashed rgba(124,131,255,0.5); display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: hidden; background: rgba(0,0,0,0.3); transition: border-color 0.2s; flex-shrink: 0; }
+    .img-slot:hover { border-color: #7c83ff; }
+    .img-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+    .img-slot .plus { font-size: 28px; color: rgba(124,131,255,0.7); pointer-events: none; }
+    .delete-txt { color: #f87171; font-size: 12px; cursor: pointer; margin-top: 6px; font-weight: bold; transition: opacity 0.2s; }
+    .delete-txt:hover { opacity: 0.8; }
+    #progress-section { display: none; margin-top: 16px; }
+    #progress-label { font-size: 13px; color: #aab; margin-bottom: 6px; }
+    #progress-bar-wrap { background: rgba(255,255,255,0.1); border-radius: 999px; height: 8px; overflow: hidden; }
+    #progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #7c83ff, #4ade80); border-radius: 999px; transition: width 0.15s ease; }
   </style>
 </head>
 <body>
   <div class="card">
     <h2>📨 CashDash Support Reply</h2>
     <div style="font-size:12px;color:#88a;margin-bottom:10px;">Subject: ${subjectText}</div>
-    <div class="query-box">${queryText.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
-    <form id="replyForm" method="POST" onsubmit="return validateForm(event)">
-      <input type="hidden" name="uid" value="${uid}">
-      <input type="hidden" name="email" value="${email || ""}">
-      <input type="hidden" name="id" value="${id}">
-      
-      <button type="submit" class="btn-resolve" style="margin-bottom: 24px;" onclick="setAction('resolve_only')">1. Mark as resolved without reply</button>
+    <div class="query-box">${escapedQueryText}</div>
 
-      <textarea id="replyText" name="reply" placeholder="Type your reply here..."></textarea>
-      <div id="error-msg">⚠️ Field is empty! Please type a response.</div>
-      
-      <div class="btn-group">
-        <button type="submit" class="btn-reply" onclick="setAction('reply')">2. Send Reply ✈️</button>
-        <button type="submit" class="btn-both" onclick="setAction('reply_and_resolve')">3. Reply & Mark resolved ✅</button>
+    <div id="form-area">
+      <input type="hidden" id="f-uid" value="${uid}">
+      <input type="hidden" id="f-email" value="${email || ""}">
+      <input type="hidden" id="f-id" value="${id}">
+
+      <button id="btn-resolve-only" class="btn-resolve" style="margin-bottom: 20px;" onclick="submitAction('resolve_only')" ${hasPreviousReply ? "disabled" : ""}>1. Mark as resolved without reply</button>
+
+      ${hasPreviousReply ? `
+      <div style="margin-bottom:20px;background:rgba(255,165,0,0.1);padding:12px;border-radius:8px;border:1px dashed orange;">
+        <div style="font-weight:bold;margin-bottom:8px;color:orange;">⚠️ Consecutive Message Options:</div>
+        <label style="display:block;margin-bottom:6px;cursor:pointer;">
+          <input type="radio" name="consecutive_mode" value="additional" onchange="enableActionButtons()"> ➕ Additional message to above message
+        </label>
+        <label style="display:block;cursor:pointer;">
+          <input type="radio" name="consecutive_mode" value="replace" onchange="enableActionButtons()"> 🔄 Replace above message
+        </label>
+      </div>` : ""}
+
+      <textarea id="replyText" placeholder="Type your reply here..."></textarea>
+
+      <div style="margin-top:16px;margin-bottom:4px;">
+        <span class="attach-label">📎 Attach Images:</span>
+        <div class="img-slots" id="imgSlots"></div>
+        <input type="file" id="hiddenPicker" accept="image/*" style="display:none;">
       </div>
-      <input type="hidden" name="action" id="actionInput">
-    </form>
+
+      <div id="error-msg">⚠️ Please type a reply or attach an image.</div>
+
+      <div id="progress-section">
+        <div id="progress-label">Uploading… 0%</div>
+        <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+      </div>
+
+      <div class="btn-group" style="margin-top:20px;">
+        <button id="btn-reply" class="btn-reply" onclick="submitAction('reply')" ${hasPreviousReply ? "disabled" : ""}>2. Send Reply ✈️</button>
+        <button id="btn-reply-and-resolve" class="btn-both" onclick="submitAction('reply_and_resolve')" ${hasPreviousReply ? "disabled" : ""}>3. Reply &amp; Mark resolved ✅</button>
+      </div>
+    </div>
   </div>
 
   <script>
+    const MAX_IMAGES = 4;
+    const hasPrev = ${hasPreviousReply};
+    let selectedFiles = [];
     let currentAction = '';
-    function setAction(action) {
-      currentAction = action;
-      document.getElementById('actionInput').value = action;
+
+    function renderSlots() {
+      const container = document.getElementById('imgSlots');
+      container.innerHTML = '';
+      
+      selectedFiles.forEach((file, i) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'img-slot-wrapper';
+        
+        const slot = document.createElement('div');
+        slot.className = 'img-slot';
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        slot.appendChild(img);
+        
+        const delTxt = document.createElement('div');
+        delTxt.className = 'delete-txt';
+        delTxt.textContent = 'Delete';
+        delTxt.onclick = () => { selectedFiles.splice(i, 1); renderSlots(); };
+        
+        wrapper.appendChild(slot);
+        wrapper.appendChild(delTxt);
+        container.appendChild(wrapper);
+      });
+      
+      if (selectedFiles.length < MAX_IMAGES) {
+        const addWrapper = document.createElement('div');
+        addWrapper.className = 'img-slot-wrapper';
+        const addSlot = document.createElement('div');
+        addSlot.className = 'img-slot';
+        addSlot.innerHTML = '<span class="plus">+</span>';
+        addSlot.onclick = () => document.getElementById('hiddenPicker').click();
+        addWrapper.appendChild(addSlot);
+        container.appendChild(addWrapper);
+      }
     }
 
-    function validateForm(e) {
+    document.getElementById('hiddenPicker').addEventListener('change', function() {
+      if (this.files[0] && selectedFiles.length < MAX_IMAGES) {
+        selectedFiles.push(this.files[0]);
+        this.value = '';
+        renderSlots();
+      }
+    });
+    
+    renderSlots();
+
+    function enableActionButtons() {
+      ['btn-resolve-only','btn-reply','btn-reply-and-resolve'].forEach(id => {
+        document.getElementById(id).removeAttribute('disabled');
+      });
+    }
+
+    function setButtons(disabled) {
+      ['btn-resolve-only','btn-reply','btn-reply-and-resolve'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (disabled) btn.setAttribute('disabled',''); else btn.removeAttribute('disabled');
+      });
+    }
+
+    function submitAction(action) {
+      currentAction = action;
       const text = document.getElementById('replyText').value.trim();
       const error = document.getElementById('error-msg');
-      
-      // If no action was set (e.g. enter key), default to reply
-      if (!currentAction) {
-        currentAction = 'reply';
-        document.getElementById('actionInput').value = 'reply';
+
+      if (hasPrev) {
+        const radios = document.getElementsByName('consecutive_mode');
+        if (!Array.from(radios).some(r => r.checked)) {
+          alert('Please select whether this is an additional or replacement message.');
+          return;
+        }
       }
 
-      // Buttons 2 and 3 require text
-      if ((currentAction === 'reply' || currentAction === 'reply_and_resolve') && text.length === 0) {
-        error.style.display = 'block';
-        return false;
+      if ((action === 'reply' || action === 'reply_and_resolve') && text.length === 0 && selectedFiles.length === 0) {
+        error.style.display = 'block'; return;
       }
-      
       error.style.display = 'none';
-      return true;
+
+      const consecutiveMode = hasPrev
+        ? (Array.from(document.getElementsByName('consecutive_mode')).find(r => r.checked)?.value || 'additional')
+        : '';
+
+      const fd = new FormData();
+      fd.append('uid', document.getElementById('f-uid').value);
+      fd.append('email', document.getElementById('f-email').value);
+      fd.append('id', document.getElementById('f-id').value);
+      fd.append('reply', text);
+      fd.append('action', action);
+      fd.append('consecutive_mode', consecutiveMode);
+      selectedFiles.forEach(file => fd.append('attachments', file, file.name));
+
+      setButtons(true);
+      const progressSection = document.getElementById('progress-section');
+      const progressBar = document.getElementById('progress-bar');
+      const progressLabel = document.getElementById('progress-label');
+      progressSection.style.display = 'block';
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', window.location.href, true);
+      xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          progressBar.style.width = pct + '%';
+          progressLabel.textContent = 'Uploading… ' + pct + '%';
+        }
+      };
+      xhr.onload = function() {
+        progressBar.style.width = '100%';
+        progressLabel.textContent = 'Done! ✅';
+        setTimeout(() => { document.open(); document.write(xhr.responseText); document.close(); }, 600);
+      };
+      xhr.onerror = function() {
+        progressSection.style.display = 'none';
+        setButtons(false);
+        alert('Upload failed. Please try again.');
+      };
+      xhr.send(fd);
     }
   </script>
 </body>
@@ -369,39 +585,121 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
     }
 
     if (req.method === "POST") {
-        let { uid, id, email, reply, action } = req.body;
-        if (!uid || !id) return res.status(400).send("Missing data.");
+        const parseMultipart = () => {
+            return new Promise((resolve, reject) => {
+                const busboy = Busboy({ headers: req.headers });
+                const fields = {};
+                const files = [];
 
-        const targetUser = email || uid;
+                busboy.on("field", (fieldName, val) => {
+                    fields[fieldName] = val;
+                });
 
-        // Handle action if it's an array or missing
-        if (Array.isArray(action)) action = action[0];
-        const actionStr = String(action || "reply");
+                busboy.on("file", (fieldName, file, info) => {
+                    const { filename, mimeType } = info;
+                    if (!filename) {
+                        file.resume();
+                        return;
+                    }
+                    const filepath = path.join(os.tmpdir(), `${Date.now()}_${filename}`);
+                    const writeStream = fs.createWriteStream(filepath);
+                    file.pipe(writeStream);
+                    
+                    files.push(new Promise((res, rej) => {
+                        writeStream.on("finish", () => {
+                            res({
+                                fieldName,
+                                filepath,
+                                filename,
+                                mimeType
+                            });
+                        });
+                        writeStream.on("error", rej);
+                    }));
+                });
 
-        let finalReply = reply ? reply.trim() : "";
-        let finalStatus = "responded";
-        let isResolvedAction = (actionStr === "resolve_only" || actionStr === "reply_and_resolve");
+                busboy.on("finish", async () => {
+                    try {
+                        const resolvedFiles = await Promise.all(files);
+                        resolve({ fields, files: resolvedFiles });
+                    } catch (e) {
+                        reject(e);
+                    }
+                });
 
-        if (actionStr === "resolve_only") {
-            finalStatus = "resolved";
-            // Ignore any typed text entirely to prevent accidental internal note leakage
-            finalReply = "This query has been marked as resolved by the admin.";
-        } else if (actionStr === "reply_and_resolve") {
-            finalStatus = "resolved";
-            // Leaves finalReply as exactly what the admin typed, with NO appended bracket metadata.
-        }
+                busboy.on("error", reject);
+
+                if (req.rawBody) {
+                    busboy.end(req.rawBody);
+                } else {
+                    req.pipe(busboy);
+                }
+            });
+        };
 
         try {
+            const parsed = await parseMultipart();
+            let { uid, id, email, reply, action, consecutive_mode } = parsed.fields;
+            if (!uid || !id) return res.status(400).send("Missing data.");
+
+            const targetUser = email || uid;
+            const actionStr = String(action || "reply");
+
+            const bucket = admin.storage().bucket();
+            const uploadedUrls = [];
+            for (const file of parsed.files) {
+                const dest = `support_attachments/${Date.now()}_${file.filename}`;
+                const [uploadedFile] = await bucket.upload(file.filepath, {
+                    destination: dest,
+                    metadata: {
+                        contentType: file.mimeType,
+                    }
+                });
+                await uploadedFile.makePublic();
+                const publicUrl = `https://storage.googleapis.com/${bucket.name}/${dest}`;
+                uploadedUrls.push(publicUrl);
+                fs.unlinkSync(file.filepath);
+            }
+
+            let typedReply = reply ? reply.trim() : "";
+            for (const url of uploadedUrls) {
+                typedReply += `\n[Attachment: ${url}]`;
+            }
+
+            let finalReply = typedReply;
+            let finalStatus = "responded";
+            let isResolvedAction = (actionStr === "resolve_only" || actionStr === "reply_and_resolve");
+
+            const doc = await db.collection("users").doc(targetUser).collection("notifications").doc(String(id)).get();
+            const existingReply = doc.exists ? (doc.data().reply || "") : "";
+            const hasPrev = existingReply && existingReply !== "Waiting for reply..." && existingReply !== "This query has been marked as resolved by the admin.";
+
+            if (actionStr === "resolve_only") {
+                finalStatus = "resolved";
+                finalReply = "This query has been marked as resolved by the admin.";
+            } else if (actionStr === "reply_and_resolve") {
+                finalStatus = "resolved";
+            }
+
+            if (actionStr !== "resolve_only" && hasPrev && consecutive_mode === "additional") {
+                finalReply = `${existingReply}\n\n${finalReply}`;
+            }
+
             const timestamp = Date.now();
-            await db.collection("users").doc(targetUser).collection("notifications").doc(String(id)).update({
+            const currentImageUrls = doc.exists ? (doc.data().imageUrls || []) : [];
+            const updatedImageUrls = [...currentImageUrls, ...uploadedUrls];
+
+            const updateData = {
                 reply: finalReply,
                 status: finalStatus,
                 read: false,
                 replyTimestamp: timestamp,
-                timestamp: timestamp, // 🔥 Update main timestamp to reflect admin activity
-            });
+                timestamp: timestamp,
+                imageUrls: updatedImageUrls
+            };
 
-            // 🚀 Send Push Notification to User
+            await db.collection("users").doc(targetUser).collection("notifications").doc(String(id)).update(updateData);
+
             try {
                 const userDoc = await db.collection("users").doc(targetUser).get();
                 const fcmToken = userDoc.data()?.fcmToken;

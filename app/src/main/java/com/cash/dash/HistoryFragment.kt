@@ -84,14 +84,18 @@ class HistoryFragment : Fragment() {
             startActivity(intent)
         }
 
-        view.findViewById<View>(R.id.cardReport).setOnClickListener {
-            val intent = Intent(requireContext(), ReportActivity::class.java)
-            startActivity(intent)
+        val cardReport = view.findViewById<View>(R.id.cardReport)
+        cardReport.setOnClickListener {
+            animateAndStart(cardReport) {
+                startActivity(Intent(requireContext(), ReportActivity::class.java))
+            }
         }
 
-        view.findViewById<View>(R.id.cardStatement).setOnClickListener {
-            val intent = Intent(requireContext(), StatementSelectionActivity::class.java)
-            startActivity(intent)
+        val cardStatement = view.findViewById<View>(R.id.cardStatement)
+        cardStatement.setOnClickListener {
+            animateAndStart(cardStatement) {
+                startActivity(Intent(requireContext(), StatementSelectionActivity::class.java))
+            }
         }
     }
 
@@ -418,6 +422,20 @@ class HistoryFragment : Fragment() {
                 graph.setDailyData(List(7) { dailyMap[it] ?: 0f })
             }
         }
+    }
+
+    private fun animateAndStart(view: View, action: () -> Unit) {
+        view.animate()
+            .scaleX(0.85f).scaleY(0.85f)
+            .setDuration(7)
+            .withEndAction {
+                view.animate()
+                    .scaleX(1f).scaleY(1f)
+                    .setDuration(8)
+                    .withEndAction { action() }
+                    .start()
+            }
+            .start()
     }
 
     private fun animateGraph(graph: View) {

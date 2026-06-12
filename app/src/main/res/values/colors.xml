@@ -27,4 +27,5 @@
     <color name="bg_main_light">@color/surface</color>
     <color name="accent_primary">@color/primary_purple</color>
     <color name="text_secondary">@color/text_muted</color>
+    <color name="theme_blue">#1A73E8</color>
 </resources>

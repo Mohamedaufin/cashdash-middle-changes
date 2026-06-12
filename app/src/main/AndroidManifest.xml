@@ -137,6 +137,7 @@
 
         <receiver
             android:name=".ScannerWidget"
+            android:label="CashDash Scanner"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -144,6 +145,24 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/scanner_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".ScannerWidgetPinReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <receiver
+            android:name=".WalletWidget"
+            android:label="CashDash Wallet"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.cash.dash.ACTION_TOGGLE_VISIBILITY" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/wallet_widget_info" />
         </receiver>
 
         <!-- 🔥 Firebase Cloud Messaging Service -->
@@ -184,6 +203,11 @@
         <!-- Floating Widget Service -->
         <service
             android:name=".FloatingWidgetService"
+            android:exported="false" />
+
+        <!-- Task Monitor Service to handle swipe-to-close presence tracking -->
+        <service
+            android:name=".TaskMonitorService"
             android:exported="false" />
 
     </application>

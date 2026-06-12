@@ -128,6 +128,14 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     override fun onResume() {
         super.onResume()
         checkPendingTransactions()
+        lightSensor?.let {
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(this)
     }
 
     private fun checkPendingTransactions() {
@@ -262,6 +270,15 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Solid black system bars for ScannerActivity
+        window.statusBarColor = android.graphics.Color.BLACK
+        window.navigationBarColor = android.graphics.Color.BLACK
+        androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
+        }
+
         setContentView(R.layout.activity_scanner)
 
         TutorialManager.showTutorialIfNeeded(
@@ -276,14 +293,56 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
         val btnClose = findViewById<ImageButton>(R.id.btnCloseScanner)
         val btnFlashlight = findViewById<ImageButton>(R.id.btnFlashlight)
-        val btnGallery = findViewById<ImageButton>(R.id.btnGallery)
+        val btnGallery = findViewById<View>(R.id.btnGallery)
         val btnHistory = findViewById<ImageButton>(R.id.btnHistory)
+        val btnMore = findViewById<ImageButton>(R.id.btnMore)
+
+        val activeTheme = ThemeHelper.getCurrentTheme(this)
+        val badgeBg = when (activeTheme) {
+            "Blue" -> R.drawable.bg_circle_scanner_blue
+            "White" -> R.drawable.bg_circle_scanner_white
+            else -> R.drawable.bg_circle_black_transparent
+        }
+        val iconTint = when (activeTheme) {
+            "White" -> Color.parseColor("#1A1A1A")
+            else -> Color.WHITE
+        }
+
+        val imgGalleryIcon = findViewById<ImageView>(R.id.imgGalleryIcon)
+        val tvGalleryText = findViewById<TextView>(R.id.tvGalleryText)
+
+        btnClose.setBackgroundResource(badgeBg)
+        btnHistory.setBackgroundResource(badgeBg)
+        btnFlashlight.setBackgroundResource(badgeBg)
+        btnMore.setBackgroundResource(badgeBg)
+
+        btnClose.backgroundTintList = null
+        btnHistory.backgroundTintList = null
+        btnFlashlight.backgroundTintList = null
+        btnMore.backgroundTintList = null
+
+        if (activeTheme == "White") {
+            btnGallery.setBackgroundResource(R.drawable.bg_capsule_white)
+            imgGalleryIcon.imageTintList = android.content.res.ColorStateList.valueOf(Color.BLACK)
+            tvGalleryText.setTextColor(Color.BLACK)
+        } else if (activeTheme == "Blue") {
+            btnGallery.setBackgroundResource(R.drawable.bg_capsule_scanner_blue)
+        }
+
+        btnClose.imageTintList = android.content.res.ColorStateList.valueOf(iconTint)
+        btnHistory.imageTintList = android.content.res.ColorStateList.valueOf(iconTint)
+        btnFlashlight.imageTintList = android.content.res.ColorStateList.valueOf(if (isFlashOn && activeTheme != "White") Color.parseColor("#8BF7E6") else iconTint)
+        btnMore.imageTintList = android.content.res.ColorStateList.valueOf(iconTint)
 
         btnFlashlight.setOnClickListener {
             isFlashOn = !isFlashOn
             userManuallyToggled = true
             camera?.cameraControl?.enableTorch(isFlashOn)
             updateFlashlightIcon()
+        }
+
+        btnMore.setOnClickListener {
+            createShortcut()
         }
 
         val root = findViewById<View>(android.R.id.content)
@@ -304,10 +363,9 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             flashParams.marginEnd = historyParams.marginEnd + 220
             btnFlashlight.layoutParams = flashParams
 
-            // Bottom Gallery button
-            val galleryParams = btnGallery.layoutParams as FrameLayout.LayoutParams
-            galleryParams.bottomMargin = systemBars.bottom + 60
-            btnGallery.layoutParams = galleryParams
+            val moreParams = btnMore.layoutParams as FrameLayout.LayoutParams
+            moreParams.bottomMargin = systemBars.bottom + 60
+            btnMore.layoutParams = moreParams
             
             insets
         }
@@ -525,10 +583,9 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                     isFlashOn = true
                     camera?.cameraControl?.enableTorch(true)
                     updateFlashlightIcon()
-                } else if (lux > 20f && isFlashOn) {
-                    isFlashOn = false
-                    camera?.cameraControl?.enableTorch(false)
-                    updateFlashlightIcon()
+                    // Stop listening after auto-turn-on to prevent feedback loops/flickering
+                    userManuallyToggled = true
+                    sensorManager.unregisterListener(this)
                 }
             }
         }
@@ -539,7 +596,9 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     private fun updateFlashlightIcon() {
         val btnFlashlight = findViewById<ImageButton>(R.id.btnFlashlight)
         btnFlashlight.setImageResource(if (isFlashOn) R.drawable.ic_flashlight_on else R.drawable.ic_flashlight_off)
-        btnFlashlight.imageTintList = android.content.res.ColorStateList.valueOf(if (isFlashOn) Color.parseColor("#8BF7E6") else Color.WHITE)
+        val activeTheme = ThemeHelper.getCurrentTheme(this)
+        val normalTint = if (activeTheme == "White") Color.parseColor("#1A1A1A") else Color.WHITE
+        btnFlashlight.imageTintList = android.content.res.ColorStateList.valueOf(if (isFlashOn) Color.parseColor("#8BF7E6") else normalTint)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -946,7 +1005,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
         val inputName = EditText(this).apply {
             hint = "Category Name (e.g. Travel)"
-            inputType = android.text.InputType.TYPE_CLASS_TEXT
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
             setHintTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textMutedColor))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
@@ -956,7 +1015,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         box.addView(inputName)
 
         val inputLimit = EditText(this).apply {
-            hint = "Monthly Limit (Optional)"
+            hint = "Enter limit (optional)"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textPrimaryColor))
             setHintTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@ScannerActivity, R.attr.textMutedColor))
@@ -1484,6 +1543,23 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 ToastHelper.showCustomToast(context, "Cycle Reset Successfully!", 1000L)
                 resumeScanning()
             }
+        }
+    }
+
+
+    private fun createShortcut() {
+        val appWidgetManager = getSystemService(android.appwidget.AppWidgetManager::class.java)
+        val myProvider = android.content.ComponentName(this, ScannerWidget::class.java)
+
+        if (appWidgetManager.isRequestPinAppWidgetSupported) {
+            val intent = android.content.Intent(this, ScannerWidgetPinReceiver::class.java)
+            val successCallback = android.app.PendingIntent.getBroadcast(
+                this, 0, intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_MUTABLE
+            )
+            appWidgetManager.requestPinAppWidget(myProvider, null, successCallback)
+        } else {
+            ToastHelper.showToast(this, "Shortcut pinning not supported by your launcher")
         }
     }
 }

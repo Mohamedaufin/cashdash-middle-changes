@@ -154,11 +154,13 @@
                     android:textSize="@dimen/text_subhead"
                     android:textStyle="bold" />
 
-                <Switch
+                <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/switchTaptrack"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:thumbTint="?attr/textPrimaryColor" />
+                    app:thumbTint="@color/switch_thumb_color"
+                    app:trackTint="@color/switch_track_color"
+                    app:track="@drawable/custom_switch_track_base" />
             </LinearLayout>
 
             <!-- Draw Overlays Permission Block (Hidden by default) -->
@@ -187,11 +189,13 @@
                         android:textSize="@dimen/text_subhead"
                         android:textStyle="bold" />
 
-                    <Switch
+                    <androidx.appcompat.widget.SwitchCompat
                         android:id="@+id/switchOverlay"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:thumbTint="?attr/textPrimaryColor" />
+                        app:thumbTint="@color/switch_thumb_color"
+                        app:trackTint="@color/switch_track_color"
+                        app:track="@drawable/custom_switch_track_base" />
                 </LinearLayout>
 
                 <TextView
@@ -229,11 +233,13 @@
                         android:textSize="@dimen/text_subhead"
                         android:textStyle="bold" />
 
-                    <Switch
+                    <androidx.appcompat.widget.SwitchCompat
                         android:id="@+id/switchUsage"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:thumbTint="?attr/textPrimaryColor" />
+                        app:thumbTint="@color/switch_thumb_color"
+                        app:trackTint="@color/switch_track_color"
+                        app:track="@drawable/custom_switch_track_base" />
                 </LinearLayout>
 
                 <TextView

@@ -32,8 +32,8 @@ class SplashActivity : ThemedActivity() {
             val initialBalance = walletPrefs.getInt("initial_balance", -1)
 
             if (initialBalance > 0) {
-                // Established user -> Instant transition to Scanner
-                startActivity(Intent(this, ScannerActivity::class.java))
+                // Established user -> Go directly to MainActivity (Home)
+                startActivity(Intent(this, MainActivity::class.java))
                 finish()
             } else {
                 // New user (after entry screen) -> Show Splash Transition

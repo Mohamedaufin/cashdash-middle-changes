@@ -66,6 +66,7 @@
             android:paddingBottom="25dp"
             android:paddingTop="5dp">
 
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -82,6 +83,7 @@
                 android:textSize="@dimen/text_body"
                 android:textColor="?attr/textMutedColor"
                 android:layout_marginBottom="25dp"/>
+
 
             <EditText
                 android:id="@+id/edtAnnouncementTitle"
@@ -238,7 +240,104 @@
                 android:backgroundTint="#FFA500"
                 android:textStyle="bold"
                 android:textSize="14sp"
-                android:layout_marginBottom="30dp"/>
+                android:layout_marginBottom="25dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Last Seen Status of Users"
+                android:textSize="@dimen/text_title"
+                android:textColor="?attr/textPrimaryColor"
+                android:textStyle="bold"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Check which users were active (opened the app) on a specific date."
+                android:textSize="@dimen/text_body"
+                android:textColor="?attr/textMutedColor"
+                android:layout_marginBottom="20dp"/>
+
+            <Button
+                android:id="@+id/btnSelectDate"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:text="Date: Today"
+                android:textColor="@android:color/white"
+                android:background="?attr/roundBackground"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:layout_marginBottom="20dp"
+                android:drawableStart="@android:drawable/ic_menu_my_calendar"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"/>
+
+            <LinearLayout
+                android:id="@+id/layoutUserStatusContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:background="?attr/inputBackground"
+                android:layout_marginBottom="40dp"/>
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/border"
+                android:layout_marginBottom="36dp"/>
+
+            <!-- Support Inbox Section -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📬 Support Inbox"
+                android:textSize="@dimen/text_title"
+                android:textColor="?attr/textPrimaryColor"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Unreplied user queries. Tap a link to open the admin reply page."
+                android:textSize="@dimen/text_body"
+                android:textColor="?attr/textMutedColor"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:id="@+id/tvInboxEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Loading..."
+                android:textSize="@dimen/text_body"
+                android:textColor="?attr/textMutedColor"
+                android:gravity="center"
+                android:paddingTop="8dp"
+                android:paddingBottom="16dp"
+                android:visibility="visible"/>
+
+            <LinearLayout
+                android:id="@+id/layoutSupportInbox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="16dp"/>
+
+            <Button
+                android:id="@+id/btnResolveAll"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:text="Auto Resolve All"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#FF4D4D"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:layout_marginBottom="40dp"
+                android:visibility="gone"/>
 
         </LinearLayout>
     </ScrollView>

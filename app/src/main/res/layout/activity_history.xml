@@ -145,6 +145,7 @@
                 android:focusable="true">
 
                 <ImageView
+                    android:id="@+id/iconReport"
                     android:layout_width="28dp"
                     android:layout_height="28dp"
                     android:src="@drawable/ic_search"
@@ -176,6 +177,7 @@
                 android:focusable="true">
 
                 <ImageView
+                    android:id="@+id/iconStatement"
                     android:layout_width="28dp"
                     android:layout_height="28dp"
                     android:src="@drawable/ic_paper_sheet"
