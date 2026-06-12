@@ -790,11 +790,18 @@ class NotificationActivity : ThemedActivity() {
                     clean to urls
                 }
 
-                // Gather all inline URLs from all blocks
-                val allInlineUrls = blocksData.flatMap { it.second }.toSet()
+                // Gather all inline URLs from all query blocks
+                val queryInlineUrls = blocksData.flatMap { it.second }.toSet()
 
-                // Any URL in 'allUrls' that is not found inline is a legacy attachment for the first question
-                val legacyUrls = allUrls.filter { it !in allInlineUrls }
+                // Also gather URLs already embedded in the reply field as [Attachment:] markers
+                // These belong to the admin reply block and must NOT be treated as legacy user attachments
+                val replyInlineUrls = attachmentRegex.findAll(item.originalReply)
+                    .map { it.groupValues[1] }.toSet()
+
+                // True legacy = URLs in imageUrls/imageUrl Firestore fields that are NOT referenced
+                // anywhere in the conversation (neither query blocks nor reply)
+                val allConversationUrls = queryInlineUrls + replyInlineUrls
+                val legacyUrls = allUrls.filter { it !in allConversationUrls }
 
                 // Render each block in chronological order
                 for ((idx, data) in blocksData.withIndex()) {
