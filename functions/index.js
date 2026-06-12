@@ -686,16 +686,17 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
             }
 
             const timestamp = Date.now();
-            const currentImageUrls = doc.exists ? (doc.data().imageUrls || []) : [];
-            const updatedImageUrls = [...currentImageUrls, ...uploadedUrls];
+            // NOTE: imageUrls field is intentionally NOT updated with admin reply images.
+            // Admin images are embedded as [Attachment:] markers in the reply text itself.
+            // Appending them to imageUrls would cause double display on the client.
+            // imageUrls only holds the user's original submission attachments.
 
             const updateData = {
                 reply: finalReply,
                 status: finalStatus,
                 read: false,
                 replyTimestamp: timestamp,
-                timestamp: timestamp,
-                imageUrls: updatedImageUrls
+                timestamp: timestamp
             };
 
             await db.collection("users").doc(targetUser).collection("notifications").doc(String(id)).update(updateData);
