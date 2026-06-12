@@ -147,7 +147,9 @@ class NotificationActivity : ThemedActivity() {
                     }
                 }.addOnFailureListener { e ->
                     replyUploadProgress[queryId]?.remove(uri)
+                    selectedReplyImages[queryId]?.remove(uri)
                     runOnUiThread {
+                        adapter.notifyDataSetChanged()
                         ToastHelper.showToast(this, "Failed to get download URL: ${e.message}")
                         val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
                         for (i in 0 until rv.childCount) {
@@ -167,7 +169,9 @@ class NotificationActivity : ThemedActivity() {
             }
             .addOnFailureListener { e ->
                 replyUploadProgress[queryId]?.remove(uri)
+                selectedReplyImages[queryId]?.remove(uri)
                 runOnUiThread {
+                    adapter.notifyDataSetChanged()
                     ToastHelper.showToast(this, "Failed to upload image: ${e.message}")
                     val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
                     for (i in 0 until rv.childCount) {
@@ -1316,8 +1320,8 @@ class NotificationActivity : ThemedActivity() {
 
 
         private fun applySwipeRecursively(view: View, listener: View.OnTouchListener) {
-            // Skip attachment cards and their children — they need their own click listeners
-            if (view.tag == "attachment_card") return
+            // Skip attachment cards and the reply input container (which needs scroll and edit focus)
+            if (view.tag == "attachment_card" || view.id == R.id.layoutReplyBox) return
             view.setOnTouchListener(listener)
             if (view is android.view.ViewGroup) {
                 for (i in 0 until view.childCount) {
