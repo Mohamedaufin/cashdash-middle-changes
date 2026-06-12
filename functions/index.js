@@ -556,19 +556,32 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
       const progressSection = document.getElementById('progress-section');
       const progressBar = document.getElementById('progress-bar');
       const progressLabel = document.getElementById('progress-label');
+      const progressBarWrap = document.getElementById('progress-bar-wrap');
+      
+      const hasImages = selectedFiles.length > 0;
       progressSection.style.display = 'block';
+      if (hasImages) {
+        progressBarWrap.style.display = 'block';
+        progressLabel.textContent = 'Uploading images… 0%';
+        progressBar.style.width = '0%';
+      } else {
+        progressBarWrap.style.display = 'none';
+        progressLabel.textContent = 'Sending reply…';
+      }
 
       const xhr = new XMLHttpRequest();
       xhr.open('POST', window.location.href, true);
       xhr.upload.onprogress = function(e) {
-        if (e.lengthComputable) {
+        if (hasImages && e.lengthComputable) {
           const pct = Math.round((e.loaded / e.total) * 100);
           progressBar.style.width = pct + '%';
-          progressLabel.textContent = 'Uploading… ' + pct + '%';
+          progressLabel.textContent = 'Uploading images… ' + pct + '%';
         }
       };
       xhr.onload = function() {
-        progressBar.style.width = '100%';
+        if (hasImages) {
+          progressBar.style.width = '100%';
+        }
         progressLabel.textContent = 'Done! ✅';
         setTimeout(() => { document.open(); document.write(xhr.responseText); document.close(); }, 600);
       };
