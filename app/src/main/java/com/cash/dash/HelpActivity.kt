@@ -222,12 +222,14 @@ class HelpActivity : ThemedActivity() {
                     checkAndSubmitIfWaiting()
                 }.addOnFailureListener { e ->
                     contactUploadProgress.remove(uri)
+                    isWaitingForUploads = false
                     updateDialogSubmitButton()
                     ToastHelper.showToast(this, "Failed to get URL: ${e.message}")
                 }
             }
             .addOnFailureListener { e ->
                 contactUploadProgress.remove(uri)
+                isWaitingForUploads = false
                 updateDialogSubmitButton()
                 ToastHelper.showToast(this, "Upload failed: ${e.message}")
             }
@@ -532,7 +534,7 @@ class HelpActivity : ThemedActivity() {
 
         // 🚀 ASYNC DIRECT WEBHOOK INJECTION:
         // Parallel direct push to circumvent Firestore trigger cold-starts and send instant email!
-        triggerImmediateWebhook(user.uid, name, userEmail, time, subject, queryWithAttachments, timestamp, imageUrl, imageUrls)
+        triggerImmediateWebhook(user.uid, name, userEmail, time, subject, queryWithAttachments, timestamp, imageUrl, allUrls)
     }
 
     private fun setupNotificationListener(badge: android.view.View) {
