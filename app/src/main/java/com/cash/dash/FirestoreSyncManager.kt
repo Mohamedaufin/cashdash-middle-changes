@@ -75,10 +75,18 @@ object FirestoreSyncManager {
                 }
                 batch.set(configColl.document("profile"), userConfigData, SetOptions.merge())
                 
-                val rootData = if (lastActiveStr.isNotEmpty()) {
-                    hashMapOf<String, Any>("email" to email, "lastActiveTime" to lastActiveStr)
-                } else {
-                    hashMapOf<String, Any>("email" to email)
+                val todayStr = java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.ENGLISH).apply {
+                    timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
+                }.format(java.util.Date())
+                val name = userPrefs.getString("user_name", "User") ?: "User"
+
+                val rootData = hashMapOf<String, Any>(
+                    "email" to email,
+                    "name" to name,
+                    "activeDates" to com.google.firebase.firestore.FieldValue.arrayUnion(todayStr)
+                )
+                if (lastActiveStr.isNotEmpty()) {
+                    rootData["lastActiveTime"] = lastActiveStr
                 }
                 batch.set(userDocRef, rootData, SetOptions.merge())
 

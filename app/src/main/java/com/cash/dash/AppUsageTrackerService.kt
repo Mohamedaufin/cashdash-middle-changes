@@ -73,6 +73,12 @@ class AppUsageTrackerService : Service() {
         super.onDestroy()
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        // Aggressive swipe-to-close on Samsung devices
+        CashDashApplication.setOfflineImmediate(this)
+    }
+
     private fun startTracking() {
         trackingJob = CoroutineScope(Dispatchers.Default).launch {
             while (isActive) {

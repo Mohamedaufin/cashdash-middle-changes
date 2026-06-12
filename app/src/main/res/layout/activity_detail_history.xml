@@ -42,17 +42,19 @@
         android:layout_height="wrap_content" />
 
     <TextView
+        android:id="@+id/tvReceiptHint"
         android:text="Tap any scanned transaction to view its receipt"
         android:textColor="?attr/textMutedColor"
-        android:textSize="12sp"
+        android:textSize="12dp"
         android:layout_marginTop="6dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
     <TextView
-        android:text="Press &amp; hold on any transaction to edit it"
+        android:id="@+id/tvEditHint"
+        android:text="Press and hold on any transaction to edit it"
         android:textColor="?attr/textMutedColor"
-        android:textSize="12sp"
+        android:textSize="12dp"
         android:layout_marginTop="2dp"
         android:layout_marginBottom="20dp"
         android:layout_width="wrap_content"

@@ -192,21 +192,6 @@
                     android:textSize="@dimen/text_body"
                     android:layout_marginBottom="12dp"/>
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Q: How do I use the Rigor Tracker (Tutorial)?"
-                    android:textColor="?attr/textPrimaryColor"
-                    android:textStyle="bold"
-                    android:textSize="@dimen/text_body"/>
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="A: This helps to manually record your expenses:\n1. Enter expense title and amount\n2. Choose date of expense from calendar\n3. Tap Next and choose an allocation\n4. Thats it, Your expense has been recorded manually and wallet has been deducted"
-                    android:textColor="?attr/textMutedColor"
-                    android:textSize="@dimen/text_body"
-                    android:layout_marginBottom="12dp"/>
-
 
                 <TextView
                     android:layout_width="match_parent"
@@ -361,7 +346,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: Here, you can set new allocations (Shopping, Food, etc.) and set limits for the category:\n1. Tap '+ Add New' to create a new category\n2. Press done and set an optional spending limit for it\n\nGeneral shortcuts:\n1. Swipe right to left to delete an allocation\n2. Press and hold allocation to rename it\n3. Tap on allocation to view insights of its spending trend"
+                    android:text="A: Here, you can set new allocations (Shopping, Food, etc.) and set limits for the category:\n1. Tap '+ Add New' to create a new category\n2. Press done and set an optional spending limit for it"
                     android:textColor="?attr/textMutedColor"
                     android:textSize="@dimen/text_body"
                     android:layout_marginBottom="12dp"/>
@@ -418,7 +403,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="To Delete: Swipe the allocation card right-to-left off the screen."
+                        android:text="To Delete: Press and hold the allocation card and select 'Delete'."
                         android:textColor="?attr/textMutedColor"
                         android:textSize="@dimen/text_body"
                         android:textStyle="bold" />
@@ -439,7 +424,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="To Rename: Press and hold the allocation card for a second."
+                        android:text="To Rename: Press and hold the allocation card and select 'Rename'."
                         android:textColor="?attr/textMutedColor"
                         android:textSize="@dimen/text_body"
                         android:textStyle="bold" />

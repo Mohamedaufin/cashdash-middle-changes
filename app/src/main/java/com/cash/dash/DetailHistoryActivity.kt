@@ -120,6 +120,17 @@ class DetailHistoryActivity : ThemedActivity() {
                     val parts = item.rawEntry.split("|")
                     if (parts.size >= 2) parts[1].toLongOrNull() ?: 0L else 0L
                 }
+                
+                val tvReceiptHint = findViewById<TextView>(R.id.tvReceiptHint)
+                val tvEditHint = findViewById<TextView>(R.id.tvEditHint)
+                if (sortedTransactions.isEmpty()) {
+                    tvReceiptHint?.visibility = View.GONE
+                    tvEditHint?.visibility = View.GONE
+                } else {
+                    tvReceiptHint?.visibility = View.VISIBLE
+                    tvEditHint?.visibility = View.VISIBLE
+                }
+
                 val adapter = TransactionAdapter(
                     items = sortedTransactions,
                     showTimestamp = false,
@@ -289,6 +300,7 @@ class DetailHistoryActivity : ThemedActivity() {
 
         val input = android.widget.EditText(this).apply {
             setText(item.title)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@DetailHistoryActivity, R.attr.textPrimaryColor))
             setHintTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@DetailHistoryActivity, R.attr.textPrimaryColor))
             background = androidx.core.content.ContextCompat.getDrawable(this@DetailHistoryActivity, com.cash.dash.ThemeHelper.getDrawable(this@DetailHistoryActivity, R.drawable.bg_glass_input))

@@ -48,16 +48,7 @@ class ProfileActivity : ThemedActivity() {
             showChangePasswordDialog()
         }
 
-        btnSave.setOnLongClickListener {
-            val user = FirebaseAuth.getInstance().currentUser
-            val email = user?.email
-            val adminEmails = listOf("mohamedaufin64@gmail.com", "arunbhalaji200904@gmail.com")
-            
-            if (email != null && adminEmails.contains(email.lowercase())) {
-                startActivity(Intent(this@ProfileActivity, AdminActivity::class.java))
-            }
-            true
-        }
+        // Admin entry point moved to MenuActivity
 
         btnSave.setOnClickListener {
             val name = edtName.text.toString().trim()

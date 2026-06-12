@@ -9,21 +9,21 @@ import android.provider.Settings
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.Switch
+import androidx.appcompat.widget.SwitchCompat
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
 class TaptrackActivity : ThemedActivity() {
 
-    private lateinit var switchTaptrack: Switch
+    private lateinit var switchTaptrack: SwitchCompat
     private lateinit var tvTaptrackStatus: TextView
     private lateinit var iconTaptrackStatus: ImageView
     
     private lateinit var layoutOverlayPermission: LinearLayout
-    private lateinit var switchOverlay: Switch
+    private lateinit var switchOverlay: SwitchCompat
     
     private lateinit var layoutUsagePermission: LinearLayout
-    private lateinit var switchUsage: Switch
+    private lateinit var switchUsage: SwitchCompat
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -107,6 +107,11 @@ class TaptrackActivity : ThemedActivity() {
         val hasUsage = hasUsageStatsPermission()
         val smartPrefs = getSharedPreferences("SmartAssistantPrefs", Context.MODE_PRIVATE)
         val wasTrackingEnabled = smartPrefs.getBoolean("tracking_enabled", false)
+
+        // Sync the switch state with preferences (this will trigger the listener if it changed in the widget)
+        if (switchTaptrack.isChecked != wasTrackingEnabled) {
+            switchTaptrack.isChecked = wasTrackingEnabled
+        }
 
         if (wasTrackingEnabled && (!hasOverlay || !hasUsage)) {
             // User manually revoked a permission from Android settings!

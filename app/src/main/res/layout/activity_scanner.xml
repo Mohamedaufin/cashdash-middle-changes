@@ -11,14 +11,58 @@
         android:layout_height="match_parent"
         android:scaleType="fitCenter" />
 
-    <!-- 🔥 Neon Scanner Frame Overlay -->
-    <View
-        android:id="@+id/neonFrame"
-        android:layout_width="280dp"
-        android:layout_height="280dp"
-        android:background="@drawable/neon_border"
-        android:layout_gravity="center"
-        android:visibility="visible"/>
+    <!-- Container for centered frame and gallery button -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:layout_gravity="center">
+
+        <!-- 🔥 Neon Scanner Frame Overlay -->
+        <View
+            android:id="@+id/neonFrame"
+            android:layout_width="280dp"
+            android:layout_height="280dp"
+            android:background="@drawable/neon_border"
+            android:visibility="visible"/>
+
+        <!-- 📁 Gallery Import Button (Capsule) -->
+        <LinearLayout
+            android:id="@+id/btnGallery"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="20dp"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="@drawable/bg_capsule_themed">
+
+            <ImageView
+                android:id="@+id/imgGalleryIcon"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_gallery_modern"
+                app:tint="#FFFFFF"
+                android:layout_marginEnd="8dp"/>
+
+            <TextView
+                android:id="@+id/tvGalleryText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Upload from gallery"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
 
     <!-- Close Button -->
     <ImageButton
@@ -26,7 +70,7 @@
         android:layout_width="55dp"
         android:layout_height="55dp"
         android:layout_margin="25dp"
-        android:background="@drawable/bg_glass_3d_round"
+        android:background="@drawable/bg_circle_black_transparent"
         android:padding="12dp"
         android:src="@android:drawable/ic_menu_close_clear_cancel"
         android:scaleType="fitCenter"
@@ -38,7 +82,7 @@
         android:id="@+id/btnFlashlight"
         android:layout_width="55dp"
         android:layout_height="55dp"
-        android:background="@drawable/bg_glass_3d_round"
+        android:background="@drawable/bg_circle_black_transparent"
         android:padding="14dp"
         android:src="@drawable/ic_flashlight_off"
         android:scaleType="fitCenter"
@@ -51,25 +95,24 @@
         android:layout_width="55dp"
         android:layout_height="55dp"
         android:layout_margin="25dp"
-        android:background="@drawable/bg_glass_3d_round"
+        android:background="@drawable/bg_circle_black_transparent"
         android:padding="12dp"
         android:src="@android:drawable/ic_menu_revert"
         android:scaleType="fitCenter"
         app:tint="#FFFFFF"
         android:layout_gravity="top|end"/>
 
-
-    <!-- 📁 Gallery Import Button (Bottom-Left) -->
+    <!-- More Menu Button (3 dots) -->
     <ImageButton
-        android:id="@+id/btnGallery"
+        android:id="@+id/btnMore"
         android:layout_width="55dp"
         android:layout_height="55dp"
-        android:layout_marginBottom="25dp"
-        android:layout_marginStart="25dp"
-        android:background="@drawable/bg_glass_3d_round"
+        android:layout_margin="25dp"
+        android:background="@drawable/bg_circle_black_transparent"
         android:padding="12dp"
-        android:src="@drawable/ic_gallery_modern"
+        android:src="@drawable/ic_more_vert"
         android:scaleType="fitCenter"
-        android:layout_gravity="bottom|start"/>
+        app:tint="#FFFFFF"
+        android:layout_gravity="bottom|end"/>
 
 </FrameLayout>

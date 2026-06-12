@@ -82,8 +82,11 @@ class HomeFragment : Fragment() {
             }
         }
 
-        view.findViewById<ImageView>(R.id.btnMenu).setOnClickListener {
-            startActivity(Intent(requireContext(), MenuActivity::class.java))
+        val btnMenu = view.findViewById<ImageView>(R.id.btnMenu)
+        btnMenu.setOnClickListener {
+            animateAndStart(btnMenu) {
+                startActivity(Intent(requireContext(), MenuActivity::class.java))
+            }
         }
 
         view.findViewById<ImageView>(R.id.btnHelp).setOnClickListener {
@@ -294,7 +297,7 @@ class HomeFragment : Fragment() {
         val mode = prefs.getString("balance_bar_mode", "gradient") ?: "gradient"
         val type = prefs.getString("balance_bar_type", "gradient1") ?: "gradient1"
         
-        val balanceStr = "₹$bal/$displayInitial"
+        val balanceStr = "₹$bal/₹$displayInitial"
         if (balanceStr != lastLoadedBalance || mode != lastLoadedBarMode || type != lastLoadedBarType) {
             view.findViewById<TextView>(R.id.tvBalance)?.text = balanceStr
             val progressPercent = if (displayInitial > 0) ((bal.toFloat() / displayInitial.toFloat()) * 100).toInt().coerceIn(0, 100) else 0

@@ -47,7 +47,8 @@ class MenuActivity : ThemedActivity() {
         // Load User Profile
         val appPrefs = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
         val userName = appPrefs.getString("user_name", "User")
-        findViewById<TextView>(R.id.tvUserName).text = userName
+        val tvUserName = findViewById<TextView>(R.id.tvUserName)
+        tvUserName.text = userName
 
         // Buttons / Items
         val btnClose = findViewById<View>(R.id.btnCloseMenu)
@@ -81,6 +82,18 @@ class MenuActivity : ThemedActivity() {
         layoutProfileHeader.setOnClickListener {
             startActivity(Intent(this, ProfileActivity::class.java))
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+        }
+
+        layoutProfileHeader.setOnLongClickListener {
+            val user = FirebaseAuth.getInstance().currentUser
+            val email = user?.email
+            val adminEmails = listOf("mohamedaufin64@gmail.com", "arunbhalaji200904@gmail.com")
+            
+            if (email != null && adminEmails.contains(email.lowercase())) {
+                startActivity(Intent(this, AdminActivity::class.java))
+                overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+            }
+            true
         }
 
         btnProfileOptions.setOnClickListener {

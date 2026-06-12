@@ -16,6 +16,7 @@ import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.google.android.material.bottomsheet.BottomSheetDialog
 
 class AllocatorFragment : Fragment() {
 
@@ -62,7 +63,7 @@ class AllocatorFragment : Fragment() {
             requireActivity(),
             "tut_allocator",
             "Category Allocator",
-            "Here, you can set new allocations (Shopping, Food, etc.) and set limits for the category.\n\n1. Tap '+ Add New' to create a new category\n2. Press done and set an optional spending limit for it\n\nGeneral tutorial for this page:\n\n1. Swipe right to left to delete an allocation\n2. Press and hold allocation to rename it\n3. Tap on allocation to view insights of its spending trend\n\n*(Note: You can revisit these instructions anytime in the 'Help' section! Tap the Menu icon located next to 'Hello' on your Home dashboard to find it.)*"
+            "Here, you can set new allocations (Shopping, Food, etc.) and set limits for the category.\n\n1. Tap '+ Add New' to create a new category\n2. Press done and set an optional spending limit for it\n\n*(Note: You can revisit these instructions anytime in the 'Help' section! Tap the Menu icon located next to 'Hello' on your Home dashboard to find it.)*"
         )
 
         refreshUI()
@@ -71,6 +72,38 @@ class AllocatorFragment : Fragment() {
     private fun refreshUI() {
         if (!::categoryContainer.isInitialized) return
         categoryContainer.removeAllViews()
+
+        val prefs = requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val savedList = prefs.getStringSet(KEY, emptySet()) ?: emptySet()
+        if (savedList.isNotEmpty()) {
+            val density = requireContext().resources.displayMetrics.density
+            val hint1 = TextView(requireContext()).apply {
+                text = "Tap on any allocator to view detailed insights"
+                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(requireContext(), R.attr.textMutedColor))
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, 12f)
+                gravity = android.view.Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    setMargins(0, (12 * density).toInt(), 0, 0)
+                }
+            }
+            val hint2 = TextView(requireContext()).apply {
+                text = "Press and hold on any allocator to edit it"
+                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(requireContext(), R.attr.textMutedColor))
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, 12f)
+                gravity = android.view.Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    setMargins(0, (2 * density).toInt(), 0, (16 * density).toInt())
+                }
+            }
+            categoryContainer.addView(hint1)
+            categoryContainer.addView(hint2)
+        }
 
         loadCategories()
         addAddNewButton()
@@ -127,7 +160,8 @@ class AllocatorFragment : Fragment() {
         box.addView(titleView)
 
         val input = EditText(requireContext()).apply {
-            hint = "Enter category name"
+            hint = "Enter category name (Eg: Food)"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
             setHintTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             background = androidx.core.content.ContextCompat.getDrawable(requireContext(), com.cash.dash.ThemeHelper.getDrawable(requireContext(), R.drawable.bg_glass_input))
@@ -271,11 +305,10 @@ class AllocatorFragment : Fragment() {
         }
 
         view.setOnLongClickListener {
-            showRenameDialog(name)
+            showAllocationOptions(name)
             true
         }
 
-        setupSwipeToDelete(view, name)
         categoryContainer.addView(view)
     }
 
@@ -300,6 +333,7 @@ class AllocatorFragment : Fragment() {
 
         val input = EditText(requireContext()).apply {
             setText(name)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setHintTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
@@ -364,79 +398,7 @@ class AllocatorFragment : Fragment() {
         dialog.show()
     }
 
-    private fun setupSwipeToDelete(view: View, name: String) {
-        val swipeDetector = GestureDetector(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
-            override fun onFling(e1: MotionEvent?, e2: MotionEvent, vx: Float, vy: Float): Boolean {
-                if (e1 != null) {
-                    val deltaX = e1.x - e2.x
-                    val deltaY = e1.y - e2.y
-                    // Highly intentional left-swipe: deltaX positive, velocity negative
-                    if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 50 && vx < -150) {
-                        // "Add New" shouldn't actually be deletable
-                        if (name != "ADD_NEW_PLACEHOLDER_NO_DELETE") {
-                            view.animate().translationX(-view.width.toFloat()).alpha(0f).setDuration(250)
-                                .withEndAction {
-                                    showDeleteConfirmDialog(view, name)
-                                }.start()
-                        }
-                        return true
-                    }
-                }
-                return false
-            }
-        })
-
-        var startX = 0f
-        var startY = 0f
-        var isSwiping = false
-        
-        val commonTouchListener = View.OnTouchListener { v, event ->
-            val vp = activity?.findViewById<androidx.viewpager2.widget.ViewPager2>(R.id.viewPager)
-            
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    startX = event.x
-                    startY = event.y
-                    isSwiping = false
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    val dX = Math.abs(event.x - startX)
-                    val dY = Math.abs(event.y - startY)
-                    
-                    // Enhanced 200% touch detection: detect horizontal intent almost immediately
-                    if (dX > 5 && dX > dY * 1.5) {
-                        isSwiping = true
-                        view.cancelLongPress() 
-                        view.parent?.requestDisallowInterceptTouchEvent(true) 
-                        vp?.isUserInputEnabled = false 
-                    }
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    vp?.isUserInputEnabled = true
-                }
-            }
-            
-            val handled = swipeDetector.onTouchEvent(event)
-            // If we detected swiping intent, consume the event cleanly so clicks don't fire
-            handled || isSwiping
-        }
-
-        view.setOnTouchListener(commonTouchListener)
-        
-        // Apply to interactive children to prevent them from blocking swipes, 
-        // using the extracted listener to avoid recursion.
-        view.findViewById<View>(R.id.btnLimit)?.setOnTouchListener { _, event ->
-            commonTouchListener.onTouch(view, event)
-        }
-        view.findViewById<View>(R.id.iconEdit)?.setOnTouchListener { _, event ->
-            commonTouchListener.onTouch(view, event)
-        }
-        view.findViewById<View>(R.id.categoryIcon)?.setOnTouchListener { _, event ->
-            commonTouchListener.onTouch(view, event)
-        }
-    }
-
-    private fun showDeleteConfirmDialog(view: View, name: String) {
+    private fun showDeleteConfirmDialog(name: String) {
         val density = requireContext().resources.displayMetrics.density
         val box = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
@@ -486,7 +448,6 @@ class AllocatorFragment : Fragment() {
             minHeight = 150
             setPadding(30,30,30,30)
             setOnClickListener {
-                view.animate().translationX(0f).alpha(1f).setDuration(200).start()
                 dialog.dismiss()
             }
         }
@@ -513,5 +474,68 @@ class AllocatorFragment : Fragment() {
         buttonContainer.addView(btnDelete)
         box.addView(buttonContainer)
         dialog.show()
+    }
+
+    private fun showAllocationOptions(name: String) {
+        val bottomSheet = BottomSheetDialog(requireContext(), R.style.BottomSheetDialogTheme)
+        
+        val density = requireContext().resources.displayMetrics.density
+        val container = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            val p = (24 * density).toInt()
+            setPadding(p, p, p, (32 * density).toInt())
+            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(this.context, R.drawable.bg_transaction))
+        }
+
+        val title = TextView(requireContext()).apply {
+            text = name
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_subhead))
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(0, 0, 0, (24 * density).toInt())
+            gravity = android.view.Gravity.CENTER
+        }
+        container.addView(title)
+
+        // RENAME OPTION
+        val btnRename = Button(requireContext()).apply {
+            text = "Rename Allocation"
+            isAllCaps = false
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
+            val tv = android.util.TypedValue()
+            requireContext().theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(requireContext(), tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt()).apply {
+                setMargins(0, 0, 0, (12 * density).toInt())
+            }
+            setOnClickListener {
+                bottomSheet.dismiss()
+                showRenameDialog(name)
+            }
+        }
+        container.addView(btnRename)
+
+        // DELETE OPTION
+        val btnDelete = Button(requireContext()).apply {
+            text = "Delete Allocation"
+            isAllCaps = false
+            setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
+            val tv = android.util.TypedValue()
+            requireContext().theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(requireContext(), tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt())
+            setOnClickListener {
+                bottomSheet.dismiss()
+                showDeleteConfirmDialog(name)
+            }
+        }
+        container.addView(btnDelete)
+
+        bottomSheet.setContentView(container)
+        bottomSheet.show()
     }
 }

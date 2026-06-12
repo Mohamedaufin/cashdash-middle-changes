@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import android.content.BroadcastReceiver
 import android.content.IntentFilter
+import com.google.android.material.bottomsheet.BottomSheetDialog
 
 class AllocatorActivity : ThemedActivity() {
 
@@ -35,7 +36,7 @@ class AllocatorActivity : ThemedActivity() {
             this,
             "tut_allocator",
             "Money Allocator",
-            "Here, you can set new allocations (Shopping, Food, etc.) and set limits for the category.\n\n1. Tap '+ Add New' to create a new category\n\n2. Press done and set an optional spending limit for it\n\n3. Swipe right to left to delete an allocation\n\n4. Press and hold allocation to rename it\n\n5. Tap on allocation to view insights of its spending trend"
+            "Here, you can set new allocations (Shopping, Food, etc.) and set limits for the category.\n\n1. Tap '+ Add New' to create a new category\n\n2. Press done and set an optional spending limit for it"
         )
 
         categoryContainer = findViewById(R.id.categoryContainer)
@@ -129,7 +130,8 @@ class AllocatorActivity : ThemedActivity() {
         box.addView(titleView)
 
         val input = EditText(this).apply {
-            hint = "Enter category name"
+            hint = "Enter category name (Eg: Food)"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
             setHintTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
@@ -259,6 +261,39 @@ class AllocatorActivity : ThemedActivity() {
 
     private fun refreshUI() {
         categoryContainer.removeAllViews()
+
+        val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val savedList = prefs.getStringSet(KEY, emptySet()) ?: emptySet()
+        if (savedList.isNotEmpty()) {
+            val density = resources.displayMetrics.density
+            val hint1 = TextView(this).apply {
+                text = "Tap on any allocator to view detailed insights"
+                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor))
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, 12f)
+                gravity = android.view.Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    setMargins(0, (12 * density).toInt(), 0, 0)
+                }
+            }
+            val hint2 = TextView(this).apply {
+                text = "Press and hold on any allocator to edit it"
+                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor))
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, 12f)
+                gravity = android.view.Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    setMargins(0, (2 * density).toInt(), 0, (16 * density).toInt())
+                }
+            }
+            categoryContainer.addView(hint1)
+            categoryContainer.addView(hint2)
+        }
+
         loadCategories()
         addAddNewButton()
     }
@@ -310,213 +345,229 @@ class AllocatorActivity : ThemedActivity() {
         }
 
         view.setOnLongClickListener {
-            val density = resources.displayMetrics.density
-            val box = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                val p = (28 * density).toInt()
-                setPadding(p, p, p, p)
-                setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
-            }
-
-            val titleView = TextView(this).apply {
-                text = "Rename Category"
-                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_subhead))
-                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-                setTypeface(null, android.graphics.Typeface.BOLD)
-                gravity = android.view.Gravity.CENTER
-                setPadding(0, 0, 0, (20 * density).toInt())
-            }
-            box.addView(titleView)
-
-            val input = EditText(this).apply {
-                setText(name)
-                setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-                setHintTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-                backgroundTintList = android.content.res.ColorStateList.valueOf(Color.CYAN)
-                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                    setMargins(0, 0, 0, 50)
-                }
-            }
-            box.addView(input)
-
-            val buttonContainer = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-            }
-
-            val dialog = AlertDialog.Builder(this)
-                .setView(box)
-                .create()
-            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-            val btnCancel = android.widget.Button(this).apply {
-                text = "Cancel"
-                isAllCaps = false
-                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-                background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
-                stateListAnimator = null
-                elevation = 0f
-                layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
-                    setMargins(0, 0, 15, 0)
-                }
-                setOnClickListener { dialog.dismiss() }
-            }
-            buttonContainer.addView(btnCancel)
-
-            val btnSave = android.widget.Button(this).apply {
-                text = "Save"
-                isAllCaps = false
-                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-                background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
-                stateListAnimator = null
-                elevation = 0f
-                layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
-                    setMargins(15, 0, 0, 0)
-                }
-                setOnClickListener {
-                    val newName = input.text.toString().trim().replace("|", "-")
-                    if (newName.equals("Overall", ignoreCase = true)) {
-                        ToastHelper.showToast(this@AllocatorActivity, "'Overall' is a reserved name")
-                        return@setOnClickListener
-                    }
-                    if (newName.isNotEmpty()) {
-                        renameCategory(name, newName)
-                        FirestoreSyncManager.pushAllDataToCloud(this@AllocatorActivity)
-                        refreshUI()
-                    }
-                    dialog.dismiss()
-                }
-            }
-            buttonContainer.addView(btnSave)
-            box.addView(buttonContainer)
-            dialog.show()
-
+            showAllocationOptions(name)
             true
         }
 
-        val swipeDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onFling(e1: MotionEvent?, e2: MotionEvent, vx: Float, vy: Float): Boolean {
-                if (e1 != null) {
-                    val deltaX = e1.x - e2.x
-                    val deltaY = e1.y - e2.y
+        categoryContainer.addView(view)
+    }
 
-                    // Highly intentional left-swipe: deltaX positive (swipe left), velocity negative, and strict horizontal thresholds
-                    if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 50 && vx < -150) {
-                        view.animate().translationX(-view.width.toFloat()).alpha(0f).setDuration(250)
-                            .withEndAction {
-                                val density = resources.displayMetrics.density
-                                val box = LinearLayout(this@AllocatorActivity).apply {
-                                    orientation = LinearLayout.VERTICAL
-                                    val p = (28 * density).toInt()
-                                    setPadding(p, p, p, (24 * density).toInt())
-                                    setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(this@AllocatorActivity, R.drawable.bg_transaction))
-                                }
-
-                                val titleView = TextView(this@AllocatorActivity).apply {
-                                    text = "Delete Allocation - $name?"
-                                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_subhead))
-                                    setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-                                    setTypeface(null, android.graphics.Typeface.BOLD)
-                                    gravity = android.view.Gravity.CENTER
-                                    setPadding(0, 0, 0, (16 * density).toInt())
-                                }
-                                box.addView(titleView)
-
-                                val buttonContainer = LinearLayout(this@AllocatorActivity).apply {
-                                    orientation = LinearLayout.HORIZONTAL
-                                    layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-                                }
-
-                                val dialog = AlertDialog.Builder(this@AllocatorActivity)
-                                    .setView(box)
-                                    .setCancelable(false)
-                                    .create()
-                                dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-                                val btnCancel = android.widget.Button(this@AllocatorActivity).apply {
-                                    text = "Cancel"
-                                    isAllCaps = false
-                                    setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@AllocatorActivity, R.attr.textPrimaryColor))
-                                    val tv = android.util.TypedValue()
-                                    this@AllocatorActivity.theme.resolveAttribute(R.attr.cardBackground, tv, true)
-                                    background = androidx.core.content.ContextCompat.getDrawable(this@AllocatorActivity, tv.resourceId)
-                                    stateListAnimator = null
-                                    elevation = 0f
-                                    layoutParams = LinearLayout.LayoutParams(0, (54 * density).toInt(), 1f).apply {
-                                        setMargins(0, 0, (8 * density).toInt(), 0)
-                                    }
-                                    setOnClickListener {
-                                        view.animate().translationX(0f).alpha(1f).setDuration(200).start()
-                                        dialog.dismiss()
-                                    }
-                                }
-                                buttonContainer.addView(btnCancel)
-
-                                val btnDelete = android.widget.Button(this@AllocatorActivity).apply {
-                                    text = "Delete"
-                                    isAllCaps = false
-                                    setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
-                                    val tv = android.util.TypedValue()
-                                    this@AllocatorActivity.theme.resolveAttribute(R.attr.cardBackground, tv, true)
-                                    background = androidx.core.content.ContextCompat.getDrawable(this@AllocatorActivity, tv.resourceId)
-                                    stateListAnimator = null
-                                    elevation = 0f
-                                    layoutParams = LinearLayout.LayoutParams(0, (54 * density).toInt(), 1f).apply {
-                                        setMargins((8 * density).toInt(), 0, 0, 0)
-                                    }
-                                    setOnClickListener {
-                                        deleteCategory(name)
-                                        FirestoreSyncManager.pushAllDataToCloud(this@AllocatorActivity)
-                                        refreshUI()
-                                        dialog.dismiss()
-                                    }
-                                }
-                                buttonContainer.addView(btnDelete)
-                                box.addView(buttonContainer)
-                                dialog.show()
-                            }.start()
-                        return true
-                    }
-                }
-                return false
-            }
-        })
-
-        var startX = 0f
-        var startY = 0f
-        var isSwiping = false
-
-        val swipeTouch = View.OnTouchListener { v, event ->
-            var consumeClick = false
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    startX = event.x
-                    startY = event.y
-                    isSwiping = false
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    val dX = Math.abs(event.x - startX)
-                    val dY = Math.abs(event.y - startY)
-                    // If intentional horizontal gesture is detected: block parent scrolls, cancel long click! 
-                    if (dX > 15 && dX > dY * 1.5) {
-                        isSwiping = true
-                        v.cancelLongPress() // Prevents "Rename" dialog from popping up mid-swipe
-                        v.parent?.requestDisallowInterceptTouchEvent(true)
-                    }
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    if (isSwiping) {
-                        consumeClick = true // Lock out any normal click triggers
-                    }
-                }
-            }
-            swipeDetector.onTouchEvent(event)
-            consumeClick
+    private fun showRenameCategoryDialog(name: String) {
+        val density = resources.displayMetrics.density
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val p = (28 * density).toInt()
+            setPadding(p, p, p, p)
+            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
         }
 
-        view.setOnTouchListener(swipeTouch)
-        btnLimit.setOnTouchListener(swipeTouch)
+        val titleView = TextView(this).apply {
+            text = "Rename Category"
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_subhead))
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, 0, 0, (20 * density).toInt())
+        }
+        box.addView(titleView)
 
-        categoryContainer.addView(view)
+        val input = EditText(this).apply {
+            setText(name)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            setHintTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            backgroundTintList = android.content.res.ColorStateList.valueOf(Color.CYAN)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                setMargins(0, 0, 0, 50)
+            }
+        }
+        box.addView(input)
+
+        val buttonContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        }
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(box)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        val btnCancel = android.widget.Button(this).apply {
+            text = "Cancel"
+            isAllCaps = false
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
+                setMargins(0, 0, 15, 0)
+            }
+            setOnClickListener { dialog.dismiss() }
+        }
+        buttonContainer.addView(btnCancel)
+
+        val btnSave = android.widget.Button(this).apply {
+            text = "Save"
+            isAllCaps = false
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(0, 140, 1f).apply {
+                setMargins(15, 0, 0, 0)
+            }
+            setOnClickListener {
+                val newName = input.text.toString().trim().replace("|", "-")
+                if (newName.equals("Overall", ignoreCase = true)) {
+                    ToastHelper.showToast(this@AllocatorActivity, "'Overall' is a reserved name")
+                    return@setOnClickListener
+                }
+                if (newName.isNotEmpty()) {
+                    renameCategory(name, newName)
+                    FirestoreSyncManager.pushAllDataToCloud(this@AllocatorActivity)
+                    refreshUI()
+                }
+                dialog.dismiss()
+            }
+        }
+        buttonContainer.addView(btnSave)
+        box.addView(buttonContainer)
+        dialog.show()
+    }
+
+    private fun showDeleteCategoryConfirmation(name: String) {
+        val density = resources.displayMetrics.density
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val p = (28 * density).toInt()
+            setPadding(p, p, p, (24 * density).toInt())
+            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
+        }
+
+        val titleView = TextView(this).apply {
+            text = "Delete Allocation - $name?"
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_subhead))
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, 0, 0, (16 * density).toInt())
+        }
+        box.addView(titleView)
+
+        val buttonContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        }
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(box)
+            .setCancelable(false)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        val btnCancel = android.widget.Button(this).apply {
+            text = "Cancel"
+            isAllCaps = false
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@AllocatorActivity, R.attr.textPrimaryColor))
+            val tv = android.util.TypedValue()
+            this@AllocatorActivity.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(this@AllocatorActivity, tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(0, (54 * density).toInt(), 1f).apply {
+                setMargins(0, 0, (8 * density).toInt(), 0)
+            }
+            setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        buttonContainer.addView(btnCancel)
+
+        val btnDelete = android.widget.Button(this).apply {
+            text = "Delete"
+            isAllCaps = false
+            setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
+            val tv = android.util.TypedValue()
+            this@AllocatorActivity.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(this@AllocatorActivity, tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(0, (54 * density).toInt(), 1f).apply {
+                setMargins((8 * density).toInt(), 0, 0, 0)
+            }
+            setOnClickListener {
+                deleteCategory(name)
+                FirestoreSyncManager.pushAllDataToCloud(this@AllocatorActivity)
+                refreshUI()
+                dialog.dismiss()
+            }
+        }
+        buttonContainer.addView(btnDelete)
+        box.addView(buttonContainer)
+        dialog.show()
+    }
+
+    private fun showAllocationOptions(name: String) {
+        val bottomSheet = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+        
+        val density = resources.displayMetrics.density
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val p = (24 * density).toInt()
+            setPadding(p, p, p, (32 * density).toInt())
+            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(this.context, R.drawable.bg_transaction))
+        }
+
+        val title = TextView(this).apply {
+            text = name
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_subhead))
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@AllocatorActivity, R.attr.textPrimaryColor))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(0, 0, 0, (24 * density).toInt())
+            gravity = android.view.Gravity.CENTER
+        }
+        container.addView(title)
+
+        // RENAME OPTION
+        val btnRename = android.widget.Button(this).apply {
+            text = "Rename Allocation"
+            isAllCaps = false
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@AllocatorActivity, R.attr.textPrimaryColor))
+            val tv = android.util.TypedValue()
+            this@AllocatorActivity.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(this@AllocatorActivity, tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt()).apply {
+                setMargins(0, 0, 0, (12 * density).toInt())
+            }
+            setOnClickListener {
+                bottomSheet.dismiss()
+                showRenameCategoryDialog(name)
+            }
+        }
+        container.addView(btnRename)
+
+        // DELETE OPTION
+        val btnDelete = android.widget.Button(this).apply {
+            text = "Delete Allocation"
+            isAllCaps = false
+            setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
+            val tv = android.util.TypedValue()
+            this@AllocatorActivity.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(this@AllocatorActivity, tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt())
+            setOnClickListener {
+                bottomSheet.dismiss()
+                showDeleteCategoryConfirmation(name)
+            }
+        }
+        container.addView(btnDelete)
+
+        bottomSheet.setContentView(container)
+        bottomSheet.show()
     }
 }

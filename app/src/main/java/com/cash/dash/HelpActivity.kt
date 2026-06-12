@@ -53,6 +53,9 @@ private data class ImageSlotViews(
 class HelpActivity : ThemedActivity() {
 
     private val selectedImageUris = mutableListOf<Uri>()
+    private val contactUploadedUrls = mutableMapOf<Uri, String>()
+    private val contactUploadProgress = mutableMapOf<Uri, Int>()
+    private var isWaitingForUploads = false
     private var activeDialog: Dialog? = null
     private var queriesListener: com.google.firebase.firestore.ListenerRegistration? = null
     private var announcementsListener: com.google.firebase.firestore.ListenerRegistration? = null
@@ -70,6 +73,7 @@ class HelpActivity : ThemedActivity() {
             if (selectedUri != null) {
                 if (selectedImageUris.size < 4) {
                     selectedImageUris.add(selectedUri)
+                    uploadContactImage(selectedUri)
                     updateDialogImageSlots()
                 }
             } else {
@@ -83,6 +87,7 @@ class HelpActivity : ThemedActivity() {
                         out.close()
                         val uri = Uri.fromFile(file)
                         selectedImageUris.add(uri)
+                        uploadContactImage(uri)
                         updateDialogImageSlots()
                     } catch (e: Exception) {
                         ToastHelper.showToast(this, "Failed to save camera image: ${e.message}")
@@ -136,6 +141,9 @@ class HelpActivity : ThemedActivity() {
 
         activeDialog = dialog
         selectedImageUris.clear()
+        contactUploadedUrls.clear()
+        contactUploadProgress.clear()
+        isWaitingForUploads = false
 
         adjustDialogLayoutForScreenSize(dialog)
 
@@ -175,57 +183,96 @@ class HelpActivity : ThemedActivity() {
                 return@setOnClickListener
             }
 
-            // Prevent multiple submissions
-            btnSubmit.isEnabled = false
-            btnSubmit.text = "Submitting..."
-
-            val uploadedUrls = mutableListOf<String>()
-            
-            fun uploadNext(index: Int) {
-                if (index >= selectedImageUris.size) {
-                    // All images uploaded!
-                    val primaryUrl = uploadedUrls.firstOrNull()
-                    submitQueryToFirestore(name, currentTime, email, subject, query, primaryUrl, uploadedUrls)
-                    dialog.dismiss()
-                    return
-                }
-
-                val uri = selectedImageUris[index]
-                btnSubmit.text = "Uploading Image ${index + 1}/${selectedImageUris.size}... 0%"
-                val storageRef = FirebaseStorage.getInstance().reference
-                val imageRef = storageRef.child("support_attachments/${System.currentTimeMillis()}_$index.jpg")
-                imageRef.putFile(uri)
-                    .addOnProgressListener { taskSnapshot ->
-                        val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
-                        btnSubmit.text = "Uploading Image ${index + 1}/${selectedImageUris.size}... $progress%"
-                    }
-                    .addOnSuccessListener {
-                        imageRef.downloadUrl.addOnSuccessListener { downloadUri ->
-                            uploadedUrls.add(downloadUri.toString())
-                            uploadNext(index + 1)
-                        }
-                    }
-                    .addOnFailureListener { e ->
-                        ToastHelper.showToast(this@HelpActivity, "Failed to upload image ${index + 1}: ${e.message}")
-                        btnSubmit.isEnabled = true
-                        btnSubmit.text = "Submit"
-                    }
-            }
-
-            if (selectedImageUris.isNotEmpty()) {
-                uploadNext(0)
-            } else {
-                submitQueryToFirestore(name, currentTime, email, subject, query, null, emptyList())
-                dialog.dismiss()
-            }
+            isWaitingForUploads = true
+            updateDialogSubmitButton()
+            checkAndSubmitIfWaiting()
         }
         
         dialog.setOnDismissListener {
             selectedImageUris.clear()
+            contactUploadedUrls.clear()
+            contactUploadProgress.clear()
+            isWaitingForUploads = false
             activeDialog = null
         }
 
         dialog.show()
+    }
+
+    private fun uploadContactImage(uri: Uri) {
+        contactUploadProgress[uri] = 0
+        updateDialogSubmitButton()
+
+        val storageRef = FirebaseStorage.getInstance().reference
+        val imageRef = storageRef.child("support_attachments/${System.currentTimeMillis()}_contact.jpg")
+
+        imageRef.putFile(uri)
+            .addOnProgressListener { taskSnapshot ->
+                val percent = if (taskSnapshot.totalByteCount > 0) {
+                    (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
+                } else 0
+                contactUploadProgress[uri] = percent
+                updateDialogSubmitButton()
+            }
+            .addOnSuccessListener {
+                imageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                    contactUploadedUrls[uri] = downloadUri.toString()
+                    contactUploadProgress.remove(uri)
+                    updateDialogSubmitButton()
+                    checkAndSubmitIfWaiting()
+                }.addOnFailureListener { e ->
+                    contactUploadProgress.remove(uri)
+                    updateDialogSubmitButton()
+                    ToastHelper.showToast(this, "Failed to get URL: ${e.message}")
+                }
+            }
+            .addOnFailureListener { e ->
+                contactUploadProgress.remove(uri)
+                updateDialogSubmitButton()
+                ToastHelper.showToast(this, "Upload failed: ${e.message}")
+            }
+    }
+
+    private fun updateDialogSubmitButton() {
+        val dialog = activeDialog ?: return
+        val btnSubmit = dialog.findViewById<Button>(R.id.btnContactSubmit) ?: return
+
+        val pendingCount = contactUploadProgress.size
+        if (pendingCount > 0) {
+            val avgProgress = contactUploadProgress.values.average().toInt()
+            btnSubmit.text = "Uploading... ($avgProgress%)"
+            btnSubmit.isEnabled = false // Disabled during upload to prevent double-submit
+        } else {
+            if (isWaitingForUploads) {
+                btnSubmit.text = "Submitting..."
+                btnSubmit.isEnabled = false
+            } else {
+                btnSubmit.text = "Submit"
+                btnSubmit.isEnabled = true
+            }
+        }
+    }
+
+    private fun checkAndSubmitIfWaiting() {
+        if (!isWaitingForUploads) return
+        val pendingCount = contactUploadProgress.size
+        if (pendingCount > 0) return // Still uploading
+
+        val dialog = activeDialog ?: return
+        val name = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).getString("user_name", "User") ?: "User"
+        val email = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).getString("user_email", "No Email") ?: "No Email"
+        val sdf = SimpleDateFormat("dd MMM yyyy, h:mm a", Locale.getDefault())
+        val currentTime = sdf.format(Date())
+
+        val subject = dialog.findViewById<EditText>(R.id.edtContactSubject).text.toString().trim()
+        val query = dialog.findViewById<EditText>(R.id.edtContactQuery).text.toString().trim()
+
+        val urls = selectedImageUris.mapNotNull { contactUploadedUrls[it] }
+        val firstUrl = urls.firstOrNull()
+        val remainingUrls = if (urls.size > 1) urls.drop(1) else emptyList()
+
+        submitQueryToFirestore(name, currentTime, email, subject, query, firstUrl, remainingUrls)
+        dialog.dismiss()
     }
 
     private fun updateDialogImageSlots() {
@@ -284,8 +331,12 @@ class HelpActivity : ThemedActivity() {
                 views.viewText.visibility = android.view.View.VISIBLE
 
                 views.trash.setOnClickListener {
+                    val uri = selectedImageUris[i]
                     selectedImageUris.removeAt(i)
+                    contactUploadedUrls.remove(uri)
+                    contactUploadProgress.remove(uri)
                     updateDialogImageSlots()
+                    updateDialogSubmitButton()
                 }
                 views.frame.setOnClickListener {
                     showFullscreenImagePreview(selectedImageUris[i])
@@ -434,6 +485,15 @@ class HelpActivity : ThemedActivity() {
 
         val timestamp = System.currentTimeMillis()
 
+        // Build final query string with [Attachment:] markers appended
+        val allUrls = mutableListOf<String>()
+        if (imageUrl != null) allUrls.add(imageUrl)
+        allUrls.addAll(imageUrls)
+        val queryWithAttachments = if (allUrls.isNotEmpty()) {
+            val markers = allUrls.joinToString("\n") { "[Attachment: $it]" }
+            if (query.isNotEmpty()) "$query\n$markers" else markers
+        } else query
+
         // Also save to Firestore for persistence and display in NotificationActivity
         // 🔥 offline-first queueing: we set needs_admin_email to true so the cloud function catches it when internet returns
         val db = FirebaseFirestore.getInstance()
@@ -443,7 +503,7 @@ class HelpActivity : ThemedActivity() {
             "time" to time,
             "subject" to subject,
             "originalSubject" to subject,
-            "query" to query,
+            "query" to queryWithAttachments,
             "timestamp" to timestamp,
             "read" to false,
             "status" to "pending",
@@ -453,8 +513,8 @@ class HelpActivity : ThemedActivity() {
         if (imageUrl != null) {
             notificationData["imageUrl"] = imageUrl
         }
-        if (imageUrls.isNotEmpty()) {
-            notificationData["imageUrls"] = imageUrls
+        if (allUrls.isNotEmpty()) {
+            notificationData["imageUrls"] = allUrls
         }
         // Use the explicit timestamp as the document ID so the backend can update it on reply
         val userEmail = user.email ?: getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).getString("user_email", null) ?: return
@@ -472,7 +532,7 @@ class HelpActivity : ThemedActivity() {
 
         // 🚀 ASYNC DIRECT WEBHOOK INJECTION:
         // Parallel direct push to circumvent Firestore trigger cold-starts and send instant email!
-        triggerImmediateWebhook(user.uid, name, userEmail, time, subject, query, timestamp, imageUrl, imageUrls)
+        triggerImmediateWebhook(user.uid, name, userEmail, time, subject, queryWithAttachments, timestamp, imageUrl, imageUrls)
     }
 
     private fun setupNotificationListener(badge: android.view.View) {
@@ -514,10 +574,15 @@ class HelpActivity : ThemedActivity() {
                 if (snapshot != null) {
                     val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
                     val email = user?.email?.lowercase() ?: ""
+                    val registrationTime = user?.metadata?.creationTimestamp ?: 0L
                     val deletedPrefs = getSharedPreferences("DeletedAnnouncements", Context.MODE_PRIVATE)
                     val readPrefs = getSharedPreferences("ReadAnnouncements", Context.MODE_PRIVATE)
                     for (doc in snapshot.documents) {
                         val id = doc.id
+                        val timestamp = doc.getLong("timestamp") ?: id.toLongOrNull() ?: 0L
+                        if (timestamp < registrationTime) {
+                            continue
+                        }
                         if (deletedPrefs.contains(id) || readPrefs.contains(id)) {
                             continue
                         }

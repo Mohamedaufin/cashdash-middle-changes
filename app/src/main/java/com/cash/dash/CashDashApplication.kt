@@ -4,6 +4,7 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.media.AudioAttributes
 import android.media.RingtoneManager
@@ -14,8 +15,10 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import android.content.SharedPreferences
 
 class CashDashApplication : Application(), DefaultLifecycleObserver {
+    private var walletPrefsListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
     override fun onCreate() {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         super<Application>.onCreate()
@@ -30,6 +33,14 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
         
         createNotificationChannel()
         com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("all_users")
+        
+        val walletPrefs = getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
+        walletPrefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "wallet_balance" || key == "initial_balance" || key == "balance_bar_mode" || key == "balance_bar_type") {
+                WalletWidget.pushUpdate(this)
+            }
+        }
+        walletPrefs.registerOnSharedPreferenceChangeListener(walletPrefsListener)
     }
 
     private fun createNotificationChannel() {
@@ -63,6 +74,11 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
     override fun onStart(owner: LifecycleOwner) {
         super.onStart(owner)
         setupRealtimePresence(this)
+        try {
+            startService(Intent(this, TaskMonitorService::class.java))
+        } catch (e: Exception) {
+            Log.e("CashDashApplication", "Failed to start TaskMonitorService", e)
+        }
     }
 
     override fun onStop(owner: LifecycleOwner) {
@@ -125,9 +141,16 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
                 context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
             } catch (e: Exception) { "unknown" }
 
+            val todayStr = java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.ENGLISH).apply {
+                timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
+            }.format(java.util.Date())
+            val name = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).getString("user_name", "User") ?: "User"
+
             val updates = hashMapOf<String, Any>(
                 "status" to "Online",
-                "appVersion" to appVersion
+                "appVersion" to appVersion,
+                "name" to name,
+                "activeDates" to com.google.firebase.firestore.FieldValue.arrayUnion(todayStr)
             )
             val mergeOptions = com.google.firebase.firestore.SetOptions.merge()
             db.collection("users").document(email).set(updates, mergeOptions).addOnFailureListener { }
@@ -155,7 +178,7 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
             updates["lastActiveTime"] = lastActive
 
             val prefs = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
-            prefs.edit().putString("lastActiveTime", lastActive).apply()
+            prefs.edit().putString("lastActiveTime", lastActive).commit()
 
             rtdbStatusRef.setValue(mapOf("state" to "Offline", "last_changed" to com.google.firebase.database.ServerValue.TIMESTAMP))
             rtdbStatusRef.onDisconnect().cancel()

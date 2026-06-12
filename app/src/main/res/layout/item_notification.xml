@@ -62,63 +62,39 @@
         android:layout_marginStart="18dp"
         android:layout_marginEnd="18dp"/>
 
-    <!-- Query / subject text -->
-    <TextView
-        android:id="@+id/tvNotificationQuery"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Subject: — \n\nQuestion: —"
-        android:textColor="?attr/textPrimaryColor"
-                android:textSize="@dimen/text_caption"
-        android:lineSpacingMultiplier="1.4"
-        android:padding="18dp"
-        android:paddingBottom="14dp"/>
-
-    <!-- Attachment Label -->
-    <TextView
-        android:id="@+id/tvAttachmentLabel"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Attachments :"
-        android:textColor="?attr/textPrimaryColor"
-        android:textSize="@dimen/text_caption"
-        android:textStyle="bold"
-        android:paddingStart="18dp"
-        android:paddingEnd="18dp"
-        android:paddingBottom="8dp"
-        android:visibility="gone" />
-
-    <!-- Attachments Grid (2 per row) -->
+    <!-- Dynamic Timeline Container -->
     <LinearLayout
-        android:id="@+id/layoutAttachments"
+        android:id="@+id/layoutTimelineContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingStart="18dp"
-        android:paddingEnd="18dp"
-        android:paddingBottom="14dp"
+        android:padding="18dp"
+        android:paddingBottom="4dp" />
+
+    <!-- Legacy Views kept hidden to avoid compilation issues -->
+    <TextView
+        android:id="@+id/tvNotificationQuery"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
         android:visibility="gone"/>
 
-    <!-- Separator before response -->
-    <View
+    <TextView
+        android:id="@+id/tvAttachmentLabel"
         android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#15808080"
-        android:layout_marginStart="18dp"
-        android:layout_marginEnd="18dp"/>
+        android:layout_height="0dp"
+        android:visibility="gone"/>
 
-    <!-- Response section -->
+    <LinearLayout
+        android:id="@+id/layoutAttachments"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:visibility="gone"/>
+
     <TextView
         android:id="@+id/tvNotificationReply"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Response: —"
-        android:textColor="?attr/textPrimaryColor"
-                android:textSize="@dimen/text_caption"
-        android:lineSpacingMultiplier="1.5"
-        android:padding="18dp"
-        android:paddingTop="14dp"
-        android:paddingBottom="10dp"/>
+        android:layout_height="0dp"
+        android:visibility="gone"/>
 
     <!-- Reply Input Section -->
     <LinearLayout
@@ -135,6 +111,51 @@
             android:layout_height="1dp"
             android:background="#10808080"
             android:layout_marginBottom="14dp"/>
+
+        <!-- Horizontal scroll for reply image previews -->
+        <HorizontalScrollView
+            android:id="@+id/scrollReplyPreviews"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone">
+            <LinearLayout
+                android:id="@+id/layoutReplyPreviews"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"/>
+        </HorizontalScrollView>
+
+        <!-- Upload Progress Section (shown only during image upload) -->
+        <LinearLayout
+            android:id="@+id/layoutUploadProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginBottom="10dp">
+
+            <TextView
+                android:id="@+id/tvUploadStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Uploading image 1 of 1…"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="12sp"
+                android:layout_marginBottom="4dp"/>
+
+            <ProgressBar
+                android:id="@+id/progressUpload"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:max="100"
+                android:progress="0"
+                android:progressTint="#7C4DFF"
+                android:progressBackgroundTint="#22FFFFFF"/>
+
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -158,8 +179,18 @@
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
                 android:gravity="center_vertical"
-                android:inputType="textMultiLine"
+                android:inputType="textMultiLine|textCapSentences"
                 android:maxLines="4"/>
+
+            <ImageButton
+                android:id="@+id/btnAttachMedia"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@android:color/transparent"
+                android:src="@android:drawable/ic_menu_gallery"
+                android:padding="16dp"
+                android:scaleType="fitCenter"
+                app:tint="?attr/textPrimaryColor"/>
 
             <ImageButton
                 android:id="@+id/btnSendReply"
