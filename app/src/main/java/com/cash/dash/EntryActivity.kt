@@ -42,15 +42,15 @@ class EntryActivity : ThemedActivity() {
 
         val layoutSelection = findViewById<View>(R.id.layoutSelection)
         val layoutAuthForm = findViewById<View>(R.id.layoutAuthForm)
-        
+
         val btnSelectLogin = findViewById<Button>(R.id.btnSelectLogin)
         val btnSelectRegister = findViewById<Button>(R.id.btnSelectRegister)
-        
+
         val edtName = findViewById<EditText>(R.id.edtName)
         val edtPhone = findViewById<EditText>(R.id.edtPhone)
         val edtEmail = findViewById<EditText>(R.id.edtEmail)
         val edtPassword = findViewById<EditText>(R.id.edtPassword)
-        
+
         val btnAction = findViewById<Button>(R.id.btnAction)
         val tvBack = findViewById<TextView>(R.id.tvBackToSelection)
         val tvForgotPassword = findViewById<TextView>(R.id.tvForgotPassword)
@@ -121,7 +121,7 @@ class EntryActivity : ThemedActivity() {
             }
             progressBar.visibility = View.VISIBLE
             tvStatus.text = ""
-            
+
             auth.sendPasswordResetEmail(email)
                 .addOnCompleteListener { task ->
                     progressBar.visibility = View.GONE
@@ -163,7 +163,7 @@ class EntryActivity : ThemedActivity() {
             edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
             edtEmail.setAutofillHints(View.AUTOFILL_HINT_EMAIL_ADDRESS)
             edtPassword.setAutofillHints(View.AUTOFILL_HINT_PASSWORD)
-            
+
             edtName.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
             edtPhone.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
         } else {
@@ -172,17 +172,32 @@ class EntryActivity : ThemedActivity() {
             btnAction.text = "Register"
             tvForgot.visibility = View.GONE
 
-            // 🟢 Explicitly define every field so Samsung Pass doesn't guess
-            edtEmail.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
-            edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
-            edtName.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
-            edtPhone.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+            val service = android.provider.Settings.Secure.getString(contentResolver, "autofill_service")
+            val isSamsung = service?.contains("samsung", ignoreCase = true) == true
 
-            // Tell Samsung exactly what these fields are so it doesn't think Name is a Username
-            edtName.setAutofillHints("personName")
-            edtPhone.setAutofillHints("phone")
-            edtEmail.setAutofillHints(View.AUTOFILL_HINT_EMAIL_ADDRESS)
-            edtPassword.setAutofillHints("newPassword")
+            if (isSamsung) {
+                // Samsung Pass: explicitly define every field
+                edtEmail.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+                edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+                edtName.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+                edtPhone.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+
+                edtName.setAutofillHints("personName")
+                edtPhone.setAutofillHints("phone")
+                edtEmail.setAutofillHints(View.AUTOFILL_HINT_EMAIL_ADDRESS)
+                edtPassword.setAutofillHints("newPassword")
+            } else {
+                // GPM: only email + password are credential fields, hide name/phone from autofill
+                edtEmail.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+                edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+                edtName.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+                edtPhone.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+
+                edtName.setAutofillHints("")
+                edtPhone.setAutofillHints("")
+                edtEmail.setAutofillHints(View.AUTOFILL_HINT_USERNAME, View.AUTOFILL_HINT_EMAIL_ADDRESS)
+                edtPassword.setAutofillHints("newPassword")
+            }
         }
 
         // Apply theme-specific button colors (especially for White Theme Register)
@@ -201,7 +216,7 @@ class EntryActivity : ThemedActivity() {
                 cornerRadius = 20 * resources.displayMetrics.density
             }
             val darkText = Color.parseColor("#1A1A1A")
-            
+
             btnSelectRegister.background = whiteBg
             btnSelectRegister.setTextColor(darkText)
 
@@ -308,7 +323,7 @@ class EntryActivity : ThemedActivity() {
                     } else {
                         failedLoginAttempts++
                         var errorMsg = task.exception?.message ?: "Unknown error"
-                        
+
                         if (errorMsg.contains("blocked all requests", ignoreCase = true) || errorMsg.contains("unusual activity", ignoreCase = true)) {
                             errorMsg = "Account temporarily locked by security. Please reset password or wait 15 mins."
                         } else if (failedLoginAttempts >= 5) {
@@ -325,7 +340,7 @@ class EntryActivity : ThemedActivity() {
                         } else {
                             errorMsg = "Incorrect Email or Password. (${5 - failedLoginAttempts} tries left)"
                         }
-                        
+
                         resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "Login Failed: $errorMsg", "Login")
                     }
                 }
@@ -351,7 +366,7 @@ class EntryActivity : ThemedActivity() {
     }
 
     private fun savePrefsAndContinue(
-        prefs: android.content.SharedPreferences, 
+        prefs: android.content.SharedPreferences,
         name: String, phone: String, email: String, pass: String,
         isLogin: Boolean,
         btnAction: Button,
@@ -359,19 +374,19 @@ class EntryActivity : ThemedActivity() {
         progressBar: ProgressBar,
         tvStatus: TextView
     ) {
-        // 🚨 CRITICAL SANITIZATION: Thoroughly purge stale state from previous device users 
+        // 🚨 CRITICAL SANITIZATION: Thoroughly purge stale state from previous device users
         // so new registrations don't inherit ghosts of older local caches.
         val prefsToPurge = listOf(
-            "WalletPrefs", "CategoryPrefs", "GraphData", 
-            "CategoryWeekData", "MoneySchedulePrefs", "ScannerHistory", 
+            "WalletPrefs", "CategoryPrefs", "GraphData",
+            "CategoryWeekData", "MoneySchedulePrefs", "ScannerHistory",
             "LocalScanPrefs", "NotificationCache", "AppPrefs" // Cleared carefully below
         )
-        
+
         // Capture ThemePrefs if needed? Actually we probably want to keep theme? No, clear state.
         prefsToPurge.forEach { prefName ->
             getSharedPreferences(prefName, MODE_PRIVATE).edit().clear().apply()
         }
-        
+
         // Fully nuke Room SQL Database to destroy lingering transaction logs
         val context = this.applicationContext
         java.util.concurrent.Executors.newSingleThreadExecutor().execute {
@@ -389,7 +404,7 @@ class EntryActivity : ThemedActivity() {
 
         if (!isLogin) {
             // Register logic: Setup not done yet, so Splash routes back into HomeFragment's balance setup logic
-            editor.putBoolean(KEY_FIRST, false) 
+            editor.putBoolean(KEY_FIRST, false)
             editor.putString(KEY_NAME, name)
             editor.putString(KEY_PHONE, phone)
             editor.putLong("account_creation_time", System.currentTimeMillis())
@@ -416,7 +431,7 @@ class EntryActivity : ThemedActivity() {
                         .putString(KEY_PHONE, profileData?.get("phone") as? String ?: "")
                         .putBoolean(KEY_FIRST, false)
                         .commit() // 🚀 Mandatory commit for SplashActivity immediate read
-                        
+
                     CashDashApplication.setupRealtimePresence(this@EntryActivity)
                     startActivity(Intent(this, SplashActivity::class.java))
                     finish()
@@ -432,4 +447,3 @@ class EntryActivity : ThemedActivity() {
         }
     }
 }
-
