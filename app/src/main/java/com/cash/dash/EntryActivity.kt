@@ -139,7 +139,6 @@ class EntryActivity : ThemedActivity() {
 
     private fun showAuthForm(isLogin: Boolean, selection: View, form: View, edtName: EditText, edtPhone: EditText, edtEmail: EditText, edtPassword: EditText, btnAction: Button, tvForgot: View) {
         val autofillManager = getSystemService(AutofillManager::class.java)
-        autofillManager?.cancel() // Force Samsung Pass to drop its cached UI state
 
         edtName.text.clear()
         edtPhone.text.clear()
@@ -157,11 +156,47 @@ class EntryActivity : ThemedActivity() {
             edtPhone.visibility = View.GONE
             btnAction.text = "Login"
             tvForgot.visibility = View.VISIBLE
+
+            // 🟢 Proper Login Autofill hints
+            edtEmail.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+            edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+            edtEmail.setAutofillHints(View.AUTOFILL_HINT_EMAIL_ADDRESS)
+            edtPassword.setAutofillHints(View.AUTOFILL_HINT_PASSWORD)
+
+            edtName.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+            edtPhone.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
         } else {
             edtName.visibility = View.VISIBLE
             edtPhone.visibility = View.VISIBLE
             btnAction.text = "Register"
             tvForgot.visibility = View.GONE
+
+            val service = android.provider.Settings.Secure.getString(contentResolver, "autofill_service")
+            val isSamsung = service?.contains("samsung", ignoreCase = true) == true
+
+            if (isSamsung) {
+                // Samsung Pass: explicitly define every field
+                edtEmail.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+                edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+                edtName.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+                edtPhone.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+
+                edtName.setAutofillHints("personName")
+                edtPhone.setAutofillHints("phone")
+                edtEmail.setAutofillHints(View.AUTOFILL_HINT_EMAIL_ADDRESS)
+                edtPassword.setAutofillHints("newPassword")
+            } else {
+                // GPM: only email + password are credential fields, hide name/phone from autofill
+                edtEmail.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+                edtPassword.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+                edtName.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+                edtPhone.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+
+                edtName.setAutofillHints("")
+                edtPhone.setAutofillHints("")
+                edtEmail.setAutofillHints(View.AUTOFILL_HINT_USERNAME, View.AUTOFILL_HINT_EMAIL_ADDRESS)
+                edtPassword.setAutofillHints("newPassword")
+            }
         }
 
         // Apply theme-specific button colors (especially for White Theme Register)
@@ -246,6 +281,11 @@ class EntryActivity : ThemedActivity() {
         tvStatus: TextView,
         prefs: android.content.SharedPreferences
     ) {
+        // Hide the keyboard automatically if it is active
+        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+        val currentView = currentFocus ?: window.decorView
+        imm.hideSoftInputFromWindow(currentView.windowToken, 0)
+
         if (isLockedOut) {
             tvStatus.text = "Too many failed attempts. Please wait 30 seconds."
             return

@@ -113,7 +113,7 @@
             android:textColorHint="@color/text_dim"
             android:padding="16dp"
             android:inputType="textEmailAddress"
-            android:autofillHints="username,emailAddress"
+            android:autofillHints="emailAddress"
             android:importantForAutofill="yes"
             android:layout_marginBottom="16dp"/>
 
