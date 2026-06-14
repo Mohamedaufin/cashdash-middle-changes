@@ -95,8 +95,10 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
 
     companion object {
         var presenceListener: com.google.firebase.database.ValueEventListener? = null
+        var isDeletingAccount = false
 
         fun setupRealtimePresence(context: Context) {
+            if (isDeletingAccount) return
             val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser ?: return
             val email = user.email ?: return
             val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
@@ -158,6 +160,7 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
         }
 
         fun setOfflineImmediate(context: Context) {
+            if (isDeletingAccount) return
             val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser ?: return
             val email = user.email ?: return
             val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()

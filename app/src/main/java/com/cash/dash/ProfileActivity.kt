@@ -160,6 +160,9 @@ class ProfileActivity : ThemedActivity() {
         val uid = user.uid
         val email = user.email ?: ""
 
+        // Prevent presence listener from creating users collection documents during deletion
+        CashDashApplication.isDeletingAccount = true
+
         val progressDialog = android.app.ProgressDialog(this).apply {
             setMessage("Deleting account...")
             setCancelable(false)
@@ -190,6 +193,8 @@ class ProfileActivity : ThemedActivity() {
                 })
                 finish()
             } else {
+                // Reset flag since deletion failed and session is still active
+                CashDashApplication.isDeletingAccount = false
                 // Usually fails if the user hasn't logged in recently (Firebase Security Requirement)
                 ToastHelper.showToast(this@ProfileActivity, "Security verification required. Please log out and log back in, then try deleting again.")
             }
