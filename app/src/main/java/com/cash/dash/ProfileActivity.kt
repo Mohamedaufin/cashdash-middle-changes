@@ -169,79 +169,85 @@ class ProfileActivity : ThemedActivity() {
             show()
         }
 
-        user.delete().addOnCompleteListener { delTask ->
-            progressDialog.dismiss()
-            if (delTask.isSuccessful) {
-                wipeUserFirestoreData(uid, email)
+        // Wipe Firestore data first while still authenticated
+        wipeUserFirestoreData(uid, email) {
+            // Once data is wiped, delete the Auth user
+            user.delete().addOnCompleteListener { delTask ->
+                progressDialog.dismiss()
+                if (delTask.isSuccessful) {
+                    ToastHelper.showToast(this@ProfileActivity, "Your account has been deleted permanently")
+                    FirestoreSyncManager.stopRealTimeSync(this@ProfileActivity)
+                    SecurityManager.stopListening() 
 
-                ToastHelper.showToast(this@ProfileActivity, "Your account has been deleted permanently")
-                FirestoreSyncManager.stopRealTimeSync(this@ProfileActivity)
-                SecurityManager.stopListening() 
+                    val prefsToClear = listOf(
+                        "AppPrefs", "WalletPrefs", "CategoryPrefs",
+                        "GraphData", "CategoryWeekData", "MoneySchedulePrefs",
+                        "ScannerHistory", "LocalScanPrefs", "NotificationCache"
+                    )
+                    prefsToClear.forEach { name ->
+                        getSharedPreferences(name, MODE_PRIVATE).edit().clear().apply()
+                    }
+                    auth.signOut()
 
-                val prefsToClear = listOf(
-                    "AppPrefs", "WalletPrefs", "CategoryPrefs",
-                    "GraphData", "CategoryWeekData", "MoneySchedulePrefs",
-                    "ScannerHistory", "LocalScanPrefs", "NotificationCache"
-                )
-                prefsToClear.forEach { name ->
-                    getSharedPreferences(name, MODE_PRIVATE).edit().clear().apply()
+                    startActivity(Intent(this@ProfileActivity, EntryActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    })
+                    finish()
+                } else {
+                    // Reset flag since deletion failed and session is still active
+                    CashDashApplication.isDeletingAccount = false
+                    // Usually fails if the user hasn't logged in recently (Firebase Security Requirement)
+                    ToastHelper.showToast(this@ProfileActivity, "Security verification required. Please log out and log back in, then try deleting again.")
                 }
-                auth.signOut()
-
-                startActivity(Intent(this@ProfileActivity, EntryActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                })
-                finish()
-            } else {
-                // Reset flag since deletion failed and session is still active
-                CashDashApplication.isDeletingAccount = false
-                // Usually fails if the user hasn't logged in recently (Firebase Security Requirement)
-                ToastHelper.showToast(this@ProfileActivity, "Security verification required. Please log out and log back in, then try deleting again.")
             }
         }
     }
 
-    private fun wipeUserFirestoreData(uid: String, email: String) {
+    private fun wipeUserFirestoreData(uid: String, email: String, onComplete: () -> Unit) {
         val db = FirebaseFirestore.getInstance()
-        try {
-            // Log deletion request (using email as doc ID for visibility)
-            val logData = hashMapOf(
-                "uid" to uid,
-                "email" to email,
-                "deleted_at" to System.currentTimeMillis(),
-                "status" to "PERMANENT_WIPE_COMPLETED"
-            )
-            db.collection("deleted_accounts").document(email).set(logData)
+        val logData = hashMapOf(
+            "uid" to uid,
+            "email" to email,
+            "deleted_at" to System.currentTimeMillis(),
+            "status" to "PERMANENT_WIPE_COMPLETED"
+        )
 
-            // Wipe sub-collections under config
-            val docs = listOf("profile", "wallet", "categories", "history", "analytics", "history_scanner", "undo_details")
-            docs.forEach { docName ->
-                db.collection("users").document(email).collection("config").document(docName).delete()
-            }
+        // Retrieve notifications to include in a single atomic batch deletion
+        db.collection("users").document(email).collection("notifications")
+            .get()
+            .addOnCompleteListener { task ->
+                val batch = db.batch()
 
-            // Wipe notifications sub-collection
-            db.collection("users").document(email).collection("notifications")
-                .get()
-                .addOnSuccessListener { snapshot ->
-                    if (snapshot != null && !snapshot.isEmpty) {
-                        val batch = db.batch()
-                        for (doc in snapshot.documents) {
-                            batch.delete(doc.reference)
-                        }
-                        batch.commit().addOnFailureListener { e ->
-                            android.util.Log.e("ProfileActivity", "Failed to delete notifications subcollection", e)
-                        }
+                // 1. Log deletion request in deleted_accounts
+                batch.set(db.collection("deleted_accounts").document(email), logData)
+
+                // 2. Wipe sub-collections under config
+                val docs = listOf("profile", "wallet", "categories", "history", "analytics", "history_scanner", "undo_details")
+                docs.forEach { docName ->
+                    batch.delete(db.collection("users").document(email).collection("config").document(docName))
+                }
+
+                // 3. Wipe sub-collections under notifications if found
+                if (task.isSuccessful && task.result != null) {
+                    for (doc in task.result.documents) {
+                        batch.delete(doc.reference)
                     }
                 }
-                .addOnFailureListener { e ->
-                    android.util.Log.e("ProfileActivity", "Failed to query notifications subcollection", e)
-                }
 
-            // Finally delete the root document itself
-            db.collection("users").document(email).delete()
-        } catch (e: Exception) {
-            android.util.Log.e("ProfileActivity", "Error during account delete logging / sub-collection wipe", e)
-        }
+                // 4. Finally delete the root document itself
+                batch.delete(db.collection("users").document(email))
+
+                // Commit the atomic batch
+                batch.commit()
+                    .addOnSuccessListener {
+                        onComplete()
+                    }
+                    .addOnFailureListener { e ->
+                        android.util.Log.e("ProfileActivity", "Firestore batch wipe failed", e)
+                        // Fallback: Proceed with Auth deletion anyway
+                        onComplete()
+                    }
+            }
     }
 
 
