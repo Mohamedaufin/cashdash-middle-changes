@@ -208,11 +208,30 @@ class ProfileActivity : ThemedActivity() {
             )
             db.collection("deleted_accounts").document(email).set(logData)
 
-            // Wipe sub-collections (using email as root doc ID)
+            // Wipe sub-collections under config
             val docs = listOf("profile", "wallet", "categories", "history", "analytics", "history_scanner", "undo_details")
             docs.forEach { docName ->
                 db.collection("users").document(email).collection("config").document(docName).delete()
             }
+
+            // Wipe notifications sub-collection
+            db.collection("users").document(email).collection("notifications")
+                .get()
+                .addOnSuccessListener { snapshot ->
+                    if (snapshot != null && !snapshot.isEmpty) {
+                        val batch = db.batch()
+                        for (doc in snapshot.documents) {
+                            batch.delete(doc.reference)
+                        }
+                        batch.commit().addOnFailureListener { e ->
+                            android.util.Log.e("ProfileActivity", "Failed to delete notifications subcollection", e)
+                        }
+                    }
+                }
+                .addOnFailureListener { e ->
+                    android.util.Log.e("ProfileActivity", "Failed to query notifications subcollection", e)
+                }
+
             // Finally delete the root document itself
             db.collection("users").document(email).delete()
         } catch (e: Exception) {
