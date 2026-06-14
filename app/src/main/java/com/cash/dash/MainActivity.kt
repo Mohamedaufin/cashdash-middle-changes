@@ -142,6 +142,37 @@ class MainActivity : ThemedActivity() {
             FirestoreSyncManager.pushAllDataToCloud(this)
             migrationPrefs.edit().putBoolean("email_sync_migrated", true).apply()
         }
+
+        checkMiuiBackgroundPermission()
+    }
+
+    private fun checkMiuiBackgroundPermission() {
+        if ("xiaomi".equals(android.os.Build.MANUFACTURER, ignoreCase = true) || 
+            "poco".equals(android.os.Build.MANUFACTURER, ignoreCase = true) || 
+            "redmi".equals(android.os.Build.MANUFACTURER, ignoreCase = true)) {
+            
+            val prefs = getSharedPreferences("MiuiPrefs", android.content.Context.MODE_PRIVATE)
+            if (!prefs.getBoolean("miui_warned", false)) {
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Xiaomi/POCO Device Detected")
+                    .setMessage("To ensure the Scanner Widget and background popups work perfectly, please enable 'Display pop-up windows while running in the background' in App Permissions.")
+                    .setPositiveButton("Go to Settings") { _, _ ->
+                        try {
+                            val intent = Intent("miui.intent.action.APP_PERM_EDITOR")
+                            intent.setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity")
+                            intent.putExtra("extra_pkgname", packageName)
+                            startActivity(intent)
+                        } catch (e: Exception) {
+                            val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                            intent.data = android.net.Uri.parse("package:$packageName")
+                            startActivity(intent)
+                        }
+                    }
+                    .setNegativeButton("Later", null)
+                    .show()
+                prefs.edit().putBoolean("miui_warned", true).apply()
+            }
+        }
     }
 
     private fun initNavbar() {

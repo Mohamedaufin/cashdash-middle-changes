@@ -135,10 +135,19 @@ class AllocatorActivity : ThemedActivity() {
             setHintTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(0, 0, 0, 50)
+                setMargins(0, 0, 0, 10)
             }
         }
         box.addView(input)
+
+        val errorView = TextView(this).apply {
+            setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
+            visibility = android.view.View.GONE
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                setMargins(10, 0, 0, 40)
+            }
+        }
+        box.addView(errorView)
 
         val buttonContainer = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -175,11 +184,21 @@ class AllocatorActivity : ThemedActivity() {
                 setMargins(15, 0, 0, 0)
             }
             setOnClickListener {
+                errorView.visibility = android.view.View.GONE
                 val name = input.text.toString().trim().replace("|", "-")
                 if (name.equals("Overall", ignoreCase = true)) {
-                    ToastHelper.showToast(this@AllocatorActivity, "'Overall' is a reserved name")
+                    errorView.text = "'Overall' is a reserved name"
+                    errorView.visibility = android.view.View.VISIBLE
                     return@setOnClickListener
                 }
+                
+                val exists = saved.any { it.equals(name, ignoreCase = true) }
+                if (exists) {
+                    errorView.text = "Allocation name already exists"
+                    errorView.visibility = android.view.View.VISIBLE
+                    return@setOnClickListener
+                }
+
                 if (name.isNotEmpty()) {
                     saveCategory(name)
                     refreshUI()
@@ -529,6 +548,26 @@ class AllocatorActivity : ThemedActivity() {
         }
         container.addView(title)
 
+        // CHANGE ICON OPTION
+        val btnChangeIcon = android.widget.Button(this).apply {
+            text = "Change Allocator Icon"
+            isAllCaps = false
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@AllocatorActivity, R.attr.textPrimaryColor))
+            val tv = android.util.TypedValue()
+            this@AllocatorActivity.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(this@AllocatorActivity, tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt()).apply {
+                setMargins(0, 0, 0, (12 * density).toInt())
+            }
+            setOnClickListener {
+                bottomSheet.dismiss()
+                showIconPickerDialog(name)
+            }
+        }
+        container.addView(btnChangeIcon)
+
         // RENAME OPTION
         val btnRename = android.widget.Button(this).apply {
             text = "Rename Allocation"
@@ -569,5 +608,92 @@ class AllocatorActivity : ThemedActivity() {
 
         bottomSheet.setContentView(container)
         bottomSheet.show()
+    }
+
+    private fun showIconPickerDialog(categoryName: String) {
+        val density = resources.displayMetrics.density
+        val box = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            val p = (28 * density).toInt()
+            setPadding(p, p, p, (24 * density).toInt())
+            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
+        }
+
+        val titleView = TextView(this).apply {
+            text = "Select Category Icon"
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_title))
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@AllocatorActivity, R.attr.textPrimaryColor))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, 0, 0, (20 * density).toInt())
+        }
+        box.addView(titleView)
+
+        val icons = listOf(
+            Pair("Food", R.drawable.ic_category_food),
+            Pair("Shopping", R.drawable.ic_category_shopping),
+            Pair("Fuel", R.drawable.ic_category_fuel),
+            Pair("Transport", R.drawable.ic_category_transport),
+            Pair("Water", R.drawable.ic_category_water),
+            Pair("Others", R.drawable.ic_edit)
+        )
+
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setView(box)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        icons.forEach { (name, resId) ->
+            val btn = android.widget.Button(this).apply {
+                text = name
+                isAllCaps = false
+                setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@AllocatorActivity, R.attr.textPrimaryColor))
+                
+                if (resId == R.drawable.ic_edit) {
+                    val drw = androidx.core.content.ContextCompat.getDrawable(this@AllocatorActivity, resId)
+                    drw?.let {
+                        val iconSize = (24 * density).toInt()
+                        val h = if (it.intrinsicWidth > 0) (iconSize * it.intrinsicHeight) / it.intrinsicWidth else iconSize
+                        it.setBounds(0, 0, iconSize, h)
+                    }
+                    val tinted = com.cash.dash.ThemeHelper.tintDrawableIfWhiteTheme(this@AllocatorActivity, drw)
+                    setCompoundDrawables(tinted, null, null, null)
+                } else {
+                    val drw = androidx.core.content.ContextCompat.getDrawable(this@AllocatorActivity, resId)
+                    val tinted = com.cash.dash.ThemeHelper.tintDrawableIfWhiteTheme(this@AllocatorActivity, drw)
+                    setCompoundDrawablesWithIntrinsicBounds(tinted, null, null, null)
+                }
+                
+                compoundDrawablePadding = (12 * density).toInt()
+                setPadding((16 * density).toInt(), 0, 0, 0)
+                gravity = android.view.Gravity.CENTER_VERTICAL or android.view.Gravity.START
+                background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt()
+                ).apply { setMargins(0, 0, 0, (12 * density).toInt()) }
+
+                setOnClickListener {
+                    val prefs = getSharedPreferences("CategoryPrefs", android.content.Context.MODE_PRIVATE)
+                    prefs.edit().putInt("ICON_$categoryName", resId).apply()
+                    refreshUI()
+                    dialog.dismiss()
+                }
+            }
+            box.addView(btn)
+        }
+
+        val btnCancel = android.widget.Button(this).apply {
+            text = "Cancel"
+            isAllCaps = false
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@AllocatorActivity, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, (50 * density).toInt()
+            )
+            setOnClickListener { dialog.dismiss() }
+        }
+        box.addView(btnCancel)
+
+        dialog.show()
     }
 }

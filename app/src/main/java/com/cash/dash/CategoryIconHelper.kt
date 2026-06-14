@@ -9,6 +9,7 @@ object CategoryIconHelper {
     private val shoppingKeywords = setOf("shop", "shopping", "cart", "buy", "mall", "clothes", "amazon", "flipkart", "myntra", "grocery", "groceries")
     private val fuelKeywords = setOf("petrol", "diesel", "fuel", "gas", "cng", "pump")
     private val transportKeywords = setOf("travel", "bus", "car", "train", "flight", "taxi", "cab", "uber", "ola", "rapido", "auto", "metro", "transport")
+    private val waterKeywords = setOf("water", "drinking", "aqua", "can", "bisleri")
 
     /**
      * Attempts to heuristically detect the best icon for a given category name based on keyword matching.
@@ -36,6 +37,9 @@ object CategoryIconHelper {
         }
         for (word in transportKeywords) {
             if (normalized.contains(word)) return R.drawable.ic_category_transport
+        }
+        for (word in waterKeywords) {
+            if (normalized.contains(word)) return R.drawable.ic_category_water
         }
         
         // Fallback
