@@ -33,6 +33,7 @@
         android:textColor="?attr/textPrimaryColor"
         android:textSize="@dimen/text_title"
         android:inputType="numberDecimal"
+        android:maxLength="7"
         android:background="?attr/inputBackground"
         android:paddingHorizontal="20dp"
         android:layout_marginBottom="20dp" />

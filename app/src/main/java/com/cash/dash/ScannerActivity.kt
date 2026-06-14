@@ -321,12 +321,14 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         btnFlashlight.backgroundTintList = null
         btnMore.backgroundTintList = null
 
-        if (activeTheme == "White") {
+        if (activeTheme != "Blue") {
             btnGallery.setBackgroundResource(R.drawable.bg_capsule_white)
             imgGalleryIcon.imageTintList = android.content.res.ColorStateList.valueOf(Color.BLACK)
             tvGalleryText.setTextColor(Color.BLACK)
-        } else if (activeTheme == "Blue") {
+        } else {
             btnGallery.setBackgroundResource(R.drawable.bg_capsule_scanner_blue)
+            imgGalleryIcon.imageTintList = android.content.res.ColorStateList.valueOf(Color.WHITE)
+            tvGalleryText.setTextColor(Color.WHITE)
         }
 
         btnClose.imageTintList = android.content.res.ColorStateList.valueOf(iconTint)

@@ -160,29 +160,39 @@ class ProfileActivity : ThemedActivity() {
         val uid = user.uid
         val email = user.email ?: ""
 
-        // 1. Instant feedback & redirect
-        ToastHelper.showToast(this@ProfileActivity, "Your account has been deleted permanently")
-        FirestoreSyncManager.stopRealTimeSync(this@ProfileActivity)
-        SecurityManager.stopListening() // Prevent false "admin deleted" notice on self-deletion
-
-        val prefsToClear = listOf(
-            "AppPrefs", "WalletPrefs", "CategoryPrefs",
-            "GraphData", "CategoryWeekData", "MoneySchedulePrefs",
-            "ScannerHistory", "LocalScanPrefs", "NotificationCache"
-        )
-        prefsToClear.forEach { name ->
-            getSharedPreferences(name, MODE_PRIVATE).edit().clear().apply()
+        val progressDialog = android.app.ProgressDialog(this).apply {
+            setMessage("Deleting account...")
+            setCancelable(false)
+            show()
         }
-        auth.signOut()
 
-        startActivity(Intent(this@ProfileActivity, EntryActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        })
-        finish()
-
-        // 2. Silent background Firebase Auth + Firestore wipe
         user.delete().addOnCompleteListener { delTask ->
-            if (delTask.isSuccessful) wipeUserFirestoreData(uid, email)
+            progressDialog.dismiss()
+            if (delTask.isSuccessful) {
+                wipeUserFirestoreData(uid, email)
+
+                ToastHelper.showToast(this@ProfileActivity, "Your account has been deleted permanently")
+                FirestoreSyncManager.stopRealTimeSync(this@ProfileActivity)
+                SecurityManager.stopListening() 
+
+                val prefsToClear = listOf(
+                    "AppPrefs", "WalletPrefs", "CategoryPrefs",
+                    "GraphData", "CategoryWeekData", "MoneySchedulePrefs",
+                    "ScannerHistory", "LocalScanPrefs", "NotificationCache"
+                )
+                prefsToClear.forEach { name ->
+                    getSharedPreferences(name, MODE_PRIVATE).edit().clear().apply()
+                }
+                auth.signOut()
+
+                startActivity(Intent(this@ProfileActivity, EntryActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                })
+                finish()
+            } else {
+                // Usually fails if the user hasn't logged in recently (Firebase Security Requirement)
+                ToastHelper.showToast(this@ProfileActivity, "Security verification required. Please log out and log back in, then try deleting again.")
+            }
         }
     }
 

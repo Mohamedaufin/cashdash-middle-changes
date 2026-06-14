@@ -112,6 +112,7 @@
                 android:layout_height="48dp"
                 android:hint="Amount"
                 android:inputType="numberDecimal"
+                android:maxLength="7"
                 android:textColorHint="#8888aa"
                 android:textColor="#e0e0ff"
                 android:background="@drawable/bg_input_field_tracker"
