@@ -85,8 +85,7 @@
             android:textColorHint="@color/text_dim"
             android:padding="16dp"
             android:inputType="textPersonName|textCapWords"
-            android:autofillHints="personName"
-            android:importantForAutofill="no"
+            android:importantForAutofill="noExcludeDescendants"
             android:layout_marginBottom="16dp"/>
 
         <!-- PHONE NUMBER -->
@@ -100,8 +99,7 @@
             android:textColorHint="@color/text_dim"
             android:padding="16dp"
             android:inputType="phone"
-            android:autofillHints="phone"
-            android:importantForAutofill="no"
+            android:importantForAutofill="noExcludeDescendants"
             android:layout_marginBottom="16dp"/>
 
         <!-- EMAIL -->
