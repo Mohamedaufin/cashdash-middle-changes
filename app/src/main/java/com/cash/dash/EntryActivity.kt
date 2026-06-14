@@ -139,7 +139,6 @@ class EntryActivity : ThemedActivity() {
 
     private fun showAuthForm(isLogin: Boolean, selection: View, form: View, edtName: EditText, edtPhone: EditText, edtEmail: EditText, edtPassword: EditText, btnAction: Button, tvForgot: View) {
         val autofillManager = getSystemService(AutofillManager::class.java)
-        autofillManager?.cancel() // Force Samsung Pass to drop its cached UI state
 
         edtName.text.clear()
         edtPhone.text.clear()
