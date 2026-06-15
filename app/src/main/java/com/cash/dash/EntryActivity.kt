@@ -30,6 +30,7 @@ class EntryActivity : ThemedActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        CashDashApplication.isDeletingAccount = false
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         // 🔥 If already completed once → skip form forever
         if (!prefs.getBoolean(KEY_FIRST, true)) {
@@ -261,7 +262,7 @@ class EntryActivity : ThemedActivity() {
                 val tvMessage = dialog.findViewById<TextView>(R.id.tvConfirmMessage)
                 val btnAction = dialog.findViewById<Button>(R.id.btnConfirmAction)
                 tvTitle?.text = "Security Notice"
-                tvMessage?.text = "Admin has deleted your account due to privacy concerns."
+                tvMessage?.text = "Your account has been deleted due to breach of our security and privacy policies. Register a new account to continue using CashDash."
                 btnAction?.text = "Understood"
                 dialog.findViewById<View>(R.id.btnConfirmCancel)?.visibility = View.GONE
                 btnAction?.setOnClickListener {
@@ -292,6 +293,11 @@ class EntryActivity : ThemedActivity() {
         prefs: android.content.SharedPreferences
     ) {
         // Hide the keyboard automatically if it is active
+        edtName.clearFocus()
+        edtPhone.clearFocus()
+        edtEmail.clearFocus()
+        edtPassword.clearFocus()
+        
         val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
         val currentView = currentFocus ?: window.decorView
         imm.hideSoftInputFromWindow(currentView.windowToken, 0)
