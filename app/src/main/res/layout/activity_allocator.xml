@@ -13,7 +13,7 @@
         android:scrollbars="none"
         android:paddingLeft="18dp"
         android:paddingRight="18dp"
-        android:paddingTop="55dp"
+        android:paddingTop="25dp"
         android:clipToPadding="false"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/bottomNav"
