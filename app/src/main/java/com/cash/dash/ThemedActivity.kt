@@ -14,12 +14,8 @@ open class ThemedActivity : AppCompatActivity() {
         
         super.onCreate(savedInstanceState)
         
-        // Restore custom status bar color logic for White theme
-        if (ThemeHelper.isWhiteTheme(this)) {
-            window.statusBarColor = android.graphics.Color.BLACK
-        } else {
-            window.statusBarColor = android.graphics.Color.TRANSPARENT
-        }
+        // Make status bar transparent for edge-to-edge
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
     }
     override fun attachBaseContext(newBase: android.content.Context) {
         val configuration = android.content.res.Configuration(newBase.resources.configuration)
