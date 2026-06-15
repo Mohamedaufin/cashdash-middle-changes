@@ -272,6 +272,15 @@ class DayBarGraphView(context: Context, attrs: AttributeSet?) : View(context, at
         invalidate()
     }
 
+    fun hasDataForCurrentMode(): Boolean {
+        val barValues = when (currentMode) {
+            "WEEKLY" -> weeklyTotals
+            "MONTHLY" -> monthlyTotals
+            else -> dailyData
+        }
+        return barValues.any { it > 0f }
+    }
+
     fun setHighlightIndices(day: Int, week: Int, month: Int) {
         highlightDay = day
         highlightWeek = week

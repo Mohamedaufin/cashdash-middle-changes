@@ -234,8 +234,7 @@ class EntryActivity : ThemedActivity() {
                 btnAction.background = whiteBg
                 btnAction.setTextColor(darkText)
             } else {
-                // Login action color remains default or themed
-                btnAction.setTextColor(Color.WHITE)
+                btnAction.setTextColor(darkText)
             }
         }
     }
