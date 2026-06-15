@@ -198,7 +198,7 @@ class ProfileActivity : ThemedActivity() {
                     val prefsToClear = listOf(
                         "AppPrefs", "WalletPrefs", "CategoryPrefs",
                         "GraphData", "CategoryWeekData", "MoneySchedulePrefs",
-                        "ScannerHistory", "LocalScanPrefs", "NotificationCache"
+                        "ScannerHistory", "LocalScanPrefs", "ScannerMetadataPrefs", "NotificationCache"
                     )
                     prefsToClear.forEach { name ->
                         getSharedPreferences(name, MODE_PRIVATE).edit().clear().apply()
@@ -238,7 +238,7 @@ class ProfileActivity : ThemedActivity() {
                 batch.set(db.collection("deleted_accounts").document(email), logData)
 
                 // 2. Wipe sub-collections under config
-                val docs = listOf("profile", "wallet", "categories", "history", "analytics", "history_scanner", "undo_details")
+                val docs = listOf("profile", "wallet", "categories", "history", "analytics", "history_scanner", "undo_details", "scanner_metadata")
                 docs.forEach { docName ->
                     batch.delete(db.collection("users").document(email).collection("config").document(docName))
                 }

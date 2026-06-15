@@ -182,6 +182,10 @@ object FirestoreSyncManager {
                 // 7. LocalScanPrefs
                 batch.set(configColl.document("undo_details"), hashMapOf("LocalScanPrefs" to localScanPrefs.all))
 
+                // 8. ScannerMetadataPrefs
+                val scannerMetaPrefs = appContext.getSharedPreferences("ScannerMetadataPrefs", Context.MODE_PRIVATE)
+                batch.set(configColl.document("scanner_metadata"), hashMapOf("ScannerMetadataPrefs" to scannerMetaPrefs.all))
+
                 // ⚡ Final Atomic Execution (1 Trip vs 8 Trip)
                 Tasks.await(batch.commit())
 
@@ -218,8 +222,9 @@ object FirestoreSyncManager {
             val tAnalytics = userDoc.document("analytics").get()
             val tScanner = userDoc.document("history_scanner").get()
             val tUndo = userDoc.document("undo_details").get()
+            val tScannerMeta = userDoc.document("scanner_metadata").get()
 
-            Tasks.whenAllComplete(tProfile, tWallet, tCategories, tHistory, tAnalytics, tScanner, tUndo)
+            Tasks.whenAllComplete(tProfile, tWallet, tCategories, tHistory, tAnalytics, tScanner, tUndo, tScannerMeta)
                 .addOnCompleteListener { task ->
                     if (!task.isSuccessful) {
                         Log.e(TAG, "Failed to pull cloud data for $docId: ${task.exception?.message}")
@@ -472,6 +477,25 @@ object FirestoreSyncManager {
                             isSyncingFromCloud = false
                         }
                     }
+
+                    // 8. ScannerMetadataPrefs
+                    val scannerMetaDoc = tScannerMeta.result
+                    if (scannerMetaDoc != null && scannerMetaDoc.exists()) {
+                        val smMap = scannerMetaDoc.get("ScannerMetadataPrefs") as? Map<String, Any>
+                        if (smMap != null) {
+                            isSyncingFromCloud = true
+                            val edit = context.getSharedPreferences("ScannerMetadataPrefs", Context.MODE_PRIVATE).edit()
+                            edit.clear().apply()
+                            for ((k, v) in smMap) {
+                                if (v is String) edit.putString(k, v)
+                                else if (v is Boolean) edit.putBoolean(k, v)
+                                else if (v is Number) edit.putInt(k, v.toInt())
+                            }
+                            edit.apply()
+                            isSyncingFromCloud = false
+                        }
+                    }
+
                     // Log.d(TAG, "Pull complete for $docId. Migration flow: $isFallback")
                     
                     if (isFallback) {
@@ -509,7 +533,7 @@ object FirestoreSyncManager {
 
         val prefsToWatch = listOf(
             "AppPrefs", "WalletPrefs", "CategoryPrefs", "GraphData",
-            "CategoryWeekData", "MoneySchedulePrefs", "ScannerHistory", "LocalScanPrefs"
+            "CategoryWeekData", "MoneySchedulePrefs", "ScannerHistory", "LocalScanPrefs", "ScannerMetadataPrefs"
         )
 
         prefsToWatch.forEach { name ->
