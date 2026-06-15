@@ -1,19 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rootNotificationLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="?attr/mainBackground">
+    android:background="?attr/mainBackground"
+    android:fitsSystemWindows="true">
 
     <!-- Header -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="28dp"
+        android:paddingTop="4dp"
         android:paddingStart="25dp"
         android:paddingEnd="25dp"
-        android:layout_marginBottom="15dp">
+        android:layout_marginBottom="4dp">
 
 
         <TextView
@@ -40,7 +42,7 @@
         android:gravity="center"
         android:paddingStart="25dp"
         android:paddingEnd="25dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="4dp"
         android:visibility="gone">
 
         <TextView
@@ -91,11 +93,11 @@
             android:id="@+id/rvNotifications"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingBottom="100dp"
+            android:paddingBottom="16dp"
             android:clipToPadding="false"
             android:paddingStart="25dp"
             android:paddingEnd="25dp"
-            android:paddingTop="25dp"
+            android:paddingTop="4dp"
             android:isScrollContainer="true"
             android:visibility="gone"/>
 

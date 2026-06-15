@@ -517,6 +517,115 @@ class AllocatorFragment : Fragment() {
         }
         container.addView(btnRename)
 
+        // CHANGE ICON OPTION
+        val btnChangeIcon = Button(requireContext()).apply {
+            text = "Change Allocator Icon"
+            isAllCaps = false
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
+            val tv = android.util.TypedValue()
+            requireContext().theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(requireContext(), tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt()).apply {
+                setMargins(0, 0, 0, (12 * density).toInt())
+            }
+            setOnClickListener {
+                bottomSheet.dismiss()
+                // Launch custom picker logic directly using fragment context
+                val box = LinearLayout(requireContext()).apply {
+                    orientation = LinearLayout.VERTICAL
+                    val p = (28 * density).toInt()
+                    setPadding(p, p, p, (24 * density).toInt())
+                    setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
+                }
+
+                val titleView = TextView(requireContext()).apply {
+                    text = "Select Category Icon"
+                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_title))
+                    setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    gravity = android.view.Gravity.CENTER
+                    setPadding(0, 0, 0, (20 * density).toInt())
+                }
+                box.addView(titleView)
+
+                val icons = listOf(
+                    Pair("Food", R.drawable.ic_category_food),
+                    Pair("Shopping", R.drawable.ic_category_shopping),
+                    Pair("Fuel", R.drawable.ic_category_fuel),
+                    Pair("Transport", R.drawable.ic_category_transport),
+                    Pair("Water", R.drawable.ic_category_water),
+                    Pair("Others", R.drawable.ic_edit)
+                )
+
+                val dialog = androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                    .setView(box)
+                    .create()
+                dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+                icons.forEach { (iconName, resId) ->
+                    val btn = Button(requireContext()).apply {
+                        text = iconName
+                        isAllCaps = false
+                        setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
+
+                        if (resId == R.drawable.ic_edit) {
+                            val drw = androidx.core.content.ContextCompat.getDrawable(requireContext(), resId)
+                            drw?.let {
+                                val iconSize = (24 * density).toInt()
+                                val h = if (it.intrinsicWidth > 0) (iconSize * it.intrinsicHeight) / it.intrinsicWidth else iconSize
+                                it.setBounds(0, 0, iconSize, h)
+                            }
+                            val tinted = com.cash.dash.ThemeHelper.tintDrawableIfWhiteTheme(requireContext(), drw)
+                            setCompoundDrawables(tinted, null, null, null)
+                        } else {
+                            val drw = androidx.core.content.ContextCompat.getDrawable(requireContext(), resId)
+                            val tinted = com.cash.dash.ThemeHelper.tintDrawableIfWhiteTheme(requireContext(), drw)
+                            setCompoundDrawablesWithIntrinsicBounds(tinted, null, null, null)
+                        }
+
+                        compoundDrawablePadding = (12 * density).toInt()
+                        setPadding((16 * density).toInt(), 0, 0, 0)
+                        gravity = android.view.Gravity.CENTER_VERTICAL or android.view.Gravity.START
+                        background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+                        layoutParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt()
+                        ).apply { setMargins(0, 0, 0, (12 * density).toInt()) }
+
+                        setOnClickListener {
+                            val prefs = requireContext().getSharedPreferences("CategoryPrefs", android.content.Context.MODE_PRIVATE)
+                            prefs.edit().putInt("ICON_$name", resId).apply()
+                            
+                            // Sync back immediately
+                            FirestoreSyncManager.pushAllDataToCloud(requireContext())
+                            androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(requireContext())
+                                .sendBroadcast(android.content.Intent(FirestoreSyncManager.ACTION_SYNC_UPDATE))
+                            
+                            refreshUI()
+                            dialog.dismiss()
+                        }
+                    }
+                    box.addView(btn)
+                }
+
+                val btnCancel = Button(requireContext()).apply {
+                    text = "Cancel"
+                    isAllCaps = false
+                    setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
+                    background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, (50 * density).toInt()
+                    )
+                    setOnClickListener { dialog.dismiss() }
+                }
+                box.addView(btnCancel)
+
+                dialog.show()
+            }
+        }
+        container.addView(btnChangeIcon)
+
         // DELETE OPTION
         val btnDelete = Button(requireContext()).apply {
             text = "Delete Allocation"

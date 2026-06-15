@@ -893,3 +893,76 @@ exports.onUserPush = onDocumentWritten({
     }
 });
 
+// ─────────────────────────────────────────────
+// FUNCTION 6: onAuthUserDeleted
+// ─────────────────────────────────────────────
+const functionsv1 = require("firebase-functions/v1");
+
+exports.onAuthUserDeleted = functionsv1.auth.user().onDelete(async (user) => {
+    const email = user.email;
+    const uid = user.uid;
+
+    if (!email) {
+        console.log(`User deleted with UID ${uid} but no email found. Skipping Firestore cleanup.`);
+        return;
+    }
+
+    console.log(`onAuthUserDeleted triggered for user: ${email} (UID: ${uid})`);
+
+    try {
+        // 1. Write status: "admin_deleted" to deleted_accounts to trigger disruptive logout on the device
+        await db.collection("deleted_accounts").doc(email).set({
+            uid: uid,
+            email: email,
+            deleted_at: Date.now(),
+            status: "admin_deleted"
+        });
+        console.log(`Successfully logged admin_deleted status in deleted_accounts for ${email}`);
+
+        const userRef = db.collection("users").doc(email);
+
+        // Retrieve and send FCM force_logout notification to active user device before wiping data
+        try {
+            const userDoc = await userRef.get();
+            const fcmToken = userDoc.data()?.fcmToken;
+            if (fcmToken) {
+                await admin.messaging().send({
+                    token: fcmToken,
+                    data: {
+                        action: "force_logout"
+                    },
+                    android: {
+                        priority: "high"
+                    }
+                });
+                console.log(`Successfully sent force_logout FCM message to ${email}`);
+            } else {
+                console.log(`No FCM token found for ${email}`);
+            }
+        } catch (fcmError) {
+            console.error(`Error sending force_logout FCM message to ${email}:`, fcmError);
+        }
+
+        // 2. Wipe sub-collections under config
+        const configDocs = ["profile", "wallet", "categories", "history", "analytics", "history_scanner", "undo_details"];
+        const batch = db.batch();
+        for (const docName of configDocs) {
+            batch.delete(userRef.collection("config").doc(docName));
+        }
+
+        // 3. Wipe sub-collections under notifications
+        const notificationsSnapshot = await userRef.collection("notifications").get();
+        notificationsSnapshot.forEach((doc) => {
+            batch.delete(doc.ref);
+        });
+
+        // 4. Finally delete the root document itself
+        batch.delete(userRef);
+
+        // Commit the batch
+        await batch.commit();
+        console.log(`Successfully cleaned up Firestore database for deleted user: ${email}`);
+    } catch (error) {
+        console.error(`Error cleaning up Firestore data for deleted user ${email}:`, error);
+    }
+});

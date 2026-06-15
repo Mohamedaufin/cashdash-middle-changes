@@ -24,6 +24,7 @@ class EntryActivity : ThemedActivity() {
     private val KEY_NAME = "user_name"
     private val KEY_EMAIL = "user_email"
     private val KEY_PHONE = "user_phone"
+    private var selectedDob = ""
 
     private var isLoginFlow = true
 
@@ -48,6 +49,7 @@ class EntryActivity : ThemedActivity() {
 
         val edtName = findViewById<EditText>(R.id.edtName)
         val edtPhone = findViewById<EditText>(R.id.edtPhone)
+        val tvDob = findViewById<TextView>(R.id.tvDob)
         val edtEmail = findViewById<EditText>(R.id.edtEmail)
         val edtPassword = findViewById<EditText>(R.id.edtPassword)
 
@@ -72,14 +74,18 @@ class EntryActivity : ThemedActivity() {
             edtPassword.setSelection(edtPassword.text.length)
         }
 
+        tvDob.setOnClickListener {
+            showDobPickerDialog(tvDob)
+        }
+
         btnSelectLogin.setOnClickListener {
             isLoginFlow = true
-            showAuthForm(true, layoutSelection, layoutAuthForm, edtName, edtPhone, edtEmail, edtPassword, btnAction, tvForgotPassword)
+            showAuthForm(true, layoutSelection, layoutAuthForm, edtName, edtPhone, tvDob, edtEmail, edtPassword, btnAction, tvForgotPassword)
         }
 
         btnSelectRegister.setOnClickListener {
             isLoginFlow = false
-            showAuthForm(false, layoutSelection, layoutAuthForm, edtName, edtPhone, edtEmail, edtPassword, btnAction, tvForgotPassword)
+            showAuthForm(false, layoutSelection, layoutAuthForm, edtName, edtPhone, tvDob, edtEmail, edtPassword, btnAction, tvForgotPassword)
         }
 
         tvBack.setOnClickListener {
@@ -91,6 +97,8 @@ class EntryActivity : ThemedActivity() {
             edtPhone.text.clear()
             edtEmail.text.clear()
             edtPassword.text.clear()
+            tvDob.text = ""
+            selectedDob = ""
             edtName.clearFocus()
             edtPhone.clearFocus()
             edtEmail.clearFocus()
@@ -137,7 +145,7 @@ class EntryActivity : ThemedActivity() {
         checkAdminDeletionReason()
     }
 
-    private fun showAuthForm(isLogin: Boolean, selection: View, form: View, edtName: EditText, edtPhone: EditText, edtEmail: EditText, edtPassword: EditText, btnAction: Button, tvForgot: View) {
+    private fun showAuthForm(isLogin: Boolean, selection: View, form: View, edtName: EditText, edtPhone: EditText, tvDob: TextView, edtEmail: EditText, edtPassword: EditText, btnAction: Button, tvForgot: View) {
         val autofillManager = getSystemService(AutofillManager::class.java)
 
         edtName.text.clear()
@@ -154,6 +162,7 @@ class EntryActivity : ThemedActivity() {
         if (isLogin) {
             edtName.visibility = View.GONE
             edtPhone.visibility = View.GONE
+            tvDob.visibility = View.GONE
             btnAction.text = "Login"
             tvForgot.visibility = View.VISIBLE
 
@@ -168,6 +177,7 @@ class EntryActivity : ThemedActivity() {
         } else {
             edtName.visibility = View.VISIBLE
             edtPhone.visibility = View.VISIBLE
+            tvDob.visibility = View.VISIBLE
             btnAction.text = "Register"
             tvForgot.visibility = View.GONE
 
@@ -291,7 +301,7 @@ class EntryActivity : ThemedActivity() {
             return
         }
 
-        val email = edtEmail.text.toString().trim()
+        val email = edtEmail.text.toString().trim().lowercase()
         val pass = edtPassword.text.toString().trim()
         val name = edtName.text.toString().trim()
         val phone = edtPhone.text.toString().trim()
@@ -301,8 +311,8 @@ class EntryActivity : ThemedActivity() {
             return
         }
 
-        if (!isLogin && (name.isEmpty() || phone.isEmpty())) {
-            tvStatus.text = "Please fill in all 4 details"
+        if (!isLogin && (name.isEmpty() || phone.isEmpty() || selectedDob.isEmpty())) {
+            tvStatus.text = "Please fill in all 5 details"
             return
         }
 
@@ -411,6 +421,7 @@ class EntryActivity : ThemedActivity() {
             editor.putBoolean(KEY_FIRST, false)
             editor.putString(KEY_NAME, name)
             editor.putString(KEY_PHONE, phone)
+            editor.putString("user_dob", selectedDob)
             editor.putLong("account_creation_time", System.currentTimeMillis())
         }
         editor.apply()
@@ -449,5 +460,84 @@ class EntryActivity : ThemedActivity() {
             startActivity(Intent(this, SplashActivity::class.java))
             finish()
         }
+    }
+
+    private fun showDobPickerDialog(tvDob: TextView) {
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+        val sheetView = layoutInflater.inflate(R.layout.layout_dob_bottom_sheet, null)
+        dialog.setContentView(sheetView)
+
+        val pickerYear = sheetView.findViewById<android.widget.NumberPicker>(R.id.pickerYear)
+        val pickerMonth = sheetView.findViewById<android.widget.NumberPicker>(R.id.pickerMonth)
+        val pickerDay = sheetView.findViewById<android.widget.NumberPicker>(R.id.pickerDay)
+        val btnSave = sheetView.findViewById<android.widget.Button>(R.id.btnSaveDate)
+
+        // Setup Year
+        val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+        pickerYear.minValue = 1900
+        pickerYear.maxValue = currentYear
+        pickerYear.value = 2000
+
+        // Setup Month
+        pickerMonth.minValue = 1
+        pickerMonth.maxValue = 12
+        val monthNames = arrayOf(
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        )
+        pickerMonth.displayedValues = monthNames
+        pickerMonth.value = 6
+
+        // Setup Day range helper
+        fun updateMaxDay(y: Int, m: Int) {
+            val cal = java.util.Calendar.getInstance()
+            cal.set(java.util.Calendar.YEAR, y)
+            cal.set(java.util.Calendar.MONTH, m - 1)
+            val maxDay = cal.getActualMaximum(java.util.Calendar.DAY_OF_MONTH)
+            pickerDay.minValue = 1
+            pickerDay.maxValue = maxDay
+        }
+
+        // Initialize Day
+        updateMaxDay(2000, 6)
+        pickerDay.value = 15
+
+        // Value change listeners to dynamically update maximum day
+        pickerYear.setOnValueChangedListener { _, _, newVal ->
+            updateMaxDay(newVal, pickerMonth.value)
+        }
+        pickerMonth.setOnValueChangedListener { _, _, newVal ->
+            updateMaxDay(pickerYear.value, newVal)
+        }
+
+        // Theme text coloring for NumberPickers
+        val textColor = ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor)
+        fun customizePicker(picker: android.widget.NumberPicker) {
+            val count = picker.childCount
+            for (i in 0 until count) {
+                val child = picker.getChildAt(i)
+                if (child is android.widget.EditText) {
+                    try {
+                        child.setTextColor(textColor)
+                        child.invalidate()
+                    } catch (e: Exception) {}
+                }
+            }
+        }
+        customizePicker(pickerYear)
+        customizePicker(pickerMonth)
+        customizePicker(pickerDay)
+
+        btnSave.setOnClickListener {
+            val year = pickerYear.value
+            val month = pickerMonth.value
+            val day = pickerDay.value
+            val formattedDate = String.format("%02d %s %d", day, monthNames[month - 1].substring(0, 3), year)
+            tvDob.text = formattedDate
+            selectedDob = formattedDate
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 }

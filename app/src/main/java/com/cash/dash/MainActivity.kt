@@ -78,7 +78,7 @@ class MainActivity : ThemedActivity() {
                 val prefs = getSharedPreferences("GraphData", Context.MODE_PRIVATE)
                 val historyList = prefs.getStringSet("HISTORY_LIST", emptySet()) ?: emptySet()
                 val metaPrefs = getSharedPreferences("ScannerMetadataPrefs", Context.MODE_PRIVATE)
-                
+
                 for (raw in historyList) {
                     val parts = raw.split("|")
                     if (parts.size >= 9) {
@@ -128,50 +128,19 @@ class MainActivity : ThemedActivity() {
 
         FirestoreSyncManager.startRealTimeSync(this)
         updateUserMetadata()
-        
+
         // Start Usage Tracker if enabled
         val smartPrefs = getSharedPreferences("SmartAssistantPrefs", MODE_PRIVATE)
         if (smartPrefs.getBoolean("tracking_enabled", false)) {
             val serviceIntent = Intent(this, AppUsageTrackerService::class.java)
             androidx.core.content.ContextCompat.startForegroundService(this, serviceIntent)
         }
-        
+
         // 🔄 MIGRATION TRIGGER: Ensure existing logged-in users have their data pushed to the new Email-based document ID
         val migrationPrefs = getSharedPreferences("MigrationPrefs", MODE_PRIVATE)
         if (!migrationPrefs.getBoolean("email_sync_migrated", false)) {
             FirestoreSyncManager.pushAllDataToCloud(this)
             migrationPrefs.edit().putBoolean("email_sync_migrated", true).apply()
-        }
-
-        checkMiuiBackgroundPermission()
-    }
-
-    private fun checkMiuiBackgroundPermission() {
-        if ("xiaomi".equals(android.os.Build.MANUFACTURER, ignoreCase = true) || 
-            "poco".equals(android.os.Build.MANUFACTURER, ignoreCase = true) || 
-            "redmi".equals(android.os.Build.MANUFACTURER, ignoreCase = true)) {
-            
-            val prefs = getSharedPreferences("MiuiPrefs", android.content.Context.MODE_PRIVATE)
-            if (!prefs.getBoolean("miui_warned", false)) {
-                androidx.appcompat.app.AlertDialog.Builder(this)
-                    .setTitle("Xiaomi/POCO Device Detected")
-                    .setMessage("To ensure the Scanner Widget and background popups work perfectly, please enable 'Display pop-up windows while running in the background' in App Permissions.")
-                    .setPositiveButton("Go to Settings") { _, _ ->
-                        try {
-                            val intent = Intent("miui.intent.action.APP_PERM_EDITOR")
-                            intent.setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity")
-                            intent.putExtra("extra_pkgname", packageName)
-                            startActivity(intent)
-                        } catch (e: Exception) {
-                            val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                            intent.data = android.net.Uri.parse("package:$packageName")
-                            startActivity(intent)
-                        }
-                    }
-                    .setNegativeButton("Later", null)
-                    .show()
-                prefs.edit().putBoolean("miui_warned", true).apply()
-            }
         }
     }
 
@@ -239,12 +208,12 @@ class MainActivity : ThemedActivity() {
                 if (viewPager.isFakeDragging) viewPager.endFakeDrag()
                 viewPager.setCurrentItem(to, false)
                 viewPager.isUserInputEnabled = true
-                
+
                 // Clear state
                 isNavigating = false
                 navFrom = -1
                 navTo = -1
-                
+
                 updateNavbarStateBetween(to, to, 0f)
             }
         })
@@ -429,15 +398,15 @@ class MainActivity : ThemedActivity() {
 
     private fun updateUserMetadata() {
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
-        
+
         val sdf = java.text.SimpleDateFormat("dd/MM/yyyy, h:mm a", java.util.Locale.ENGLISH)
         sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
         val lastActive = sdf.format(java.util.Date())
-        
+
         val editor = prefs.edit()
         editor.putString("lastActiveTime", lastActive)
         editor.apply()
-        
+
         FirestoreSyncManager.pushAllDataToCloud(this)
     }
 }

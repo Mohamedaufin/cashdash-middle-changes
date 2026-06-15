@@ -102,6 +102,24 @@
             android:importantForAutofill="noExcludeDescendants"
             android:layout_marginBottom="16dp"/>
 
+        <!-- DATE OF BIRTH -->
+        <TextView
+            android:id="@+id/tvDob"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:background="?attr/inputBackground"
+            android:hint="Date of Birth"
+            android:textColor="?attr/textPrimaryColor"
+            android:textColorHint="@color/text_dim"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textSize="16sp"
+            android:layout_marginBottom="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"/>
+
         <!-- EMAIL -->
         <EditText
             android:id="@+id/edtEmail"

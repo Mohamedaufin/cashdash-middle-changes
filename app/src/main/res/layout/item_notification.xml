@@ -3,14 +3,33 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:layout_marginBottom="16dp"
-    android:background="?attr/cardBackground">
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:layout_marginBottom="16dp">
 
-    <!-- Top accent bar + title row -->
-    <LinearLayout
+    <TextView
+        android:id="@+id/tvSwipeHintItem"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:text="Swipe right to left to delete queries"
+        android:textColor="?attr/textMutedColor"
+        android:textSize="12dp"
+        android:gravity="center"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/mainCardContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="?attr/cardBackground">
+
+        <!-- Top accent bar + title row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
         android:gravity="center_vertical"
         android:padding="18dp"
         android:paddingBottom="12dp">
@@ -174,13 +193,13 @@
                 android:textColor="?attr/textPrimaryColor"
                 android:textColorHint="?attr/textMutedColor"
                 android:background="@android:color/transparent"
-                        android:textSize="@dimen/text_caption"
+                android:textSize="@dimen/text_caption"
                 android:minHeight="48dp"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
-                android:gravity="center_vertical"
-                android:inputType="textMultiLine|textCapSentences"
-                android:maxLines="4"/>
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:inputType="textMultiLine|textCapSentences"/>
 
             <ImageButton
                 android:id="@+id/btnAttachMedia"
@@ -221,4 +240,5 @@
         android:textAllCaps="false"
         android:letterSpacing="0.1"/>
 
+    </LinearLayout>
 </LinearLayout>

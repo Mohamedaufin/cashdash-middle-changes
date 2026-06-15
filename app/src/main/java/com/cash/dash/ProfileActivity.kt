@@ -24,6 +24,7 @@ class ProfileActivity : ThemedActivity() {
     private val KEY_NAME = "user_name"
     private val KEY_PHONE = "user_phone"
     private val KEY_EMAIL = "user_email"
+    private var selectedDob = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,10 +40,18 @@ class ProfileActivity : ThemedActivity() {
 
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
 
+        val tvDob = findViewById<TextView>(R.id.tvDob)
+
         // Load saved data
         edtName.setText(prefs.getString(KEY_NAME, ""))
         edtPhone.setText(prefs.getString(KEY_PHONE, ""))
         edtEmail.setText(prefs.getString(KEY_EMAIL, ""))
+        selectedDob = prefs.getString("user_dob", "") ?: ""
+        tvDob.text = selectedDob
+
+        tvDob.setOnClickListener {
+            showDobPickerDialog(tvDob)
+        }
 
         btnChangePassword.setOnClickListener {
             showChangePasswordDialog()
@@ -53,7 +62,7 @@ class ProfileActivity : ThemedActivity() {
         btnSave.setOnClickListener {
             val name = edtName.text.toString().trim()
             val phone = edtPhone.text.toString().trim()
-            val newEmail = edtEmail.text.toString().trim()
+            val newEmail = edtEmail.text.toString().trim().lowercase()
             val user = FirebaseAuth.getInstance().currentUser
 
             if(name.isEmpty()){
@@ -66,26 +75,27 @@ class ProfileActivity : ThemedActivity() {
                 return@setOnClickListener
             }
 
-        if (user != null && user.email != null && newEmail != user.email) {
-            val oldEmail = user.email!!
-            btnSave.isEnabled = false
-            btnSave.text = "Checking..."
+            if (user != null && user.email != null && newEmail != user.email) {
+                val oldEmail = user.email!!
+                btnSave.isEnabled = false
+                btnSave.text = "Checking..."
 
-            user.updateEmail(newEmail).addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    prefs.edit().apply {
-                        putString(KEY_NAME, name)
-                        putString(KEY_PHONE, phone)
-                        putString(KEY_EMAIL, newEmail)
-                        apply()
-                    }
-                    
-                    // Wipe old firestore document so we don't leave orphaned data
-                    wipeUserFirestoreData(user.uid, oldEmail)
+                user.updateEmail(newEmail).addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        prefs.edit().apply {
+                            putString(KEY_NAME, name)
+                            putString(KEY_PHONE, phone)
+                            putString("user_dob", selectedDob)
+                            putString(KEY_EMAIL, newEmail)
+                            apply()
+                        }
 
-                    FirestoreSyncManager.pushAllDataToCloud(this@ProfileActivity)
-                    ToastHelper.showToast(this@ProfileActivity, "Profile Updated ✔")
-                    finish()
+                        // Wipe old firestore document so we don't leave orphaned data
+                        wipeUserFirestoreData(user.uid, oldEmail)
+
+                        FirestoreSyncManager.pushAllDataToCloud(this@ProfileActivity)
+                        ToastHelper.showToast(this@ProfileActivity, "Profile Updated ✔")
+                        finish()
                     } else {
                         btnSave.isEnabled = true
                         btnSave.text = "Save"
@@ -103,12 +113,15 @@ class ProfileActivity : ThemedActivity() {
                 prefs.edit().apply {
                     putString(KEY_NAME, name)
                     putString(KEY_PHONE, phone)
+                    putString("user_dob", selectedDob)
                     putString(KEY_EMAIL, newEmail)
                     apply()
                 }
 
                 FirestoreSyncManager.pushAllDataToCloud(this@ProfileActivity)
                 ToastHelper.showToast(this@ProfileActivity, "Profile Updated ✔")
+
+                // Finish activity to go back
                 finish()
             }
         }
@@ -121,11 +134,12 @@ class ProfileActivity : ThemedActivity() {
             ) {
                 // 0. Stop automatic sync listeners BEFORE clearing data
                 FirestoreSyncManager.stopRealTimeSync(this@ProfileActivity)
+                SecurityManager.stopListening()
 
                 // 1. Clear ALL local data to prevent leak between accounts
                 val prefsToClear = listOf(
-                    "AppPrefs", "WalletPrefs", "CategoryPrefs", 
-                    "GraphData", "CategoryWeekData", "MoneySchedulePrefs", 
+                    "AppPrefs", "WalletPrefs", "CategoryPrefs",
+                    "GraphData", "CategoryWeekData", "MoneySchedulePrefs",
                     "ScannerHistory", "LocalScanPrefs", "NotificationCache"
                 )
                 prefsToClear.forEach { name ->
@@ -158,10 +172,12 @@ class ProfileActivity : ThemedActivity() {
         val auth = FirebaseAuth.getInstance()
         val user = auth.currentUser ?: return
         val uid = user.uid
-        val email = user.email ?: ""
+        val email = (user.email ?: "").lowercase()
 
         // Prevent presence listener from creating users collection documents during deletion
         CashDashApplication.isDeletingAccount = true
+
+        SecurityManager.stopListening()
 
         val progressDialog = android.app.ProgressDialog(this).apply {
             setMessage("Deleting account...")
@@ -177,7 +193,7 @@ class ProfileActivity : ThemedActivity() {
                 if (delTask.isSuccessful) {
                     ToastHelper.showToast(this@ProfileActivity, "Your account has been deleted permanently")
                     FirestoreSyncManager.stopRealTimeSync(this@ProfileActivity)
-                    SecurityManager.stopListening() 
+                    SecurityManager.stopListening()
 
                     val prefsToClear = listOf(
                         "AppPrefs", "WalletPrefs", "CategoryPrefs",
@@ -203,7 +219,7 @@ class ProfileActivity : ThemedActivity() {
         }
     }
 
-    private fun wipeUserFirestoreData(uid: String, email: String, onComplete: () -> Unit) {
+    private fun wipeUserFirestoreData(uid: String, email: String, onComplete: () -> Unit = {}) {
         val db = FirebaseFirestore.getInstance()
         val logData = hashMapOf(
             "uid" to uid,
@@ -280,7 +296,7 @@ class ProfileActivity : ThemedActivity() {
             dialog.dismiss()
             onConfirm()
         }
-        
+
         dialog.show()
     }
 
@@ -352,6 +368,85 @@ class ProfileActivity : ThemedActivity() {
                     Toast.makeText(this@ProfileActivity, "Authentication failed. Check old password.", Toast.LENGTH_LONG).show()
                 }
             }
+        }
+
+        dialog.show()
+    }
+
+    private fun showDobPickerDialog(tvDob: TextView) {
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+        val sheetView = layoutInflater.inflate(R.layout.layout_dob_bottom_sheet, null)
+        dialog.setContentView(sheetView)
+
+        val pickerYear = sheetView.findViewById<android.widget.NumberPicker>(R.id.pickerYear)
+        val pickerMonth = sheetView.findViewById<android.widget.NumberPicker>(R.id.pickerMonth)
+        val pickerDay = sheetView.findViewById<android.widget.NumberPicker>(R.id.pickerDay)
+        val btnSave = sheetView.findViewById<android.widget.Button>(R.id.btnSaveDate)
+
+        // Setup Year
+        val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+        pickerYear.minValue = 1900
+        pickerYear.maxValue = currentYear
+        pickerYear.value = 2000
+
+        // Setup Month
+        pickerMonth.minValue = 1
+        pickerMonth.maxValue = 12
+        val monthNames = arrayOf(
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        )
+        pickerMonth.displayedValues = monthNames
+        pickerMonth.value = 6
+
+        // Setup Day range helper
+        fun updateMaxDay(y: Int, m: Int) {
+            val cal = java.util.Calendar.getInstance()
+            cal.set(java.util.Calendar.YEAR, y)
+            cal.set(java.util.Calendar.MONTH, m - 1)
+            val maxDay = cal.getActualMaximum(java.util.Calendar.DAY_OF_MONTH)
+            pickerDay.minValue = 1
+            pickerDay.maxValue = maxDay
+        }
+
+        // Initialize Day
+        updateMaxDay(2000, 6)
+        pickerDay.value = 15
+
+        // Value change listeners to dynamically update maximum day
+        pickerYear.setOnValueChangedListener { _, _, newVal ->
+            updateMaxDay(newVal, pickerMonth.value)
+        }
+        pickerMonth.setOnValueChangedListener { _, _, newVal ->
+            updateMaxDay(pickerYear.value, newVal)
+        }
+
+        // Theme text coloring for NumberPickers
+        val textColor = ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor)
+        fun customizePicker(picker: android.widget.NumberPicker) {
+            val count = picker.childCount
+            for (i in 0 until count) {
+                val child = picker.getChildAt(i)
+                if (child is android.widget.EditText) {
+                    try {
+                        child.setTextColor(textColor)
+                        child.invalidate()
+                    } catch (e: Exception) {}
+                }
+            }
+        }
+        customizePicker(pickerYear)
+        customizePicker(pickerMonth)
+        customizePicker(pickerDay)
+
+        btnSave.setOnClickListener {
+            val year = pickerYear.value
+            val month = pickerMonth.value
+            val day = pickerDay.value
+            val formattedDate = String.format("%02d %s %d", day, monthNames[month - 1].substring(0, 3), year)
+            tvDob.text = formattedDate
+            selectedDob = formattedDate
+            dialog.dismiss()
         }
 
         dialog.show()

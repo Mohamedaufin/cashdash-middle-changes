@@ -46,12 +46,34 @@ class NotificationActivity : ThemedActivity() {
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             val selectedUri = result.data?.data
             val id = activePickerQueryId
-            if (selectedUri != null && id != null) {
+            if (id == null) return@registerForActivityResult
+            
+            if (selectedUri != null) {
                 val list = selectedReplyImages.getOrPut(id) { mutableListOf() }
                 if (list.size < 4) {
                     list.add(selectedUri)
                     uploadReplyImage(id, selectedUri)
                     adapter.notifyDataSetChanged()
+                }
+            } else {
+                val bitmap = result.data?.extras?.get("data") as? android.graphics.Bitmap
+                if (bitmap != null) {
+                    try {
+                        val file = java.io.File(externalCacheDir, "reply_img_${System.currentTimeMillis()}.jpg")
+                        val out = java.io.FileOutputStream(file)
+                        bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
+                        out.flush()
+                        out.close()
+                        val uri = Uri.fromFile(file)
+                        val list = selectedReplyImages.getOrPut(id) { mutableListOf() }
+                        if (list.size < 4) {
+                            list.add(uri)
+                            uploadReplyImage(id, uri)
+                            adapter.notifyDataSetChanged()
+                        }
+                    } catch (e: Exception) {
+                        ToastHelper.showToast(this, "Failed to save camera image: ${e.message}")
+                    }
                 }
             }
         }
@@ -198,6 +220,9 @@ class NotificationActivity : ThemedActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_notification)
+
+        val rootLayout = findViewById<View>(R.id.rootNotificationLayout)
+
 
         // Capture initially read announcements before any marking as read occurs in this session
         val readPrefs = getSharedPreferences("ReadAnnouncements", MODE_PRIVATE)
@@ -362,7 +387,8 @@ class NotificationActivity : ThemedActivity() {
                 if (e != null) {
                     tvEmpty.text = "Failed to load notifications.\nPlease check your connection."
                     tvEmpty.visibility = View.VISIBLE
-                    findViewById<LinearLayout>(R.id.filterBar).visibility = View.VISIBLE
+                    val filterBar = findViewById<View>(R.id.filterBar)
+                    filterBar.visibility = View.VISIBLE
                     rv.visibility = View.GONE
                     allNotifications = emptyList()
                     return@addSnapshotListener
@@ -737,9 +763,12 @@ class NotificationActivity : ThemedActivity() {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val item = items[position]
             
+            // Show swipe hint only for the very first item
+            holder.tvSwipeHintItem.visibility = if (position == 0) View.VISIBLE else View.GONE
+            
             // Reset view state (crucial for Cancel or recycling)
-            holder.itemView.translationX = 0f
-            holder.itemView.alpha = 1f
+            holder.mainCardContainer.translationX = 0f
+            holder.mainCardContainer.alpha = 1f
             holder.viewAccentBar.setBackgroundColor(item.statusColor)
             holder.tvTime.text = item.timeFormatted
 
@@ -939,11 +968,15 @@ class NotificationActivity : ThemedActivity() {
             // Setup Media Gallery Attachments button inside the reply box
             holder.btnAttachMedia.setOnClickListener {
                 activePickerQueryId = item.id
-                val intent = android.content.Intent(android.content.Intent.ACTION_GET_CONTENT).apply {
+                val galleryIntent = android.content.Intent(android.content.Intent.ACTION_GET_CONTENT).apply {
                     type = "image/*"
                     addCategory(android.content.Intent.CATEGORY_OPENABLE)
                 }
-                replyPickerLauncher.launch(intent)
+                val cameraIntent = android.content.Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
+                val chooserIntent = android.content.Intent.createChooser(galleryIntent, "Select Image Source").apply {
+                    putExtra(android.content.Intent.EXTRA_INITIAL_INTENTS, arrayOf(cameraIntent))
+                }
+                replyPickerLauncher.launch(chooserIntent)
             }
 
             // Render selected reply attachments previews
@@ -964,16 +997,39 @@ class NotificationActivity : ThemedActivity() {
                 submitUserReply(item, replyText, holder)
             }
 
-            // 🔥 Auto-scroll to item when keyboard opens/focused
-            holder.edtReply.setOnFocusChangeListener { _, hasFocus ->
-                if (hasFocus) {
-                    holder.itemView.postDelayed({
-                        val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
-                        val pos = holder.adapterPosition
-                        if (pos != androidx.recyclerview.widget.RecyclerView.NO_POSITION) {
-                            rv.smoothScrollToPosition(pos)
+            // 🔥 Auto-scroll to ensure reply box is visible when keyboard opens
+            val scrollAction = Runnable {
+                val pos = holder.adapterPosition
+                if (pos != androidx.recyclerview.widget.RecyclerView.NO_POSITION) {
+                    val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
+                    val scroller = object : androidx.recyclerview.widget.LinearSmoothScroller(rv.context) {
+                        override fun calculateDtToFit(viewStart: Int, viewEnd: Int, boxStart: Int, boxEnd: Int, snapPreference: Int): Int {
+                            val actualBoxBottom = rv.height
+                            val density = rv.context.resources.displayMetrics.density
+                            // The margin is 16dp. We want to push the view down further so the visible gap is reduced even more.
+                            val extraPushDownPx = (7 * density).toInt() 
+                            return actualBoxBottom - viewEnd + extraPushDownPx
                         }
-                    }, 500) // Slightly longer to ensure keyboard is up
+                    }
+                    scroller.targetPosition = pos
+                    rv.layoutManager?.startSmoothScroll(scroller)
+                }
+            }
+
+            holder.edtReply.setOnFocusChangeListener { view, hasFocus ->
+                if (hasFocus) {
+                    view.postDelayed(scrollAction, 300)
+                }
+            }
+            
+            holder.edtReply.setOnClickListener { view ->
+                view.postDelayed(scrollAction, 300)
+            }
+
+            holder.edtReply.addOnLayoutChangeListener { view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+                if (bottom - top != oldBottom - oldTop) {
+                    // Height changed due to text expansion, scroll to keep it above keyboard
+                    view.postDelayed(scrollAction, 50)
                 }
             }
 
@@ -988,7 +1044,7 @@ class NotificationActivity : ThemedActivity() {
                     android.view.MotionEvent.ACTION_DOWN -> {
                         startRawX = event.rawX
                         startRawY = event.rawY
-                        startTranslationX = holder.itemView.translationX
+                        startTranslationX = holder.mainCardContainer.translationX
                         isSwiping = false
                         v == holder.itemView || (v !is EditText && v !is Button && v !is ImageButton)
                     }
@@ -1005,8 +1061,8 @@ class NotificationActivity : ThemedActivity() {
                         if (isSwiping) {
                             // Only allow left swiping (negative translation)
                             if (dX < 0) {
-                                holder.itemView.translationX = dX
-                                holder.itemView.alpha = 1f - (absDX / holder.itemView.width.toFloat())
+                                holder.mainCardContainer.translationX = dX
+                                holder.mainCardContainer.alpha = 1f - (absDX / holder.mainCardContainer.width.toFloat())
                             }
                         }
                         isSwiping
@@ -1014,11 +1070,11 @@ class NotificationActivity : ThemedActivity() {
                     android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
                         if (isSwiping) {
                             val dX = event.rawX - startRawX
-                            if (Math.abs(dX) > holder.itemView.width * 0.3) {
+                            if (Math.abs(dX) > holder.mainCardContainer.width * 0.3) {
                                 // Trigger delete
                                 isSwiping = false // Reset
-                                holder.itemView.animate()
-                                    .translationX(-holder.itemView.width.toFloat())
+                                holder.mainCardContainer.animate()
+                                    .translationX(-holder.mainCardContainer.width.toFloat())
                                     .alpha(0f)
                                     .setDuration(200)
                                     .withEndAction { onDelete(item) }
@@ -1026,7 +1082,7 @@ class NotificationActivity : ThemedActivity() {
                             } else {
                                 // Snap back
                                 isSwiping = false // Reset
-                                holder.itemView.animate()
+                                holder.mainCardContainer.animate()
                                     .translationX(0f)
                                     .alpha(1f)
                                     .setDuration(200)
@@ -1333,6 +1389,8 @@ class NotificationActivity : ThemedActivity() {
         override fun getItemCount() = items.size
 
         inner class ViewHolder(v: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(v) {
+            val tvSwipeHintItem = v.findViewById<TextView>(R.id.tvSwipeHintItem)
+            val mainCardContainer = v.findViewById<LinearLayout>(R.id.mainCardContainer)
             val tvQuery = v.findViewById<TextView>(R.id.tvNotificationQuery)
             val tvReply = v.findViewById<TextView>(R.id.tvNotificationReply)
             val tvTime = v.findViewById<TextView>(R.id.tvNotificationTime)
