@@ -154,8 +154,10 @@
         <item name="navActiveColor">#1A1A1A</item>
         <item name="navInactiveColor">#5F6D7E</item>
         <item name="infoIconBackground">@drawable/bg_white_circle_bordered_white</item>
-        <item name="android:statusBarColor">#000000</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">#F8FAFC</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">#F8FAFC</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="O">true</item>
         <item name="progressTrackColor">#E2E8F0</item>
     </style>
 
