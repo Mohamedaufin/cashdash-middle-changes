@@ -20,7 +20,7 @@
             android:layout_height="wrap_content"
             android:background="?attr/inputBackground"
             android:backgroundTint="@null"
-            android:text="Daily"
+            android:text="Daily ▼"
             android:textAllCaps="false"
             android:textColor="?attr/textPrimaryColor"
             android:textSize="@dimen/text_subhead"
@@ -47,7 +47,7 @@
             android:layout_height="wrap_content"
             android:background="?attr/inputBackground"
             android:backgroundTint="@null"
-            android:text="Overall"
+            android:text="Overall ▼"
             android:textAllCaps="false"
             android:textColor="?attr/textPrimaryColor"
             android:textSize="@dimen/text_subhead"
@@ -80,6 +80,18 @@
             android:textColor="@color/text_secondary"
             android:textSize="@dimen/text_body" />
     </LinearLayout>
+    
+    <!-- GRAPH HINT -->
+    <TextView
+        android:id="@+id/tvGraphHint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="10dp"
+        android:text="Click on any graph to view daily breakdown"
+        android:textColor="@color/text_secondary"
+        android:textSize="11sp" />
+
     <!-- GRAPH -->
     <com.cash.dash.DayBarGraphView
         android:id="@+id/dayGraph"

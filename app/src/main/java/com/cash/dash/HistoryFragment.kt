@@ -129,7 +129,7 @@ class HistoryFragment : Fragment() {
 
         if (currentCategoryFilter == "no choice" && !categoriesList.contains("no choice")) {
             currentCategoryFilter = "Overall"
-            view?.findViewById<Button>(R.id.btnOverall)?.text = "Overall"
+            view?.findViewById<Button>(R.id.btnOverall)?.text = "Overall ▼"
         }
     }
 
@@ -155,7 +155,7 @@ class HistoryFragment : Fragment() {
             fetchCategories()
             DropdownHelper.showBlinkingDropdown(requireContext(), btn, categoriesList, 200, null, android.view.Gravity.END) { index, cat ->
                 currentCategoryFilter = cat
-                btn.text = if (currentCategoryFilter == "no choice") "No Allocation" else currentCategoryFilter
+                btn.text = if (currentCategoryFilter == "no choice") "Overall ▼" else "$currentCategoryFilter ▼"
                 loadGraphValues(graph)
                 animateGraph(graph)
             }
@@ -168,7 +168,7 @@ class HistoryFragment : Fragment() {
                 currentMode = "DAILY"
                 selectedWeek = index
                 title.text = "Daily Spending"
-                btnDaily.text = "Daily"
+                btnDaily.text = "Daily ▼"
                 loadDailyForSelectedWeek(graph)
                 updateDailyLabels(graph)
 
@@ -211,7 +211,7 @@ class HistoryFragment : Fragment() {
                 }
                 loadGraphValues(graph)
                 title.text = "Weekly Spending"
-                btnDaily.text = "Weekly"
+                btnDaily.text = "Weekly ▼"
                 val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }
                 btnDate.text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
                 graph.setWeekMode()
@@ -277,6 +277,9 @@ class HistoryFragment : Fragment() {
                 updateDailyLabels(graph)
                 updateWeeklyLabels(graph)
                 updateMonthlyLabels(graph)
+
+                val hintTv = view?.findViewById<TextView>(R.id.tvGraphHint)
+                hintTv?.visibility = if (graph.hasDataForCurrentMode()) View.VISIBLE else View.GONE
             }
         }
     }
@@ -340,7 +343,8 @@ class HistoryFragment : Fragment() {
         when (mode) {
             "DAILY" -> {
                 title.text = "Daily Spending"
-                btnDaily.text = "Daily"
+                btnDaily.text = "Daily ▼"
+                view?.findViewById<TextView>(R.id.tvGraphHint)?.text = "Click on any graph to view daily breakdown"
                 loadDailyForSelectedWeek(graph)
                 updateDailyLabels(graph)
                 val realC = Calendar.getInstance()
@@ -349,7 +353,8 @@ class HistoryFragment : Fragment() {
             }
             "WEEKLY" -> {
                 title.text = "Weekly Spending"
-                btnDaily.text = "Weekly"
+                btnDaily.text = "Weekly ▼"
+                view?.findViewById<TextView>(R.id.tvGraphHint)?.text = "Click on any week graph to view daily graph"
                 val realC = Calendar.getInstance().apply { firstDayOfWeek = Calendar.MONDAY; minimalDaysInFirstWeek = 1 }
                 if (selectedYear == realC.get(Calendar.YEAR) && selectedMonth == realC.get(Calendar.MONTH)) selectedWeek = realC.get(Calendar.WEEK_OF_MONTH) - 1
                 val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }
@@ -358,9 +363,10 @@ class HistoryFragment : Fragment() {
             }
             "MONTHLY" -> {
                 title.text = "Monthly Spending"
-                btnDaily.text = "Monthly"
-                graph.setMonthMode()
+                btnDaily.text = "Monthly ▼"
+                view?.findViewById<TextView>(R.id.tvGraphHint)?.text = "Click on any month graph to view weekly graph"
                 updateMonthlyLabels(graph)
+                graph.setMonthMode()
                 btnDate.text = selectedYear.toString()
             }
         }

@@ -77,7 +77,7 @@ class HistoryActivity : ThemedActivity() {
                     selectedWeek = index
 
                     title.text = "Daily Spending"
-                    btnDaily.text = "Daily"
+                    btnDaily.text = "Daily ▼"
 
                     loadDailyForSelectedWeek(graph)
                     updateDailyLabels(graph)
@@ -126,7 +126,7 @@ class HistoryActivity : ThemedActivity() {
                     loadGraphValues(graph)
 
                     title.text = "Weekly Spending"
-                    btnDaily.text = "Weekly"
+                    btnDaily.text = "Weekly ▼"
                     val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }
                     btnDate.text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
 
@@ -199,16 +199,16 @@ class HistoryActivity : ThemedActivity() {
 
     override fun onResume() {
         super.onResume()
-        forcedHighlightDay = -1 // Reset highlight to \"true today\" on return
-        fetchCategories() // Refresh in case \"no choice\" was reallocated
+        forcedHighlightDay = -1 // Reset highlight to "true today" on return
+        fetchCategories() // Refresh in case "no choice" was reallocated
         findViewById<DayBarGraphView>(R.id.dayGraph)?.let {
             loadGraphValues(it)
         }
 
-        // Safety: If \"no choice\" was selected but is now gone, reset to Overall
+        // Safety: If "no choice" was selected but is now gone, reset to Overall
         if (currentCategoryFilter == "no choice" && !categoriesList.contains("no choice")) {
             currentCategoryFilter = "Overall"
-            findViewById<Button>(R.id.btnOverall)?.text = "Overall"
+            findViewById<Button>(R.id.btnOverall)?.text = "Overall ▼"
         }
     }
 
@@ -224,7 +224,7 @@ class HistoryActivity : ThemedActivity() {
         categoriesList.add("Overall")
         categoriesList.addAll(saved)
 
-        // Dynamic \"no choice\" addition
+        // Dynamic "no choice" addition
         val hasNoChoice = historySet.any { it.contains("|no choice|") }
         if (hasNoChoice && !categoriesList.contains("no choice")) {
             categoriesList.add("no choice")
@@ -236,7 +236,7 @@ class HistoryActivity : ThemedActivity() {
             fetchCategories() // Refresh before showing menu
             DropdownHelper.showBlinkingDropdown(this, btn, categoriesList, 200, null, android.view.Gravity.END) { index, cat ->
                 currentCategoryFilter = cat
-                btn.text = if (currentCategoryFilter == "no choice") "No Allocation" else currentCategoryFilter
+                btn.text = if (currentCategoryFilter == "no choice") "Overall ▼" else "$currentCategoryFilter ▼"
                 loadGraphValues(graph)
                 animateGraph(graph)
             }
@@ -314,6 +314,9 @@ class HistoryActivity : ThemedActivity() {
                 updateDailyLabels(graph)
                 updateWeeklyLabels(graph)
                 updateMonthlyLabels(graph)
+
+                val hintTv = findViewById<TextView>(R.id.tvGraphHint)
+                hintTv?.visibility = if (graph.hasDataForCurrentMode()) View.VISIBLE else View.GONE
             }
         }
     }
@@ -500,7 +503,8 @@ class HistoryActivity : ThemedActivity() {
         when (mode) {
             "DAILY" -> {
                 title.text = "Daily Spending"
-                btnDaily.text = "Daily"
+                btnDaily.text = "Daily ▼"
+                findViewById<TextView>(R.id.tvGraphHint)?.text = "Click on any graph to view daily breakdown"
                 loadDailyForSelectedWeek(graph)
                 updateDailyLabels(graph)
 
@@ -516,7 +520,8 @@ class HistoryActivity : ThemedActivity() {
 
             "WEEKLY" -> {
                 title.text = "Weekly Spending"
-                btnDaily.text = "Weekly"
+                btnDaily.text = "Weekly ▼"
+                findViewById<TextView>(R.id.tvGraphHint)?.text = "Click on any week graph to view daily graph"
 
                 val realC = Calendar.getInstance().apply {
                     firstDayOfWeek = Calendar.MONDAY
@@ -533,9 +538,10 @@ class HistoryActivity : ThemedActivity() {
 
             "MONTHLY" -> {
                 title.text = "Monthly Spending"
-                btnDaily.text = "Monthly"
-                graph.setMonthMode()
+                btnDaily.text = "Monthly ▼"
+                findViewById<TextView>(R.id.tvGraphHint)?.text = "Click on any month graph to view weekly graph"
                 updateMonthlyLabels(graph)
+                graph.setMonthMode()
                 btnDate.text = selectedYear.toString()
             }
         }
