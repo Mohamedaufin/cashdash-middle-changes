@@ -220,21 +220,7 @@ class EntryActivity : ThemedActivity() {
         val isWhiteTheme = currentTheme == "White"
 
         if (isWhiteTheme) {
-            // "change register colour to white" -> White background, Dark text
-            val whiteBg = android.graphics.drawable.GradientDrawable().apply {
-                setColor(Color.WHITE)
-                cornerRadius = 20 * resources.displayMetrics.density
-            }
             val darkText = Color.parseColor("#1A1A1A")
-
-            btnSelectRegister.background = whiteBg
-            btnSelectRegister.setTextColor(darkText)
-
-            val btnSelectLogin = findViewById<Button>(R.id.btnSelectLogin)
-            btnSelectLogin?.background = whiteBg
-            btnSelectLogin?.setTextColor(darkText)
-
-            btnAction.background = whiteBg
             btnAction.setTextColor(darkText)
         }
     }
