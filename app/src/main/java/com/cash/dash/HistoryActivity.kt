@@ -78,6 +78,7 @@ class HistoryActivity : ThemedActivity() {
 
                     title.text = "Daily Spending"
                     btnDaily.text = "Daily ▼"
+                    findViewById<TextView>(R.id.tvGraphHint)?.text = "Click on any graph to view daily breakdown"
 
                     loadDailyForSelectedWeek(graph)
                     updateDailyLabels(graph)
@@ -127,6 +128,7 @@ class HistoryActivity : ThemedActivity() {
 
                     title.text = "Weekly Spending"
                     btnDaily.text = "Weekly ▼"
+                    findViewById<TextView>(R.id.tvGraphHint)?.text = "Click on any week graph to view daily graph"
                     val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }
                     btnDate.text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
 
@@ -452,6 +454,8 @@ class HistoryActivity : ThemedActivity() {
             }
             withContext(Dispatchers.Main) {
                 graph.setDailyData(List(7) { dailyMap[it] ?: 0f })
+                val hintTv = findViewById<TextView>(R.id.tvGraphHint)
+                hintTv?.visibility = if (graph.hasDataForCurrentMode()) View.VISIBLE else View.GONE
             }
         }
     }

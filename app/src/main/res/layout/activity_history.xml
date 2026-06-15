@@ -110,7 +110,7 @@
             android:layout_marginTop="10dp"
             android:text="Click on any graph to view daily breakdown"
             android:textColor="@color/text_secondary"
-            android:textSize="11sp" />
+            android:textSize="12dp" />
 
         <!-- SPLIT ACTION BUTTONS (Side-by-Side Row) -->
         <!-- GRAPH -->
