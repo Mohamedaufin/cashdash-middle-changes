@@ -84,6 +84,10 @@ class ProfileActivity : ThemedActivity() {
             showDobPickerDialog(tvDob)
         }
 
+        findViewById<View>(R.id.btnBack)?.setOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
+
         btnChangePassword.setOnClickListener {
             showChangePasswordDialog()
         }
