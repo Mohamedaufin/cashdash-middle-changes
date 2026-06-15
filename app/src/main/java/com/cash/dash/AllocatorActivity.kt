@@ -32,13 +32,11 @@ class AllocatorActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_allocator)
 
-        // Fix gap: apply status bar inset directly to scroll view top padding
+        // Fix gap: read status bar height directly and apply as scrollView paddingTop
         val scrollView = findViewById<android.widget.ScrollView>(R.id.allocatorScrollView)
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(scrollView) { v, insets ->
-            val statusBarHeight = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars()).top
-            v.setPadding(v.paddingLeft, statusBarHeight, v.paddingRight, v.paddingBottom)
-            insets
-        }
+        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+        val statusBarHeight = if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
+        scrollView.setPadding(scrollView.paddingLeft, statusBarHeight, scrollView.paddingRight, scrollView.paddingBottom)
 
         TutorialManager.showTutorialIfNeeded(
             this,
