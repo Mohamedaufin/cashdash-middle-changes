@@ -106,7 +106,8 @@
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnAdd"
             android:layout_width="0dp"
-            android:layout_height="65dp"
+            android:layout_height="wrap_content"
+            android:minHeight="65dp"
             android:layout_weight="1"
             android:layout_marginEnd="8dp"
             android:background="?attr/cardBackground"
@@ -114,15 +115,17 @@
             android:text="Add to current balance"
             android:textAllCaps="false"
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="@dimen/text_body"
+            android:textSize="@dimen/text_caption"
             android:textStyle="bold"
+            android:padding="8dp"
             android:stateListAnimator="@null"
             android:elevation="0dp" />
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnReplace"
             android:layout_width="0dp"
-            android:layout_height="65dp"
+            android:layout_height="wrap_content"
+            android:minHeight="65dp"
             android:layout_weight="1"
             android:layout_marginStart="8dp"
             android:background="?attr/cardBackground"
@@ -130,8 +133,9 @@
             android:text="Replace total balance"
             android:textAllCaps="false"
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="@dimen/text_body"
+            android:textSize="@dimen/text_caption"
             android:textStyle="bold"
+            android:padding="8dp"
             android:stateListAnimator="@null"
             android:elevation="0dp" />
     </LinearLayout>
