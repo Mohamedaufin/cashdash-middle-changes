@@ -294,7 +294,7 @@ class AllocatorActivity : ThemedActivity() {
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
-                    setMargins(0, (12 * density).toInt(), 0, 0)
+                    setMargins(0, 0, 0, 0)
                 }
             }
             val hint2 = TextView(this).apply {
