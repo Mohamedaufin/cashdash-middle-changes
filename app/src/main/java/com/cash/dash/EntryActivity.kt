@@ -230,12 +230,12 @@ class EntryActivity : ThemedActivity() {
             btnSelectRegister.background = whiteBg
             btnSelectRegister.setTextColor(darkText)
 
-            if (!isLogin) {
-                btnAction.background = whiteBg
-                btnAction.setTextColor(darkText)
-            } else {
-                btnAction.setTextColor(darkText)
-            }
+            val btnSelectLogin = findViewById<Button>(R.id.btnSelectLogin)
+            btnSelectLogin?.background = whiteBg
+            btnSelectLogin?.setTextColor(darkText)
+
+            btnAction.background = whiteBg
+            btnAction.setTextColor(darkText)
         }
     }
 
