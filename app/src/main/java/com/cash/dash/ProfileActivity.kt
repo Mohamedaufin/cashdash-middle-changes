@@ -61,7 +61,7 @@ class ProfileActivity : ThemedActivity() {
                 val currentDob = selectedDob
 
                 if (currentName != originalName || currentPhone != originalPhone || currentEmail != originalEmail || currentDob != originalDob) {
-                    android.app.AlertDialog.Builder(this@ProfileActivity, com.cash.dash.ThemeHelper.getAlertDialogTheme(this@ProfileActivity))
+                    android.app.AlertDialog.Builder(this@ProfileActivity)
                         .setTitle("Unsaved Changes")
                         .setMessage("Do you want to save changes to your profile?")
                         .setPositiveButton("Save") { _, _ ->
