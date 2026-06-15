@@ -15,7 +15,6 @@
         android:paddingLeft="18dp"
         android:paddingRight="18dp"
         android:paddingTop="0dp"
-        android:layout_marginTop="-50dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/bottomNav"
         app:layout_constraintStart_toStartOf="parent"
@@ -29,8 +28,8 @@
             android:gravity="center_horizontal"
             android:dividerPadding="0dp"
             android:showDividers="none"
-            android:paddingBottom="150dp"
-            android:dividerHeight="28dp"/>
+            android:translationY="-50dp"
+            android:paddingBottom="150dp"/>
     </ScrollView>
 
     <!-- ══════════════════════ BOTTOM NAV BAR ══════════════════════ -->
