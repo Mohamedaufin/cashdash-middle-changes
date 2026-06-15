@@ -35,6 +35,7 @@ object FirestoreSyncManager {
     // High level wrapper to blindly sync everything
     // High level wrapper to blindly sync everything
     fun pushAllDataToCloud(context: Context) {
+        if (CashDashApplication.isDeletingAccount) return
         val appContext = context.applicationContext
         val user = FirebaseAuth.getInstance().currentUser ?: return
         val email = user.email ?: return 
@@ -487,7 +488,7 @@ object FirestoreSyncManager {
     }
 
     private fun triggerInstantPush(context: Context) {
-        if (isSyncingFromCloud) return
+        if (isSyncingFromCloud || CashDashApplication.isDeletingAccount) return
         
         pendingSyncRunnable?.let { syncHandler.removeCallbacks(it) }
         val runnable = Runnable { pushAllDataToCloud(context) }

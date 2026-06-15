@@ -24,9 +24,7 @@ object SecurityManager {
             .collection("config").document("profile")
             .addSnapshotListener { snapshot, e ->
                 if (e != null || isTriggering) return@addSnapshotListener
-                if (snapshot != null && !snapshot.exists()) {
-                    triggerLogout(appContext, "session_expired")
-                } else if (snapshot != null && snapshot.exists()) {
+                if (snapshot != null && snapshot.exists()) {
                     val status = snapshot.getString("account_status") ?: "active"
                     if (status == "admin_deleted") {
                         triggerLogout(appContext, "admin_deleted")
