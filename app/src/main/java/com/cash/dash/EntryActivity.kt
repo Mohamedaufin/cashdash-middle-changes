@@ -481,7 +481,6 @@ class EntryActivity : ThemedActivity() {
         val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
         pickerYear.minValue = 1900
         pickerYear.maxValue = currentYear
-        pickerYear.value = 2000
 
         // Setup Month
         pickerMonth.minValue = 1
@@ -491,7 +490,6 @@ class EntryActivity : ThemedActivity() {
             "July", "August", "September", "October", "November", "December"
         )
         pickerMonth.displayedValues = monthNames
-        pickerMonth.value = 6
 
         // Setup Day range helper
         fun updateMaxDay(y: Int, m: Int) {
@@ -503,9 +501,32 @@ class EntryActivity : ThemedActivity() {
             pickerDay.maxValue = maxDay
         }
 
-        // Initialize Day
-        updateMaxDay(2000, 6)
-        pickerDay.value = 15
+        var startYear = 2000
+        var startMonth = 6
+        var startDay = 15
+
+        val currentText = tvDob.text.toString().trim()
+        if (currentText.isNotEmpty() && !currentText.equals("Date of Birth", ignoreCase = true)) {
+            try {
+                val parts = currentText.split(" ")
+                if (parts.size == 3) {
+                    startDay = parts[0].toInt()
+                    val mName = parts[1]
+                    startYear = parts[2].toInt()
+                    val monthIndex = monthNames.indexOfFirst { it.startsWith(mName, ignoreCase = true) }
+                    if (monthIndex != -1) {
+                        startMonth = monthIndex + 1
+                    }
+                }
+            } catch (e: Exception) {
+                // Ignore parse errors, use default
+            }
+        }
+
+        pickerYear.value = startYear
+        pickerMonth.value = startMonth
+        updateMaxDay(startYear, startMonth)
+        pickerDay.value = startDay
 
         // Value change listeners to dynamically update maximum day
         pickerYear.setOnValueChangedListener { _, _, newVal ->
