@@ -42,12 +42,43 @@ class ProfileActivity : ThemedActivity() {
 
         val tvDob = findViewById<TextView>(R.id.tvDob)
 
-        // Load saved data
-        edtName.setText(prefs.getString(KEY_NAME, ""))
-        edtPhone.setText(prefs.getString(KEY_PHONE, ""))
-        edtEmail.setText(prefs.getString(KEY_EMAIL, ""))
-        selectedDob = prefs.getString("user_dob", "") ?: ""
+        val originalName = prefs.getString(KEY_NAME, "") ?: ""
+        val originalPhone = prefs.getString(KEY_PHONE, "") ?: ""
+        val originalEmail = prefs.getString(KEY_EMAIL, "") ?: ""
+        val originalDob = prefs.getString("user_dob", "") ?: ""
+
+        edtName.setText(originalName)
+        edtPhone.setText(originalPhone)
+        edtEmail.setText(originalEmail)
+        selectedDob = originalDob
         tvDob.text = selectedDob
+
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val currentName = edtName.text.toString().trim()
+                val currentPhone = edtPhone.text.toString().trim()
+                val currentEmail = edtEmail.text.toString().trim().lowercase()
+                val currentDob = selectedDob
+
+                if (currentName != originalName || currentPhone != originalPhone || currentEmail != originalEmail || currentDob != originalDob) {
+                    android.app.AlertDialog.Builder(this@ProfileActivity, com.cash.dash.ThemeHelper.getAlertDialogTheme(this@ProfileActivity))
+                        .setTitle("Unsaved Changes")
+                        .setMessage("Do you want to save changes to your profile?")
+                        .setPositiveButton("Save") { _, _ ->
+                            btnSave.performClick()
+                        }
+                        .setNeutralButton("Discard") { _, _ ->
+                            finish()
+                        }
+                        .setNegativeButton("Cancel") { dialog, _ ->
+                            dialog.dismiss()
+                        }
+                        .show()
+                } else {
+                    finish()
+                }
+            }
+        })
 
         tvDob.setOnClickListener {
             showDobPickerDialog(tvDob)
