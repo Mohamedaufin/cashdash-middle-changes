@@ -33,6 +33,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
+        val action = remoteMessage.data["action"]
+        if (action == "force_logout") {
+            SecurityManager.triggerLogout(applicationContext)
+            return
+        }
+
         val title = remoteMessage.notification?.title ?: remoteMessage.data["title"] ?: "CashDash Support"
         val body = remoteMessage.notification?.body ?: remoteMessage.data["body"] ?: ""
 

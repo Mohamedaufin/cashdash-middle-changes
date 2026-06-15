@@ -30,7 +30,7 @@ class HomeFragment : Fragment() {
     private val PREFS_SCHEDULE = "MoneySchedulePrefs"
     private val KEY_NEXT_DATE = "next_date"
     private val KEY_FREQUENCY = "frequency"
-    
+
     // Cache for optimization
     private var lastLoadedName: String? = null
     private var lastLoadedBalance: String? = null
@@ -40,7 +40,7 @@ class HomeFragment : Fragment() {
     private var activeResetDialog: AlertDialog? = null
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
     private var reminderRunnable: Runnable? = null
-    
+
     private val walletListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == KEY_BALANCE || key == "initial_balance" || key == "balance_bar_mode" || key == "balance_bar_type") {
             view?.let { loadBalance(it) }
@@ -58,7 +58,7 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         loadUserName(view)
-        
+
         // Ensure username is visible for the shared element transition
         view.findViewById<TextView>(R.id.tvUsernameHome)?.apply {
             visibility = View.VISIBLE
@@ -74,7 +74,6 @@ class HomeFragment : Fragment() {
         view.findViewById<ImageView>(R.id.btnMenu)?.setImageResource(ThemeHelper.getDrawable(requireContext(), R.drawable.ic_glass_menu_vector))
         view.findViewById<ImageView>(R.id.iconScanner)?.setImageResource(ThemeHelper.getDrawable(requireContext(), R.drawable.ic_scanner))
         view.findViewById<ImageView>(R.id.iconRigorTracker)?.setImageResource(ThemeHelper.getDrawable(requireContext(), R.drawable.ic_rigor_tracker))
-        view.findViewById<ImageView>(R.id.btnHelp)?.setImageResource(ThemeHelper.getDrawable(requireContext(), R.drawable.ic_info_outline))
 
         view.findViewById<LinearLayout>(R.id.cardScanner).setOnClickListener {
             animateAndStart(view.findViewById<ImageView>(R.id.iconScanner)) {
@@ -89,9 +88,7 @@ class HomeFragment : Fragment() {
             }
         }
 
-        view.findViewById<ImageView>(R.id.btnHelp).setOnClickListener {
-            startActivity(Intent(requireContext(), HelpActivity::class.java))
-        }
+
 
         view.findViewById<ImageView>(R.id.btnSmartAssistant)?.setOnClickListener {
             startActivity(Intent(requireContext(), TaptrackActivity::class.java))
@@ -133,7 +130,7 @@ class HomeFragment : Fragment() {
             val dy = event.y - cy
             val distance = Math.sqrt((dx * dx + dy * dy).toDouble())
             val radius = v.width / 2f
-            
+
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     touchDownInside = distance <= radius
@@ -168,7 +165,7 @@ class HomeFragment : Fragment() {
                 return true
             }
         })
-        
+
         val wPrefs = requireContext().getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
         wPrefs.registerOnSharedPreferenceChangeListener(walletListener)
     }
@@ -198,7 +195,7 @@ class HomeFragment : Fragment() {
         val density = resources.displayMetrics.density
         val prefs = requireContext().getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
         val initialBalance = prefs.getInt("initial_balance", -1)
-        
+
         // 🔧 FIX: Explicitly aligns with BalanceSetupActivity logic where <= 0 is treated as unset
         if (initialBalance <= 0) {
             val box = android.widget.LinearLayout(requireContext()).apply {
@@ -255,11 +252,11 @@ class HomeFragment : Fragment() {
             loadUserName(it)
             loadBalance(it)
             updateNextMoneyDays(it)
-            
+
             // Update smart assistant icon tint based on tracking status
             val smartPrefs = requireContext().getSharedPreferences("SmartAssistantPrefs", android.content.Context.MODE_PRIVATE)
             var isTrackingOn = smartPrefs.getBoolean("tracking_enabled", false)
-            
+
             if (isTrackingOn) {
                 if (!hasUsageStatsPermission() || !android.provider.Settings.canDrawOverlays(requireContext())) {
                     isTrackingOn = false
@@ -293,19 +290,19 @@ class HomeFragment : Fragment() {
 
         val initial = if (initialRaw == -1) 0 else initialRaw
         val displayInitial = if (initial == 0 && bal == 0) 0 else initial.coerceAtLeast(1)
-        
+
         val mode = prefs.getString("balance_bar_mode", "gradient") ?: "gradient"
         val type = prefs.getString("balance_bar_type", "gradient1") ?: "gradient1"
-        
+
         val balanceStr = "₹$bal/₹$displayInitial"
         if (balanceStr != lastLoadedBalance || mode != lastLoadedBarMode || type != lastLoadedBarType) {
             view.findViewById<TextView>(R.id.tvBalance)?.text = balanceStr
             val progressPercent = if (displayInitial > 0) ((bal.toFloat() / displayInitial.toFloat()) * 100).toInt().coerceIn(0, 100) else 0
-            
+
             val pBar = view.findViewById<com.cash.dash.GradientCircularProgressView>(R.id.walletProgress)
             pBar?.setColorConfig(mode, type)
             pBar?.setProgressCompat(progressPercent, true)
-            
+
             lastLoadedBalance = balanceStr
             lastLoadedBarMode = mode
             lastLoadedBarType = type
@@ -355,7 +352,7 @@ class HomeFragment : Fragment() {
                 val sdf = java.text.SimpleDateFormat("dd/MM/yyyy h:mm a", java.util.Locale.US)
                 val formattedTime = sdf.format(reminderCal.time).lowercase(java.util.Locale.US)
                 tvResetPending.text = "Reminder set at $formattedTime. Tap here to configure"
-                
+
                 tvResetPending.setOnClickListener {
                     showResetConfirmationDialog(nextDate, freq)
                 }
@@ -517,7 +514,7 @@ class HomeFragment : Fragment() {
     private fun showCustomDatePicker(parentDialog: AlertDialog) {
         val context = requireContext()
         val currentCal = Calendar.getInstance()
-        
+
         val datePicker = DatePickerDialog(
             context,
             ThemeHelper.getDatePickerTheme(context),
@@ -526,14 +523,14 @@ class HomeFragment : Fragment() {
                 selectedCal.set(Calendar.YEAR, year)
                 selectedCal.set(Calendar.MONTH, month)
                 selectedCal.set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                
+
                 showCustomTimePicker(selectedCal, parentDialog)
             },
             currentCal.get(Calendar.YEAR),
             currentCal.get(Calendar.MONTH),
             currentCal.get(Calendar.DAY_OF_MONTH)
         )
-        
+
         datePicker.datePicker.minDate = System.currentTimeMillis() - 1000
         datePicker.show()
     }
@@ -557,7 +554,7 @@ class HomeFragment : Fragment() {
                 } else {
                     savePostponeTime(selectedMs)
                     parentDialog.dismiss()
-                    
+
                     val sdf = java.text.SimpleDateFormat("MMM d, yyyy 'at' h:mm a", java.util.Locale.US)
                     val formatted = sdf.format(selectedCal.time).lowercase(java.util.Locale.US)
                     ToastHelper.showCustomToast(context, "Rescheduled. Reminding on $formatted", 1500L)
@@ -580,7 +577,7 @@ class HomeFragment : Fragment() {
         val context = requireContext()
         val prefs = context.getSharedPreferences(PREFS_SCHEDULE, android.content.Context.MODE_PRIVATE)
         val textView = view?.findViewById<TextView>(R.id.tvNextMoney) ?: return
-        
+
         prefs.edit().remove("postpone_until").apply()
 
         CoroutineScope(Dispatchers.IO).launch {
@@ -590,7 +587,7 @@ class HomeFragment : Fragment() {
                 set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
             }
-            
+
             val next = Calendar.getInstance().apply {
                 timeInMillis = nextDate
                 set(Calendar.HOUR_OF_DAY, 0)
@@ -701,11 +698,11 @@ class HomeFragment : Fragment() {
         if (hasUsageStatsPermission()) {
             val prefs = requireContext().getSharedPreferences("SmartAssistantPrefs", android.content.Context.MODE_PRIVATE)
             prefs.edit().putBoolean("tracking_enabled", true).apply()
-            
+
             // Start the foreground service
             val serviceIntent = Intent(requireContext(), AppUsageTrackerService::class.java)
             androidx.core.content.ContextCompat.startForegroundService(requireContext(), serviceIntent)
-            
+
             ToastHelper.showCustomToast(requireContext(), "Smart Shopping Assistant is Active!", 1500L)
             refreshUI()
             return
@@ -724,7 +721,7 @@ class HomeFragment : Fragment() {
             .setPositiveButton("I Agree") {
                 val prefs = requireContext().getSharedPreferences("SmartAssistantPrefs", android.content.Context.MODE_PRIVATE)
                 prefs.edit().putBoolean("tracking_enabled", true).apply()
-                
+
                 val intent = Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS)
                 try {
                     startActivity(intent)

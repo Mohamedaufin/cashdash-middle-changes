@@ -69,20 +69,7 @@
         app:layout_constraintTop_toTopOf="@id/btnMenu"
         app:layout_constraintBottom_toBottomOf="@id/btnMenu"/>
 
-    <!-- Help button -->
-    <ImageView
-        android:id="@+id/btnHelp"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:padding="5dp"
-        android:layout_marginEnd="4dp"
-        android:src="@drawable/ic_info_outline"
-        app:tint="?attr/textPrimaryColor"
-        android:clickable="true"
-        android:focusable="true"
-        app:layout_constraintEnd_toStartOf="@id/btnSmartAssistant"
-        app:layout_constraintTop_toTopOf="@id/btnMenu"
-        app:layout_constraintBottom_toBottomOf="@id/btnMenu"/>
+
     <TextView
         android:id="@+id/tvResetPending"
         android:layout_width="wrap_content"

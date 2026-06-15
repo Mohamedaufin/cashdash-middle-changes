@@ -24,31 +24,45 @@ object SecurityManager {
             .collection("config").document("profile")
             .addSnapshotListener { snapshot, e ->
                 if (e != null || isTriggering) return@addSnapshotListener
-                if (snapshot != null && snapshot.exists()) {
+                if (snapshot != null && !snapshot.exists()) {
+                    triggerLogout(appContext, "session_expired")
+                } else if (snapshot != null && snapshot.exists()) {
                     val status = snapshot.getString("account_status") ?: "active"
                     if (status == "admin_deleted") {
-                        triggerLogout(appContext)
+                        triggerLogout(appContext, "admin_deleted")
                     }
                 }
             }
 
-        // 2. We no longer treat missing documents as admin_deleted to prevent false lockouts
-        // if a document hasn't synced yet.
+        // 2. Monitor global deleted_accounts collection to catch admin deletions
+        userDocListener = db.collection("deleted_accounts").document(email)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null || isTriggering) return@addSnapshotListener
+                if (snapshot != null && snapshot.exists()) {
+                    val status = snapshot.getString("status")
+                    if (status == "admin_deleted" || status == "ADMIN_DELETED") {
+                        triggerLogout(appContext, "admin_deleted")
+                    } else if (status != "PERMANENT_WIPE_COMPLETED") {
+                        // Unknown deletion status, default to session expired
+                        triggerLogout(appContext, "session_expired")
+                    }
+                }
+            }
     }
 
-    private fun triggerLogout(context: Context) {
+    fun triggerLogout(context: Context, reason: String? = null) {
         if (isTriggering) return
         isTriggering = true
-        
+
         stopListening()
-        
+
         // 0. Stop automatic sync BEFORE clearing data
         FirestoreSyncManager.stopRealTimeSync(context)
 
         // 1. Clear all SharedPreferences
         val prefsToClear = listOf(
-            "AppPrefs", "WalletPrefs", "CategoryPrefs", 
-            "GraphData", "CategoryWeekData", "MoneySchedulePrefs", 
+            "AppPrefs", "WalletPrefs", "CategoryPrefs",
+            "GraphData", "CategoryWeekData", "MoneySchedulePrefs",
             "ScannerHistory", "LocalScanPrefs", "NotificationCache"
         )
         prefsToClear.forEach { name ->
@@ -62,7 +76,9 @@ object SecurityManager {
         // 3. Redirect to EntryActivity with security notice
         val intent = Intent(context, EntryActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            putExtra("reason", "admin_deleted")
+            if (reason != null) {
+                putExtra("reason", reason)
+            }
         }
         context.startActivity(intent)
     }

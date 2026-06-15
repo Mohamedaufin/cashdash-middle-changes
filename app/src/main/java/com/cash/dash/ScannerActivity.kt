@@ -1550,6 +1550,51 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
 
     private fun createShortcut() {
+        val isXiaomi = "xiaomi".equals(android.os.Build.MANUFACTURER, ignoreCase = true) || 
+            "poco".equals(android.os.Build.MANUFACTURER, ignoreCase = true) || 
+            "redmi".equals(android.os.Build.MANUFACTURER, ignoreCase = true)
+
+        if (isXiaomi && !isMiuiBackgroundStartActivityAllowed(this)) {
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Xiaomi/POCO Device Detected")
+                .setMessage("To ensure the Scanner Widget and background popups work perfectly, please enable 'Display pop-up windows while running in the background' in App Permissions.")
+                .setPositiveButton("Go to Settings") { _, _ ->
+                    try {
+                        val intent = android.content.Intent("miui.intent.action.APP_PERM_EDITOR")
+                        intent.setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity")
+                        intent.putExtra("extra_pkgname", packageName)
+                        startActivity(intent)
+                    } catch (e: Exception) {
+                        val intent = android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        intent.data = android.net.Uri.parse("package:$packageName")
+                        startActivity(intent)
+                    }
+                    triggerPinWidget()
+                }
+                .setNegativeButton("Later", null)
+                .show()
+        } else {
+            triggerPinWidget()
+        }
+    }
+
+    private fun isMiuiBackgroundStartActivityAllowed(context: android.content.Context): Boolean {
+        return try {
+            val ops = context.getSystemService(android.content.Context.APP_OPS_SERVICE) as android.app.AppOpsManager
+            val method = ops.javaClass.getMethod(
+                "checkOpNoThrow",
+                Int::class.javaPrimitiveType,
+                Int::class.javaPrimitiveType,
+                String::class.java
+            )
+            val mode = method.invoke(ops, 10021, android.os.Process.myUid(), context.packageName) as Int
+            mode == android.app.AppOpsManager.MODE_ALLOWED
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private fun triggerPinWidget() {
         val appWidgetManager = getSystemService(android.appwidget.AppWidgetManager::class.java)
         val myProvider = android.content.ComponentName(this, ScannerWidget::class.java)
 
@@ -1559,9 +1604,12 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 this, 0, intent,
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_MUTABLE
             )
-            appWidgetManager.requestPinAppWidget(myProvider, null, successCallback)
+            val success = appWidgetManager.requestPinAppWidget(myProvider, null, successCallback)
+            if (!success) {
+                ToastHelper.showToast(this, "Your launcher doesn't support adding widgets from here")
+            }
         } else {
-            ToastHelper.showToast(this, "Shortcut pinning not supported by your launcher")
+            ToastHelper.showToast(this, "Widget pinning not supported by your launcher")
         }
     }
 }

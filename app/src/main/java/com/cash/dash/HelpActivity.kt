@@ -40,7 +40,7 @@ private data class DialogDimensions(
     val imagesBottomMargin: Int
 )
 
-private data class ImageSlotViews(
+data class ImageSlotViews(
     val slot: ViewGroup,
     val frame: ViewGroup,
     val preview: ImageView,
@@ -57,14 +57,8 @@ class HelpActivity : ThemedActivity() {
     private val contactUploadProgress = mutableMapOf<Uri, Int>()
     private var isWaitingForUploads = false
     private var activeDialog: Dialog? = null
-    private var queriesListener: com.google.firebase.firestore.ListenerRegistration? = null
-    private var announcementsListener: com.google.firebase.firestore.ListenerRegistration? = null
 
-    override fun onDestroy() {
-        super.onDestroy()
-        queriesListener?.remove()
-        announcementsListener?.remove()
-    }
+
 
     private val pickerChooserLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
@@ -103,19 +97,11 @@ class HelpActivity : ThemedActivity() {
 
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
 
-        val btnNotifications = findViewById<android.view.View>(R.id.btnNotifications)
-        val notificationBadge = findViewById<android.view.View>(R.id.notificationBadge)
-        
-        btnNotifications.setOnClickListener {
-            notificationBadge.visibility = android.view.View.GONE
-            startActivity(Intent(this, NotificationActivity::class.java))
-            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
-        }
-        
-        setupNotificationListener(notificationBadge)
+
 
         findViewById<TextView>(R.id.btnContactUs).setOnClickListener {
-            showContactDialog()
+            startActivity(Intent(this, ContactSupportActivity::class.java))
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
 
         val root = findViewById<android.view.View>(android.R.id.content)
@@ -537,71 +523,8 @@ class HelpActivity : ThemedActivity() {
         triggerImmediateWebhook(user.uid, name, userEmail, time, subject, queryWithAttachments, timestamp, imageUrl, allUrls)
     }
 
-    private fun setupNotificationListener(badge: android.view.View) {
-        val user = FirebaseAuth.getInstance().currentUser ?: return
-        val email = user.email ?: getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).getString("user_email", null) ?: return
-        val db = FirebaseFirestore.getInstance()
-
-        var hasUnreadReply = false
-        var hasUnreadAnnouncement = false
-
-        fun updateBadgeVisibility() {
-            badge.visibility = if (hasUnreadReply || hasUnreadAnnouncement) android.view.View.VISIBLE else android.view.View.GONE
-        }
-
-        queriesListener?.remove()
-        queriesListener = db.collection("users").document(email).collection("notifications")
-            .whereEqualTo("read", false)
-            .addSnapshotListener { snapshot, _ ->
-                hasUnreadReply = false
-                if (snapshot != null) {
-                    for (doc in snapshot.documents) {
-                        val reply = doc.getString("reply")?.trim()
-                        if (!reply.isNullOrEmpty() && reply != "Waiting for reply...") {
-                            hasUnreadReply = true
-                            break
-                        }
-                    }
-                }
-                updateBadgeVisibility()
-            }
-
-        val adminEmails = listOf("mohamedaufin64@gmail.com", "arunbhalaji200904@gmail.com")
-        val isAdmin = adminEmails.contains(email.lowercase())
-
-        announcementsListener?.remove()
-        announcementsListener = db.collection("announcements")
-            .addSnapshotListener { snapshot, _ ->
-                hasUnreadAnnouncement = false
-                if (snapshot != null) {
-                    val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-                    val email = user?.email?.lowercase() ?: ""
-                    val registrationTime = user?.metadata?.creationTimestamp ?: 0L
-                    val deletedPrefs = getSharedPreferences("DeletedAnnouncements", Context.MODE_PRIVATE)
-                    val readPrefs = getSharedPreferences("ReadAnnouncements", Context.MODE_PRIVATE)
-                    for (doc in snapshot.documents) {
-                        val id = doc.id
-                        val timestamp = doc.getLong("timestamp") ?: id.toLongOrNull() ?: 0L
-                        if (timestamp < registrationTime) {
-                            continue
-                        }
-                        if (deletedPrefs.contains(id) || readPrefs.contains(id)) {
-                            continue
-                        }
-                        val adminOnly = doc.getBoolean("adminOnly") ?: false
-                        val targetEmails = doc.get("targetEmails") as? List<String>
-                        if (adminOnly && !isAdmin) {
-                            continue
-                        }
-                        if (targetEmails != null && !targetEmails.map { it.lowercase() }.contains(email)) {
-                            continue
-                        }
-                        hasUnreadAnnouncement = true
-                        break
-                    }
-                }
-                updateBadgeVisibility()
-            }
+    override fun onDestroy() {
+        super.onDestroy()
     }
 
     private fun triggerImmediateWebhook(

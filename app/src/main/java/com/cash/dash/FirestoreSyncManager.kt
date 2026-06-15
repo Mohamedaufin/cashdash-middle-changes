@@ -64,6 +64,7 @@ object FirestoreSyncManager {
                     "name" to (userPrefs.getString("user_name", "User") ?: "User"),
                     "email" to email,
                     "phone" to (userPrefs.getString("user_phone", "") ?: ""),
+                    "dob" to (userPrefs.getString("user_dob", "") ?: ""),
                     "setup_complete" to !userPrefs.getBoolean("isFirstLaunch", true),
                     "wallet_popup_shown" to userPrefs.getBoolean("WalletPopupShown", false),
                     "account_creation_time" to userPrefs.getLong("account_creation_time", 0L),
@@ -260,6 +261,7 @@ object FirestoreSyncManager {
 
                     profileDoc.getString("name")?.let { editor.putString("user_name", it) }
                     profileDoc.getString("phone")?.let { editor.putString("user_phone", it) }
+                    profileDoc.getString("dob")?.let { editor.putString("user_dob", it) }
                     profileDoc.getString("email")?.let { editor.putString("user_email", it) }
 
                     val setupComplete = profileDoc.getBoolean("setup_complete") ?: false
@@ -528,6 +530,7 @@ object FirestoreSyncManager {
             val editor = prefs.edit()
             snapshot.getString("name")?.let { editor.putString("user_name", it) }
             snapshot.getString("phone")?.let { editor.putString("user_phone", it) }
+            snapshot.getString("dob")?.let { editor.putString("user_dob", it) }
             snapshot.getString("email")?.let { editor.putString("user_email", it) }
             snapshot.getBoolean("setup_complete")?.let { editor.putBoolean("isFirstLaunch", !it) }
             editor.apply()

@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/mainBackground">
+
+    <!-- Top Navigation Bar -->
+    <RelativeLayout
+        android:id="@+id/navBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="50dp"
+        android:paddingHorizontal="25dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:background="?attr/roundBackground"
+            android:src="@drawable/ic_back_arrow1"
+            app:tint="?attr/textPrimaryColor"
+            android:padding="10dp"
+            android:scaleType="fitCenter"
+            android:layout_alignParentStart="true"/>
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_alignTop="@id/btnBack"
+            android:layout_alignBottom="@id/btnBack"
+            android:gravity="center"
+            android:text="Contact Support"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold" />
+    </RelativeLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="20dp"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@id/navBar"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="25dp"
+            android:paddingBottom="50dp">
+
+            <!-- Subject Header -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Subject"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="@dimen/text_body"
+                android:textStyle="bold"
+                android:layout_marginBottom="10dp" />
+
+            <!-- Subject Box -->
+            <EditText
+                android:id="@+id/edtContactSubject"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="60dp"
+                android:background="?attr/inputBackground"
+                android:hint="Brief title of the issue"
+                android:textColorHint="?attr/textMutedColor"
+                android:textColor="?attr/textPrimaryColor"
+                android:textSize="@dimen/text_body"
+                android:gravity="top|start"
+                android:padding="20dp"
+                android:inputType="textMultiLine|textCapSentences"
+                android:layout_marginBottom="25dp" />
+
+            <!-- Query Header -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Query"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="@dimen/text_body"
+                android:textStyle="bold"
+                android:layout_marginBottom="10dp" />
+
+            <!-- Query Box (Rectangular design) -->
+            <EditText
+                android:id="@+id/edtContactQuery"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="180dp"
+                android:background="?attr/inputBackground"
+                android:hint="Describe your issue in detail..."
+                android:textColorHint="?attr/textMutedColor"
+                android:textColor="?attr/textPrimaryColor"
+                android:textSize="@dimen/text_body"
+                android:padding="20dp"
+                android:gravity="top|start"
+                android:inputType="textMultiLine|textCapSentences"
+                android:layout_marginBottom="25dp" />
+
+            <!-- Supporting Images Header -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add Supporting Images"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="@dimen/text_body"
+                android:textStyle="bold"
+                android:layout_marginBottom="15dp" />
+
+            <!-- Horizontal list of attachment slots -->
+            <LinearLayout
+                android:id="@+id/layoutAttachmentSlots"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="40dp">
+
+                <!-- Slot 1 -->
+                <LinearLayout
+                    android:id="@+id/slotImage1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:layout_marginEnd="16dp">
+
+                    <FrameLayout
+                        android:layout_width="61dp"
+                        android:layout_height="61dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
+
+                        <FrameLayout
+                            android:id="@+id/frameImage1"
+                            android:layout_width="55dp"
+                            android:layout_height="55dp"
+                            android:layout_gravity="bottom|start"
+                            android:background="?attr/inputBackground"
+                            android:clipToOutline="true"
+                            android:clipChildren="true"
+                            android:clipToPadding="true">
+
+                            <ImageView
+                                android:id="@+id/imgPreview1"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:clipToOutline="true" />
+
+                            <ImageView
+                                android:id="@+id/imgPlus1"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_plus_vector"
+                                android:contentDescription="Add image" />
+                        </FrameLayout>
+
+                        <ImageButton
+                            android:id="@+id/btnTrash1"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="top|end"
+                            android:background="@android:color/transparent"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_trash"
+                            android:contentDescription="Delete image" />
+                    </FrameLayout>
+
+                    <ImageView
+                        android:id="@+id/imgEye1"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginTop="10dp"
+                        android:src="@drawable/ic_eye"
+                        android:contentDescription="View image" />
+
+                    <TextView
+                        android:id="@+id/tvView1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="view"
+                        android:textColor="?attr/textMutedColor"
+                        android:textSize="10sp"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+
+                <!-- Slot 2 -->
+                <LinearLayout
+                    android:id="@+id/slotImage2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:layout_marginEnd="16dp">
+
+                    <FrameLayout
+                        android:layout_width="61dp"
+                        android:layout_height="61dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
+
+                        <FrameLayout
+                            android:id="@+id/frameImage2"
+                            android:layout_width="55dp"
+                            android:layout_height="55dp"
+                            android:layout_gravity="bottom|start"
+                            android:background="?attr/inputBackground"
+                            android:clipToOutline="true"
+                            android:clipChildren="true"
+                            android:clipToPadding="true">
+
+                            <ImageView
+                                android:id="@+id/imgPreview2"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:clipToOutline="true" />
+
+                            <ImageView
+                                android:id="@+id/imgPlus2"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_plus_vector"
+                                android:contentDescription="Add image" />
+                        </FrameLayout>
+
+                        <ImageButton
+                            android:id="@+id/btnTrash2"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="top|end"
+                            android:background="@android:color/transparent"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_trash"
+                            android:contentDescription="Delete image" />
+                    </FrameLayout>
+
+                    <ImageView
+                        android:id="@+id/imgEye2"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginTop="10dp"
+                        android:src="@drawable/ic_eye"
+                        android:contentDescription="View image" />
+
+                    <TextView
+                        android:id="@+id/tvView2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="view"
+                        android:textColor="?attr/textMutedColor"
+                        android:textSize="10sp"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+
+                <!-- Slot 3 -->
+                <LinearLayout
+                    android:id="@+id/slotImage3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:layout_marginEnd="16dp">
+
+                    <FrameLayout
+                        android:layout_width="61dp"
+                        android:layout_height="61dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
+
+                        <FrameLayout
+                            android:id="@+id/frameImage3"
+                            android:layout_width="55dp"
+                            android:layout_height="55dp"
+                            android:layout_gravity="bottom|start"
+                            android:background="?attr/inputBackground"
+                            android:clipToOutline="true"
+                            android:clipChildren="true"
+                            android:clipToPadding="true">
+
+                            <ImageView
+                                android:id="@+id/imgPreview3"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:clipToOutline="true" />
+
+                            <ImageView
+                                android:id="@+id/imgPlus3"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_plus_vector"
+                                android:contentDescription="Add image" />
+                        </FrameLayout>
+
+                        <ImageButton
+                            android:id="@+id/btnTrash3"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="top|end"
+                            android:background="@android:color/transparent"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_trash"
+                            android:contentDescription="Delete image" />
+                    </FrameLayout>
+
+                    <ImageView
+                        android:id="@+id/imgEye3"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginTop="10dp"
+                        android:src="@drawable/ic_eye"
+                        android:contentDescription="View image" />
+
+                    <TextView
+                        android:id="@+id/tvView3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="view"
+                        android:textColor="?attr/textMutedColor"
+                        android:textSize="10sp"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+
+                <!-- Slot 4 -->
+                <LinearLayout
+                    android:id="@+id/slotImage4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal">
+
+                    <FrameLayout
+                        android:layout_width="61dp"
+                        android:layout_height="61dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
+
+                        <FrameLayout
+                            android:id="@+id/frameImage4"
+                            android:layout_width="55dp"
+                            android:layout_height="55dp"
+                            android:layout_gravity="bottom|start"
+                            android:background="?attr/inputBackground"
+                            android:clipToOutline="true"
+                            android:clipChildren="true"
+                            android:clipToPadding="true">
+
+                            <ImageView
+                                android:id="@+id/imgPreview4"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:clipToOutline="true" />
+
+                            <ImageView
+                                android:id="@+id/imgPlus4"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_plus_vector"
+                                android:contentDescription="Add image" />
+                        </FrameLayout>
+
+                        <ImageButton
+                            android:id="@+id/btnTrash4"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="top|end"
+                            android:background="@android:color/transparent"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_trash"
+                            android:contentDescription="Delete image" />
+                    </FrameLayout>
+
+                    <ImageView
+                        android:id="@+id/imgEye4"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginTop="10dp"
+                        android:src="@drawable/ic_eye"
+                        android:contentDescription="View image" />
+
+                    <TextView
+                        android:id="@+id/tvView4"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="view"
+                        android:textColor="?attr/textMutedColor"
+                        android:textSize="10sp"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnContactSubmit"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:background="?attr/cardBackground"
+                android:backgroundTint="@null"
+                android:text="Submit"
+                android:textColor="?attr/textPrimaryColor"
+                android:textStyle="bold"
+                android:textSize="@dimen/text_subhead"
+                android:textAllCaps="false"
+                android:stateListAnimator="@null"
+                android:elevation="0dp"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

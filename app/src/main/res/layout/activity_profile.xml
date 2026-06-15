@@ -47,6 +47,22 @@
             android:inputType="phone"
             android:layout_marginBottom="20dp"/>
 
+        <TextView
+            android:id="@+id/tvDob"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:background="?attr/inputBackground"
+            android:hint="Date of Birth"
+            android:textColor="?attr/textPrimaryColor"
+            android:textColorHint="?attr/textMutedColor"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textSize="16sp"
+            android:layout_marginBottom="20dp"
+            android:clickable="true"
+            android:focusable="true"/>
+
         <EditText
             android:id="@+id/edtEmail"
             android:layout_width="match_parent"

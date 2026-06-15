@@ -191,7 +191,7 @@ class AllocatorActivity : ThemedActivity() {
                     errorView.visibility = android.view.View.VISIBLE
                     return@setOnClickListener
                 }
-                
+
                 val exists = saved.any { it.equals(name, ignoreCase = true) }
                 if (exists) {
                     errorView.text = "Allocation name already exists"
@@ -278,7 +278,7 @@ class AllocatorActivity : ThemedActivity() {
         }
     }
 
-    private fun refreshUI() {
+    internal fun refreshUI() {
         categoryContainer.removeAllViews()
 
         val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -529,7 +529,7 @@ class AllocatorActivity : ThemedActivity() {
 
     private fun showAllocationOptions(name: String) {
         val bottomSheet = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
-        
+
         val density = resources.displayMetrics.density
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -586,7 +586,7 @@ class AllocatorActivity : ThemedActivity() {
                 showRenameCategoryDialog(name)
             }
         }
-        container.addView(btnRename)
+
 
         // DELETE OPTION
         val btnDelete = android.widget.Button(this).apply {
@@ -648,7 +648,7 @@ class AllocatorActivity : ThemedActivity() {
                 text = name
                 isAllCaps = false
                 setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(this@AllocatorActivity, R.attr.textPrimaryColor))
-                
+
                 if (resId == R.drawable.ic_edit) {
                     val drw = androidx.core.content.ContextCompat.getDrawable(this@AllocatorActivity, resId)
                     drw?.let {
@@ -663,7 +663,7 @@ class AllocatorActivity : ThemedActivity() {
                     val tinted = com.cash.dash.ThemeHelper.tintDrawableIfWhiteTheme(this@AllocatorActivity, drw)
                     setCompoundDrawablesWithIntrinsicBounds(tinted, null, null, null)
                 }
-                
+
                 compoundDrawablePadding = (12 * density).toInt()
                 setPadding((16 * density).toInt(), 0, 0, 0)
                 gravity = android.view.Gravity.CENTER_VERTICAL or android.view.Gravity.START
@@ -675,6 +675,12 @@ class AllocatorActivity : ThemedActivity() {
                 setOnClickListener {
                     val prefs = getSharedPreferences("CategoryPrefs", android.content.Context.MODE_PRIVATE)
                     prefs.edit().putInt("ICON_$categoryName", resId).apply()
+                    
+                    // Push to Firestore & broadcast change to other activities immediately
+                    FirestoreSyncManager.pushAllDataToCloud(this@AllocatorActivity)
+                    androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this@AllocatorActivity)
+                        .sendBroadcast(android.content.Intent(FirestoreSyncManager.ACTION_SYNC_UPDATE))
+                    
                     refreshUI()
                     dialog.dismiss()
                 }

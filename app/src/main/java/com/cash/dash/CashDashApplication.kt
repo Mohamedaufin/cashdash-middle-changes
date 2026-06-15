@@ -100,6 +100,10 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
         fun setupRealtimePresence(context: Context) {
             if (isDeletingAccount) return
             val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser ?: return
+            
+            // Start listening to security events
+            SecurityManager.startListening(context)
+            
             val email = user.email ?: return
             val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
             
