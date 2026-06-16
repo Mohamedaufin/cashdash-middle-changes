@@ -246,15 +246,6 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
             holder.itemView.backgroundTintList = null
         }
         
-        // Force the padding to exactly match the default grey bar's intrinsic padding
-        // This prevents the red bar (which has more layers) from expanding due to accumulated padding.
-        val typedValue = android.util.TypedValue()
-        holder.itemView.context.theme.resolveAttribute(R.attr.transactionBackground, typedValue, true)
-        val defaultBg = androidx.core.content.ContextCompat.getDrawable(holder.itemView.context, typedValue.resourceId)
-        val rect = android.graphics.Rect()
-        defaultBg?.getPadding(rect)
-        holder.itemView.setPadding(rect.left, rect.top, rect.right, rect.bottom)
-        
         holder.cbFinminder.setOnCheckedChangeListener(null)
         holder.cbFinminder.isChecked = item.isChecked
         
