@@ -271,6 +271,13 @@ class HomeFragment : Fragment() {
             } else {
                 iconTaptrack?.setColorFilter(ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor)) // Original Color
             }
+
+            val iconSmartAssistant = it.findViewById<ImageView>(R.id.btnSmartAssistant)
+            if (ThemeHelper.isWhiteTheme(requireContext())) {
+                iconSmartAssistant?.setImageResource(R.drawable.ic_finminder_black)
+            } else {
+                iconSmartAssistant?.setImageResource(R.drawable.ic_finminder)
+            }
         }
     }
 
