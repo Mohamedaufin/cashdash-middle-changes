@@ -39,8 +39,7 @@
             android:textSize="@dimen/text_title"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/tvUsernameHome"
@@ -55,8 +54,7 @@
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toEndOf="@id/tvHello"
             app:layout_constraintEnd_toStartOf="@+id/tvComma"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/tvComma"
@@ -67,10 +65,10 @@
             android:textSize="@dimen/text_title"
             android:textStyle="bold"
             app:layout_constraintStart_toEndOf="@id/tvUsernameHome"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintBottom_toBottomOf="@+id/tvUsernameHome" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+
     <!-- Taptrack button -->
     <ImageView
         android:id="@+id/btnTaptrack"
@@ -89,13 +87,11 @@
     <!-- Smart Assistant button -->
     <ImageView
         android:id="@+id/btnSmartAssistant"
-        android:layout_width="44dp"
-        android:layout_height="44dp"
-        android:padding="0dp"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:padding="4dp"
         android:layout_marginEnd="16dp"
         android:src="@drawable/ic_finminder"
-        android:scaleX="2.2"
-        android:scaleY="2.2"
         app:tint="?attr/textPrimaryColor"
         android:scaleType="fitCenter"
         android:clickable="true"
