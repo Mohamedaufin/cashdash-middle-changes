@@ -1053,7 +1053,7 @@ class NotificationActivity : ThemedActivity() {
                         val absDX = Math.abs(dX)
                         val absDY = Math.abs(event.rawY - startRawY)
 
-                        if (!isSwiping && absDX > 5 && absDX > absDY) { // Ultra-low threshold + horizontal bias
+                        if (!isSwiping && absDX > 5 && absDX > absDY && dX < 0) { // Only right-to-left
                             isSwiping = true
                             holder.itemView.parent?.requestDisallowInterceptTouchEvent(true)
                         }
@@ -1070,7 +1070,7 @@ class NotificationActivity : ThemedActivity() {
                     android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
                         if (isSwiping) {
                             val dX = event.rawX - startRawX
-                            if (Math.abs(dX) > holder.mainCardContainer.width * 0.3) {
+                            if (dX < 0 && Math.abs(dX) > holder.mainCardContainer.width * 0.3) {
                                 // Trigger delete
                                 isSwiping = false // Reset
                                 holder.mainCardContainer.animate()
