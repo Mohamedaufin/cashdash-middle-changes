@@ -90,11 +90,11 @@ class HomeFragment : Fragment() {
 
 
 
-        view.findViewById<ImageView>(R.id.btnSmartAssistant)?.setOnClickListener {
+        view.findViewById<ImageView>(R.id.btnTaptrack)?.setOnClickListener {
             startActivity(Intent(requireContext(), TaptrackActivity::class.java))
         }
 
-        view.findViewById<ImageView>(R.id.btnSmartAssistant)?.setOnLongClickListener {
+        view.findViewById<ImageView>(R.id.btnTaptrack)?.setOnLongClickListener {
             val smartPrefs = requireContext().getSharedPreferences("SmartAssistantPrefs", android.content.Context.MODE_PRIVATE)
             val isTrackingOn = smartPrefs.getBoolean("tracking_enabled", false)
             if (isTrackingOn) {
@@ -265,11 +265,11 @@ class HomeFragment : Fragment() {
                 }
             }
 
-            val iconSmartAssistant = it.findViewById<ImageView>(R.id.btnSmartAssistant)
+            val iconTaptrack = it.findViewById<ImageView>(R.id.btnTaptrack)
             if (isTrackingOn) {
-                iconSmartAssistant?.setColorFilter(android.graphics.Color.parseColor("#1DD15D")) // Vibrant Proper Green
+                iconTaptrack?.setColorFilter(android.graphics.Color.parseColor("#1DD15D")) // Vibrant Proper Green
             } else {
-                iconSmartAssistant?.setColorFilter(ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor)) // Original Color
+                iconTaptrack?.setColorFilter(ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor)) // Original Color
             }
         }
     }

@@ -54,14 +54,29 @@
             android:textSize="@dimen/text_title"
             android:textStyle="bold" />
     </LinearLayout>
+    <!-- Taptrack button -->
+    <ImageView
+        android:id="@+id/btnTaptrack"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:padding="4dp"
+        android:layout_marginEnd="12dp"
+        android:src="@drawable/ic_taptrack_icon"
+        app:tint="?attr/textPrimaryColor"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintEnd_toStartOf="@+id/btnSmartAssistant"
+        app:layout_constraintTop_toTopOf="@id/btnMenu"
+        app:layout_constraintBottom_toBottomOf="@id/btnMenu"/>
+
     <!-- Smart Assistant button -->
     <ImageView
         android:id="@+id/btnSmartAssistant"
         android:layout_width="36dp"
         android:layout_height="36dp"
-        android:padding="4dp"
-        android:layout_marginEnd="8dp"
-        android:src="@drawable/ic_taptrack_icon"
+        android:padding="2dp"
+        android:layout_marginEnd="16dp"
+        android:src="@drawable/ic_ai_assistant"
         app:tint="?attr/textPrimaryColor"
         android:clickable="true"
         android:focusable="true"
