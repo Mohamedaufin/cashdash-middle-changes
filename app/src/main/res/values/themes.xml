@@ -19,6 +19,7 @@
         <item name="healthYellow">#FFC107</item>
         <item name="healthRed">#B71C1C</item>
         <item name="progressTrackColor">#262626</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
     </style>
 
 

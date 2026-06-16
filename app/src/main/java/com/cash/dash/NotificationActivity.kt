@@ -47,7 +47,7 @@ class NotificationActivity : ThemedActivity() {
             val selectedUri = result.data?.data
             val id = activePickerQueryId
             if (id == null) return@registerForActivityResult
-            
+
             if (selectedUri != null) {
                 val list = selectedReplyImages.getOrPut(id) { mutableListOf() }
                 if (list.size < 4) {
@@ -119,12 +119,12 @@ class NotificationActivity : ThemedActivity() {
                 val percent = if (taskSnapshot.totalByteCount > 0) {
                     (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
                 } else 0
-                
+
                 // Update progress map
                 val pm = replyUploadProgress[queryId]
                 if (pm != null && pm.containsKey(uri)) {
                     pm[uri] = percent
-                    
+
                     // Update visible ViewHolder
                     runOnUiThread {
                         val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
@@ -148,10 +148,10 @@ class NotificationActivity : ThemedActivity() {
                     // Save URL
                     val urlMap = replyUploadedUrls.getOrPut(queryId) { mutableMapOf() }
                     urlMap[uri] = downloadUri.toString()
-                    
+
                     // Remove from progress
                     replyUploadProgress[queryId]?.remove(uri)
-                    
+
                     runOnUiThread {
                         val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
                         for (i in 0 until rv.childCount) {
@@ -202,9 +202,9 @@ class NotificationActivity : ThemedActivity() {
                         if (holder != null) {
                             val pos = holder.adapterPosition
                             if (pos != androidx.recyclerview.widget.RecyclerView.NO_POSITION && pos < filteredNotifications.size) {
-                                    if (filteredNotifications[pos].id == queryId) {
-                                        updateViewHolderUploadProgress(holder, queryId)
-                                    }
+                                if (filteredNotifications[pos].id == queryId) {
+                                    updateViewHolderUploadProgress(holder, queryId)
+                                }
                             }
                         }
                     }
@@ -230,14 +230,14 @@ class NotificationActivity : ThemedActivity() {
 
         setupRecyclerView()
         setupFilters()
-        
+
         loadNotifications()
     }
 
     private fun setupRecyclerView() {
         val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
         rv.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
-        adapter = NotificationAdapter(mutableListOf(), 
+        adapter = NotificationAdapter(mutableListOf(),
             onDelete = { model -> showDeleteConfirmDialog(model) }
         )
         rv.adapter = adapter
@@ -268,17 +268,17 @@ class NotificationActivity : ThemedActivity() {
         chipResponded.setTextColor(if (currentFilter == "responded") activeColor else inactiveColor)
         chipPending.setTextColor(if (currentFilter == "pending") activeColor else inactiveColor)
     }
-    
+
     private fun markAllAsRead() {
         val user = FirebaseAuth.getInstance().currentUser ?: return
         val email = user.email ?: return
         val db = FirebaseFirestore.getInstance()
-        
+
         // Update in-memory lists so animation stops/does not trigger
         allNotifications = allNotifications.map { it.copy(isUnread = false) }
         filteredNotifications = filteredNotifications.map { it.copy(isUnread = false) }
         adapter.updateList(filteredNotifications)
-        
+
         // 1. Mark user support queries as read in Firestore and Room
         db.collection("users").document(email).collection("notifications")
             .whereEqualTo("read", false)
@@ -288,7 +288,7 @@ class NotificationActivity : ThemedActivity() {
                     val batch = db.batch()
                     for (doc in docs) batch.update(doc.reference, "read", true)
                     batch.commit()
-                    
+
                     // Sync to Room
                     CoroutineScope(Dispatchers.IO).launch {
                         val dao = AppDatabase.getDatabase(this@NotificationActivity).notificationDao()
@@ -337,7 +337,7 @@ class NotificationActivity : ThemedActivity() {
                 val deletedPrefs = getSharedPreferences("DeletedAnnouncements", MODE_PRIVATE)
                 val readAnnPrefs = getSharedPreferences("ReadAnnouncements", MODE_PRIVATE)
 
-                 rawAnnouncements = adminDocs.mapNotNull { doc ->
+                rawAnnouncements = adminDocs.mapNotNull { doc ->
                     val timestamp = doc.getLong("timestamp") ?: doc.id.toLongOrNull() ?: 0L
                     if (timestamp < registrationTime) {
                         null
@@ -410,7 +410,7 @@ class NotificationActivity : ThemedActivity() {
                 val rawDocs = docs.documents
                 val grouped = rawDocs.groupBy { "${it.getString("subject")}|${it.getString("query")}" }
                 val toDelete = mutableListOf<com.google.firebase.firestore.DocumentSnapshot>()
-                
+
                 for (group in grouped.values) {
                     if (group.size > 1) {
                         val keeper = group.find { (it.getString("reply") ?: "Waiting for reply...") != "Waiting for reply..." }
@@ -418,7 +418,7 @@ class NotificationActivity : ThemedActivity() {
                         group.forEach { if (it.id != keeper.id) toDelete.add(it) }
                     }
                 }
-                
+
                 if (toDelete.isNotEmpty()) {
                     val batch = db.batch()
                     toDelete.forEach { batch.delete(it.reference) }
@@ -446,14 +446,14 @@ class NotificationActivity : ThemedActivity() {
                             imageUrls = (doc.get("imageUrls") as? List<*>)?.mapNotNull { it as? String }?.let { org.json.JSONArray(it).toString() }
                         )
                     }
-                    
+
                     rawUserNotifications = entities
                     val allEntities = (rawUserNotifications + rawAnnouncements).sortedByDescending { it.timestamp }
                     saveToRoom(allEntities)
 
                     // 2. Heavy CPU computation: String replacement + HTML interpolation
                     val models = mapEntitiesToModels(allEntities)
-                    
+
                     // 3. Push results to UI
                     withContext(Dispatchers.Main) {
                         allNotifications = models
@@ -475,10 +475,10 @@ class NotificationActivity : ThemedActivity() {
         CoroutineScope(Dispatchers.IO).launch {
             val db = AppDatabase.getDatabase(this@NotificationActivity)
             val entities = db.notificationDao().getAll()
-            
+
             val deletedPrefs = getSharedPreferences("DeletedAnnouncements", MODE_PRIVATE)
             val readAnnPrefs = getSharedPreferences("ReadAnnouncements", MODE_PRIVATE)
-            
+
             val user = FirebaseAuth.getInstance().currentUser
             val email = user?.email?.lowercase() ?: ""
             val registrationTime = user?.metadata?.creationTimestamp ?: 0L
@@ -502,9 +502,9 @@ class NotificationActivity : ThemedActivity() {
                     entity
                 }
             }
-            
+
             val models = mapEntitiesToModels(filteredEntities)
-            
+
             withContext(Dispatchers.Main) {
                 allNotifications = models
                 if (allNotifications.isNotEmpty()) applyFilter()
@@ -532,10 +532,10 @@ class NotificationActivity : ThemedActivity() {
             val ts = entity.timestamp
             val status = entity.status.ifEmpty { if (reply == "Waiting for reply...") "pending" else "responded" }
 
-            var isResolved = status == "resolved" || 
-                             reply.contains("[RESOLVED]", ignoreCase = true) || 
-                             reply.contains("[DONE]", ignoreCase = true)
-            
+            var isResolved = status == "resolved" ||
+                    reply.contains("[RESOLVED]", ignoreCase = true) ||
+                    reply.contains("[DONE]", ignoreCase = true)
+
             if (!isResolved && status == "responded" && (now - ts) > fortyEightHours) {
                 isResolved = true
             }
@@ -651,7 +651,7 @@ class NotificationActivity : ThemedActivity() {
             setPadding(p, p, p, (24 * density).toInt())
             setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
         }
-        
+
         TextView(this).apply {
             text = "Delete query?"
             setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_title))
@@ -689,9 +689,9 @@ class NotificationActivity : ThemedActivity() {
                 setMargins(0, 0, (8 * density).toInt(), 0)
             }
             minHeight = (54 * density).toInt()
-            setOnClickListener { 
+            setOnClickListener {
                 adapter.notifyDataSetChanged() // Reset swipe state
-                dialog.dismiss() 
+                dialog.dismiss()
             }
             btnContainer.addView(this)
         }
@@ -708,15 +708,15 @@ class NotificationActivity : ThemedActivity() {
             setOnClickListener {
                 val user = FirebaseAuth.getInstance().currentUser ?: return@setOnClickListener
                 val email = user.email ?: return@setOnClickListener
-                
+
                 dialog.dismiss()
                 ToastHelper.showToast(this@NotificationActivity, "Query deleted")
-                
+
                 // Explicit Optimistic UI Update from RAM (Instant Execution)
                 val mutList = allNotifications.toMutableList()
                 mutList.removeAll { it.id == model.id }
                 allNotifications = mutList
-                
+
                 if (allNotifications.isEmpty()) {
                     saveToRoom(emptyList()) // Ensures the empty state sticks
                 } else {
@@ -726,7 +726,7 @@ class NotificationActivity : ThemedActivity() {
                 }
 
                 applyFilter() // Redraws RecyclerView instantaneously
-                
+
                 // Process the deletion with Firestore/SharedPreferences sequentially
                 if (model.originalReply == "[ANNOUNCEMENT]") {
                     val prefs = getSharedPreferences("DeletedAnnouncements", MODE_PRIVATE)
@@ -738,7 +738,7 @@ class NotificationActivity : ThemedActivity() {
             }
             btnContainer.addView(this)
         }
-        
+
         box.addView(btnContainer)
         dialog.show()
     }
@@ -762,10 +762,10 @@ class NotificationActivity : ThemedActivity() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val item = items[position]
-            
+
             // Show swipe hint only for the very first item
             holder.tvSwipeHintItem.visibility = if (position == 0) View.VISIBLE else View.GONE
-            
+
             // Reset view state (crucial for Cancel or recycling)
             holder.mainCardContainer.translationX = 0f
             holder.mainCardContainer.alpha = 1f
@@ -1007,7 +1007,7 @@ class NotificationActivity : ThemedActivity() {
                             val actualBoxBottom = rv.height
                             val density = rv.context.resources.displayMetrics.density
                             // The margin is 16dp. We want to push the view down further so the visible gap is reduced even more.
-                            val extraPushDownPx = (7 * density).toInt() 
+                            val extraPushDownPx = (7 * density).toInt()
                             return actualBoxBottom - viewEnd + extraPushDownPx
                         }
                     }
@@ -1021,7 +1021,7 @@ class NotificationActivity : ThemedActivity() {
                     view.postDelayed(scrollAction, 300)
                 }
             }
-            
+
             holder.edtReply.setOnClickListener { view ->
                 view.postDelayed(scrollAction, 300)
             }
@@ -1112,8 +1112,8 @@ class NotificationActivity : ThemedActivity() {
 
             if (shouldAnimate && !item.isPending && !animatedItems.contains(item.id)) {
                 animatedItems.add(item.id)
-                val anim = android.view.animation.ScaleAnimation(1f, 1.05f, 1f, 1.05f, 
-                    android.view.animation.Animation.RELATIVE_TO_SELF, 0.5f, 
+                val anim = android.view.animation.ScaleAnimation(1f, 1.05f, 1f, 1.05f,
+                    android.view.animation.Animation.RELATIVE_TO_SELF, 0.5f,
                     android.view.animation.Animation.RELATIVE_TO_SELF, 0.5f).apply {
                     duration = 300
                     repeatMode = android.view.animation.Animation.REVERSE
@@ -1261,11 +1261,11 @@ class NotificationActivity : ThemedActivity() {
             val user = FirebaseAuth.getInstance().currentUser ?: return
             val db = FirebaseFirestore.getInstance()
             val timestamp = System.currentTimeMillis()
-            
+
             val prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
             val userName = prefs.getString("user_name", "User") ?: "User"
             val email = user.email ?: return
-            
+
             val uploadedUrls = selectedReplyImages[model.id]?.mapNotNull { replyUploadedUrls[model.id]?.get(it) } ?: emptyList()
 
             fun sendReplyWithAttachments() {
@@ -1277,7 +1277,7 @@ class NotificationActivity : ThemedActivity() {
 
                 val lastTeamReply = model.originalReply
                 val currentHistory = model.originalQuery
-                
+
                 val updatedQuery = if (lastTeamReply.isNotEmpty() && lastTeamReply != "Waiting for reply...") {
                     "$currentHistory\n\nTeam Cashdash: $lastTeamReply\n\n$userName: $textWithAttachments"
                 } else {
@@ -1286,7 +1286,7 @@ class NotificationActivity : ThemedActivity() {
 
                 val finalImageUrls = model.imageUrls.toMutableList()
                 finalImageUrls.addAll(uploadedUrls)
-                
+
                 val updateData = hashMapOf(
                     "query" to updatedQuery,
                     "reply" to "Waiting for reply...",
@@ -1331,7 +1331,7 @@ class NotificationActivity : ThemedActivity() {
         }
 
         private fun triggerImmediateWebhook(
-            uid: String, id: String, name: String, email: String, subject: String, 
+            uid: String, id: String, name: String, email: String, subject: String,
             updatedQuery: String, originalQuery: String, teamReply: String, userFollowup: String, timestamp: Long
         ) {
             CoroutineScope(Dispatchers.IO).launch {
