@@ -433,7 +433,7 @@ class HistoryActivity : ThemedActivity() {
 
                     loadGraphValues(graph)
                     animateGraph(graph)
-                }, selectedYear, selectedMonth, 1)
+                }, selectedYear, selectedMonth, if (selectedYear == Calendar.getInstance().get(Calendar.YEAR) && selectedMonth == Calendar.getInstance().get(Calendar.MONTH)) Calendar.getInstance().get(Calendar.DAY_OF_MONTH) else 1)
                 picker.show()
             }
         }

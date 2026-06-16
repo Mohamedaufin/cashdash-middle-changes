@@ -8,14 +8,13 @@
 
     <!-- ════════════════════ SCROLLABLE CONTENT ════════════════════ -->
     <ScrollView
-        android:id="@+id/allocatorScrollView"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:fillViewport="true"
         android:scrollbars="none"
         android:paddingLeft="18dp"
         android:paddingRight="18dp"
         android:paddingTop="0dp"
-        android:clipToPadding="false"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/bottomNav"
         app:layout_constraintStart_toStartOf="parent"
@@ -26,10 +25,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:gravity="top|center_horizontal"
+            android:gravity="center_horizontal"
             android:dividerPadding="0dp"
             android:showDividers="none"
-            android:paddingBottom="150dp"/>
+            android:layout_marginTop="-65dp"
+            android:paddingBottom="150dp"
+            android:dividerHeight="28dp"/>
     </ScrollView>
 
     <!-- ══════════════════════ BOTTOM NAV BAR ══════════════════════ -->

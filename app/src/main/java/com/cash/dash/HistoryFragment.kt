@@ -408,7 +408,7 @@ class HistoryFragment : Fragment() {
                     forcedHighlightDay = (cp.get(Calendar.DAY_OF_WEEK) + 5) % 7
                     
                     loadGraphValues(graph); animateGraph(graph)
-                }, selectedYear, selectedMonth, 1).show()
+                }, selectedYear, selectedMonth, if (selectedYear == Calendar.getInstance().get(Calendar.YEAR) && selectedMonth == Calendar.getInstance().get(Calendar.MONTH)) Calendar.getInstance().get(Calendar.DAY_OF_MONTH) else 1).show()
             }
         }
     }

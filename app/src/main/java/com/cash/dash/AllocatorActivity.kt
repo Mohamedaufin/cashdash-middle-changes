@@ -135,19 +135,10 @@ class AllocatorActivity : ThemedActivity() {
             setHintTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(0, 0, 0, 10)
+                setMargins(0, 0, 0, 50)
             }
         }
         box.addView(input)
-
-        val errorView = TextView(this).apply {
-            setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
-            visibility = android.view.View.GONE
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(10, 0, 0, 40)
-            }
-        }
-        box.addView(errorView)
 
         val buttonContainer = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -184,18 +175,15 @@ class AllocatorActivity : ThemedActivity() {
                 setMargins(15, 0, 0, 0)
             }
             setOnClickListener {
-                errorView.visibility = android.view.View.GONE
                 val name = input.text.toString().trim().replace("|", "-")
                 if (name.equals("Overall", ignoreCase = true)) {
-                    errorView.text = "'Overall' is a reserved name"
-                    errorView.visibility = android.view.View.VISIBLE
+                    input.error = "'Overall' is a reserved name"
                     return@setOnClickListener
                 }
 
                 val exists = saved.any { it.equals(name, ignoreCase = true) }
                 if (exists) {
-                    errorView.text = "Allocation name already exists"
-                    errorView.visibility = android.view.View.VISIBLE
+                    input.error = "Allocation name already exists"
                     return@setOnClickListener
                 }
 
@@ -294,7 +282,7 @@ class AllocatorActivity : ThemedActivity() {
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
-                    setMargins(0, 0, 0, 0)
+                    setMargins(0, (12 * density).toInt(), 0, 0)
                 }
             }
             val hint2 = TextView(this).apply {
@@ -439,9 +427,18 @@ class AllocatorActivity : ThemedActivity() {
             setOnClickListener {
                 val newName = input.text.toString().trim().replace("|", "-")
                 if (newName.equals("Overall", ignoreCase = true)) {
-                    ToastHelper.showToast(this@AllocatorActivity, "'Overall' is a reserved name")
+                    input.error = "'Overall' is a reserved name"
                     return@setOnClickListener
                 }
+                
+                // If it's a completely different name (case-insensitive) but already exists
+                val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                val saved = prefs.getStringSet(KEY, emptySet()) ?: emptySet()
+                if (!newName.equals(name, ignoreCase = true) && saved.any { it.equals(newName, ignoreCase = true) }) {
+                    input.error = "Allocation name already exists"
+                    return@setOnClickListener
+                }
+
                 if (newName.isNotEmpty()) {
                     renameCategory(name, newName)
                     FirestoreSyncManager.pushAllDataToCloud(this@AllocatorActivity)
