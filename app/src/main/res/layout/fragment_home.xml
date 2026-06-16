@@ -29,6 +29,18 @@
         app:layout_constraintEnd_toStartOf="@+id/btnTaptrack"
         app:layout_constraintTop_toTopOf="@id/btnMenu"
         app:layout_constraintBottom_toBottomOf="@id/btnMenu">
+        <androidx.constraintlayout.helper.widget.Flow
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:constraint_referenced_ids="tvHello,tvUsernameHome,tvComma"
+            app:flow_wrapMode="chain"
+            app:flow_horizontalStyle="packed"
+            app:flow_horizontalBias="0.0"
+            app:flow_verticalAlign="baseline" />
 
         <TextView
             android:id="@+id/tvHello"
@@ -37,10 +49,7 @@
             android:text="Hello "
             android:textColor="?attr/textPrimaryColor"
             android:textSize="@dimen/text_title"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvUsernameHome"
@@ -50,12 +59,8 @@
             android:textColor="?attr/textPrimaryColor"
             android:textSize="@dimen/text_title"
             android:textStyle="bold"
-            android:transitionName="greeting_text_transition"
             app:layout_constrainedWidth="true"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintStart_toEndOf="@id/tvHello"
-            app:layout_constraintEnd_toStartOf="@+id/tvComma"
-            app:layout_constraintBaseline_toBaselineOf="@id/tvHello" />
+            android:transitionName="greeting_text_transition" />
 
         <TextView
             android:id="@+id/tvComma"
@@ -64,9 +69,7 @@
             android:text=","
             android:textColor="?attr/textPrimaryColor"
             android:textSize="@dimen/text_title"
-            android:textStyle="bold"
-            app:layout_constraintStart_toEndOf="@id/tvUsernameHome"
-            app:layout_constraintBaseline_toBaselineOf="@id/tvUsernameHome" />
+            android:textStyle="bold" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
