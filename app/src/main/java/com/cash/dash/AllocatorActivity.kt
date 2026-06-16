@@ -135,10 +135,19 @@ class AllocatorActivity : ThemedActivity() {
             setHintTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(0, 0, 0, 50)
+                setMargins(0, 0, 0, 10)
             }
         }
         box.addView(input)
+
+        val errorView = TextView(this).apply {
+            setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
+            visibility = android.view.View.GONE
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                setMargins(10, 0, 0, 40)
+            }
+        }
+        box.addView(errorView)
 
         val buttonContainer = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -175,15 +184,21 @@ class AllocatorActivity : ThemedActivity() {
                 setMargins(15, 0, 0, 0)
             }
             setOnClickListener {
+                errorView.visibility = android.view.View.GONE
                 val name = input.text.toString().trim().replace("|", "-")
                 if (name.equals("Overall", ignoreCase = true)) {
                     input.error = "'Overall' is a reserved name"
+                    errorView.text = "'Overall' is a reserved name"
+                    errorView.visibility = android.view.View.VISIBLE
                     return@setOnClickListener
                 }
 
-                val exists = saved.any { it.equals(name, ignoreCase = true) }
+                val currentSaved = getSharedPreferences(PREFS, Context.MODE_PRIVATE).getStringSet(KEY, emptySet()) ?: emptySet()
+                val exists = currentSaved.any { it.equals(name, ignoreCase = true) }
                 if (exists) {
                     input.error = "Allocation name already exists"
+                    errorView.text = "Allocation name already exists"
+                    errorView.visibility = android.view.View.VISIBLE
                     return@setOnClickListener
                 }
 
@@ -385,10 +400,19 @@ class AllocatorActivity : ThemedActivity() {
             setHintTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             backgroundTintList = android.content.res.ColorStateList.valueOf(Color.CYAN)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(0, 0, 0, 50)
+                setMargins(0, 0, 0, 10)
             }
         }
         box.addView(input)
+
+        val errorView = TextView(this).apply {
+            setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
+            visibility = android.view.View.GONE
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                setMargins(10, 0, 0, 40)
+            }
+        }
+        box.addView(errorView)
 
         val buttonContainer = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -425,9 +449,12 @@ class AllocatorActivity : ThemedActivity() {
                 setMargins(15, 0, 0, 0)
             }
             setOnClickListener {
+                errorView.visibility = android.view.View.GONE
                 val newName = input.text.toString().trim().replace("|", "-")
                 if (newName.equals("Overall", ignoreCase = true)) {
                     input.error = "'Overall' is a reserved name"
+                    errorView.text = "'Overall' is a reserved name"
+                    errorView.visibility = android.view.View.VISIBLE
                     return@setOnClickListener
                 }
                 
@@ -436,6 +463,8 @@ class AllocatorActivity : ThemedActivity() {
                 val saved = prefs.getStringSet(KEY, emptySet()) ?: emptySet()
                 if (!newName.equals(name, ignoreCase = true) && saved.any { it.equals(newName, ignoreCase = true) }) {
                     input.error = "Allocation name already exists"
+                    errorView.text = "Allocation name already exists"
+                    errorView.visibility = android.view.View.VISIBLE
                     return@setOnClickListener
                 }
 
