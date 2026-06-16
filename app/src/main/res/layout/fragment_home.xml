@@ -39,7 +39,8 @@
             android:textSize="@dimen/text_title"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
         <TextView
             android:id="@+id/tvUsernameHome"
@@ -54,7 +55,7 @@
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toEndOf="@id/tvHello"
             app:layout_constraintEnd_toStartOf="@+id/tvComma"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintBaseline_toBaselineOf="@id/tvHello" />
 
         <TextView
             android:id="@+id/tvComma"
@@ -65,7 +66,7 @@
             android:textSize="@dimen/text_title"
             android:textStyle="bold"
             app:layout_constraintStart_toEndOf="@id/tvUsernameHome"
-            app:layout_constraintBottom_toBottomOf="@+id/tvUsernameHome" />
+            app:layout_constraintBaseline_toBaselineOf="@id/tvUsernameHome" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

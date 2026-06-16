@@ -8,56 +8,56 @@
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.5"
+        android:strokeWidth="1.5"
         android:strokeLineCap="round"
-        android:pathData="M 10 3 L 14 3" />
+        android:pathData="M 10.5 4 L 13.5 4" />
 
     <!-- Left Alarm Bell -->
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.5"
+        android:strokeWidth="1.5"
         android:strokeLineCap="round"
-        android:pathData="M 5.5 7.5 C 4 5 6 2.5 9 4.5" />
+        android:pathData="M 6.5 8 C 5.5 6 7 4 9.5 5.5" />
 
     <!-- Right Alarm Bell -->
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.5"
+        android:strokeWidth="1.5"
         android:strokeLineCap="round"
-        android:pathData="M 18.5 7.5 C 20 5 18 2.5 15 4.5" />
+        android:pathData="M 17.5 8 C 18.5 6 17 4 14.5 5.5" />
 
     <!-- Clock Body -->
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.5"
-        android:pathData="M 12 6 A 7.5 7.5 0 1 1 11.99 6" />
+        android:strokeWidth="1.5"
+        android:pathData="M 12 7 A 6.5 6.5 0 1 1 11.99 7" />
 
     <!-- Left Foot -->
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.5"
+        android:strokeWidth="1.5"
         android:strokeLineCap="round"
-        android:pathData="M 8 19.5 L 6.5 22" />
+        android:pathData="M 8.5 19 L 7.5 21" />
 
     <!-- Right Foot -->
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.5"
+        android:strokeWidth="1.5"
         android:strokeLineCap="round"
-        android:pathData="M 16 19.5 L 17.5 22" />
+        android:pathData="M 15.5 19 L 16.5 21" />
 
     <!-- Rupee Symbol Inside -->
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.0"
+        android:strokeWidth="1.5"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M 9.5 9.5 H 14.5 M 9.5 12 H 14.5 M 11.5 9.5 V 12 M 11.5 12 C 14 12 14 15 11.5 15 L 14 18" />
+        android:pathData="M 10 10 H 14 M 10 12 H 14 M 11.5 10 V 12 M 11.5 12 C 13.5 12 13.5 14.5 11.5 14.5 L 14 17" />
 
 </vector>
