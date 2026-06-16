@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/mainBackground"
+    android:fitsSystemWindows="true">
+
+    <!-- Header -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="4dp"
+        android:paddingStart="25dp"
+        android:paddingEnd="25dp"
+        android:layout_marginBottom="4dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/roundBackground"
+            android:padding="12dp"
+            android:src="@drawable/ic_back_arrow1"
+            app:tint="?attr/textPrimaryColor"
+            android:clickable="true"
+            android:focusable="true"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+        <TextView
+            android:id="@+id/tvAddTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="60dp"
+            android:text="Finminder Cashout"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold"
+            android:gravity="center"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@id/topBar"
+        app:layout_constraintBottom_toTopOf="@id/btnSave">
+        
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <!-- Title Field -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Title"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="@dimen/text_body"
+                android:layout_marginBottom="8dp"/>
+            
+            <EditText
+                android:id="@+id/etTitle"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:background="?attr/inputBackground"
+                android:hint="e.g. Milk, Cricket"
+                android:textColor="?attr/textPrimaryColor"
+                android:textColorHint="@color/text_dim"
+                android:padding="16dp"
+                android:singleLine="true"
+                android:inputType="textCapWords"
+                android:layout_marginBottom="20dp"/>
+
+            <!-- Quantity Data Field -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Quant. data"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="@dimen/text_body"
+                android:layout_marginBottom="8dp"/>
+            
+            <EditText
+                android:id="@+id/etQuantity"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:background="?attr/inputBackground"
+                android:hint="e.g. ₹100, 1kg, 2L"
+                android:textColor="?attr/textPrimaryColor"
+                android:textColorHint="@color/text_dim"
+                android:padding="16dp"
+                android:singleLine="true"
+                android:inputType="textCapSentences"
+                android:layout_marginBottom="20dp"/>
+
+            <!-- Expandable Frequency Dropdown -->
+            <LinearLayout
+                android:id="@+id/layoutFrequencyExpandable"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="?attr/inputBackground"
+                android:layout_marginBottom="20dp"
+                android:animateLayoutChanges="true">
+
+                <RelativeLayout
+                    android:id="@+id/btnFrequencyToggle"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:clickable="true"
+                    android:focusable="true">
+                    
+                    <TextView
+                        android:id="@+id/tvSelectedFrequency"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_alignParentStart="true"
+                        android:layout_marginStart="16dp"
+                        android:text="Select Frequency"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textSize="@dimen/text_body"/>
+                        
+                    <ImageView
+                        android:id="@+id/ivFrequencyArrow"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_arrow_drop_down"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginEnd="16dp"
+                        app:tint="@color/text_dim" />
+                </RelativeLayout>
+
+                <LinearLayout
+                    android:id="@+id/layoutFrequencyOptions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/btnFreqOneTime"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp"
+                        android:text="One time only"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textSize="@dimen/text_body"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground"/>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#1AFFFFFF" />
+                        
+                    <TextView
+                        android:id="@+id/btnFreqWeekly"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp"
+                        android:text="Repeat every week"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textSize="@dimen/text_body"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground"/>
+                        
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#1AFFFFFF" />
+                        
+                    <TextView
+                        android:id="@+id/btnFreqMonthly"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp"
+                        android:text="Repeat every month"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textSize="@dimen/text_body"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- One Time : Calendar View -->
+            <LinearLayout
+                android:id="@+id/layoutOneTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Select Date"
+                    android:textColor="?attr/textMutedColor"
+                    android:textSize="@dimen/text_body"
+                    android:layout_marginBottom="8dp"/>
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/rigorCalendarBackground"
+                    android:padding="10dp"
+                    android:layout_marginBottom="8dp">
+
+                    <CalendarView
+                        android:id="@+id/calendarView"
+                        android:theme="?attr/calendarTheme"
+                        android:layout_width="match_parent"
+                        android:layout_height="353dp"
+                        android:background="@null" />
+                </FrameLayout>
+                
+                <TextView
+                    android:id="@+id/tvNotificationHint"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/textMutedColor"
+                    android:textSize="@dimen/text_body"
+                    android:layout_marginBottom="20dp"
+                    android:visibility="gone"/>
+            </LinearLayout>                <!-- Remind Every Week: Day Picker -->
+                <LinearLayout
+                    android:id="@+id/layoutWeekly"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Remind every:"
+                        android:textColor="?attr/textMutedColor"
+                        android:textSize="@dimen/text_body"
+                        android:layout_marginBottom="8dp"/>
+                    <LinearLayout
+                        android:id="@+id/layoutDayExpandable"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="?attr/inputBackground"
+                        android:layout_marginBottom="20dp"
+                        android:animateLayoutChanges="true">
+        
+                        <RelativeLayout
+                            android:id="@+id/btnDayToggle"
+                            android:layout_width="match_parent"
+                            android:layout_height="60dp"
+                            android:clickable="true"
+                            android:focusable="true">
+                            
+                            <TextView
+                                android:id="@+id/tvSelectedDay"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_centerVertical="true"
+                                android:layout_alignParentStart="true"
+                                android:layout_marginStart="16dp"
+                                android:text="Monday"
+                                android:textColor="?attr/textPrimaryColor"
+                                android:textSize="@dimen/text_body"/>
+                                
+                            <ImageView
+                                android:id="@+id/ivDayArrow"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_arrow_drop_down"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true"
+                                android:layout_marginEnd="16dp"
+                                app:tint="@color/text_dim" />
+                        </RelativeLayout>
+        
+                        <LinearLayout
+                            android:id="@+id/layoutDayOptions"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:visibility="gone">
+        
+                            <TextView android:id="@+id/btnDayMonday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Monday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
+                            <TextView android:id="@+id/btnDayTuesday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Tuesday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
+                            <TextView android:id="@+id/btnDayWednesday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Wednesday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
+                            <TextView android:id="@+id/btnDayThursday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Thursday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
+                            <TextView android:id="@+id/btnDayFriday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Friday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
+                            <TextView android:id="@+id/btnDaySaturday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Saturday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
+                            <TextView android:id="@+id/btnDaySunday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Sunday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/tvNotificationHintWeekly"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="?attr/textMutedColor"
+                        android:textSize="@dimen/text_body"
+                        android:layout_marginBottom="20dp"
+                        android:visibility="gone"/>
+                </LinearLayout>
+
+                <!-- Remind Every Month: Date Picker (Number) -->
+                <LinearLayout
+                    android:id="@+id/layoutMonthly"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Select Date of Month"
+                        android:textColor="?attr/textMutedColor"
+                        android:textSize="@dimen/text_body"
+                        android:layout_marginBottom="8dp"/>
+                    
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:background="?attr/inputBackground"
+                        android:layout_marginBottom="20dp">
+                        <EditText
+                            android:id="@+id/etDateOfMonth"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@null"
+                            android:hint="e.g. 15"
+                            android:inputType="number"
+                            android:maxLength="2"
+                            android:textColor="?attr/textPrimaryColor"
+                            android:textColorHint="@color/text_dim"
+                            android:padding="16dp"
+                            android:singleLine="true"/>
+                    </RelativeLayout>
+                    <TextView
+                        android:id="@+id/tvNotificationHintMonthly"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="?attr/textMutedColor"
+                        android:textSize="@dimen/text_body"
+                        android:layout_marginBottom="20dp"
+                        android:visibility="gone"/>
+                </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Save Button -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnSave"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_margin="20dp"
+        android:background="?attr/cardBackground"
+        android:backgroundTint="@null"
+        android:elevation="0dp"
+        android:stateListAnimator="@null"
+        android:text="Save"
+        android:textAllCaps="false"
+        android:textColor="?attr/textPrimaryColor"
+        android:textSize="@dimen/text_subhead"
+        android:textStyle="bold"
+        android:alpha="0.5"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -88,6 +88,10 @@ class HomeFragment : Fragment() {
             }
         }
 
+        view.findViewById<ImageView>(R.id.btnSmartAssistant)?.setOnClickListener {
+            startActivity(Intent(requireContext(), FinminderActivity::class.java))
+        }
+
 
 
         view.findViewById<ImageView>(R.id.btnTaptrack)?.setOnClickListener {
@@ -178,6 +182,7 @@ class HomeFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        checkPendingTransactions()
         refreshUI()
 
         // Show setup dialog quickly after transition (800ms)
@@ -278,7 +283,7 @@ class HomeFragment : Fragment() {
         val prefs = requireContext().getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
         val name = prefs.getString(KEY_NAME, "User") ?: "User"
         if (name != lastLoadedName) {
-            view.findViewById<TextView>(R.id.tvUsernameHome)?.text = name
+            view.findViewById<TextView>(R.id.tvUsernameHome)?.text = "Hello $name,"
             lastLoadedName = name
         }
     }
@@ -447,6 +452,12 @@ class HomeFragment : Fragment() {
         val spacer = View(context).apply { layoutParams = LinearLayout.LayoutParams(1, (16 * density).toInt()) }
         box.addView(spacer)
 
+        val remindLaterContainer = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            layoutTransition = android.animation.LayoutTransition()
+        }
+
         val btnRemindLater = Button(context).apply {
             text = "Remind Me Later"
             isAllCaps = false
@@ -454,25 +465,97 @@ class HomeFragment : Fragment() {
             background = androidx.core.content.ContextCompat.getDrawable(context, ThemeHelper.getDrawable(context, R.drawable.bg_3d_card))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt())
         }
-        box.addView(btnRemindLater)
+        remindLaterContainer.addView(btnRemindLater)
 
-        val dialog = AlertDialog.Builder(context)
+        val optionsContainer = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = View.GONE
+            val marginParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            marginParams.topMargin = (8 * density).toInt()
+            layoutParams = marginParams
+            
+            val tvTypedValue = android.util.TypedValue()
+            context.theme.resolveAttribute(R.attr.inputBackground, tvTypedValue, true)
+            if (tvTypedValue.resourceId != 0) {
+                setBackgroundResource(tvTypedValue.resourceId)
+            } else if (tvTypedValue.type >= android.util.TypedValue.TYPE_FIRST_COLOR_INT && tvTypedValue.type <= android.util.TypedValue.TYPE_LAST_COLOR_INT) {
+                setBackgroundColor(tvTypedValue.data)
+            }
+        }
+
+        var dialog: AlertDialog? = null
+        val items = listOf("30 minutes", "1 hour", "3 hours", "Custom")
+
+        items.forEachIndexed { index, itemText ->
+            if (index > 0) {
+                val divider = View(context).apply {
+                    layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1)
+                    setBackgroundColor(android.graphics.Color.parseColor("#1AFFFFFF"))
+                }
+                optionsContainer.addView(divider)
+            }
+            
+            val optionView = TextView(context).apply {
+                text = itemText
+                setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_body))
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding((16 * density).toInt(), 0, (16 * density).toInt(), 0)
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (50 * density).toInt())
+                
+                val typedValue = android.util.TypedValue()
+                context.theme.resolveAttribute(android.R.attr.selectableItemBackground, typedValue, true)
+                setBackgroundResource(typedValue.resourceId)
+                
+                isClickable = true
+                isFocusable = true
+            }
+            optionsContainer.addView(optionView)
+            
+            optionView.setOnClickListener {
+                optionsContainer.visibility = View.GONE
+                val durationMs = when (index) {
+                    0 -> 30L * 60 * 1000
+                    1 -> 60L * 60 * 1000
+                    2 -> 3L * 60 * 60 * 1000
+                    3 -> {
+                        dialog?.let { d -> showCustomDatePicker(d) }
+                        return@setOnClickListener
+                    }
+                    else -> 0L
+                }
+
+                if (durationMs > 0L) {
+                    val newPostponeUntil = System.currentTimeMillis() + durationMs
+                    savePostponeTime(newPostponeUntil)
+                    dialog?.dismiss()
+                    val minutes = durationMs / (60 * 1000)
+                    ToastHelper.showCustomToast(context, "Rescheduled. Reminding in ${if (minutes >= 60) "${minutes / 60} hour(s)" else "$minutes minutes"}", 1200L)
+                    refreshUI()
+                }
+            }
+        }
+        
+        remindLaterContainer.addView(optionsContainer)
+        box.addView(remindLaterContainer)
+
+        dialog = AlertDialog.Builder(context)
             .setView(box)
             .setCancelable(false)
             .create()
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog?.window?.setBackgroundDrawableResource(android.R.color.transparent)
         activeResetDialog = dialog
 
         btnReset.setOnClickListener {
-            dialog.dismiss()
+            dialog?.dismiss()
             performCycleReset(nextDate, freq)
         }
 
-        btnRemindLater.setOnClickListener { btnView ->
-            showPostponeDropdown(btnView, dialog)
+        btnRemindLater.setOnClickListener {
+            optionsContainer.visibility = if (optionsContainer.visibility == View.VISIBLE) View.GONE else View.VISIBLE
         }
 
-        dialog.show()
+        dialog?.show()
     }
 
     private fun showPostponeDropdown(anchorView: View, parentDialog: AlertDialog) {
@@ -744,5 +827,129 @@ class HomeFragment : Fragment() {
             appOps.checkOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), requireContext().packageName)
         }
         return mode == android.app.AppOpsManager.MODE_ALLOWED
+    }
+
+    private fun checkPendingTransactions() {
+        val prefs = requireContext().getSharedPreferences("PendingTransactionPrefs", android.content.Context.MODE_PRIVATE)
+        if (prefs.getBoolean("has_pending", false)) {
+            androidx.core.app.NotificationManagerCompat.from(requireContext()).cancel(999)
+            androidx.work.WorkManager.getInstance(requireContext()).cancelUniqueWork("RecoveryNotification")
+
+            val amountStr = prefs.getString("pending_amount", "0") ?: "0"
+            val amount = amountStr.toDoubleOrNull()?.toInt() ?: 0
+            val category = prefs.getString("pending_category", "no choice") ?: "no choice"
+            val title = prefs.getString("pending_title", "") ?: ""
+            
+            val density = resources.displayMetrics.density
+            val box = android.widget.LinearLayout(requireContext()).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                val p = (28 * density).toInt()
+                setPadding(p, p, p, (24 * density).toInt())
+                setBackgroundResource(ThemeHelper.getDrawable(requireContext(), R.drawable.bg_transaction))
+            }
+
+            val titleView = android.widget.TextView(requireContext()).apply {
+                text = "Payment Interrupted?"
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_subhead))
+                setTextColor(ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                gravity = android.view.Gravity.CENTER
+                setPadding(0, 0, 0, (16 * density).toInt())
+            }
+            box.addView(titleView)
+
+            val introView = android.widget.TextView(requireContext()).apply {
+                text = "Please confirm the final status of the transaction mentioned below:"
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_body))
+                setTextColor(ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
+                gravity = android.view.Gravity.CENTER
+                setPadding(0, 0, 0, (16 * density).toInt())
+                setLineSpacing(8f, 1f)
+            }
+            box.addView(introView)
+
+            val detailsBox = android.widget.LinearLayout(requireContext()).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                gravity = android.view.Gravity.CENTER
+                setPadding(0, 0, 0, (32 * density).toInt())
+            }
+
+            val amountView = android.widget.TextView(requireContext()).apply {
+                val formattedTitle = title.replace("(?i)^To:\\s*".toRegex(), "").split(" ").joinToString(" ") { word -> word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() } }
+                text = "₹$amount ➔ $formattedTitle"
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_subhead))
+                setTextColor(ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                gravity = android.view.Gravity.CENTER
+                setPadding(0, 0, 0, (4 * density).toInt())
+            }
+            detailsBox.addView(amountView)
+
+            val categoryView = android.widget.TextView(requireContext()).apply {
+                text = "Allocation: $category"
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_body))
+                setTextColor(ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
+                gravity = android.view.Gravity.CENTER
+            }
+            detailsBox.addView(categoryView)
+            box.addView(detailsBox)
+
+            val buttonContainer = android.widget.LinearLayout(requireContext()).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                clipChildren = false
+                clipToPadding = false
+            }
+
+            val dialog = androidx.appcompat.app.AlertDialog.Builder(requireContext()).setView(box).setCancelable(false).create()
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+            val btnNo = android.widget.Button(requireContext()).apply {
+                text = "Payment Failed"
+                isAllCaps = false
+                setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                val tv = android.util.TypedValue(); context.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+                background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+                stateListAnimator = null
+                elevation = 0f
+                layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(0, 0, 15, 0) }
+                minHeight = 150
+                setPadding(30, 30, 30, 30)
+                setOnClickListener {
+                    prefs.edit().clear().apply()
+                    androidx.core.app.NotificationManagerCompat.from(requireContext()).cancel(999)
+                    dialog.dismiss()
+                }
+            }
+
+            val btnYes = android.widget.Button(requireContext()).apply {
+                text = "Payment Success"
+                isAllCaps = false
+                setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                val tv = android.util.TypedValue(); context.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+                background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+                stateListAnimator = null
+                elevation = 0f
+                layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(15, 0, 0, 0) }
+                minHeight = 150
+                setPadding(30, 30, 30, 30)
+                setOnClickListener {
+                    if (amount > 0) {
+                        HistoryDataManager.saveTransaction(requireContext(), title, amount.toFloat(), category, System.currentTimeMillis())
+                        FirestoreSyncManager.pushAllDataToCloud(requireContext())
+                        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(requireContext()).sendBroadcast(android.content.Intent(FirestoreSyncManager.ACTION_SYNC_UPDATE))
+                    }
+                    prefs.edit().clear().apply()
+                    androidx.core.app.NotificationManagerCompat.from(requireContext()).cancel(999)
+                    dialog.dismiss()
+                    refreshUI()
+                }
+            }
+
+            buttonContainer.addView(btnNo)
+            buttonContainer.addView(btnYes)
+            box.addView(buttonContainer)
+
+            dialog.show()
+        }
     }
 }
