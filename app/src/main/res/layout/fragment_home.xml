@@ -19,16 +19,17 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
     <!-- Greeting -->
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layoutHomeGreeting"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:layout_marginStart="14dp"
-        android:gravity="center_vertical"
+        android:layout_marginEnd="16dp"
         app:layout_constraintStart_toEndOf="@id/btnMenu"
+        app:layout_constraintEnd_toStartOf="@+id/btnTaptrack"
         app:layout_constraintTop_toTopOf="@id/btnMenu"
         app:layout_constraintBottom_toBottomOf="@id/btnMenu">
+
         <TextView
             android:id="@+id/tvHello"
             android:layout_width="wrap_content"
@@ -36,7 +37,11 @@
             android:text="Hello "
             android:textColor="?attr/textPrimaryColor"
             android:textSize="@dimen/text_title"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
         <TextView
             android:id="@+id/tvUsernameHome"
             android:layout_width="wrap_content"
@@ -45,15 +50,27 @@
             android:textColor="?attr/textPrimaryColor"
             android:textSize="@dimen/text_title"
             android:textStyle="bold"
-            android:transitionName="greeting_text_transition" />
+            android:transitionName="greeting_text_transition"
+            app:layout_constrainedWidth="true"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toEndOf="@id/tvHello"
+            app:layout_constraintEnd_toStartOf="@+id/tvComma"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
         <TextView
+            android:id="@+id/tvComma"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text=","
             android:textColor="?attr/textPrimaryColor"
             android:textSize="@dimen/text_title"
-            android:textStyle="bold" />
-    </LinearLayout>
+            android:textStyle="bold"
+            app:layout_constraintStart_toEndOf="@id/tvUsernameHome"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
     <!-- Taptrack button -->
     <ImageView
         android:id="@+id/btnTaptrack"
@@ -77,6 +94,9 @@
         android:padding="0dp"
         android:layout_marginEnd="16dp"
         android:src="@drawable/ic_finminder"
+        android:scaleX="2.2"
+        android:scaleY="2.2"
+        app:tint="?attr/textPrimaryColor"
         android:scaleType="fitCenter"
         android:clickable="true"
         android:focusable="true"
