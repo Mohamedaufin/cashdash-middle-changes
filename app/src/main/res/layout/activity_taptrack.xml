@@ -69,7 +69,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="• Automatically detects when you open shopping apps."
+                    android:text="• TapTrack is your digital pet dog which detects and follows you whenever you open the supported apps listed below."
                     android:textColor="@color/text_secondary"
                     android:textSize="@dimen/text_body"
                     android:layout_marginBottom="10dp"/>
@@ -77,7 +77,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="• Provides a floating bubble to instantly check your wallet balance and remaining limits before you spend."
+                    android:text="• It automatically detects when a Shopping app is opened and pops up as a floating bubble from where you can directly record your expense."
                     android:textColor="@color/text_secondary"
                     android:textSize="@dimen/text_body"
                     android:layout_marginBottom="10dp"/>

@@ -13,6 +13,7 @@
     <!-- Foreground Service permissions -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <!-- Overlay permission for Smart Shopping Assistant -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
@@ -26,7 +27,6 @@
     <!-- 🔍 Declare UPI apps (queries section) -->
     <queries>
         <package android:name="com.dreamplug.androidapp" /> <!-- CRED -->
-        <package android:name="com.google.android.apps.nbu.paisa.user" /> <!-- GPay -->
     </queries>
 
     <application
@@ -80,6 +80,11 @@
         </activity>
 
         <activity
+            android:name=".AgeSpecificPushActivity"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
+        <activity
             android:name=".EntryActivity"
             android:screenOrientation="portrait"
             android:exported="false" />
@@ -114,6 +119,7 @@
         <activity 
             android:name=".NotificationActivity" 
             android:exported="true"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -156,12 +162,19 @@
             android:exported="false" />
 
         <receiver
-            android:name=".WalletWidget"
-            android:label="CashDash Wallet"
+            android:name=".WalletWidgetPinReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <receiver
+            android:name=".Finminder"
+            android:label="Finminder"
+            android:icon="@drawable/ic_finminder_preview"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.cash.dash.ACTION_TOGGLE_VISIBILITY" />
+                <action android:name="com.cash.dash.ACTION_NEXT" />
+                <action android:name="com.cash.dash.ACTION_PREV" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
@@ -211,6 +224,19 @@
         <!-- Task Monitor Service to handle swipe-to-close presence tracking -->
         <service
             android:name=".TaskMonitorService"
+            android:exported="false" />
+
+        <receiver
+            android:name=".PaymentRecoveryReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.cash.dash.PAYMENT_YES" />
+                <action android:name="com.cash.dash.PAYMENT_NO" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".PaymentRecoveryAlarmReceiver"
             android:exported="false" />
 
     </application>

@@ -12,6 +12,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import android.os.CountDownTimer
+import android.graphics.Color
+import com.google.android.material.bottomsheet.BottomSheetDialog
 
 class FinminderActivity : ThemedActivity() {
 
@@ -25,18 +27,25 @@ class FinminderActivity : ThemedActivity() {
         setContentView(R.layout.activity_finminder)
 
         val btnBack = findViewById<View>(R.id.btnBack)
+        val btnMore = findViewById<android.widget.ImageButton>(R.id.btnMore)
         val toggleMode = findViewById<com.google.android.material.button.MaterialButtonToggleGroup>(R.id.toggleMode)
         val btnAdd = findViewById<Button>(R.id.btnAdd)
         rvFinminder = findViewById(R.id.rvFinminder)
         headerRow = findViewById(R.id.headerRow)
 
         btnBack.setOnClickListener { finish() }
+        
+        btnMore.setOnClickListener {
+            createShortcut()
+        }
 
         adapter = FinminderAdapter { item ->
             deleteWithUndo(item)
         }
         rvFinminder.layoutManager = LinearLayoutManager(this)
         rvFinminder.adapter = adapter
+
+        val tvInstruction = findViewById<TextView>(R.id.tvInstruction)
 
         toggleMode.addOnButtonCheckedListener { group, checkedId, isChecked ->
             if (isChecked) {
@@ -95,11 +104,21 @@ class FinminderActivity : ThemedActivity() {
         }
 
         headerRow.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
+        
+        val tvInstruction = findViewById<TextView>(R.id.tvInstruction)
+        if (filtered.isEmpty()) {
+            tvInstruction.visibility = View.GONE
+        } else {
+            tvInstruction.visibility = View.VISIBLE
+            tvInstruction.text = "Press and hold on any transaction to edit."
+        }
+        
         adapter.submitList(filtered)
     }
 
     private fun deleteWithUndo(item: FinminderItem) {
         FinminderRepository.deleteItem(this, item.id)
+        FirestoreSyncManager.pushAllDataToCloud(this)
         loadData() // Refresh list
 
         val snackbar = Snackbar.make(rvFinminder, "Tap here to undo this cashout", Snackbar.LENGTH_INDEFINITE)
@@ -111,6 +130,7 @@ class FinminderActivity : ThemedActivity() {
         
         snackbar.setAction("UNDO (7)") {
             FinminderRepository.saveItem(this, item)
+            FirestoreSyncManager.pushAllDataToCloud(this)
             loadData()
             snackbar.dismiss()
         }
@@ -139,6 +159,74 @@ class FinminderActivity : ThemedActivity() {
 
         snackbar.show()
     }
+
+    private fun createShortcut() {
+        val isXiaomi = "xiaomi".equals(android.os.Build.MANUFACTURER, ignoreCase = true) || 
+            "poco".equals(android.os.Build.MANUFACTURER, ignoreCase = true) || 
+            "redmi".equals(android.os.Build.MANUFACTURER, ignoreCase = true)
+
+        if (isXiaomi && !isMiuiBackgroundStartActivityAllowed(this)) {
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Xiaomi/POCO Device Detected")
+                .setMessage("To ensure the Finminder Widget and background popups work perfectly, please enable 'Display pop-up windows while running in the background' in App Permissions.")
+                .setPositiveButton("Go to Settings") { _, _ ->
+                    try {
+                        val intent = android.content.Intent("miui.intent.action.APP_PERM_EDITOR")
+                        intent.setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity")
+                        intent.putExtra("extra_pkgname", packageName)
+                        startActivity(intent)
+                    } catch (e: Exception) {
+                        val intent = android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        intent.data = android.net.Uri.parse("package:$packageName")
+                        startActivity(intent)
+                    }
+                    triggerPinWidget()
+                }
+                .setNegativeButton("Later", null)
+                .show()
+        } else {
+            triggerPinWidget()
+        }
+    }
+
+    private fun isMiuiBackgroundStartActivityAllowed(context: android.content.Context): Boolean {
+        return try {
+            val ops = context.getSystemService(android.content.Context.APP_OPS_SERVICE) as android.app.AppOpsManager
+            val method = ops.javaClass.getMethod(
+                "checkOpNoThrow",
+                Int::class.javaPrimitiveType,
+                Int::class.javaPrimitiveType,
+                String::class.java
+            )
+            val mode = method.invoke(ops, 10021, android.os.Process.myUid(), context.packageName) as Int
+            mode == android.app.AppOpsManager.MODE_ALLOWED
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private fun triggerPinWidget() {
+        val appWidgetManager = getSystemService(android.appwidget.AppWidgetManager::class.java)
+        val myProvider = android.content.ComponentName(this, Finminder::class.java)
+
+        if (appWidgetManager.isRequestPinAppWidgetSupported) {
+            val intent = android.content.Intent(this, WalletWidgetPinReceiver::class.java)
+            val successCallback = android.app.PendingIntent.getBroadcast(
+                this, 0, intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_MUTABLE
+            )
+            val bundle = android.os.Bundle()
+            val preview = android.widget.RemoteViews(packageName, R.layout.layout_finminder_pin_preview)
+            bundle.putParcelable(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_PREVIEW, preview)
+            
+            val success = appWidgetManager.requestPinAppWidget(myProvider, bundle, successCallback)
+            if (!success) {
+                ToastHelper.showToast(this, "Your launcher doesn't support adding widgets from here")
+            }
+        } else {
+            ToastHelper.showToast(this, "Widget pinning not supported by your launcher")
+        }
+    }
 }
 
 class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : RecyclerView.Adapter<FinminderAdapter.ViewHolder>() {
@@ -154,8 +242,10 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
         val tvTitle: TextView = view.findViewById(R.id.tvTitle)
         val tvQuantData: TextView = view.findViewById(R.id.tvQuantData)
         val tvDateInfo: TextView = view.findViewById(R.id.tvDateInfo)
-        val cbFinminder: CheckBox = view.findViewById(R.id.cbFinminder)
-        val ivRepeatIcon: android.widget.ImageView = view.findViewById(R.id.ivRepeatIcon)
+        val tvFrequencyInfo: TextView = view.findViewById(R.id.tvFrequencyInfo)
+        val layoutExtendedInfo: android.widget.LinearLayout = view.findViewById(R.id.layoutExtendedInfo)
+        val tvExtendedInfo1: TextView = view.findViewById(R.id.tvExtendedInfo1)
+        val tvExtendedInfo2: TextView = view.findViewById(R.id.tvExtendedInfo2)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -168,6 +258,16 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
         holder.tvTitle.text = item.title
         holder.tvQuantData.text = item.quantity
         
+        val freqText = when (item.frequency) {
+            "Weekly" -> "(weekly)"
+            "Monthly" -> "(monthly)"
+            else -> "(one time)"
+        }
+        holder.tvFrequencyInfo.text = freqText
+        
+        val typeText = if (item.type == "CASH_OUT") "cash-out" else "cash-in"
+        holder.layoutExtendedInfo.visibility = if (item.frequency == "One time") View.GONE else View.VISIBLE
+
         val displayDate = if (item.frequency == "Weekly") {
             try {
                 val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
@@ -191,11 +291,21 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
                         daysToAdd += 7
                     }
                     today.add(java.util.Calendar.DATE, daysToAdd)
-                    sdf.format(today.time)
+                    val date1 = sdf.format(today.time)
+                    today.add(java.util.Calendar.DATE, 7)
+                    val date2 = sdf.format(today.time)
+                    
+                    holder.tvExtendedInfo1.text = "• Weekly $typeText set on every ${item.dateInfo}"
+                    holder.tvExtendedInfo2.text = "• Next target dates are $date1 and $date2"
+                    date1
                 } else {
+                    holder.layoutExtendedInfo.visibility = View.GONE
                     item.dateInfo
                 }
-            } catch (e: Exception) { item.dateInfo }
+            } catch (e: Exception) { 
+                holder.layoutExtendedInfo.visibility = View.GONE
+                item.dateInfo 
+            }
         } else if (item.frequency == "Monthly") {
             try {
                 val targetDay = item.dateInfo.toInt()
@@ -210,9 +320,25 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
                 today.set(java.util.Calendar.DAY_OF_MONTH, dayToSet)
                 
                 val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
-                sdf.format(today.time)
-            } catch (e: Exception) { item.dateInfo }
+                val date1 = sdf.format(today.time)
+                
+                today.add(java.util.Calendar.MONTH, 1)
+                val maxDaysNext = today.getActualMaximum(java.util.Calendar.DAY_OF_MONTH)
+                val dayToSetNext = if (targetDay > maxDaysNext) maxDaysNext else targetDay
+                today.set(java.util.Calendar.DAY_OF_MONTH, dayToSetNext)
+                val date2 = sdf.format(today.time)
+                
+                val suffix = if (targetDay in 11..13) "th" else when (targetDay % 10) { 1 -> "st"; 2 -> "nd"; 3 -> "rd"; else -> "th" }
+                holder.tvExtendedInfo1.text = "• Monthly $typeText set on the $targetDay$suffix of every month"
+                holder.tvExtendedInfo2.text = "• Next target dates are $date1 and $date2"
+                
+                date1
+            } catch (e: Exception) { 
+                holder.layoutExtendedInfo.visibility = View.GONE
+                item.dateInfo 
+            }
         } else {
+            holder.layoutExtendedInfo.visibility = View.GONE
             item.dateInfo
         }
 
@@ -234,10 +360,12 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
             } catch (e: Exception) {}
         }
         
+        val density = holder.itemView.context.resources.displayMetrics.density
+
+
         if (isOverdue) {
-            val typedValue = android.util.TypedValue()
-            holder.itemView.context.theme.resolveAttribute(R.attr.transactionBackground, typedValue, true)
-            holder.itemView.setBackgroundResource(R.drawable.bg_transaction_red)
+            // Use the exact same glass-red drawable as the Skip Allocation button in Scanner.
+            holder.itemView.setBackgroundResource(R.drawable.bg_glass_3d_red)
             holder.itemView.backgroundTintList = null
         } else {
             val typedValue = android.util.TypedValue()
@@ -245,24 +373,92 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
             holder.itemView.setBackgroundResource(typedValue.resourceId)
             holder.itemView.backgroundTintList = null
         }
+        holder.itemView.foreground = null
+        // Restore XML-defined padding — setBackgroundResource can overwrite it.
+        val p = (16 * density).toInt()
+        holder.itemView.setPadding(p, p, p, p)
         
-        holder.cbFinminder.setOnCheckedChangeListener(null)
-        holder.cbFinminder.isChecked = item.isChecked
-        
-        if (item.frequency == "One time") {
-            holder.cbFinminder.visibility = View.VISIBLE
-            holder.ivRepeatIcon.visibility = View.GONE
-        } else {
-            holder.cbFinminder.visibility = View.GONE
-            holder.ivRepeatIcon.visibility = View.VISIBLE
+        holder.itemView.setOnLongClickListener {
+            showOptionsBottomSheet(holder.itemView.context, item)
+            true
+        }
+    }
+
+    private fun showOptionsBottomSheet(context: android.content.Context, item: FinminderItem) {
+        val bottomSheet = com.google.android.material.bottomsheet.BottomSheetDialog(context, R.style.BottomSheetDialogTheme)
+        val density = context.resources.displayMetrics.density
+        val container = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            val p = (24 * density).toInt()
+            setPadding(p, p, p, (32 * density).toInt())
+            setBackgroundResource(com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
         }
 
-        val clickListener = View.OnClickListener {
-            onDelete(item)
+        val title = TextView(context).apply {
+            text = item.title
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, context.resources.getDimension(R.dimen.text_subhead))
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(0, 0, 0, (24 * density).toInt())
+            gravity = android.view.Gravity.CENTER
         }
-        holder.cbFinminder.setOnClickListener(clickListener)
-        holder.ivRepeatIcon.setOnClickListener(clickListener)
+        container.addView(title)
+
+        // EDIT OPTION
+        val btnEdit = android.widget.Button(context).apply {
+            val modeText = if (item.type == "CASH_OUT") "cash-out" else "cash-in"
+            text = "Edit $modeText"
+            isAllCaps = false
+            setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+            val tv = android.util.TypedValue()
+            context.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = android.widget.LinearLayout.LayoutParams(android.widget.LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt()).apply {
+                setMargins(0, 0, 0, (12 * density).toInt())
+            }
+            setOnClickListener {
+                bottomSheet.dismiss()
+                val intent = android.content.Intent(context, AddFinminderActivity::class.java)
+                intent.putExtra("TAB", item.type)
+                intent.putExtra("ITEM_ID", item.id)
+                context.startActivity(intent)
+            }
+        }
+        container.addView(btnEdit)
+
+        // COMPLETE / DELETE OPTION
+        val btnAction = android.widget.Button(context).apply {
+            isAllCaps = false
+            val tv = android.util.TypedValue()
+            context.theme.resolveAttribute(R.attr.cardBackground, tv, true)
+            background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+            stateListAnimator = null
+            elevation = 0f
+            layoutParams = android.widget.LinearLayout.LayoutParams(android.widget.LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt()).apply {
+                setMargins(0, 0, 0, (12 * density).toInt())
+            }
+            
+            if (item.frequency == "One time") {
+                text = "Mark task as completed"
+                setTextColor(android.graphics.Color.parseColor("#4CAF50"))
+            } else {
+                val modeText = if (item.type == "CASH_OUT") "cash-out" else "cash-in"
+                text = "Delete $modeText"
+                setTextColor(android.graphics.Color.parseColor("#FF4D4D")) // Red color for delete
+            }
+            
+            setOnClickListener {
+                bottomSheet.dismiss()
+                onDelete(item)
+            }
+        }
+        container.addView(btnAction)
+        bottomSheet.setContentView(container)
+        bottomSheet.show()
     }
+
 
     override fun getItemCount() = items.size
 }

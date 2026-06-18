@@ -63,7 +63,7 @@ class HistoryFragment : Fragment() {
         fetchCategories()
         setupCategoryDropdown(btnOverall, graph)
 
-        btnDate.text = "${getTodayDate()} ▼"
+        btnDate.text = getTodayDate()
 
         loadGraphValues(graph)
         setupModeDropdown(btnDaily, graph, title, btnDate)
@@ -114,12 +114,6 @@ class HistoryFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
-        TutorialManager.showTutorialIfNeeded(
-            requireActivity(),
-            "tut_history",
-            "History",
-            "View all your recorded transactions\n\nGeneral tutorial for this page:\n\n1. Use the search bar to find specific expenses quickly\n2. Tap daily button to switch over weekly/monthly graphs\n3. Tap overall to change allocation and view specific category's expense\n\n*(Note: You can revisit these instructions anytime in the 'Help' section! Tap the Menu icon located next to 'Hello' on your Home dashboard to find it.)*"
-        )
 
         forcedHighlightDay = -1
         fetchCategories()
@@ -129,7 +123,7 @@ class HistoryFragment : Fragment() {
 
         if (currentCategoryFilter == "no choice" && !categoriesList.contains("no choice")) {
             currentCategoryFilter = "Overall"
-            view?.findViewById<Button>(R.id.btnOverall)?.text = "Overall ▼"
+            view?.findViewById<Button>(R.id.btnOverall)?.text = "Overall"
         }
     }
 
@@ -155,7 +149,7 @@ class HistoryFragment : Fragment() {
             fetchCategories()
             DropdownHelper.showBlinkingDropdown(requireContext(), btn, categoriesList, 200, null, android.view.Gravity.END) { index, cat ->
                 currentCategoryFilter = cat
-                btn.text = if (currentCategoryFilter == "no choice") "Overall ▼" else "$currentCategoryFilter ▼"
+                btn.text = if (currentCategoryFilter == "no choice") "Overall" else currentCategoryFilter
                 loadGraphValues(graph)
                 animateGraph(graph)
             }
@@ -168,7 +162,7 @@ class HistoryFragment : Fragment() {
                 currentMode = "DAILY"
                 selectedWeek = index
                 title.text = "Daily Spending"
-                btnDaily.text = "Daily ▼"
+                btnDaily.text = "Daily"
                 view?.findViewById<TextView>(R.id.tvGraphHint)?.text = "Click on any graph to view daily breakdown"
                 loadDailyForSelectedWeek(graph)
                 updateDailyLabels(graph)
@@ -180,7 +174,7 @@ class HistoryFragment : Fragment() {
                 val currentWeekIndex = realC.get(Calendar.WEEK_OF_MONTH) - 1
 
                 if (selectedYear == realC.get(Calendar.YEAR) && selectedMonth == realC.get(Calendar.MONTH) && selectedWeek == currentWeekIndex) {
-                    btnDate.text = "${getTodayDate()} ▼"
+                    btnDate.text = getTodayDate()
                 } else {
                     val cal = Calendar.getInstance().apply {
                         firstDayOfWeek = Calendar.MONDAY
@@ -193,7 +187,7 @@ class HistoryFragment : Fragment() {
                             set(Calendar.DAY_OF_MONTH, 1)
                         }
                     }
-                    btnDate.text = "${SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(cal.time)} ▼"
+                    btnDate.text = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(cal.time)
                 }
                 graph.setDayMode()
                 animateGraph(graph)
@@ -212,10 +206,10 @@ class HistoryFragment : Fragment() {
                 }
                 loadGraphValues(graph)
                 title.text = "Weekly Spending"
-                btnDaily.text = "Weekly ▼"
+                btnDaily.text = "Weekly"
                 view?.findViewById<TextView>(R.id.tvGraphHint)?.text = "Click on any week graph to view daily graph"
                 val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }
-                btnDate.text = "${SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)} ▼"
+                btnDate.text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
                 graph.setWeekMode()
                 animateGraph(graph)
             }
@@ -345,31 +339,31 @@ class HistoryFragment : Fragment() {
         when (mode) {
             "DAILY" -> {
                 title.text = "Daily Spending"
-                btnDaily.text = "Daily ▼"
+                btnDaily.text = "Daily"
                 view?.findViewById<TextView>(R.id.tvGraphHint)?.text = "Click on any graph to view daily breakdown"
                 loadDailyForSelectedWeek(graph)
                 updateDailyLabels(graph)
                 val realC = Calendar.getInstance()
-                btnDate.text = "${if (selectedYear == realC.get(Calendar.YEAR) && selectedMonth == realC.get(Calendar.MONTH)) getTodayDate() else SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }.time)} ▼"
+                btnDate.text = if (selectedYear == realC.get(Calendar.YEAR) && selectedMonth == realC.get(Calendar.MONTH)) getTodayDate() else SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }.time)
                 graph.setDayMode()
             }
             "WEEKLY" -> {
                 title.text = "Weekly Spending"
-                btnDaily.text = "Weekly ▼"
+                btnDaily.text = "Weekly"
                 view?.findViewById<TextView>(R.id.tvGraphHint)?.text = "Click on any week graph to view daily graph"
                 val realC = Calendar.getInstance().apply { firstDayOfWeek = Calendar.MONDAY; minimalDaysInFirstWeek = 1 }
                 if (selectedYear == realC.get(Calendar.YEAR) && selectedMonth == realC.get(Calendar.MONTH)) selectedWeek = realC.get(Calendar.WEEK_OF_MONTH) - 1
                 val cal = Calendar.getInstance().apply { set(selectedYear, selectedMonth, 1) }
-                btnDate.text = "${SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)} ▼"
+                btnDate.text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
                 graph.setWeekMode()
             }
             "MONTHLY" -> {
                 title.text = "Monthly Spending"
-                btnDaily.text = "Monthly ▼"
+                btnDaily.text = "Monthly"
                 view?.findViewById<TextView>(R.id.tvGraphHint)?.text = "Click on any month graph to view weekly graph"
                 updateMonthlyLabels(graph)
                 graph.setMonthMode()
-                btnDate.text = "${selectedYear} ▼"
+                btnDate.text = selectedYear.toString()
             }
         }
         animateGraph(graph)

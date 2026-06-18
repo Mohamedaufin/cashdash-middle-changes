@@ -60,7 +60,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:padding="20dp"
+            android:animateLayoutChanges="true">
 
             <!-- Title Field -->
             <TextView
@@ -302,11 +303,17 @@
                             android:visibility="gone">
         
                             <TextView android:id="@+id/btnDayMonday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Monday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
+                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1AFFFFFF" />
                             <TextView android:id="@+id/btnDayTuesday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Tuesday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
+                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1AFFFFFF" />
                             <TextView android:id="@+id/btnDayWednesday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Wednesday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
+                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1AFFFFFF" />
                             <TextView android:id="@+id/btnDayThursday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Thursday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
+                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1AFFFFFF" />
                             <TextView android:id="@+id/btnDayFriday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Friday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
+                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1AFFFFFF" />
                             <TextView android:id="@+id/btnDaySaturday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Saturday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
+                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1AFFFFFF" />
                             <TextView android:id="@+id/btnDaySunday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Sunday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
                         </LinearLayout>
                     </LinearLayout>

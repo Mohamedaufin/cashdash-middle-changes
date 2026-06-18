@@ -28,6 +28,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val data = hashMapOf("fcmToken" to token, "email" to email)
         db.collection("users").document(email)
             .set(data, com.google.firebase.firestore.SetOptions.merge())
+        // Also save to fcmTokens collection for targeted push lookups
+        db.collection("fcmTokens").document(email)
+            .set(hashMapOf("token" to token, "email" to email), com.google.firebase.firestore.SetOptions.merge())
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
@@ -46,8 +49,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun sendNotification(title: String, messageBody: String) {
-        val intent = Intent(this, NotificationActivity::class.java)
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val intent = Intent(this, NotificationActivity::class.java).apply {
+            action = "NotificationActivity"
+            // These flags ensure it works whether the app is killed, in background, or foreground
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
         val pendingIntent = PendingIntent.getActivity(
             this, System.currentTimeMillis().toInt(), intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE

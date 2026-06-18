@@ -281,7 +281,29 @@
                 android:orientation="vertical"
                 android:padding="16dp"
                 android:background="?attr/inputBackground"
-                android:layout_marginBottom="40dp"/>
+                android:layout_marginBottom="16dp"/>
+
+            <Button
+                android:id="@+id/btnAgeSpecificAnnouncement"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:text="Age Specific Announcement"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#8B5CF6"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:layout_marginBottom="12dp"/>
+
+            <Button
+                android:id="@+id/btnAgeSpecificNotification"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:text="Age Specific Notification"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#0EA5E9"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:layout_marginBottom="24dp"/>
 
             <!-- Divider -->
             <View

@@ -95,6 +95,41 @@ class MainActivity : ThemedActivity() {
             } catch (e: Exception) { android.util.Log.e("MainActivity", "Error assigning metadata default fallback", e) }
         }.start()
 
+        // ONE-TIME FIX: Deduplicate Allocator Categories (Case-Insensitive)
+        Thread {
+            try {
+                val catPrefs = getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
+                val categories = catPrefs.getStringSet("categories", null)?.toMutableSet()
+                if (categories != null) {
+                    val lowerCaseMap = mutableMapOf<String, String>()
+                    var changed = false
+                    val toRemove = mutableListOf<String>()
+
+                    for (cat in categories) {
+                        val lower = cat.lowercase()
+                        if (lowerCaseMap.containsKey(lower)) {
+                            toRemove.add(cat)
+                            changed = true
+                        } else {
+                            lowerCaseMap[lower] = cat
+                        }
+                    }
+
+                    if (changed) {
+                        val editor = catPrefs.edit()
+                        for (cat in toRemove) {
+                            categories.remove(cat)
+                            editor.remove("LIMIT_$cat")
+                            editor.remove("ICON_$cat")
+                        }
+                        editor.putStringSet("categories", categories)
+                        editor.apply()
+                        FirestoreSyncManager.pushAllDataToCloud(this)
+                    }
+                }
+            } catch (e: Exception) { android.util.Log.e("MainActivity", "Error deduplicating categories", e) }
+        }.start()
+
         if (intent.getBooleanExtra("from_splash", false)) {
             supportPostponeEnterTransition()
         }
@@ -383,6 +418,8 @@ class MainActivity : ThemedActivity() {
 
     override fun onResume() {
         super.onResume()
+        updateUserMetadata()
+        
         val result = intent.getStringExtra("payment_status")
         when (result) {
             "failed" -> Snackbar.make(findViewById(android.R.id.content), "❌ Payment Failed or Cancelled", Snackbar.LENGTH_LONG).show()

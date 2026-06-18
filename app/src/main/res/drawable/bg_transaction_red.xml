@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-
     <!-- 1. Deep Shadow for elevation -->
+    <!-- 1. Deep Shadow for elevation (identical to bg_transaction.xml) -->
     <item
         android:left="4dp"
         android:top="4dp">
@@ -10,13 +10,14 @@
             <corners android:radius="16dp"/>
         </shape>
     </item>
-
     <!-- 2. Inner Glow / Glass Tint (Red) -->
+    <!-- 2. Red fill with border (same insets as bg_transaction.xml) -->
     <item
         android:bottom="4dp"
         android:right="4dp">
         <shape android:shape="rectangle">
             <gradient
+
                 android:startColor="#40FF0000"
                 android:endColor="#10FF0000"
                 android:angle="135"
@@ -27,7 +28,6 @@
                 android:color="#80FF4444"/>
         </shape>
     </item>
-
     <!-- 3. Top-edge Gloss Highlight -->
     <item
         android:bottom="4dp"

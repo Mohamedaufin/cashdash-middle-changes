@@ -40,6 +40,13 @@ class HomeFragment : Fragment() {
     private var activeResetDialog: AlertDialog? = null
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
     private var reminderRunnable: Runnable? = null
+    private var dobLockDialog: com.google.android.material.bottomsheet.BottomSheetDialog? = null
+
+    private val appPrefsListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+        if (key == "user_dob") {
+            checkDobLock()
+        }
+    }
 
     private val walletListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == KEY_BALANCE || key == "initial_balance" || key == "balance_bar_mode" || key == "balance_bar_type") {
@@ -88,14 +95,18 @@ class HomeFragment : Fragment() {
             }
         }
 
-        view.findViewById<ImageView>(R.id.btnSmartAssistant)?.setOnClickListener {
-            startActivity(Intent(requireContext(), FinminderActivity::class.java))
+        val btnSmartAssistant = view.findViewById<ImageView>(R.id.btnSmartAssistant)
+        btnSmartAssistant?.setOnClickListener {
+            animateAndStart(btnSmartAssistant) {
+                startActivity(Intent(requireContext(), FinminderActivity::class.java))
+            }
         }
 
-
-
-        view.findViewById<ImageView>(R.id.btnTaptrack)?.setOnClickListener {
-            startActivity(Intent(requireContext(), TaptrackActivity::class.java))
+        val btnTaptrack = view.findViewById<ImageView>(R.id.btnTaptrack)
+        btnTaptrack?.setOnClickListener {
+            animateAndStart(btnTaptrack) {
+                startActivity(Intent(requireContext(), TaptrackActivity::class.java))
+            }
         }
 
         view.findViewById<ImageView>(R.id.btnTaptrack)?.setOnLongClickListener {
@@ -172,12 +183,18 @@ class HomeFragment : Fragment() {
 
         val wPrefs = requireContext().getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
         wPrefs.registerOnSharedPreferenceChangeListener(walletListener)
+        val appPrefs = requireContext().getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+        appPrefs.registerOnSharedPreferenceChangeListener(appPrefsListener)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         val wPrefs = requireContext().getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
         wPrefs.unregisterOnSharedPreferenceChangeListener(walletListener)
+        val appPrefs = requireContext().getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+        appPrefs.unregisterOnSharedPreferenceChangeListener(appPrefsListener)
+        dobLockDialog?.dismiss()
+        dobLockDialog = null
     }
 
     override fun onResume() {
@@ -187,13 +204,100 @@ class HomeFragment : Fragment() {
 
         // Show setup dialog quickly after transition (800ms)
         view?.postDelayed({
-            if (isAdded) checkInitialSetup()
+            if (isAdded) {
+                checkDobLock()
+                checkInitialSetup()
+            }
         }, 800)
     }
 
     override fun onPause() {
         super.onPause()
         reminderRunnable?.let { handler.removeCallbacks(it) }
+    }
+
+    private fun checkDobLock() {
+        val prefs = requireContext().getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+        val dob = prefs.getString("user_dob", "") ?: ""
+        if (dob.isEmpty()) {
+            if (dobLockDialog == null || dobLockDialog?.isShowing == false) {
+                showDobLockDialog()
+            }
+        } else {
+            dobLockDialog?.dismiss()
+            dobLockDialog = null
+        }
+    }
+
+    private fun showDobLockDialog() {
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(requireContext(), R.style.BottomSheetDialogTheme)
+        dialog.setCancelable(false)
+        val sheetView = layoutInflater.inflate(R.layout.layout_dob_bottom_sheet, null)
+        dialog.setContentView(sheetView)
+
+        val pickerYear = sheetView.findViewById<android.widget.NumberPicker>(R.id.pickerYear)
+        val pickerMonth = sheetView.findViewById<android.widget.NumberPicker>(R.id.pickerMonth)
+        val pickerDay = sheetView.findViewById<android.widget.NumberPicker>(R.id.pickerDay)
+        val btnSave = sheetView.findViewById<android.widget.Button>(R.id.btnSaveDate)
+        
+        sheetView.findViewById<View>(R.id.dragHandle)?.visibility = View.GONE
+        sheetView.findViewById<TextView>(R.id.tvSheetTitle)?.text = "Select Date of Birth to continue"
+        sheetView.findViewById<View>(R.id.btnSaveDate)?.setOnClickListener(null) // Reset default listener if any
+
+        // Setup Pickers
+        val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+        pickerYear.minValue = 1900
+        pickerYear.maxValue = currentYear
+
+        pickerMonth.minValue = 1
+        pickerMonth.maxValue = 12
+        val monthNames = arrayOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+        pickerMonth.displayedValues = monthNames
+
+        fun updateMaxDay(y: Int, m: Int) {
+            val cal = java.util.Calendar.getInstance()
+            cal.set(java.util.Calendar.YEAR, y)
+            cal.set(java.util.Calendar.MONTH, m - 1)
+            val maxDay = cal.getActualMaximum(java.util.Calendar.DAY_OF_MONTH)
+            pickerDay.minValue = 1
+            pickerDay.maxValue = maxDay
+        }
+
+        pickerYear.value = 2000
+        pickerMonth.value = 6
+        updateMaxDay(2000, 6)
+        pickerDay.value = 15
+
+        pickerYear.setOnValueChangedListener { _, _, newVal -> updateMaxDay(newVal, pickerMonth.value) }
+        pickerMonth.setOnValueChangedListener { _, _, newVal -> updateMaxDay(pickerYear.value, newVal) }
+
+        val textColor = ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor)
+        fun customizePicker(picker: android.widget.NumberPicker) {
+            for (i in 0 until picker.childCount) {
+                val child = picker.getChildAt(i)
+                if (child is android.widget.EditText) {
+                    try { child.setTextColor(textColor); child.invalidate() } catch (e: Exception) {}
+                }
+            }
+        }
+        customizePicker(pickerYear)
+        customizePicker(pickerMonth)
+        customizePicker(pickerDay)
+
+        btnSave.setOnClickListener {
+            val formattedDate = String.format("%02d %s %d", pickerDay.value, monthNames[pickerMonth.value - 1].substring(0, 3), pickerYear.value)
+            val prefs = requireContext().getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+            prefs.edit().putString("user_dob", formattedDate).apply()
+            
+            // Sync up immediately
+            FirestoreSyncManager.pushAllDataToCloud(requireContext())
+            
+            dialog.dismiss()
+            dobLockDialog = null
+        }
+
+        dobLockDialog = dialog
+        dialog.show()
     }
 
     private fun checkInitialSetup() {
@@ -829,7 +933,10 @@ class HomeFragment : Fragment() {
         return mode == android.app.AppOpsManager.MODE_ALLOWED
     }
 
+    private var isPendingDialogShowing = false
+
     private fun checkPendingTransactions() {
+        if (isPendingDialogShowing) return
         val prefs = requireContext().getSharedPreferences("PendingTransactionPrefs", android.content.Context.MODE_PRIVATE)
         if (prefs.getBoolean("has_pending", false)) {
             androidx.core.app.NotificationManagerCompat.from(requireContext()).cancel(999)
@@ -839,6 +946,8 @@ class HomeFragment : Fragment() {
             val amount = amountStr.toDoubleOrNull()?.toInt() ?: 0
             val category = prefs.getString("pending_category", "no choice") ?: "no choice"
             val title = prefs.getString("pending_title", "") ?: ""
+            val upiUri = prefs.getString("pending_upi_uri", "") ?: ""
+            val paymentApp = prefs.getString("pending_app", "CRED") ?: "CRED"
             
             val density = resources.displayMetrics.density
             val box = android.widget.LinearLayout(requireContext()).apply {
@@ -900,6 +1009,7 @@ class HomeFragment : Fragment() {
                 clipToPadding = false
             }
 
+            isPendingDialogShowing = true
             val dialog = androidx.appcompat.app.AlertDialog.Builder(requireContext()).setView(box).setCancelable(false).create()
             dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
@@ -915,6 +1025,12 @@ class HomeFragment : Fragment() {
                 minHeight = 150
                 setPadding(30, 30, 30, 30)
                 setOnClickListener {
+                    isPendingDialogShowing = false
+                    val currentPrefs = requireContext().getSharedPreferences("PendingTransactionPrefs", android.content.Context.MODE_PRIVATE)
+                    if (!currentPrefs.getBoolean("has_pending", false)) {
+                        dialog.dismiss()
+                        return@setOnClickListener
+                    }
                     prefs.edit().clear().apply()
                     androidx.core.app.NotificationManagerCompat.from(requireContext()).cancel(999)
                     dialog.dismiss()
@@ -933,8 +1049,21 @@ class HomeFragment : Fragment() {
                 minHeight = 150
                 setPadding(30, 30, 30, 30)
                 setOnClickListener {
+                    isPendingDialogShowing = false
+                    val currentPrefs = requireContext().getSharedPreferences("PendingTransactionPrefs", android.content.Context.MODE_PRIVATE)
+                    if (!currentPrefs.getBoolean("has_pending", false)) {
+                        dialog.dismiss()
+                        return@setOnClickListener
+                    }
                     if (amount > 0) {
-                        HistoryDataManager.saveTransaction(requireContext(), title, amount.toFloat(), category, System.currentTimeMillis())
+                        val ts = System.currentTimeMillis()
+                        HistoryDataManager.saveTransaction(requireContext(), title, amount.toFloat(), category, ts)
+                        
+                        requireContext().getSharedPreferences("ScannerMetadataPrefs", android.content.Context.MODE_PRIVATE).edit()
+                            .putString("UPI_$ts", upiUri)
+                            .putString("APP_$ts", paymentApp)
+                            .apply()
+                            
                         FirestoreSyncManager.pushAllDataToCloud(requireContext())
                         androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(requireContext()).sendBroadcast(android.content.Intent(FirestoreSyncManager.ACTION_SYNC_UPDATE))
                     }

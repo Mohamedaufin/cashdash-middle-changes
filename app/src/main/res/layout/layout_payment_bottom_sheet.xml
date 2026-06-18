@@ -99,7 +99,7 @@
             android:layout_width="0dp"
             android:layout_height="60dp"
             android:layout_weight="1"
-            android:text="GPay"
+            android:text="Other UPI"
             android:textColor="?attr/textPrimaryColor"
             android:textStyle="bold"
             android:textAllCaps="false"
@@ -107,6 +107,7 @@
             android:backgroundTint="@null"
             android:stateListAnimator="@null"
             android:elevation="0dp"
+            android:alpha="0.4"
             android:layout_marginStart="8dp" />
 
     </LinearLayout>

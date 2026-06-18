@@ -45,7 +45,33 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
 
+        <ImageButton
+            android:id="@+id/btnMore"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/roundBackground"
+            android:padding="12dp"
+            android:src="@drawable/ic_more_vert"
+            app:tint="?attr/textPrimaryColor"
+            android:clickable="true"
+            android:focusable="true"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Instructional Text -->
+    <TextView
+        android:id="@+id/tvInstruction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Press and hold on any cash out to edit."
+        android:textColor="?attr/textMutedColor"
+        android:textSize="@dimen/text_body"
+        android:gravity="center"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/topBar" />
 
     <!-- Tabs (Cash Outs / Cash Ins) -->
     <LinearLayout
@@ -56,7 +82,7 @@
         android:paddingHorizontal="20dp"
         android:paddingTop="10dp"
         android:paddingBottom="10dp"
-        app:layout_constraintTop_toBottomOf="@id/topBar">
+        app:layout_constraintTop_toBottomOf="@id/tvInstruction">
 
         <com.google.android.material.button.MaterialButtonToggleGroup
             android:id="@+id/toggleMode"
@@ -104,7 +130,7 @@
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="2"
             android:textColor="?attr/textMutedColor"
             android:textSize="14sp"
             android:text="Title" />
@@ -126,15 +152,6 @@
             android:textColor="?attr/textMutedColor"
             android:textSize="14sp"
             android:text="Date" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:textColor="?attr/textMutedColor"
-            android:textSize="14sp"
-            android:text="Status" />
     </LinearLayout>
 
     <!-- RecyclerView -->

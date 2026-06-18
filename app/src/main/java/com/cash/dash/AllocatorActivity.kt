@@ -132,6 +132,7 @@ class AllocatorActivity : ThemedActivity() {
         val input = EditText(this).apply {
             hint = "Enter category name (Eg: Food)"
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
             setHintTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {

@@ -19,6 +19,7 @@ import android.content.SharedPreferences
 
 class CashDashApplication : Application(), DefaultLifecycleObserver {
     private var walletPrefsListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
+    private var themePrefsListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
     override fun onCreate() {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         super<Application>.onCreate()
@@ -37,10 +38,18 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
         val walletPrefs = getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
         walletPrefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "wallet_balance" || key == "initial_balance" || key == "balance_bar_mode" || key == "balance_bar_type") {
-                WalletWidget.pushUpdate(this)
+                Finminder.pushUpdate(this)
             }
         }
         walletPrefs.registerOnSharedPreferenceChangeListener(walletPrefsListener)
+        
+        val themePrefs = getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
+        themePrefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "current_theme") {
+                Finminder.pushUpdate(this)
+            }
+        }
+        themePrefs.registerOnSharedPreferenceChangeListener(themePrefsListener)
     }
 
     private fun createNotificationChannel() {
@@ -73,6 +82,7 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
 
     override fun onStart(owner: LifecycleOwner) {
         super.onStart(owner)
+        isAppInForeground = true
         setupRealtimePresence(this)
         try {
             startService(Intent(this, TaskMonitorService::class.java))
@@ -83,6 +93,7 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
 
     override fun onStop(owner: LifecycleOwner) {
         super.onStop(owner)
+        isAppInForeground = false
         setOfflineImmediate(this)
     }
 
@@ -94,6 +105,7 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
     }
 
     companion object {
+        var isAppInForeground = false
         var presenceListener: com.google.firebase.database.ValueEventListener? = null
         var isDeletingAccount = false
 

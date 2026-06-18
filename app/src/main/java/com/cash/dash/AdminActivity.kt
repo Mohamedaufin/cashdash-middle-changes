@@ -170,6 +170,20 @@ class AdminActivity : ThemedActivity() {
         btnSendGlobalPush.setOnClickListener { sendPushNotification(false) }
         btnSendAdminPush.setOnClickListener { sendPushNotification(true) }
 
+        val btnAgeSpecificAnnouncement = findViewById<Button>(R.id.btnAgeSpecificAnnouncement)
+        btnAgeSpecificAnnouncement.setOnClickListener {
+            val intent = android.content.Intent(this, AgeSpecificPushActivity::class.java)
+            intent.putExtra("isAnnouncement", true)
+            startActivity(intent)
+        }
+
+        val btnAgeSpecificNotification = findViewById<Button>(R.id.btnAgeSpecificNotification)
+        btnAgeSpecificNotification.setOnClickListener {
+            val intent = android.content.Intent(this, AgeSpecificPushActivity::class.java)
+            intent.putExtra("isAnnouncement", false)
+            startActivity(intent)
+        }
+
         val btnSendUserPush = findViewById<Button>(R.id.btnSendUserPush)
         val btnPublishUserAnnouncement = findViewById<Button>(R.id.btnPublishUserAnnouncement)
 
