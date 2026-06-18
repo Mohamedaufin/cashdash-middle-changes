@@ -8,7 +8,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
-import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import android.widget.GridLayout
@@ -46,7 +46,7 @@ class BalanceSetupActivity : ThemedActivity() {
             showEditBalanceDialog(tvCurrentBalance)
         }
 
-        findViewById<ImageButton>(R.id.btnBack).setOnClickListener { onBackPressed() }
+        findViewById<ImageView>(R.id.btnBack).setOnClickListener { onBackPressed() }
 
         setupNumpad()
 

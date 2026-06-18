@@ -888,6 +888,23 @@ exports.onUserPush = onDocumentWritten({
         } else {
             console.log(`No FCM token found for user ${email}`);
         }
+
+        // Save to the user's in-app notification inbox so they can actually open it in NotificationActivity!
+        const docData = {
+            name: userDoc.data()?.name || "User",
+            email: email,
+            time: new Date(newData.timestamp || Date.now()).toLocaleString(),
+            subject: title,
+            originalSubject: title,
+            query: message,
+            timestamp: newData.timestamp || Date.now(),
+            read: false,
+            status: "resolved",
+            reply: "Notification Received",
+            isPush: true
+        };
+        await db.collection("users").doc(email).collection("notifications").doc(String(newData.timestamp || Date.now())).set(docData);
+
     } catch (error) {
         console.error(`Error sending user-specific push to ${email}:`, error);
     }

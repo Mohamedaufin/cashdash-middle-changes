@@ -223,16 +223,45 @@ class NotificationActivity : ThemedActivity() {
 
         val rootLayout = findViewById<View>(R.id.rootNotificationLayout)
 
-
-        // Capture initially read announcements before any marking as read occurs in this session
+        // Sync Firestore → SharedPreferences BEFORE capturing initiallyReadAnnouncements.
+        // This survives uninstall/reinstall and re-login because read state is stored
+        // in the user's Firestore document, not just locally.
+        val user = FirebaseAuth.getInstance().currentUser
+        val email = user?.email
         val readPrefs = getSharedPreferences("ReadAnnouncements", MODE_PRIVATE)
-        initiallyReadAnnouncements.addAll(readPrefs.all.keys)
 
-        setupRecyclerView()
-        setupFilters()
-
-        loadNotifications()
+        if (email != null) {
+            FirebaseFirestore.getInstance()
+                .collection("users").document(email)
+                .get()
+                .addOnSuccessListener { doc ->
+                    @Suppress("UNCHECKED_CAST")
+                    val cloudReadIds = doc.get("readAnnouncementIds") as? List<String> ?: emptyList()
+                    if (cloudReadIds.isNotEmpty()) {
+                        val editor = readPrefs.edit()
+                        for (id in cloudReadIds) editor.putBoolean(id, true)
+                        editor.apply()
+                    }
+                    initiallyReadAnnouncements.addAll(readPrefs.all.keys)
+                    setupRecyclerView()
+                    setupFilters()
+                    loadNotifications()
+                }
+                .addOnFailureListener {
+                    // Firestore failed — fall back to whatever is in SharedPreferences
+                    initiallyReadAnnouncements.addAll(readPrefs.all.keys)
+                    setupRecyclerView()
+                    setupFilters()
+                    loadNotifications()
+                }
+        } else {
+            initiallyReadAnnouncements.addAll(readPrefs.all.keys)
+            setupRecyclerView()
+            setupFilters()
+            loadNotifications()
+        }
     }
+
 
     private fun setupRecyclerView() {
         val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
@@ -297,18 +326,31 @@ class NotificationActivity : ThemedActivity() {
                 }
             }
 
-        // 2. Mark announcements as read locally
+        // 2. Mark announcements as read — locally AND in Firestore (survives reinstall/re-login)
         db.collection("announcements")
             .get()
             .addOnSuccessListener { adminDocs ->
                 val readPrefs = getSharedPreferences("ReadAnnouncements", MODE_PRIVATE)
                 val editor = readPrefs.edit()
+                val readIds = mutableListOf<String>()
                 for (doc in adminDocs) {
                     editor.putBoolean(doc.id, true)
+                    readIds.add(doc.id)
                 }
                 editor.apply()
 
-                // Sync to Room so they persist as read locally
+                // Persist to Firestore so it survives uninstall/reinstall and re-login
+                if (readIds.isNotEmpty()) {
+                    db.collection("users").document(email)
+                        .update("readAnnouncementIds", com.google.firebase.firestore.FieldValue.arrayUnion(*readIds.toTypedArray()))
+                        .addOnFailureListener {
+                            // If doc doesn't have the field yet, set it
+                            db.collection("users").document(email)
+                                .set(mapOf("readAnnouncementIds" to readIds), com.google.firebase.firestore.SetOptions.merge())
+                        }
+                }
+
+                // Sync to Room so they persist locally too
                 CoroutineScope(Dispatchers.IO).launch {
                     val dao = AppDatabase.getDatabase(this@NotificationActivity).notificationDao()
                     for (doc in adminDocs) {

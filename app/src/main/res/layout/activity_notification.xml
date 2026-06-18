@@ -99,7 +99,7 @@
             android:paddingEnd="25dp"
             android:paddingTop="4dp"
             android:isScrollContainer="true"
-            android:visibility="gone"/>
+            android:scrollbarStyle="outsideOverlay" />
 
         <TextView
             android:id="@+id/tvEmptyNotifications"

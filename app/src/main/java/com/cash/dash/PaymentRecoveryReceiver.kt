@@ -9,32 +9,32 @@ class PaymentRecoveryReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
         val prefs = context.getSharedPreferences("PendingTransactionPrefs", Context.MODE_PRIVATE)
-        
+
         if (action == "com.cash.dash.PAYMENT_YES") {
             // Retrieve pending transaction details
             val amountStr = prefs.getString("pending_amount", "0") ?: "0"
             val amount = amountStr.toDoubleOrNull()?.toInt() ?: 0
             val category = prefs.getString("pending_category", "no choice") ?: "no choice"
             val title = prefs.getString("pending_title", "") ?: ""
-            val upiId = prefs.getString("pending_upi", "") ?: ""
-            val paymentApp = prefs.getString("pending_app", "Google Pay") ?: "Google Pay"
-            
+            val upiUri = prefs.getString("pending_upi_uri", "") ?: ""
+            val paymentApp = prefs.getString("pending_app", "CRED") ?: "CRED"
+
             if (amount > 0) {
                 val ts = System.currentTimeMillis()
                 // Write to History (This also deducts wallet balance internally)
                 HistoryDataManager.saveTransaction(context, title, amount.toFloat(), category, ts)
-                
+
                 // Save Scanner Metadata so it shows correctly in Detail History
                 context.getSharedPreferences("ScannerMetadataPrefs", Context.MODE_PRIVATE).edit()
-                    .putString("UPI_$ts", upiId)
+                    .putString("UPI_$ts", upiUri)
                     .putString("APP_$ts", paymentApp)
                     .apply()
-                
+
                 // Sync to Cloud
                 FirestoreSyncManager.pushAllDataToCloud(context)
             }
         }
-        
+
         // Regardless of Yes or No, clear the pending state and cancel notification
         prefs.edit().clear().apply()
         NotificationManagerCompat.from(context).cancel(999)

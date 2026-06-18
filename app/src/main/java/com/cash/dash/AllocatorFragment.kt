@@ -162,7 +162,7 @@ class AllocatorFragment : Fragment() {
         val input = EditText(requireContext()).apply {
             hint = "Enter category name (Eg: Food)"
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
-            setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
             setHintTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             background = androidx.core.content.ContextCompat.getDrawable(requireContext(), com.cash.dash.ThemeHelper.getDrawable(requireContext(), R.drawable.bg_glass_input))

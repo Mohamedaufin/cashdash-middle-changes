@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/walletWidgetRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -15,41 +16,148 @@
         android:layout_marginVertical="6dp">
 
         <LinearLayout
+            android:id="@+id/widgetCapsule"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-        android:background="@drawable/bg_widget_capsule"
-        android:paddingStart="24dp"
-        android:paddingEnd="20dp">
+            android:background="@drawable/bg_widget_capsule"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
 
-        <TextView
-            android:id="@+id/tvWidgetBalance"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Good Night"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:ellipsize="end"
-            android:maxLines="1" />
+            <!-- Empty / Placeholder State -->
+            <TextView
+                android:id="@+id/tvEmptyState"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="No finminders today"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:visibility="gone" />
 
-        <ImageView
-            android:id="@+id/btnWidgetToggle"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="2dp"
-            android:padding="10dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/ic_eye_off"
-            android:contentDescription="Toggle visibility"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:focusable="true"
-            android:clickable="true" />
+            <!-- Left arrow -->
+            <ImageView
+                android:id="@+id/btnPrev"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_back_arrow1"
+                app:tint="#FFFFFF"
+                android:padding="8dp"
+                android:layout_marginEnd="4dp"
+                android:visibility="gone" />
 
-    </LinearLayout>
+            <!-- Finminder Details -->
+            <LinearLayout
+                android:id="@+id/layoutContent"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:baselineAligned="false">
+
+                <!-- Dynamic Spacer Left -->
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <!-- Left Column (Title & Type) -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0"
+                    android:orientation="vertical">
+                    
+                    <TextView
+                        android:id="@+id/tvWidgetTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:maxWidth="130dp"
+                        android:text="Grocery"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:ellipsize="end"
+                        android:maxLines="1" />
+                        
+                    <TextView
+                        android:id="@+id/tvWidgetType"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Cash out"
+                        android:textColor="#AAAAAA"
+                        android:textSize="12sp"
+                        android:maxLines="1" />
+                </LinearLayout>
+
+                <!-- Dynamic Spacing Middle -->
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5" />
+
+                <!-- Middle Column (Amount & Frequency) -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    
+                    <TextView
+                        android:id="@+id/tvWidgetAmount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="₹100"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:maxLines="1" />
+                        
+                    <TextView
+                        android:id="@+id/tvWidgetFrequency"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Monthly"
+                        android:textColor="#AAAAAA"
+                        android:textSize="12sp"
+                        android:maxLines="1" />
+                </LinearLayout>
+
+                <!-- Dynamic Spacing Right -->
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <!-- Right arrow -->
+            <ImageView
+                android:id="@+id/btnNext"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_back_arrow1"
+                android:rotation="180"
+                app:tint="#FFFFFF"
+                android:padding="8dp"
+                android:layout_marginStart="4dp"
+                android:visibility="gone" />
+
+            <!-- Logo -->
+            <ImageView
+                android:id="@+id/imgWidgetLogo"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="8dp"
+                android:src="@mipmap/ic_launcher"
+                android:scaleType="fitCenter" />
+
+        </LinearLayout>
     </FrameLayout>
 
 </FrameLayout>

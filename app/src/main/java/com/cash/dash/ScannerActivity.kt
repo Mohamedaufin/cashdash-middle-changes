@@ -27,6 +27,7 @@ import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -81,7 +82,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     private var pendingTitle: String = "UPI Payment"
     private var allocationHandled: Boolean = false
     private var currentChooser: BottomSheetDialog? = null
-    private var selectedPaymentApp: String = "Google Pay"
+    private var selectedPaymentApp: String = "CRED"
 
     private val syncReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
@@ -130,6 +131,18 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         lightSensor?.let {
             sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
         }
+        // If user returns to scanner manually (not via onActivityResult),
+        // cancel any pending recovery notification to avoid stale prompts
+        val pendingPrefs = getSharedPreferences("PendingTransactionPrefs", Context.MODE_PRIVATE)
+        if (pendingPrefs.getBoolean("has_pending", false)) {
+            pendingPrefs.edit().clear().apply()
+            // Also cancel the recovery alarm if returning normally
+            androidx.core.app.NotificationManagerCompat.from(this).cancel(999)
+            val alarmIntent = android.content.Intent(this, PaymentRecoveryAlarmReceiver::class.java)
+            val pendingIntent = android.app.PendingIntent.getBroadcast(this, 99, alarmIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
+            val alarmManager = getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
+            alarmManager.cancel(pendingIntent)
+        }
     }
 
     override fun onPause() {
@@ -141,9 +154,8 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Solid black system bars for ScannerActivity
-        window.statusBarColor = android.graphics.Color.BLACK
-        window.navigationBarColor = android.graphics.Color.BLACK
+        // Solid black system bars for ScannerActivity (edge-to-edge compatible)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).apply {
             isAppearanceLightStatusBars = false
             isAppearanceLightNavigationBars = false
@@ -545,12 +557,16 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 pendingAmount = prefs.getString("pending_amount", "0")?.toDoubleOrNull()?.toInt() ?: 0
                 pendingCategory = prefs.getString("pending_category", "no choice")
                 pendingTitle = prefs.getString("pending_title", "") ?: ""
-                selectedPaymentApp = prefs.getString("pending_app", "Google Pay") ?: "Google Pay"
+                selectedPaymentApp = prefs.getString("pending_app", "CRED") ?: "CRED"
             }
 
             prefs.edit().clear().apply()
+            // Also cancel the recovery alarm if returning normally
             androidx.core.app.NotificationManagerCompat.from(this).cancel(999)
-            androidx.work.WorkManager.getInstance(this).cancelUniqueWork("upi_recovery_notification_work")
+            val alarmIntent = android.content.Intent(this, PaymentRecoveryAlarmReceiver::class.java)
+            val pendingIntent = android.app.PendingIntent.getBroadcast(this, 99, alarmIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
+            val alarmManager = getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
+            alarmManager.cancel(pendingIntent)
 
             if (isSuccess) {
                 redirectSuccess()
@@ -682,13 +698,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             }
 
             btnGPay.setOnClickListener {
-                if (!allocationHandled) { toast("Please select an allocation or skip"); return@setOnClickListener }
-                val amtStr = etAmount.text.toString()
-                if (amtStr.isEmpty()) return@setOnClickListener
-                pendingAmount = amtStr.toIntOrNull() ?: 0
-                selectedPaymentApp = "Google Pay"
-                dialog.dismiss()
-                payUPI(upi, amtStr, "com.google.android.apps.nbu.paisa.user")
+                toast("Coming Soon! 🚀")
             }
 
             dialog.setOnDismissListener {
@@ -1035,24 +1045,44 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     }
 
     private fun scheduleRecoveryNotification(amount: String, upiId: String) {
-        val workRequest = androidx.work.OneTimeWorkRequestBuilder<RecoveryNotificationWorker>()
-            .setInitialDelay(1, java.util.concurrent.TimeUnit.MINUTES)
-            .addTag("upi_recovery_notification")
-            .build()
-            
-        androidx.work.WorkManager.getInstance(this).enqueueUniqueWork(
-            "upi_recovery_notification_work",
-            androidx.work.ExistingWorkPolicy.REPLACE,
-            workRequest
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+        val intent = Intent(this, PaymentRecoveryAlarmReceiver::class.java)
+        
+        val pendingIntent = android.app.PendingIntent.getBroadcast(
+            this,
+            99,
+            intent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
         )
+
+        val triggerTime = System.currentTimeMillis() + 60_000 // Exact 1 minute
+
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                if (alarmManager.canScheduleExactAlarms()) {
+                    alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+                } else {
+                    // Fallback if permission is denied
+                    alarmManager.setAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+                }
+            } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+            } else {
+                alarmManager.setExact(android.app.AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+            }
+        } catch (e: SecurityException) {
+            // Fallback for extreme OEM modifications
+            alarmManager.setAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+        }
     }
 
-    private fun logPendingTransaction(amount: String, upiId: String) {
+    private fun logPendingTransaction(amount: String, upiId: String, fullUri: String) {
         val prefs = getSharedPreferences("PendingTransactionPrefs", Context.MODE_PRIVATE)
         prefs.edit()
             .putBoolean("has_pending", true)
             .putString("pending_amount", amount)
             .putString("pending_upi", upiId)
+            .putString("pending_upi_uri", fullUri)
             .putLong("pending_time", System.currentTimeMillis())
             .putString("pending_category", pendingCategory ?: "no choice")
             .putString("pending_title", pendingTitle)
@@ -1076,13 +1106,13 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             }
 
             if (packageManager.resolveActivity(baseIntent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
-                logPendingTransaction(amt, cleanPaMatch)
+                logPendingTransaction(amt, cleanPaMatch, p2pUriString)
                 startActivityForResult(baseIntent, PAYMENT_REQ)
             } else {
                 packageManager.getLaunchIntentForPackage(pkg)?.let {
                     it.action = Intent.ACTION_VIEW
                     it.data = Uri.parse(p2pUriString)
-                    logPendingTransaction(amt, cleanPaMatch)
+                    logPendingTransaction(amt, cleanPaMatch, p2pUriString)
                     startActivityForResult(it, PAYMENT_REQ)
                 } ?: toast("App not installed on this device")
             }

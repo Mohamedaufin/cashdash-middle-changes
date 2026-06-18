@@ -36,6 +36,7 @@ class AddFinminderActivity : ThemedActivity() {
     private lateinit var scrollView: ScrollView
     private lateinit var layoutOneTime: LinearLayout
     private lateinit var calendarView: CalendarView
+    private lateinit var tvAddTitle: TextView
     private lateinit var tvNotificationHint: TextView
     private lateinit var tvNotificationHintWeekly: TextView
     private lateinit var tvNotificationHintMonthly: TextView
@@ -50,6 +51,8 @@ class AddFinminderActivity : ThemedActivity() {
 
     private var currentTab = "CASH_OUT"
     private var selectedDateStr = ""
+    private var editModeItemId: String? = null
+    private var editModeTimestamp: Long = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,9 +61,9 @@ class AddFinminderActivity : ThemedActivity() {
         currentTab = intent.getStringExtra("TAB") ?: "CASH_OUT"
 
         val btnBack = findViewById<View>(R.id.btnBack)
-        val tvAddTitle = findViewById<TextView>(R.id.tvAddTitle)
+        tvAddTitle = findViewById(R.id.tvAddTitle)
         
-        tvAddTitle.text = if (currentTab == "CASH_OUT") "Finminder Cashout" else "Finminder Cashin"
+        tvAddTitle.text = if (currentTab == "CASH_OUT") "Finminder Cash Out" else "Finminder Cash In"
         btnBack.setOnClickListener { finish() }
 
         etTitle = findViewById(R.id.etTitle)
@@ -94,17 +97,26 @@ class AddFinminderActivity : ThemedActivity() {
     }
 
     private fun setupListeners() {
-        val updateHintText = {
+        etDateOfMonth.filters = arrayOf(android.text.InputFilter { source, _, _, dest, dstart, dend ->
+            try {
+                val input = (dest.subSequence(0, dstart).toString() + source + dest.subSequence(dend, dest.length)).toInt()
+                if (input in 1..31) null else ""
+            } catch (nfe: NumberFormatException) { "" }
+        })
+
+        fun updateHintText(shouldScroll: Boolean = false) {
             val title = etTitle.text.toString().trim().ifEmpty { "your expense" }
             if (selectedFrequencyIndex == 0) {
                 val dateStrFull = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault()).format(
                     SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).parse(selectedDateStr) ?: Date()
                 )
-                tvNotificationHint.text = "You will be notified about $title on $dateStrFull"
+                tvNotificationHint.text = "You will be notified about $title on $dateStrFull."
                 tvNotificationHint.visibility = View.VISIBLE
                 tvNotificationHintWeekly.visibility = View.GONE
                 tvNotificationHintMonthly.visibility = View.GONE
-                scrollView.post { scrollView.smoothScrollTo(0, scrollView.bottom) }
+                if (shouldScroll) {
+                    scrollView.post { scrollView.smoothScrollTo(0, scrollView.bottom) }
+                }
             } else if (selectedFrequencyIndex == 1) {
                 tvNotificationHint.visibility = View.GONE
                 tvNotificationHintMonthly.visibility = View.GONE
@@ -120,9 +132,11 @@ class AddFinminderActivity : ThemedActivity() {
                         dates.add(SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(cal.time))
                         cal.add(Calendar.DATE, 1)
                     }
-                    tvNotificationHintWeekly.text = "You will be notified about $title on every $selectedDayStr\n\nExamples: ${dates.joinToString(", ")}, etc."
+                    tvNotificationHintWeekly.text = "You will be notified about $title on every $selectedDayStr.\n\nExamples: ${dates.joinToString(", ")}, etc."
                     tvNotificationHintWeekly.visibility = View.VISIBLE
-                    scrollView.post { scrollView.smoothScrollTo(0, scrollView.bottom) }
+                    if (shouldScroll) {
+                        scrollView.post { scrollView.smoothScrollTo(0, scrollView.bottom) }
+                    }
                 }
             } else if (selectedFrequencyIndex == 2) {
                 tvNotificationHint.visibility = View.GONE
@@ -142,9 +156,11 @@ class AddFinminderActivity : ThemedActivity() {
                         dates.add(SimpleDateFormat("MMMM dd", Locale.getDefault()).format(monthCal.time))
                         cal.add(Calendar.MONTH, 1)
                     }
-                    tvNotificationHintMonthly.text = "You will be notified about $title on every month's $dayOfMonth\n\nExamples: ${dates.joinToString(", ")}, etc."
+                    tvNotificationHintMonthly.text = "You will be notified about $title on every month's $dayOfMonth.\n\nExamples: ${dates.joinToString(", ")}, etc."
                     tvNotificationHintMonthly.visibility = View.VISIBLE
-                    scrollView.post { scrollView.smoothScrollTo(0, scrollView.bottom) }
+                    if (shouldScroll) {
+                        scrollView.post { scrollView.smoothScrollTo(0, scrollView.bottom) }
+                    }
                 } else {
                     tvNotificationHintMonthly.visibility = View.GONE
                 }
@@ -163,43 +179,91 @@ class AddFinminderActivity : ThemedActivity() {
         etQuantity.addTextChangedListener(watcher)
         etDateOfMonth.addTextChangedListener(watcher)
         
+        val rootContainer = findViewById<android.view.ViewGroup>(R.id.scrollView).getChildAt(0) as android.view.ViewGroup
+
+        val btnDays = mapOf(
+            "Monday" to findViewById<TextView>(R.id.btnDayMonday),
+            "Tuesday" to findViewById<TextView>(R.id.btnDayTuesday),
+            "Wednesday" to findViewById<TextView>(R.id.btnDayWednesday),
+            "Thursday" to findViewById<TextView>(R.id.btnDayThursday),
+            "Friday" to findViewById<TextView>(R.id.btnDayFriday),
+            "Saturday" to findViewById<TextView>(R.id.btnDaySaturday),
+            "Sunday" to findViewById<TextView>(R.id.btnDaySunday)
+        )
+
+        val updateDayTicks = { selectedDay: String ->
+            val tick = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_check_green)
+            for ((dayStr, btn) in btnDays) {
+                btn.setCompoundDrawablesWithIntrinsicBounds(null, null, if (dayStr == selectedDay) tick else null, null)
+            }
+        }
+        
         btnDayToggle.setOnClickListener {
             val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
             imm.hideSoftInputFromWindow(btnDayToggle.windowToken, 0)
+            if (layoutDayOptions.visibility != View.VISIBLE) {
+                updateDayTicks(selectedDayStr)
+            }
             layoutDayOptions.visibility = if (layoutDayOptions.visibility == View.VISIBLE) View.GONE else View.VISIBLE
         }
         
         val selectDay = { text: String ->
-            selectedDayStr = text
-            tvSelectedDay.text = text
             layoutDayOptions.visibility = View.GONE
-            updateHintText()
+            if (text != selectedDayStr) {
+                selectedDayStr = text
+                tvSelectedDay.text = text
+                updateHintText(true)
+                validateForm()
+            }
         }
         
-        findViewById<View>(R.id.btnDayMonday).setOnClickListener { selectDay("Monday") }
-        findViewById<View>(R.id.btnDayTuesday).setOnClickListener { selectDay("Tuesday") }
-        findViewById<View>(R.id.btnDayWednesday).setOnClickListener { selectDay("Wednesday") }
-        findViewById<View>(R.id.btnDayThursday).setOnClickListener { selectDay("Thursday") }
-        findViewById<View>(R.id.btnDayFriday).setOnClickListener { selectDay("Friday") }
-        findViewById<View>(R.id.btnDaySaturday).setOnClickListener { selectDay("Saturday") }
-        findViewById<View>(R.id.btnDaySunday).setOnClickListener { selectDay("Sunday") }
+        btnDays["Monday"]?.setOnClickListener { selectDay("Monday") }
+        btnDays["Tuesday"]?.setOnClickListener { selectDay("Tuesday") }
+        btnDays["Wednesday"]?.setOnClickListener { selectDay("Wednesday") }
+        btnDays["Thursday"]?.setOnClickListener { selectDay("Thursday") }
+        btnDays["Friday"]?.setOnClickListener { selectDay("Friday") }
+        btnDays["Saturday"]?.setOnClickListener { selectDay("Saturday") }
+        btnDays["Sunday"]?.setOnClickListener { selectDay("Sunday") }
+
+        val updateFrequencyTicks = { selectedIndex: Int ->
+            val tick = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_check_green)
+            btnFreqOneTime.setCompoundDrawablesWithIntrinsicBounds(null, null, if (selectedIndex == 0) tick else null, null)
+            btnFreqWeekly.setCompoundDrawablesWithIntrinsicBounds(null, null, if (selectedIndex == 1) tick else null, null)
+            btnFreqMonthly.setCompoundDrawablesWithIntrinsicBounds(null, null, if (selectedIndex == 2) tick else null, null)
+        }
 
         btnFrequencyToggle.setOnClickListener {
             val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
             imm.hideSoftInputFromWindow(btnFrequencyToggle.windowToken, 0)
+            if (layoutFrequencyOptions.visibility != View.VISIBLE) {
+                updateFrequencyTicks(selectedFrequencyIndex)
+            }
             layoutFrequencyOptions.visibility = if (layoutFrequencyOptions.visibility == View.VISIBLE) View.GONE else View.VISIBLE
         }
 
         val selectFrequency = { index: Int, text: String ->
-            selectedFrequencyIndex = index
-            tvSelectedFrequency.text = text
             layoutFrequencyOptions.visibility = View.GONE
-            layoutOneTime.visibility = if (index == 0) View.VISIBLE else View.GONE
-            layoutWeekly.visibility = if (index == 1) View.VISIBLE else View.GONE
-            layoutMonthly.visibility = if (index == 2) View.VISIBLE else View.GONE
-            validateForm()
-            updateHintText()
-
+            if (index == selectedFrequencyIndex) {
+                // Do nothing if selecting the same frequency (avoids layout reloading/glitch)
+                Unit
+            } else {
+                selectedFrequencyIndex = index
+                tvSelectedFrequency.text = text
+                
+                // Hide all sections first to avoid simultaneous layout causing flicker
+                layoutOneTime.visibility = View.GONE
+                layoutWeekly.visibility = View.GONE
+                layoutMonthly.visibility = View.GONE
+                
+                // Then show the selected one
+                when (index) {
+                    0 -> layoutOneTime.visibility = View.VISIBLE
+                    1 -> layoutWeekly.visibility = View.VISIBLE
+                    2 -> layoutMonthly.visibility = View.VISIBLE
+                }
+                validateForm()
+                updateHintText(true)
+            }
         }
 
         btnFreqOneTime.setOnClickListener { selectFrequency(0, "One time only") }
@@ -212,8 +276,38 @@ class AddFinminderActivity : ThemedActivity() {
             val cal = Calendar.getInstance()
             cal.set(year, month, dayOfMonth)
             selectedDateStr = sdf.format(cal.time)
-            updateHintText()
+            updateHintText(true)
             validateForm()
+        }
+
+        editModeItemId = intent.getStringExtra("ITEM_ID")
+        editModeItemId?.let { id ->
+            val item = FinminderRepository.getItems(this).find { it.id == id }
+            if (item != null) {
+                editModeTimestamp = item.timestamp
+                etTitle.setText(item.title)
+                etQuantity.setText(item.quantity)
+                
+                when (item.frequency) {
+                    "One time" -> {
+                        selectFrequency(0, "One time only")
+                        try {
+                            val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+                            val date = sdf.parse(item.dateInfo)
+                            if (date != null) calendarView.date = date.time
+                        } catch(e: Exception){}
+                    }
+                    "Weekly" -> {
+                        selectFrequency(1, "Repeat every week")
+                        selectDay(item.dateInfo)
+                    }
+                    "Monthly" -> {
+                        selectFrequency(2, "Repeat every month")
+                        etDateOfMonth.setText(item.dateInfo)
+                    }
+                }
+                tvAddTitle.text = if (currentTab == "CASH_OUT") "Edit cash out" else "Edit cash in"
+            }
         }
 
         btnSave.setOnClickListener {
@@ -234,8 +328,18 @@ class AddFinminderActivity : ThemedActivity() {
         if (freq == -1) isValid = false
         
         if (freq == 2) { // Monthly
-            if (etDateOfMonth.text.toString().trim().isEmpty()) {
+            val dayStr = etDateOfMonth.text.toString().trim()
+            if (dayStr.isEmpty()) {
                 isValid = false
+                etDateOfMonth.error = null
+            } else {
+                val dayNum = dayStr.toIntOrNull()
+                if (dayNum == null || dayNum < 1 || dayNum > 31) {
+                    isValid = false
+                    etDateOfMonth.error = "Date must be between 1 and 31"
+                } else {
+                    etDateOfMonth.error = null
+                }
             }
         }
 
@@ -259,15 +363,17 @@ class AddFinminderActivity : ThemedActivity() {
         }
 
         val item = FinminderItem(
-            id = UUID.randomUUID().toString(),
+            id = editModeItemId ?: java.util.UUID.randomUUID().toString(),
             type = currentTab,
             title = etTitle.text.toString().trim(),
             quantity = etQuantity.text.toString().trim(),
             frequency = freqStr,
-            dateInfo = dateInfo
+            dateInfo = dateInfo,
+            timestamp = if (editModeTimestamp > 0) editModeTimestamp else System.currentTimeMillis()
         )
 
         FinminderRepository.saveItem(this, item)
+        FirestoreSyncManager.pushAllDataToCloud(this)
         Toast.makeText(this, "Saved successfully!", Toast.LENGTH_SHORT).show()
         finish()
     }

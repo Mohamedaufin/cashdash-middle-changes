@@ -25,21 +25,21 @@ object CategoryIconHelper {
 
         val normalized = categoryName.lowercase(Locale.getDefault()).trim()
         
-        // Exact or partial containment matching
+        // Exact or whole-word boundary matching
         for (word in foodKeywords) {
-            if (normalized.contains(word)) return R.drawable.ic_category_food
+            if (Regex("\\b$word\\b").containsMatchIn(normalized)) return R.drawable.ic_category_food
         }
         for (word in shoppingKeywords) {
-            if (normalized.contains(word)) return R.drawable.ic_category_shopping
+            if (Regex("\\b$word\\b").containsMatchIn(normalized)) return R.drawable.ic_category_shopping
         }
         for (word in fuelKeywords) {
-            if (normalized.contains(word)) return R.drawable.ic_category_fuel
+            if (Regex("\\b$word\\b").containsMatchIn(normalized)) return R.drawable.ic_category_fuel
         }
         for (word in transportKeywords) {
-            if (normalized.contains(word)) return R.drawable.ic_category_transport
+            if (Regex("\\b$word\\b").containsMatchIn(normalized)) return R.drawable.ic_category_transport
         }
         for (word in waterKeywords) {
-            if (normalized.contains(word)) return R.drawable.ic_category_water
+            if (Regex("\\b$word\\b").containsMatchIn(normalized)) return R.drawable.ic_category_water
         }
         
         // Fallback

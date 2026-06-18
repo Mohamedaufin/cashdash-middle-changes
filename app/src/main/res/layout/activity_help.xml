@@ -151,14 +151,14 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Q: How do I use the QR Scanner (Tutorial)?"
+                    android:text="Q: How do I use the QR Scanner?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
                     android:textSize="@dimen/text_body"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="A: Scan from CashDash directly and record your payments:\n1. Scan any UPI QR code\n2. Enter the amount and select an allocation\n3. Choose your payment app (Cred, GPay)\n4. Complete the payment in your UPI app and wait for 2-3 seconds\n5. We will automatically bring you back to CashDash and record the transaction\n\nGeneral shortcuts:\n1. Tap Undo button to pay again to the last scanned receiver\n2. Swipe right to left to go home page or use exit button at top"
+                    android:text="A: Scan from CashDash directly and record your payments:\n1. Scan any UPI QR code\n2. Enter the amount and select an allocation\n3. Choose your payment app (Cred, GPay, Phonepe, etc)\n4. Complete the payment in your UPI app and wait for 2-3 seconds\n5. We will automatically bring you back to CashDash and record the transaction\n\nGeneral shortcuts:\n1. Tap Undo button to pay again to the last scanned receiver\n2. Swipe right to left to go home page or use exit button at top"
                     android:textColor="?attr/textMutedColor"
                     android:textSize="@dimen/text_body"
                     android:layout_marginBottom="12dp"/>
@@ -310,7 +310,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Q: How do I use the Category Allocator (Tutorial)?"
+                    android:text="Q: How do I use the Category Allocator?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
                     android:textSize="@dimen/text_body"/>
@@ -437,7 +437,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Q: How do I use the History page (Tutorial)?"
+                    android:text="Q: How do I use the History page?"
                     android:textColor="?attr/textPrimaryColor"
                     android:textStyle="bold"
                     android:textSize="@dimen/text_body"/>
