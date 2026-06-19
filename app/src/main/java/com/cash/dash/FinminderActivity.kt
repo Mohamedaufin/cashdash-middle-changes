@@ -106,11 +106,14 @@ class FinminderActivity : ThemedActivity() {
         headerRow.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
         
         val tvInstruction = findViewById<TextView>(R.id.tvInstruction)
+        val tvEmptyState = findViewById<TextView>(R.id.tvEmptyState)
         if (filtered.isEmpty()) {
             tvInstruction.visibility = View.GONE
+            tvEmptyState?.visibility = View.VISIBLE
         } else {
             tvInstruction.visibility = View.VISIBLE
             tvInstruction.text = "Press and hold on any transaction to edit."
+            tvEmptyState?.visibility = View.GONE
         }
         
         adapter.submitList(filtered)
@@ -295,7 +298,7 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
                     today.add(java.util.Calendar.DATE, 7)
                     val date2 = sdf.format(today.time)
                     
-                    holder.tvExtendedInfo1.text = "• Weekly $typeText set on every ${item.dateInfo}"
+                    holder.tvExtendedInfo1.text = "• Weekly $typeText is set on every ${item.dateInfo}"
                     holder.tvExtendedInfo2.text = "• Next target dates are $date1 and $date2"
                     date1
                 } else {
@@ -329,7 +332,7 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
                 val date2 = sdf.format(today.time)
                 
                 val suffix = if (targetDay in 11..13) "th" else when (targetDay % 10) { 1 -> "st"; 2 -> "nd"; 3 -> "rd"; else -> "th" }
-                holder.tvExtendedInfo1.text = "• Monthly $typeText set on the $targetDay$suffix of every month"
+                holder.tvExtendedInfo1.text = "• Monthly $typeText is set on the $targetDay$suffix of every month"
                 holder.tvExtendedInfo2.text = "• Next target dates are $date1 and $date2"
                 
                 date1

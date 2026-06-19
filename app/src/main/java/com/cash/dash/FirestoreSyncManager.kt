@@ -83,9 +83,11 @@ object FirestoreSyncManager {
                 }.format(java.util.Date())
                 val name = userPrefs.getString("user_name", "User") ?: "User"
 
+                val dobString = userPrefs.getString("user_dob", "") ?: ""
                 val rootData = hashMapOf<String, Any>(
                     "email" to email,
                     "name" to name,
+                    "dob" to dobString,
                     "activeDates" to com.google.firebase.firestore.FieldValue.arrayUnion(todayStr)
                 )
                 if (lastActiveStr.isNotEmpty()) {
