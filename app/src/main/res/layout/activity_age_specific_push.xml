@@ -113,7 +113,7 @@
                 android:layout_height="55dp"
                 android:text="Fetch Users"
                 android:textColor="@android:color/white"
-                android:backgroundTint="#A259FF"
+                android:backgroundTint="#10B981"
                 android:textStyle="bold"
                 android:textSize="14sp"
                 android:layout_marginBottom="24dp"/>
@@ -204,7 +204,7 @@
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp"
                     android:layout_marginBottom="16dp"
-                    android:inputType="text"/>
+                    android:inputType="textCapSentences"/>
 
                 <EditText
                     android:id="@+id/edtPushContent"
@@ -217,7 +217,7 @@
                     android:padding="16dp"
                     android:gravity="top|start"
                     android:layout_marginBottom="24dp"
-                    android:inputType="textMultiLine"
+                    android:inputType="textCapSentences|textMultiLine"
                     android:scrollbars="vertical"/>
 
                 <Button
@@ -226,7 +226,7 @@
                     android:layout_height="55dp"
                     android:text="Send"
                     android:textColor="@android:color/white"
-                    android:backgroundTint="?attr/colorPrimary"
+                    android:backgroundTint="#6366F1"
                     android:textStyle="bold"
                     android:textSize="16sp"
                     android:layout_marginBottom="20dp"/>

@@ -470,7 +470,7 @@ class NotificationActivity : ThemedActivity() {
                 // 🚀 ASYNCHRONOUS OPTIMIZATION: Heavy HTML parsing & mapping offloaded from UI Thread
                 CoroutineScope(Dispatchers.Default).launch {
                     // 1. Filter and Map to Entities
-                    val finalDocs = rawDocs.filter { d -> !toDelete.any { it.id == d.id } }
+                    val finalDocs = rawDocs.filter { d -> !toDelete.any { it.id == d.id } && d.getBoolean("isPush") != true }
                     val entities = finalDocs.map { doc ->
                         val readVal = doc.getBoolean("read") ?: true
                         if (!readVal) {

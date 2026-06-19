@@ -126,7 +126,7 @@ class AgeSpecificPushActivity : ThemedActivity() {
                             }
                         }
                     } catch (e: Exception) {
-                        // Skip malformed dates
+                        android.util.Log.e("AgeSpecificPush", "Failed to parse DOB: '$dobString' for user ${document.id}")
                     }
                 }
             }
