@@ -30,9 +30,14 @@
         <item name="glass3dRedBackground">@drawable/bg_glass_3d_red</item>
         <item name="calendarTheme">@style/CalendarThemeDark</item>
         <item name="textPrimaryColor">@color/text_primary</item>
+        <item name="textSecondaryColor">#A0AAB2</item>
         <item name="textMutedColor">@color/text_muted</item>
         <item name="navActiveColor">#FFFFFF</item>
         <item name="navInactiveColor">#D0E0FF</item>
+        <item name="infoIconBackground">@drawable/bg_white_circle</item>
+        <item name="dividerColor">#1AFFFFFF</item>
+        <item name="textRedColor">#FF4D4D</item>
+        <item name="textGreenColor">#4CAF50</item>
     </style>
 
 

@@ -40,6 +40,13 @@ class MenuActivity : ThemedActivity() {
     private val PREFS = "WalletPrefs"
     private val KEY_BALANCE = "wallet_balance"
 
+    private val syncReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+            val prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
+            findViewById<TextView>(R.id.tvUserName).text = prefs.getString("user_name", "User")
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_menu)
@@ -170,37 +177,60 @@ class MenuActivity : ThemedActivity() {
         val isAdmin = adminEmails.contains(email.lowercase())
 
         announcementsListener?.remove()
-        announcementsListener = db.collection("announcements")
-            .addSnapshotListener { snapshot, _ ->
-                hasUnreadAnnouncement = false
-                if (snapshot != null) {
-                    val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-                    val email = user?.email?.lowercase() ?: ""
-                    val registrationTime = user?.metadata?.creationTimestamp ?: 0L
-                    val deletedPrefs = getSharedPreferences("DeletedAnnouncements", Context.MODE_PRIVATE)
-                    val readPrefs = getSharedPreferences("ReadAnnouncements", Context.MODE_PRIVATE)
-                    for (doc in snapshot.documents) {
-                        val id = doc.id
-                        val timestamp = doc.getLong("timestamp") ?: id.toLongOrNull() ?: 0L
-                        if (timestamp < registrationTime) {
-                            continue
+        
+        fun setupAnnouncementsListener() {
+            val db = FirebaseFirestore.getInstance()
+            announcementsListener = db.collection("announcements")
+                .addSnapshotListener { snapshot, _ ->
+                    hasUnreadAnnouncement = false
+                    if (snapshot != null) {
+                        val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                        val currentEmail = user?.email?.lowercase() ?: ""
+                        val registrationTime = user?.metadata?.creationTimestamp ?: 0L
+                        val deletedPrefs = getSharedPreferences("DeletedAnnouncements", Context.MODE_PRIVATE)
+                        val readPrefs = getSharedPreferences("ReadAnnouncements", Context.MODE_PRIVATE)
+                        for (doc in snapshot.documents) {
+                            val id = doc.id
+                            val timestamp = doc.getLong("timestamp") ?: id.toLongOrNull() ?: 0L
+                            if (timestamp < registrationTime) {
+                                continue
+                            }
+                            if (deletedPrefs.contains(id) || readPrefs.contains(id)) {
+                                continue
+                            }
+                            val adminOnly = doc.getBoolean("adminOnly") ?: false
+                            val targetEmails = doc.get("targetEmails") as? List<String>
+                            if (adminOnly && !isAdmin) {
+                                continue
+                            }
+                            if (targetEmails != null && !targetEmails.map { it.lowercase() }.contains(currentEmail)) {
+                                continue
+                            }
+                            hasUnreadAnnouncement = true
+                            break
                         }
-                        if (deletedPrefs.contains(id) || readPrefs.contains(id)) {
-                            continue
-                        }
-                        val adminOnly = doc.getBoolean("adminOnly") ?: false
-                        val targetEmails = doc.get("targetEmails") as? List<String>
-                        if (adminOnly && !isAdmin) {
-                            continue
-                        }
-                        if (targetEmails != null && !targetEmails.map { it.lowercase() }.contains(email)) {
-                            continue
-                        }
-                        hasUnreadAnnouncement = true
-                        break
                     }
+                    updateBadgeVisibility()
                 }
-                updateBadgeVisibility()
+        }
+
+        // Sync read announcements from Firestore first so badge doesn't wrongly appear on reinstall
+        db.collection("users").document(email)
+            .get()
+            .addOnSuccessListener { doc ->
+                val cloudReadIds = doc.get("readAnnouncementIds") as? List<String> ?: emptyList()
+                if (cloudReadIds.isNotEmpty()) {
+                    val readPrefs = getSharedPreferences("ReadAnnouncements", Context.MODE_PRIVATE)
+                    val editor = readPrefs.edit()
+                    for (id in cloudReadIds) {
+                        editor.putBoolean(id, true)
+                    }
+                    editor.apply()
+                }
+                setupAnnouncementsListener()
+            }
+            .addOnFailureListener {
+                setupAnnouncementsListener()
             }
     }
 
@@ -218,23 +248,31 @@ class MenuActivity : ThemedActivity() {
     override fun onResume() {
         super.onResume()
         // Reload User Profile to display changes immediately upon returning
-        val appPrefs = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+        val appPrefs = getSharedPreferences("AppPrefs", android.content.Context.MODE_PRIVATE)
         val userName = appPrefs.getString("user_name", "User")
-        findViewById<TextView>(R.id.tvUserName)?.text = userName
+        findViewById<android.widget.TextView>(R.id.tvUserName)?.text = userName
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).registerReceiver(
+            syncReceiver, android.content.IntentFilter(FirestoreSyncManager.ACTION_SYNC_UPDATE)
+        )
     }
 
     private fun animateDialog(view: android.view.View) {
-        val scale = ScaleAnimation(
+        val scale = android.view.animation.ScaleAnimation(
             0.8f, 1f, 0.8f, 1f,
             android.view.animation.Animation.RELATIVE_TO_SELF, 0.5f,
             android.view.animation.Animation.RELATIVE_TO_SELF, 0.5f
         )
         scale.duration = 200
 
-        val fade = AlphaAnimation(0f, 1f)
+        val fade = android.view.animation.AlphaAnimation(0f, 1f)
         fade.duration = 200
 
         view.startAnimation(scale)
         view.startAnimation(fade)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).unregisterReceiver(syncReceiver)
     }
 }

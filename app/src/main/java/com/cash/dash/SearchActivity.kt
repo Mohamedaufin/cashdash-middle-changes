@@ -49,6 +49,7 @@ class SearchActivity : ThemedActivity() {
 
         edtSearch.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                edtSearch.clearFocus()
                 hideKeyboard()
                 true
             } else {

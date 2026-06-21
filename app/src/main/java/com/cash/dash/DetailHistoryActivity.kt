@@ -177,7 +177,7 @@ class DetailHistoryActivity : ThemedActivity() {
     }
 
     private fun showTransactionActionMenu(item: TransactionItem, mode: String, week: Int, day: Int, month: Int, year: Int, categoryFilter: String) {
-        val bottomSheet = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+        val bottomSheet = BottomSheetDialog(this, ThemeHelper.getBottomSheetTheme(this))
         
         val density = resources.displayMetrics.density
         val container = LinearLayout(this).apply {
@@ -261,7 +261,7 @@ class DetailHistoryActivity : ThemedActivity() {
         val btnDelete = android.widget.Button(this).apply {
             text = "Delete Transaction"
             isAllCaps = false
-            setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
+            setTextColor(ThemeHelper.resolveColorAttr(this@DetailHistoryActivity, R.attr.textRedColor))
             val tv = android.util.TypedValue()
             this@DetailHistoryActivity.theme.resolveAttribute(R.attr.cardBackground, tv, true)
             background = androidx.core.content.ContextCompat.getDrawable(this@DetailHistoryActivity, tv.resourceId)
@@ -451,7 +451,7 @@ class DetailHistoryActivity : ThemedActivity() {
     }
 
     private fun showReallocationDialog(item: TransactionItem, mode: String, week: Int, day: Int, month: Int, year: Int, categoryFilter: String) {
-        val bottomSheet = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+        val bottomSheet = BottomSheetDialog(this, ThemeHelper.getBottomSheetTheme(this))
         
         val density = resources.displayMetrics.density
         val container = LinearLayout(this).apply {

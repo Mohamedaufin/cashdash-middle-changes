@@ -35,7 +35,7 @@
         android:id="@+id/txtTransAmount"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="#FF4D4D"
+        android:textColor="?attr/textRedColor"
         android:textSize="@dimen/text_subhead"
         android:textStyle="bold"
         android:text="+500" />

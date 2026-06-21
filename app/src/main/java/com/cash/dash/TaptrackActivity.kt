@@ -34,8 +34,24 @@ class TaptrackActivity : ThemedActivity() {
         }
 
         switchTaptrack = findViewById(R.id.switchTaptrack)
+        val isWhiteTheme = ThemeHelper.isWhiteTheme(this)
+        val activeColorStr = if (isWhiteTheme) "#008000" else "#1DD15D"
+        switchTaptrack.trackTintList = android.content.res.ColorStateList(
+            arrayOf(
+                intArrayOf(android.R.attr.state_checked),
+                intArrayOf()
+            ),
+            intArrayOf(
+                Color.parseColor(activeColorStr),
+                Color.parseColor("#757575")
+            )
+        )
         tvTaptrackStatus = findViewById(R.id.tvTaptrackStatus)
         iconTaptrackStatus = findViewById(R.id.iconTaptrackStatus)
+
+        findViewById<View>(R.id.masterToggleContainer).setOnClickListener {
+            switchTaptrack.toggle()
+        }
 
         layoutOverlayPermission = findViewById(R.id.layoutOverlayPermission)
         switchOverlay = findViewById(R.id.switchOverlay)
@@ -81,7 +97,7 @@ class TaptrackActivity : ThemedActivity() {
         switchUsage.setOnClickListener {
             AlertDialogHelper.createFlatDialogBuilder(this)
                 .setTitle("Data Collection Disclosure")
-                .setMessage("CashDash collects data about which apps you open to detect when you are using supported shopping applications. This enables the Taptrack widget to appear automatically while you shop. This data is kept strictly on your device and never shared.")
+                .setMessage("CashDash collects data about which apps you open to detect when you are using supported shopping applications. This enables the TapTrack widget to appear automatically while you shop. This data is kept strictly on your device and never shared.")
                 .setTitleGravity(android.view.Gravity.CENTER)
                 .setMessageGravity(android.view.Gravity.START)
                 .setTitleTextSize(16f)
@@ -161,17 +177,25 @@ class TaptrackActivity : ThemedActivity() {
     private fun updateMasterToggleUI() {
         val hasOverlay = Settings.canDrawOverlays(this)
         val hasUsage = hasUsageStatsPermission()
+        
+        val tvTapTrackHint = findViewById<TextView>(R.id.tvTapTrackHint)
+        if (hasOverlay && hasUsage) {
+            tvTapTrackHint.visibility = View.VISIBLE
+        } else {
+            tvTapTrackHint.visibility = View.GONE
+        }
 
         if (switchTaptrack.isChecked) {
             if (hasOverlay && hasUsage) {
-                tvTaptrackStatus.text = "Taptrack is active"
-                iconTaptrackStatus.setColorFilter(Color.parseColor("#1DD15D")) // Green
+                tvTaptrackStatus.text = "TapTrack is active"
+                val activeColor = if (ThemeHelper.isWhiteTheme(this)) "#008000" else "#1DD15D"
+                iconTaptrackStatus.setColorFilter(Color.parseColor(activeColor)) // Green
             } else {
                 tvTaptrackStatus.text = "Setup Required"
                 iconTaptrackStatus.setColorFilter(ThemeHelper.resolveColorAttr(this, R.attr.textMutedColor))
             }
         } else {
-            tvTaptrackStatus.text = "Taptrack is off"
+            tvTaptrackStatus.text = "TapTrack is off"
             iconTaptrackStatus.setColorFilter(ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor))
         }
     }

@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="16dp"
-        android:background="#0a0a1a">
+        android:background="?attr/mainBackground">
 
         <!-- Header with Close Button -->
         <RelativeLayout
@@ -30,7 +30,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="CashDash Tracker"
-                android:textColor="#e0e0ff"
+                android:textColor="?attr/textPrimaryColor"
                 android:textStyle="bold"
                 android:textSize="16sp"
                 android:layout_marginStart="32dp"
@@ -40,11 +40,11 @@
                 android:id="@+id/btnClose"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
-                android:background="#1a1a2e"
+                android:background="?attr/inputBackground"
                 android:src="@android:drawable/ic_menu_close_clear_cancel"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                app:tint="#8888aa"/>
+                app:tint="?attr/textPrimaryColor"/>
         </RelativeLayout>
 
         <!-- Toggle Section -->
@@ -52,7 +52,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:background="#151525"
+            android:background="?attr/inputBackground"
             android:padding="12dp"
             android:gravity="center_vertical">
             
@@ -60,8 +60,8 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Taptrack"
-                android:textColor="#e0e0ff"
+                android:text="TapTrack"
+                android:textColor="?attr/textPrimaryColor"
                 android:textStyle="bold"/>
 
             <androidx.appcompat.widget.SwitchCompat
@@ -87,7 +87,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Wallet: ₹0 / ₹0"
-                android:textColor="#8888aa"
+                android:textColor="?attr/textSecondaryColor"
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:gravity="end"
@@ -98,9 +98,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:hint="Expense Title (e.g. Swiggy Order)"
-                android:textColorHint="#8888aa"
-                android:textColor="#e0e0ff"
-                android:background="@drawable/bg_input_field_tracker"
+                android:textColorHint="@color/text_dim"
+                android:textColor="?attr/textPrimaryColor"
+                android:background="?attr/inputBackground"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
                 android:layout_marginBottom="12dp"
@@ -113,9 +113,9 @@
                 android:hint="Amount"
                 android:inputType="numberDecimal"
                 android:maxLength="7"
-                android:textColorHint="#8888aa"
-                android:textColor="#e0e0ff"
-                android:background="@drawable/bg_input_field_tracker"
+                android:textColorHint="@color/text_dim"
+                android:textColor="?attr/textPrimaryColor"
+                android:background="?attr/inputBackground"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
                 android:layout_marginBottom="12dp"
@@ -125,25 +125,58 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Allocation"
-                android:textColor="#8888aa"
+                android:textColor="?attr/textSecondaryColor"
                 android:textSize="12sp"
                 android:layout_marginBottom="4dp"/>
 
-            <androidx.appcompat.widget.AppCompatSpinner
-                android:id="@+id/spinnerAllocation"
+            <LinearLayout
+                android:id="@+id/layoutAllocationBtn"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:background="@drawable/bg_input_field_tracker"
-                android:popupBackground="#151525"
-                android:layout_marginBottom="16dp"/>
+                android:background="?attr/inputBackground"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="12dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:id="@+id/tvSelectedAllocation"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Select Allocation"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textSize="14sp" />
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/imgAllocationArrow"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_arrow_drop_down"
+                    app:tint="?attr/textPrimaryColor" />
+            </LinearLayout>
+
+            <!-- Expandable Options Container -->
+            <LinearLayout
+                android:id="@+id/layoutAllocationExpandable"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="?attr/inputBackground"
+                android:layout_marginTop="4dp"
+                android:visibility="gone">
+                <!-- Dynamically populated options go here -->
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/btnSave"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
+                android:layout_marginTop="16dp"
                 android:text="SAVE EXPENSE"
-                android:textColor="#e0e0ff"
-                android:background="#151525"
+                android:textColor="?attr/textPrimaryColor"
+                android:background="?attr/inputBackground"
                 android:gravity="center"
                 android:textStyle="bold"
                 android:clickable="true"

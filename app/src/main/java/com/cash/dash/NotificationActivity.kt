@@ -290,12 +290,17 @@ class NotificationActivity : ThemedActivity() {
         val chipResponded = findViewById<TextView>(R.id.chipResponded)
         val chipPending = findViewById<TextView>(R.id.chipPending)
 
-        val activeColor = Color.WHITE
+        val isWhite = ThemeHelper.isWhiteTheme(this)
+        val activeColor = if (isWhite) Color.BLACK else Color.WHITE
         val inactiveColor = Color.parseColor("#606880")
 
         chipAll.setTextColor(if (currentFilter == "all") activeColor else inactiveColor)
         chipResponded.setTextColor(if (currentFilter == "responded") activeColor else inactiveColor)
         chipPending.setTextColor(if (currentFilter == "pending") activeColor else inactiveColor)
+
+        chipAll.isSelected = (currentFilter == "all")
+        chipResponded.isSelected = (currentFilter == "responded")
+        chipPending.isSelected = (currentFilter == "pending")
     }
 
     private fun markAllAsRead() {

@@ -42,6 +42,12 @@ class HomeFragment : Fragment() {
     private var reminderRunnable: Runnable? = null
     private var dobLockDialog: com.google.android.material.bottomsheet.BottomSheetDialog? = null
 
+    private val syncReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+            refreshUI()
+        }
+    }
+
     private val appPrefsListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
         if (key == "user_dob") {
             checkDobLock()
@@ -115,18 +121,18 @@ class HomeFragment : Fragment() {
             if (isTrackingOn) {
                 smartPrefs.edit().putBoolean("tracking_enabled", false).apply()
                 requireContext().stopService(Intent(requireContext(), AppUsageTrackerService::class.java))
-                android.widget.Toast.makeText(requireContext(), "Taptrack is off", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(requireContext(), "TapTrack is off", android.widget.Toast.LENGTH_SHORT).show()
                 refreshUI()
                 true
             } else {
                 if (!hasUsageStatsPermission() || !android.provider.Settings.canDrawOverlays(requireContext())) {
-                    android.widget.Toast.makeText(requireContext(), "Please finish setup in Taptrack first", android.widget.Toast.LENGTH_SHORT).show()
+                    android.widget.Toast.makeText(requireContext(), "Please finish setup in TapTrack first", android.widget.Toast.LENGTH_SHORT).show()
                     startActivity(Intent(requireContext(), TaptrackActivity::class.java))
                 } else {
                     smartPrefs.edit().putBoolean("tracking_enabled", true).apply()
                     val serviceIntent = Intent(requireContext(), AppUsageTrackerService::class.java)
                     androidx.core.content.ContextCompat.startForegroundService(requireContext(), serviceIntent)
-                    android.widget.Toast.makeText(requireContext(), "Taptrack is on", android.widget.Toast.LENGTH_SHORT).show()
+                    android.widget.Toast.makeText(requireContext(), "TapTrack is on", android.widget.Toast.LENGTH_SHORT).show()
                     refreshUI()
                 }
                 true
@@ -199,6 +205,9 @@ class HomeFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(requireContext()).registerReceiver(
+            syncReceiver, android.content.IntentFilter(FirestoreSyncManager.ACTION_SYNC_UPDATE)
+        )
         checkPendingTransactions()
         refreshUI()
 
@@ -213,6 +222,7 @@ class HomeFragment : Fragment() {
 
     override fun onPause() {
         super.onPause()
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(syncReceiver)
         reminderRunnable?.let { handler.removeCallbacks(it) }
     }
 
@@ -230,7 +240,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun showDobLockDialog() {
-        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(requireContext(), R.style.BottomSheetDialogTheme)
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(requireContext(), ThemeHelper.getBottomSheetTheme(requireContext()))
         dialog.setCancelable(false)
         val sheetView = layoutInflater.inflate(R.layout.layout_dob_bottom_sheet, null)
         dialog.setContentView(sheetView)
@@ -376,7 +386,8 @@ class HomeFragment : Fragment() {
 
             val iconTaptrack = it.findViewById<ImageView>(R.id.btnTaptrack)
             if (isTrackingOn) {
-                iconTaptrack?.setColorFilter(android.graphics.Color.parseColor("#1DD15D")) // Vibrant Proper Green
+                val activeColor = if (ThemeHelper.isWhiteTheme(requireContext())) "#008000" else "#1DD15D"
+                iconTaptrack?.setColorFilter(android.graphics.Color.parseColor(activeColor))
             } else {
                 iconTaptrack?.setColorFilter(ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor)) // Original Color
             }
@@ -460,7 +471,7 @@ class HomeFragment : Fragment() {
                 val reminderCal = Calendar.getInstance().apply { timeInMillis = postponeUntil }
                 val sdf = java.text.SimpleDateFormat("dd/MM/yyyy h:mm a", java.util.Locale.US)
                 val formattedTime = sdf.format(reminderCal.time).lowercase(java.util.Locale.US)
-                tvResetPending.text = "Reminder set at $formattedTime. Tap here to configure"
+                tvResetPending.text = "Reminder set at $formattedTime. Tap text to configure"
 
                 tvResetPending.setOnClickListener {
                     showResetConfirmationDialog(nextDate, freq)
@@ -898,7 +909,7 @@ class HomeFragment : Fragment() {
         // Show Prominent Disclosure Dialog
         AlertDialogHelper.createFlatDialogBuilder(requireContext())
             .setTitle("Data Collection Disclosure")
-            .setMessage("CashDash collects data about which apps you open to detect when you are using supported shopping applications. This enables the Taptrack widget to appear automatically while you shop. This data is kept strictly on your device and never shared.")
+            .setMessage("CashDash collects data about which apps you open to detect when you are using supported shopping applications. This enables the TapTrack widget to appear automatically while you shop. This data is kept strictly on your device and never shared.")
             .setTitleGravity(android.view.Gravity.CENTER)
             .setMessageGravity(android.view.Gravity.START)
             .setTitleTextSize(16f)

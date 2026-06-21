@@ -40,4 +40,66 @@ open class ThemedActivity : AppCompatActivity() {
             super.attachBaseContext(newBase)
         }
     }
+
+    override fun onStart() {
+        super.onStart()
+        setupGlobalEditTextFocusClearer()
+    }
+
+    private fun setupGlobalEditTextFocusClearer() {
+        val decorView = window.decorView
+        decorView.viewTreeObserver.addOnGlobalLayoutListener(object : android.view.ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                val root = decorView.findViewById<android.view.ViewGroup>(android.R.id.content) ?: return
+                attachFocusClearListeners(root)
+            }
+        })
+    }
+
+    private fun attachFocusClearListeners(view: android.view.View) {
+        if (view is android.widget.EditText) {
+            if (view.getTag(R.id.focus_clearer_tag) == null) {
+                view.setTag(R.id.focus_clearer_tag, true)
+                if (view.id != R.id.edtSearch) {
+                    view.setOnEditorActionListener { _, actionId, event ->
+                        val isActionDone = actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE ||
+                                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_NEXT ||
+                                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_GO ||
+                                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH ||
+                                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND ||
+                                (event != null && event.keyCode == android.view.KeyEvent.KEYCODE_ENTER && event.action == android.view.KeyEvent.ACTION_UP)
+                                
+                        if (isActionDone) {
+                            view.clearFocus()
+                            val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                            imm.hideSoftInputFromWindow(view.windowToken, 0)
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                }
+            }
+        } else if (view is android.view.ViewGroup) {
+            for (i in 0 until view.childCount) {
+                attachFocusClearListeners(view.getChildAt(i))
+            }
+        }
+    }
+
+    override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
+        if (ev.action == android.view.MotionEvent.ACTION_DOWN) {
+            val v = currentFocus
+            if (v is android.widget.EditText) {
+                val outRect = android.graphics.Rect()
+                v.getGlobalVisibleRect(outRect)
+                if (!outRect.contains(ev.rawX.toInt(), ev.rawY.toInt())) {
+                    v.clearFocus()
+                    val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                    imm.hideSoftInputFromWindow(v.windowToken, 0)
+                }
+            }
+        }
+        return super.dispatchTouchEvent(ev)
+    }
 }

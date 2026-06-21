@@ -21,6 +21,7 @@
     <attr name="calendarTheme" format="reference" />
 
     <attr name="textPrimaryColor" format="color" />
+    <attr name="textSecondaryColor" format="color" />
     <attr name="textMutedColor" format="color" />
     <attr name="navActiveColor" format="color" />
     <attr name="navInactiveColor" format="color" />
@@ -29,4 +30,8 @@
     <attr name="healthYellow" format="color" />
     <attr name="healthRed" format="color" />
     <attr name="progressTrackColor" format="color" />
+    <attr name="dividerColor" format="color" />
+    <attr name="textRedColor" format="color" />
+    <attr name="textGreenColor" format="color" />
+    <item name="focus_clearer_tag" type="id" />
 </resources>

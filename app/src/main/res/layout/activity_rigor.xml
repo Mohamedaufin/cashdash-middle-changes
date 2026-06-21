@@ -63,7 +63,7 @@
                 android:id="@+id/tvDescription"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Enter the details below to log your expense."
+                android:text="Enter the details below to manually record your expense."
                 android:textColor="?attr/textMutedColor"
                 android:textSize="@dimen/text_body"
                 android:layout_marginTop="8dp"

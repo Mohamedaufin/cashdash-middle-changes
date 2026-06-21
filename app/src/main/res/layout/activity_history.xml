@@ -22,7 +22,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingTop="35dp"
+        android:paddingTop="40dp"
         android:paddingBottom="160dp"
         android:clipToPadding="false">
 
@@ -47,7 +47,7 @@
                 android:paddingStart="16dp"
                 android:textAllCaps="false"
                 android:textColor="?attr/textPrimaryColor"
-                android:textSize="@dimen/text_subhead"
+                android:textSize="12dp"
                 android:textStyle="bold" />
 
             <androidx.appcompat.widget.AppCompatButton
@@ -65,7 +65,8 @@
                 android:paddingStart="16dp"
                 android:textAllCaps="false"
                 android:textColor="?attr/textPrimaryColor"
-                android:textSize="@dimen/text_body" />
+                android:textSize="12dp"
+                android:textStyle="bold" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnOverall"
@@ -80,7 +81,8 @@
                 android:paddingStart="16dp"
                 android:textAllCaps="false"
                 android:textColor="?attr/textPrimaryColor"
-                android:textSize="@dimen/text_subhead" />
+                android:textSize="12dp"
+                android:textStyle="bold" />
         </LinearLayout>
 
 

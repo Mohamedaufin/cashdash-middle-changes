@@ -161,7 +161,10 @@ class WeeklyBarGraphView(context: Context, attrs: AttributeSet?) : View(context,
             val isLimitCrossed = limitValue > 0f && value > limitValue
 
             val colors = if (isLimitCrossed) {
-                intArrayOf(Color.parseColor("#FFA1A1"), Color.parseColor("#FF4D4D"))
+                intArrayOf(
+                    if (isWhiteTheme) Color.parseColor("#EF9A9A") else Color.parseColor("#FFA1A1"),
+                    com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textRedColor)
+                )
             } else if (isWhiteTheme) {
                 if (i == currentWeekIndex && value > 0f) {
                     intArrayOf(Color.parseColor("#8BF7E6"), Color.parseColor("#4DE1C1"))

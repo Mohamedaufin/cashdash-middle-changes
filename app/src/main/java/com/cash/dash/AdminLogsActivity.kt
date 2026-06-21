@@ -159,10 +159,10 @@ class AdminLogsActivity : ThemedActivity() {
 
             // Color-code the left accent bar and the badge text based on rawActionType
             val color = when {
-                item.rawActionType.contains("Global", ignoreCase = true) -> android.graphics.Color.parseColor("#4ADE80") // Green
-                item.rawActionType.contains("Admin", ignoreCase = true) -> android.graphics.Color.parseColor("#FF4D4D") // Red
+                item.rawActionType.contains("Global", ignoreCase = true) -> ThemeHelper.resolveColorAttr(holder.itemView.context, R.attr.textGreenColor) // Green
+                item.rawActionType.contains("Admin", ignoreCase = true) -> ThemeHelper.resolveColorAttr(holder.itemView.context, R.attr.textRedColor) // Red
                 item.rawActionType.contains("User Specific", ignoreCase = true) -> android.graphics.Color.parseColor("#FFA500") // Yellow
-                else -> android.graphics.Color.parseColor("#4ADE80")
+                else -> ThemeHelper.resolveColorAttr(holder.itemView.context, R.attr.textGreenColor)
             }
             
             if (item.targetedUsers != null) {

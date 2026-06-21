@@ -36,9 +36,10 @@ class FloatingWidgetService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.Main + Job())
 
     private fun getThemedContext(): Context {
-        // Force the widget to ALWAYS use the dark theme (Theme.Cashdash)
-        // regardless of the user's base app settings.
-        return androidx.appcompat.view.ContextThemeWrapper(this, R.style.Theme_Cashdash)
+        val currentNightMode = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+        val isSystemDark = currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        val themeResId = if (!isSystemDark) R.style.Theme_Cashdash_White else R.style.Theme_Cashdash
+        return androidx.appcompat.view.ContextThemeWrapper(this, themeResId)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -105,7 +106,7 @@ class FloatingWidgetService : Service() {
                     MotionEvent.ACTION_MOVE -> {
                         val dx = (event.rawX - initialTouchX).toInt()
                         val dy = (event.rawY - initialTouchY).toInt()
-                        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) isClick = false
+                        if (Math.abs(dx) > 20 || Math.abs(dy) > 20) isClick = false
                         params.x = initialX + dx
                         params.y = initialY + dy
                         windowManager.updateViewLayout(bubbleView, params)
@@ -161,8 +162,9 @@ class FloatingWidgetService : Service() {
                 // If Usage Stats isn't enabled, we can ask for it
                 if (!hasUsageStatsPermission()) {
                     switchTracking.isChecked = false
-                    val dialogView = LayoutInflater.from(getThemedContext()).inflate(R.layout.dialog_confirm_action, null)
-                    val dialog = androidx.appcompat.app.AlertDialog.Builder(getThemedContext())
+                    val themedContext = getThemedContext()
+                    val dialogView = LayoutInflater.from(themedContext).inflate(R.layout.dialog_confirm_action, null)
+                    val dialog = android.app.AlertDialog.Builder(themedContext)
                         .setView(dialogView)
                         .setCancelable(false)
                         .create()
@@ -175,7 +177,7 @@ class FloatingWidgetService : Service() {
                     val btnNegative = dialogView.findViewById<Button>(R.id.btnConfirmCancel)
 
                     tvTitle.text = "Data Collection Disclosure"
-                    tvMessage.text = "CashDash collects data about which apps you open to detect when you are using supported shopping applications. This enables the Taptrack widget to appear automatically while you shop. This data is kept strictly on your device and never shared."
+                    tvMessage.text = "CashDash collects data about which apps you open to detect when you are using supported shopping applications. This enables the TapTrack widget to appear automatically while you shop. This data is kept strictly on your device and never shared."
                     tvTitle.gravity = android.view.Gravity.CENTER
                     tvMessage.gravity = android.view.Gravity.START
                     tvTitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
@@ -231,9 +233,12 @@ class FloatingWidgetService : Service() {
             populateTrackerData()
         }
 
+        val addTime = System.currentTimeMillis()
         trackerView?.setOnTouchListener { v, event ->
             if (event.action == MotionEvent.ACTION_OUTSIDE) {
-                showBubble()
+                if (System.currentTimeMillis() - addTime > 300) {
+                    showBubble()
+                }
                 true
             } else {
                 false
@@ -258,14 +263,24 @@ class FloatingWidgetService : Service() {
         isWidgetShowing = true
     }
 
+    private var selectedAllocation: String? = null
+    private var isDropdownExpanded = false
+
     private fun populateTrackerData() {
         val edtTitle = trackerView?.findViewById<EditText>(R.id.edtTitle)
         val edtAmount = trackerView?.findViewById<EditText>(R.id.edtAmount)
-        val spinner = trackerView?.findViewById<Spinner>(R.id.spinnerAllocation)
+        val layoutAllocationBtn = trackerView?.findViewById<LinearLayout>(R.id.layoutAllocationBtn)
+        val tvSelectedAllocation = trackerView?.findViewById<TextView>(R.id.tvSelectedAllocation)
+        val imgAllocationArrow = trackerView?.findViewById<ImageView>(R.id.imgAllocationArrow)
+        val layoutAllocationExpandable = trackerView?.findViewById<LinearLayout>(R.id.layoutAllocationExpandable)
         val tvWalletHint = trackerView?.findViewById<TextView>(R.id.tvWalletHint)
         val btnSave = trackerView?.findViewById<android.widget.TextView>(R.id.btnSave)
 
         edtTitle?.setText(currentAppName)
+
+        // Read app memory
+        val savedAlloc = getSharedPreferences("AppAllocationPrefs", Context.MODE_PRIVATE)
+            .getString("ALLOC_$currentAppName", null)
 
         serviceScope.launch(Dispatchers.IO) {
             val db = AppDatabase.getDatabase(this@FloatingWidgetService)
@@ -300,10 +315,65 @@ class FloatingWidgetService : Service() {
 
             withContext(Dispatchers.Main) {
                 tvWalletHint?.text = "Wallet: ₹$currentWallet / ₹$walletMax"
-                val themedContext = getThemedContext()
-                val adapter = ArrayAdapter(themedContext, R.layout.spinner_item_tracker, displayList)
-                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item_tracker)
-                spinner?.adapter = adapter
+                
+                // Pre-fill memory
+                val initialAlloc = if (savedAlloc != null && categoriesList.contains(savedAlloc)) {
+                    savedAlloc
+                } else null
+                
+                selectedAllocation = initialAlloc
+                tvSelectedAllocation?.text = if (initialAlloc != null) {
+                    val spent = getSpentForCategory(db, initialAlloc).toInt()
+                    val limit = prefsCat.all["LIMIT_$initialAlloc"]?.toString()?.toFloatOrNull()?.toInt() ?: -1
+                    if (limit > 0) "$initialAlloc - ₹$spent / ₹$limit" else initialAlloc
+                } else "Select Allocation"
+                
+                layoutAllocationExpandable?.removeAllViews()
+                
+                val density = resources.displayMetrics.density
+                for (catInfo in displayList) {
+                    val rawCat = categoriesList[displayList.indexOf(catInfo)]
+                    val themedContext = getThemedContext() // ensure we use local variable for the iteration
+                    val tv = TextView(themedContext).apply {
+                        text = catInfo
+                        setTextColor(ThemeHelper.resolveColorAttr(themedContext, R.attr.textPrimaryColor))
+                        textSize = 14f
+                        setPadding((12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt())
+                        isClickable = true
+                        isFocusable = true
+                        
+                        setOnClickListener {
+                            selectedAllocation = rawCat
+                            tvSelectedAllocation?.text = catInfo
+                            isDropdownExpanded = false
+                            layoutAllocationExpandable?.visibility = View.GONE
+                            imgAllocationArrow?.rotation = 0f
+                            
+                            if (rawCat == "Create new allocation") {
+                                val amountStr = edtAmount?.text.toString().trim()
+                                val amount = amountStr.toFloatOrNull() ?: 0f
+                                showCreateAllocationDialog(edtTitle?.text.toString().trim(), amount)
+                            }
+                        }
+                    }
+                    layoutAllocationExpandable?.addView(tv)
+                }
+
+                layoutAllocationBtn?.setOnClickListener {
+                    isDropdownExpanded = !isDropdownExpanded
+                    if (isDropdownExpanded) {
+                        layoutAllocationExpandable?.visibility = View.VISIBLE
+                        imgAllocationArrow?.rotation = 180f
+                        // Remove bottom margin of button when expanded
+                        val params = layoutAllocationBtn.layoutParams as ViewGroup.MarginLayoutParams
+                        params.bottomMargin = 0
+                        layoutAllocationBtn.layoutParams = params
+                    } else {
+                        layoutAllocationExpandable?.visibility = View.GONE
+                        imgAllocationArrow?.rotation = 0f
+                        // Restore margin if any, though our layout has 0dp bottom margin originally on the btn
+                    }
+                }
 
                 btnSave?.setOnClickListener {
                     val amountStr = edtAmount?.text.toString().trim()
@@ -312,12 +382,18 @@ class FloatingWidgetService : Service() {
                         return@setOnClickListener
                     }
                     val amount = amountStr.toFloatOrNull() ?: 0f
-                    val selectedIdx = spinner?.selectedItemPosition ?: 0
-                    val rawCategory = categoriesList.getOrNull(selectedIdx) ?: "Create new allocation"
+                    val rawCategory = selectedAllocation ?: "Create new allocation"
 
                     if (rawCategory == "Create new allocation") {
                         showCreateAllocationDialog(edtTitle?.text.toString().trim(), amount)
                     } else {
+                        // Store memory
+                        if (currentAppName.isNotBlank()) {
+                            getSharedPreferences("AppAllocationPrefs", Context.MODE_PRIVATE)
+                                .edit().putString("ALLOC_$currentAppName", rawCategory).apply()
+                            FirestoreSyncManager.pushAllDataToCloud(this@FloatingWidgetService)
+                        }
+                        
                         saveExpense(edtTitle?.text.toString().trim(), amount, rawCategory)
                     }
                 }
@@ -327,29 +403,30 @@ class FloatingWidgetService : Service() {
 
     private fun showCreateAllocationDialog(expenseTitle: String, expenseAmount: Float) {
         val density = resources.displayMetrics.density
-        val inputContainer = LinearLayout(getThemedContext()).apply {
+        val themedContext = getThemedContext()
+        val inputContainer = LinearLayout(themedContext).apply {
             orientation = LinearLayout.VERTICAL
             val p = (20 * density).toInt()
             setPadding(p, p, p, p)
-            setBackgroundResource(ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
+            setBackgroundResource(R.drawable.bg_transaction)
         }
 
-        val titleView = TextView(getThemedContext()).apply {
+        val titleView = TextView(themedContext).apply {
             text = "Create New Allocation"
             setTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, 18f)
-            setTextColor(ThemeHelper.resolveColorAttr(this@FloatingWidgetService, R.attr.textPrimaryColor))
+            setTextColor(ThemeHelper.resolveColorAttr(themedContext, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, (16 * density).toInt())
         }
         inputContainer.addView(titleView)
 
-        val edtName = EditText(getThemedContext()).apply {
+        val edtName = EditText(themedContext).apply {
             hint = "Allocation Name (e.g. Shopping)"
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
-            setHintTextColor(ThemeHelper.resolveColorAttr(this@FloatingWidgetService, R.attr.textMutedColor))
-            setTextColor(ThemeHelper.resolveColorAttr(this@FloatingWidgetService, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+            setHintTextColor(ThemeHelper.resolveColorAttr(themedContext, R.attr.textMutedColor))
+            setTextColor(ThemeHelper.resolveColorAttr(themedContext, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(themedContext, android.util.TypedValue().apply { themedContext.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
             setPadding((12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt())
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -360,32 +437,32 @@ class FloatingWidgetService : Service() {
         }
         inputContainer.addView(edtName)
 
-        val btnContainer = LinearLayout(getThemedContext()).apply {
+        val btnContainer = LinearLayout(themedContext).apply {
             orientation = LinearLayout.HORIZONTAL
         }
 
-        val btnCancel = Button(getThemedContext()).apply {
+        val btnCancel = Button(themedContext).apply {
             text = "Cancel"
             isAllCaps = false
-            setTextColor(ThemeHelper.resolveColorAttr(this@FloatingWidgetService, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+            setTextColor(ThemeHelper.resolveColorAttr(themedContext, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(themedContext, android.util.TypedValue().apply { themedContext.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
                 marginEnd = (8 * density).toInt()
             }
         }
         btnContainer.addView(btnCancel)
 
-        val btnCreate = Button(getThemedContext()).apply {
+        val btnCreate = Button(themedContext).apply {
             text = "Create"
             isAllCaps = false
-            setTextColor(ThemeHelper.resolveColorAttr(this@FloatingWidgetService, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
+            setTextColor(ThemeHelper.resolveColorAttr(themedContext, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(themedContext, android.util.TypedValue().apply { themedContext.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
         btnContainer.addView(btnCreate)
         inputContainer.addView(btnContainer)
 
-        val allocDialog = androidx.appcompat.app.AlertDialog.Builder(getThemedContext())
+        val allocDialog = android.app.AlertDialog.Builder(themedContext)
             .setView(inputContainer)
             .setCancelable(true)
             .create()

@@ -6,11 +6,10 @@
     android:background="?attr/mainBackground">
 
     <!-- Header -->
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:paddingTop="50dp"
         android:paddingBottom="20dp"
         android:paddingStart="25dp"
@@ -19,25 +18,29 @@
 
         <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="45dp"
-            android:layout_height="45dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:background="?attr/roundBackground"
             android:src="@drawable/ic_back_arrow1"
             app:tint="?attr/textPrimaryColor"
-            android:padding="10dp"
-            android:layout_gravity="center_vertical"
-            android:scaleType="fitCenter"/>
+            android:padding="12dp"
+            android:scaleType="fitCenter"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
 
         <TextView
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Help Center"
             android:textColor="?attr/textPrimaryColor"
             android:textSize="@dimen/text_title"
             android:textStyle="bold"
-            android:layout_gravity="center_vertical"
-            android:layout_marginStart="20dp"/>
-    </LinearLayout>
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/btnBack"
+            app:layout_constraintBottom_toBottomOf="@id/btnBack"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ScrollView
         android:layout_width="match_parent"
