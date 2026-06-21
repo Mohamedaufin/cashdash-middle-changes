@@ -17,6 +17,14 @@ object ThemeHelper {
 
     fun applyTheme(activity: android.app.Activity) {
         val theme = getCurrentTheme(activity)
+        if (activity is TaptrackActivity) {
+            if (theme == "White") {
+                activity.setTheme(R.style.Theme_Cashdash_White)
+            } else {
+                activity.setTheme(R.style.Theme_Cashdash)
+            }
+            return
+        }
         if (activity is SplashActivity) {
             when (theme) {
                 "Blue" -> activity.setTheme(R.style.Theme_Cashdash_Blue_Splash)
@@ -112,6 +120,13 @@ object ThemeHelper {
         return when (getCurrentTheme(context)) {
             "White" -> R.style.DatePickerThemeWhite
             else -> R.style.DatePickerThemeDark
+        }
+    }
+
+    fun getBottomSheetTheme(context: Context): Int {
+        return when (getCurrentTheme(context)) {
+            "White" -> R.style.BottomSheetDialogThemeWhite
+            else -> R.style.BottomSheetDialogTheme
         }
     }
 

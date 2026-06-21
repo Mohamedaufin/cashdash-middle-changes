@@ -260,17 +260,20 @@
                 android:textColor="?attr/textMutedColor"
                 android:layout_marginBottom="20dp"/>
 
-            <Button
+            <androidx.appcompat.widget.AppCompatTextView
                 android:id="@+id/btnSelectDate"
                 android:layout_width="match_parent"
                 android:layout_height="55dp"
                 android:text="Date: Today"
-                android:textColor="@android:color/white"
+                android:textColor="?attr/textPrimaryColor"
                 android:background="?attr/roundBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:textAllCaps="false"
                 android:textStyle="bold"
                 android:textSize="14sp"
                 android:layout_marginBottom="20dp"
-                android:drawableStart="@android:drawable/ic_menu_my_calendar"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"/>
 

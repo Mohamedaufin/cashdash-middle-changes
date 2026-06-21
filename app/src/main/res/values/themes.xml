@@ -19,6 +19,8 @@
         <item name="healthYellow">#FFC107</item>
         <item name="healthRed">#B71C1C</item>
         <item name="progressTrackColor">#262626</item>
+        <item name="textRedColor">#FF4D4D</item>
+        <item name="textGreenColor">#4CAF50</item>
 
     </style>
 
@@ -84,10 +86,14 @@
         <item name="rigorCalendarBackground">@drawable/bg_glass_panel</item>
         <item name="calendarTheme">@style/CalendarThemeDark</item>
         <item name="textPrimaryColor">@color/text_primary</item>
+        <item name="textSecondaryColor">#A0AAB2</item>
         <item name="textMutedColor">@color/text_muted</item>
         <item name="navActiveColor">#FFFFFF</item>
         <item name="navInactiveColor">#D0E0FF</item>
         <item name="infoIconBackground">@drawable/bg_white_circle</item>
+        <item name="dividerColor">#1AFFFFFF</item>
+        <item name="textRedColor">#FF4D4D</item>
+        <item name="textGreenColor">#4CAF50</item>
     </style>
 
 
@@ -117,11 +123,15 @@
         <item name="rigorCalendarBackground">@drawable/bg_glass_panel_blue</item>
         <item name="calendarTheme">@style/CalendarThemeDark</item>
         <item name="textPrimaryColor">@color/text_primary</item>
+        <item name="textSecondaryColor">#A0AAB2</item>
         <item name="textMutedColor">@color/text_muted</item>
         <item name="navActiveColor">#FFFFFF</item>
         <item name="navInactiveColor">#D0E0FF</item>
         <item name="infoIconBackground">@drawable/bg_white_circle</item>
         <item name="progressTrackColor">#08123A</item>
+        <item name="dividerColor">#1AFFFFFF</item>
+        <item name="textRedColor">#FF4D4D</item>
+        <item name="textGreenColor">#4ADE80</item>
     </style>
 
 
@@ -150,6 +160,7 @@
         <item name="colorSurface">@color/surface_white</item>
         <item name="android:windowBackground">#F8FAFC</item>
         <item name="textPrimaryColor">#1A1A1A</item> <!-- Dark charcoal for primary text -->
+        <item name="textSecondaryColor">#475569</item>
         <item name="textMutedColor">#5F6D7E</item>   <!-- Muted gray for secondary text -->
         <item name="navActiveColor">#1A1A1A</item>
         <item name="navInactiveColor">#5F6D7E</item>
@@ -159,6 +170,12 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="O">true</item>
         <item name="progressTrackColor">#E2E8F0</item>
+        <item name="dividerColor">#20000000</item>
+        <item name="textRedColor">#D32F2F</item>
+        <item name="textGreenColor">#008000</item>
+        <item name="android:textColor">#1A1A1A</item>
+        <item name="android:textColorPrimary">#1A1A1A</item>
+        <item name="android:textColorSecondary">#5F6D7E</item>
     </style>
 
 
@@ -195,6 +212,10 @@
 
     <style name="BottomSheetStyle" parent="Widget.Design.BottomSheet.Modal">
         <item name="android:background">@android:color/transparent</item>
+    </style>
+
+    <style name="BottomSheetDialogThemeWhite" parent="Theme.Design.Light.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/BottomSheetStyle</item>
     </style>
 
     <!-- CalendarTheme: used for White Theme CalendarView (dark text on light bg) -->
@@ -251,16 +272,33 @@
     <style name="DatePickerThemeWhite" parent="Theme.Material3.Light.Dialog">
         <item name="android:colorAccent">#1A1A1A</item>
         <item name="colorPrimary">#1A1A1A</item>
-        <item name="android:windowBackground">@drawable/bg_glass_panel_white</item>
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="colorSurface">@android:color/white</item>
+        <item name="android:colorBackground">@android:color/white</item>
         <item name="android:textColorPrimary">#1A1A1A</item>
         <item name="android:textColorSecondary">#475569</item>
         <item name="android:headerBackground">#F1F5F9</item>
-        <item name="colorOnPrimary">#1A1A1A</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
         <item name="android:colorControlActivated">#1A1A1A</item>
         <item name="android:windowIsFloating">true</item>
-        <!-- Fix for invisible buttons -->
+        <item name="android:textColor">#1A1A1A</item>
         <item name="android:buttonBarPositiveButtonStyle">@style/DatePickerButtonWhite</item>
         <item name="android:buttonBarNegativeButtonStyle">@style/DatePickerButtonWhite</item>
+        <item name="android:headerMonthTextAppearance">@style/CustomDatePickerHeaderMonth</item>
+        <item name="android:headerDayOfMonthTextAppearance">@style/CustomDatePickerHeaderDay</item>
+    </style>
+
+    <style name="CustomDatePickerHeaderMonth">
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">#475569</item>
+    </style>
+
+    <style name="CustomDatePickerHeaderDay">
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">30sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">#1A1A1A</item>
     </style>
 
     <style name="DatePickerButtonWhite" parent="Widget.Material3.Button.TextButton">

@@ -6,9 +6,9 @@ import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.auth.FirebaseAuth
 
 class SplashActivity : ThemedActivity() {
 
@@ -30,6 +30,17 @@ class SplashActivity : ThemedActivity() {
         } else {
             val walletPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
             val initialBalance = walletPrefs.getInt("initial_balance", -1)
+
+            // 🔄 Silent background pull for established users:
+            // Runs every launch so that any newly-added prefs (e.g. UpiAllocationPrefs)
+            // or data from another device/reinstall are always up-to-date locally.
+            val firebaseUser = FirebaseAuth.getInstance().currentUser
+            if (firebaseUser != null) {
+                FirestoreSyncManager.pullDataFromCloud(this) { _, _, _, _ ->
+                    // No-op: we don't block navigation on this result.
+                    // Data lands in local SharedPreferences silently in the background.
+                }
+            }
 
             if (initialBalance > 0) {
                 // Established user -> Go directly to MainActivity (Home)

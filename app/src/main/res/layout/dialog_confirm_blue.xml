@@ -57,7 +57,7 @@
             android:layout_height="54dp"
             android:text="Confirm"
             android:textAllCaps="false"
-            android:textColor="#FF4D4D"
+            android:textColor="?attr/textRedColor"
             android:textStyle="bold"
             android:background="?attr/cardBackground"
             android:backgroundTint="@null"

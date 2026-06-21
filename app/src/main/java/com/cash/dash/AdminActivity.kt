@@ -319,8 +319,14 @@ class AdminActivity : ThemedActivity() {
             db.collection("users").get()
                 .addOnSuccessListener { querySnapshot ->
                     progressDialog.dismiss()
-                    val emails = querySnapshot.documents.map { it.id }.sorted()
-                    if (emails.isEmpty()) {
+                    val userTargets = querySnapshot.documents.map { doc ->
+                        val email = doc.id
+                        val profileName = doc.getString("profileName")
+                        val displayName = if (!profileName.isNullOrEmpty()) profileName else email.substringBefore("@")
+                        Pair(email, displayName)
+                    }.sortedBy { it.second.lowercase() }
+                    
+                    if (userTargets.isEmpty()) {
                         ToastHelper.showToast(this, "No registered users found")
                         return@addOnSuccessListener
                     }
@@ -370,30 +376,38 @@ class AdminActivity : ThemedActivity() {
                     }
                     container.addView(searchInput)
 
-                    // ListView
-                    val listView = android.widget.ListView(this).apply {
-                        val layoutParams = android.widget.LinearLayout.LayoutParams(
+                    // User List
+                    val scrollView = android.widget.ScrollView(this).apply {
+                        layoutParams = android.widget.LinearLayout.LayoutParams(
                             android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                            (300 * resources.displayMetrics.density).toInt()
-                        )
-                        this.layoutParams = layoutParams
-                        divider = null
-                        dividerHeight = 0
+                            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                        ).apply {
+                            weight = 1f
+                        }
                     }
-                    container.addView(listView)
+                    val listView = android.widget.LinearLayout(this).apply {
+                        orientation = android.widget.LinearLayout.VERTICAL
+                        layoutParams = android.widget.FrameLayout.LayoutParams(
+                            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
+                        )
+                    }
+                    scrollView.addView(listView)
+                    container.addView(scrollView)
 
                     dialogBuilder.setView(container)
 
-                    val originalList = emails.toMutableList()
-                    val filteredList = emails.toMutableList()
+                    val originalList = userTargets.toMutableList()
+                    val filteredList = userTargets.toMutableList()
                     
-                    // Styled custom adapter with Checkboxes
-                    val listAdapter = object : android.widget.ArrayAdapter<String>(this@AdminActivity, 0, filteredList) {
-                        override fun getView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
-                            val context = this@AdminActivity
-                            val density = context.resources.displayMetrics.density
+                    fun refreshUserList() {
+                        listView.removeAllViews()
+                        val density = resources.displayMetrics.density
+                        for (target in filteredList) {
+                            val email = target.first
+                            val displayName = target.second
                             
-                            val layout = (convertView as? android.widget.LinearLayout) ?: android.widget.LinearLayout(context).apply {
+                            val itemLayout = android.widget.LinearLayout(this@AdminActivity).apply {
                                 orientation = android.widget.LinearLayout.HORIZONTAL
                                 gravity = android.view.Gravity.CENTER_VERTICAL
                                 setPadding(
@@ -403,211 +417,97 @@ class AdminActivity : ThemedActivity() {
                                     (12 * density).toInt()
                                 )
                                 
-                                val cb = android.widget.CheckBox(context).apply {
-                                    buttonTintList = android.content.res.ColorStateList.valueOf(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                                val cb = android.widget.CheckBox(this@AdminActivity).apply {
+                                    buttonTintList = android.content.res.ColorStateList.valueOf(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textPrimaryColor))
                                     isFocusable = false
                                     isClickable = false
+                                    isChecked = selectedEmails.contains(email)
                                 }
-                                val tv = android.widget.TextView(context).apply {
-                                    setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                                val tv = android.widget.TextView(this@AdminActivity).apply {
+                                    setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textPrimaryColor))
                                     setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
                                     setPadding((12 * density).toInt(), 0, 0, 0)
+                                    text = "$displayName - $email"
                                 }
                                 addView(cb)
                                 addView(tv)
+                                
+                                setOnClickListener {
+                                    cb.isChecked = !cb.isChecked
+                                    if (cb.isChecked) {
+                                        selectedEmails.add(email)
+                                    } else {
+                                        selectedEmails.remove(email)
+                                    }
+                                }
                             }
-                            
-                            val cb = layout.getChildAt(0) as android.widget.CheckBox
-                            val tv = layout.getChildAt(1) as android.widget.TextView
-                            
-                            val email = filteredList[position]
-                            tv.text = email
-                            cb.isChecked = selectedEmails.contains(email)
-                            
-                            return layout
+                            listView.addView(itemLayout)
                         }
                     }
-                    listView.adapter = listAdapter
+                    refreshUserList()
 
                     // Action buttons container at bottom
-                    val buttonContainer = android.widget.LinearLayout(this@AdminActivity).apply {
+                    val actionContainer = android.widget.LinearLayout(this).apply {
                         orientation = android.widget.LinearLayout.HORIZONTAL
-                        gravity = android.view.Gravity.CENTER
-                        setPadding(0, (16 * resources.displayMetrics.density).toInt(), 0, 0)
                         layoutParams = android.widget.LinearLayout.LayoutParams(
                             android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
                             android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-                        )
+                        ).apply {
+                            topMargin = (16 * resources.displayMetrics.density).toInt()
+                        }
                     }
 
-                    val btnCancel = android.widget.Button(this@AdminActivity).apply {
+                    val btnCancel = androidx.appcompat.widget.AppCompatButton(this).apply {
                         text = "Cancel"
-                        isAllCaps = false
                         setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textPrimaryColor))
-                        background = androidx.core.content.ContextCompat.getDrawable(this@AdminActivity, ThemeHelper.getDrawable(this@AdminActivity, R.drawable.bg_3d_card))
+                        setBackgroundResource(ThemeHelper.getDrawable(this@AdminActivity, R.drawable.bg_card_dark))
                         layoutParams = android.widget.LinearLayout.LayoutParams(
                             0,
-                            (48 * resources.displayMetrics.density).toInt(),
+                            (50 * resources.displayMetrics.density).toInt(),
                             1f
                         ).apply {
-                            rightMargin = (8 * resources.displayMetrics.density).toInt()
+                            marginEnd = (8 * resources.displayMetrics.density).toInt()
                         }
                     }
+                    actionContainer.addView(btnCancel)
 
-                    val btnSendSelectedPush = android.widget.Button(this@AdminActivity).apply {
-                        text = "Send"
-                        isAllCaps = false
-                        setTextColor(android.graphics.Color.WHITE)
-                        background = androidx.core.content.ContextCompat.getDrawable(this@AdminActivity, ThemeHelper.getDrawable(this@AdminActivity, R.drawable.bg_3d_card))
-                        layoutParams = android.widget.LinearLayout.LayoutParams(
-                            0,
-                            (48 * resources.displayMetrics.density).toInt(),
-                            1.2f
-                        ).apply {
-                            rightMargin = (8 * resources.displayMetrics.density).toInt()
-                        }
-                    }
-
-                    val btnSendSelectedAnnounce = android.widget.Button(this@AdminActivity).apply {
-                        text = "Send"
-                        isAllCaps = false
-                        setTextColor(android.graphics.Color.WHITE)
-                        background = androidx.core.content.ContextCompat.getDrawable(this@AdminActivity, ThemeHelper.getDrawable(this@AdminActivity, R.drawable.bg_3d_card))
-                        layoutParams = android.widget.LinearLayout.LayoutParams(
-                            0,
-                            (48 * resources.displayMetrics.density).toInt(),
-                            1.2f
+                    val btnNext = androidx.appcompat.widget.AppCompatButton(this).apply {
+                        text = "Next"
+                        setTextColor(androidx.core.content.ContextCompat.getColor(this@AdminActivity, android.R.color.white))
+                        backgroundTintList = android.content.res.ColorStateList.valueOf(
+                            ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textGreenColor)
                         )
+                        layoutParams = android.widget.LinearLayout.LayoutParams(
+                            0,
+                            (50 * resources.displayMetrics.density).toInt(),
+                            1f
+                        ).apply {
+                            marginStart = (8 * resources.displayMetrics.density).toInt()
+                        }
                     }
-
-                    if (isAnnouncement) {
-                        btnSendSelectedPush.visibility = android.view.View.GONE
-                    } else {
-                        btnSendSelectedAnnounce.visibility = android.view.View.GONE
-                        // adjust margin since only 2 buttons visible now
-                        val params = btnSendSelectedPush.layoutParams as android.widget.LinearLayout.LayoutParams
-                        params.rightMargin = 0
-                        btnSendSelectedPush.layoutParams = params
-                    }
-
-                    buttonContainer.addView(btnCancel)
-                    buttonContainer.addView(btnSendSelectedPush)
-                    buttonContainer.addView(btnSendSelectedAnnounce)
-                    container.addView(buttonContainer)
+                    actionContainer.addView(btnNext)
+                    container.addView(actionContainer)
 
                     val dialog = dialogBuilder.create()
                     dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-                    btnCancel.setOnClickListener { dialog.dismiss() }
-
-                    btnSendSelectedPush.setOnClickListener {
-                        if (selectedEmails.isEmpty()) {
-                            ToastHelper.showToast(this@AdminActivity, "Please select at least one user")
-                            return@setOnClickListener
-                        }
-                        dialog.dismiss()
-
-                        // Ask for confirmation
-                        val dialogView = layoutInflater.inflate(R.layout.dialog_confirm_action, null)
-                        val confirmDialog = androidx.appcompat.app.AlertDialog.Builder(this@AdminActivity)
-                            .setView(dialogView)
-                            .create()
-                        confirmDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-                        dialogView.findViewById<android.widget.TextView>(R.id.tvConfirmTitle).text = "Confirm Notification"
-                        val msgSuffix = if (selectedEmails.size == 1) "user?" else "users?"
-                        dialogView.findViewById<android.widget.TextView>(R.id.tvConfirmMessage).text = "Send notification to the selected $msgSuffix"
-                        
-                        val tvUsers = dialogView.findViewById<android.widget.TextView>(R.id.tvTargetUsers)
-                        if (tvUsers != null) {
-                            val usersText = if (selectedEmails.size == 1) {
-                                "• ${selectedEmails.first()}"
-                            } else {
-                                selectedEmails.joinToString("\n") { "• $it" }
-                            }
-                            tvUsers.text = usersText
-                            tvUsers.visibility = android.view.View.VISIBLE
-                        }
-                        
-                        val btnYes = dialogView.findViewById<android.widget.Button>(R.id.btnConfirmAction)
-                        val btnNo = dialogView.findViewById<android.widget.Button>(R.id.btnConfirmCancel)
-
-                        btnYes.text = "Send"
-                        btnYes.setTextColor(android.graphics.Color.WHITE)
-                        btnYes.setOnClickListener {
-                            confirmDialog.dismiss()
-                            sendBatchUserPushes(selectedEmails.toList(), title, body)
-                        }
-                        btnNo.setOnClickListener { confirmDialog.dismiss() }
-                        confirmDialog.show()
-                    }
-
-                    btnSendSelectedAnnounce.setOnClickListener {
-                        if (selectedEmails.isEmpty()) {
-                            ToastHelper.showToast(this@AdminActivity, "Please select at least one user")
-                            return@setOnClickListener
-                        }
-                        dialog.dismiss()
-
-                        // Ask for confirmation
-                        val dialogView = layoutInflater.inflate(R.layout.dialog_confirm_action, null)
-                        val confirmDialog = androidx.appcompat.app.AlertDialog.Builder(this@AdminActivity)
-                            .setView(dialogView)
-                            .create()
-                        confirmDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-                        dialogView.findViewById<android.widget.TextView>(R.id.tvConfirmTitle).text = "Confirm Announcement"
-                        val msgSuffix = if (selectedEmails.size == 1) "user?" else "users?"
-                        dialogView.findViewById<android.widget.TextView>(R.id.tvConfirmMessage).text = "Send announcement to the selected $msgSuffix"
-                        
-                        val tvUsers = dialogView.findViewById<android.widget.TextView>(R.id.tvTargetUsers)
-                        if (tvUsers != null) {
-                            val usersText = if (selectedEmails.size == 1) {
-                                "• ${selectedEmails.first()}"
-                            } else {
-                                selectedEmails.joinToString("\n") { "• $it" }
-                            }
-                            tvUsers.text = usersText
-                            tvUsers.visibility = android.view.View.VISIBLE
-                        }
-                        
-                        val btnYes = dialogView.findViewById<android.widget.Button>(R.id.btnConfirmAction)
-                        val btnNo = dialogView.findViewById<android.widget.Button>(R.id.btnConfirmCancel)
-
-                        btnYes.text = "Publish"
-                        btnYes.setTextColor(android.graphics.Color.WHITE)
-                        btnYes.setOnClickListener {
-                            confirmDialog.dismiss()
-                            sendSelectedUserAnnouncement(selectedEmails.toList(), title, body)
-                        }
-                        btnNo.setOnClickListener { confirmDialog.dismiss() }
-                        confirmDialog.show()
-                    }
-
+                    
                     searchInput.addTextChangedListener(object : android.text.TextWatcher {
                         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                         override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                            val text = s?.toString()?.trim() ?: ""
+                            val query = s.toString().lowercase()
                             filteredList.clear()
-                            if (text.isEmpty()) {
+                            if (query.isEmpty()) {
                                 filteredList.addAll(originalList)
                             } else {
-                                filteredList.addAll(originalList.filter { it.contains(text, ignoreCase = true) })
+                                filteredList.addAll(originalList.filter { 
+                                    it.first.lowercase().contains(query) || it.second.lowercase().contains(query)
+                                })
                             }
-                            listAdapter.notifyDataSetChanged()
+                            refreshUserList()
                         }
                         override fun afterTextChanged(s: android.text.Editable?) {}
                     })
 
-                    listView.setOnItemClickListener { _, _, position, _ ->
-                        val email = filteredList[position]
-                        if (selectedEmails.contains(email)) {
-                            selectedEmails.remove(email)
-                        } else {
-                            selectedEmails.add(email)
-                        }
-                        listAdapter.notifyDataSetChanged()
-                    }
 
                     dialog.show()
                 }
@@ -626,13 +526,13 @@ class AdminActivity : ThemedActivity() {
             startActivity(intent)
         }
 
-        val btnSelectDate = findViewById<Button>(R.id.btnSelectDate)
+        val btnSelectDate = findViewById<android.widget.TextView>(R.id.btnSelectDate)
         btnSelectDate.setOnClickListener {
             val year = selectedDateCalendar.get(Calendar.YEAR)
             val month = selectedDateCalendar.get(Calendar.MONTH)
             val day = selectedDateCalendar.get(Calendar.DAY_OF_MONTH)
 
-            val dpd = DatePickerDialog(this, { _, selectedYear, selectedMonth, selectedDay ->
+            val dpd = DatePickerDialog(this, ThemeHelper.getDatePickerTheme(this), { _, selectedYear, selectedMonth, selectedDay ->
                 selectedDateCalendar.set(Calendar.YEAR, selectedYear)
                 selectedDateCalendar.set(Calendar.MONTH, selectedMonth)
                 selectedDateCalendar.set(Calendar.DAY_OF_MONTH, selectedDay)
@@ -826,7 +726,7 @@ class AdminActivity : ThemedActivity() {
                                 }
                                 background = android.graphics.drawable.GradientDrawable().apply {
                                     shape = android.graphics.drawable.GradientDrawable.OVAL
-                                    setColor(android.graphics.Color.parseColor("#FF4D4D"))
+                                    setColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textRedColor))
                                 }
                             }
                             val tvSubject = TextView(this@AdminActivity).apply {
@@ -1004,14 +904,14 @@ class AdminActivity : ThemedActivity() {
         val container = findViewById<LinearLayout>(R.id.layoutUserStatusContainer) ?: return
         container.removeAllViews()
 
-        val btnSelectDate = findViewById<Button>(R.id.btnSelectDate)
+        val btnSelectDate = findViewById<android.widget.TextView>(R.id.btnSelectDate)
 
         val todayCal = Calendar.getInstance()
         val isToday = todayCal.get(Calendar.YEAR) == selectedDateCalendar.get(Calendar.YEAR) &&
                 todayCal.get(Calendar.MONTH) == selectedDateCalendar.get(Calendar.MONTH) &&
                 todayCal.get(Calendar.DAY_OF_MONTH) == selectedDateCalendar.get(Calendar.DAY_OF_MONTH)
 
-        val dateTextFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(selectedDateCalendar.time)
+        val dateTextFormat = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault()).format(selectedDateCalendar.time)
         btnSelectDate?.text = if (isToday) "Date: Today ($dateTextFormat)" else "Date: $dateTextFormat"
 
         val formattedQueryDateNew = SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH).apply {
@@ -1078,7 +978,7 @@ class AdminActivity : ThemedActivity() {
             }
             row.addView(dot)
 
-            // White text username (show email if name is duplicated)
+            // Theme-aware text username (show email if name is duplicated)
             val displayName = if (duplicateNames.contains(item.name.lowercase())) {
                 "${item.name} (${item.email})"
             } else {
@@ -1086,7 +986,7 @@ class AdminActivity : ThemedActivity() {
             }
             val tvUsername = android.widget.TextView(this).apply {
                 text = displayName
-                setTextColor(android.graphics.Color.WHITE)
+                setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textPrimaryColor))
                 textSize = 15f
                 setTypeface(null, android.graphics.Typeface.BOLD)
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
@@ -1096,7 +996,7 @@ class AdminActivity : ThemedActivity() {
             // Opened/Not Opened status
             val tvStatus = android.widget.TextView(this).apply {
                 text = if (isActive) "Opened" else "Not Opened"
-                setTextColor(if (isActive) android.graphics.Color.parseColor("#4ADE80") else android.graphics.Color.parseColor("#FF4D4D"))
+                setTextColor(if (isActive) ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textGreenColor) else ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textRedColor))
                 textSize = 14f
                 setTypeface(null, android.graphics.Typeface.BOLD)
             }

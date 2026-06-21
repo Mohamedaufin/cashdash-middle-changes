@@ -26,6 +26,27 @@ class ProfileActivity : ThemedActivity() {
     private val KEY_EMAIL = "user_email"
     private var selectedDob = ""
 
+    private val syncReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+            val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+            val originalName = prefs.getString(KEY_NAME, "") ?: ""
+            val originalPhone = prefs.getString(KEY_PHONE, "") ?: ""
+            val originalEmail = prefs.getString(KEY_EMAIL, "") ?: ""
+            val originalDob = prefs.getString("user_dob", "") ?: ""
+            
+            val edtName = findViewById<EditText>(R.id.edtName)
+            val edtPhone = findViewById<EditText>(R.id.edtPhone)
+            val edtEmail = findViewById<EditText>(R.id.edtEmail)
+            val tvDob = findViewById<TextView>(R.id.tvDob)
+
+            if (!edtName.isFocused) edtName.setText(originalName)
+            if (!edtPhone.isFocused) edtPhone.setText(originalPhone)
+            if (!edtEmail.isFocused) edtEmail.setText(originalEmail)
+            selectedDob = originalDob
+            tvDob.text = selectedDob
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
@@ -408,8 +429,20 @@ class ProfileActivity : ThemedActivity() {
         dialog.show()
     }
 
+    override fun onResume() {
+        super.onResume()
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this)
+            .registerReceiver(syncReceiver, android.content.IntentFilter(FirestoreSyncManager.ACTION_SYNC_UPDATE))
+    }
+
+    override fun onPause() {
+        super.onPause()
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this)
+            .unregisterReceiver(syncReceiver)
+    }
+
     private fun showDobPickerDialog(tvDob: TextView) {
-        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this, ThemeHelper.getBottomSheetTheme(this))
         val sheetView = layoutInflater.inflate(R.layout.layout_dob_bottom_sheet, null)
         dialog.setContentView(sheetView)
 

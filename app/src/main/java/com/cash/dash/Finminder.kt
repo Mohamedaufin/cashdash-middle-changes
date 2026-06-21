@@ -62,6 +62,7 @@ class Finminder : AppWidgetProvider() {
             val todayItems = items.filter { item ->
                 when (item.frequency) {
                     "One time" -> item.dateInfo == todayDateStr
+                    "Daily" -> true
                     "Weekly" -> item.dateInfo == todayDayStr
                     "Monthly" -> item.dateInfo == todayDateOfMonth
                     else -> false

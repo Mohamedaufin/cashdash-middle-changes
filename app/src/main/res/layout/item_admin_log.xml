@@ -88,7 +88,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="This action is triggered by: —"
-        android:textColor="#4ADE80"
+        android:textColor="?attr/textGreenColor"
         android:textSize="@dimen/text_caption"
         android:textStyle="bold"
         android:padding="18dp"

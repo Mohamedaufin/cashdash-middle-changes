@@ -29,6 +29,7 @@ class AddFinminderActivity : ThemedActivity() {
     private lateinit var tvSelectedFrequency: TextView
     private lateinit var layoutFrequencyOptions: LinearLayout
     private lateinit var btnFreqOneTime: TextView
+    private lateinit var btnFreqDaily: TextView
     private lateinit var btnFreqWeekly: TextView
     private lateinit var btnFreqMonthly: TextView
     
@@ -64,6 +65,14 @@ class AddFinminderActivity : ThemedActivity() {
         tvAddTitle = findViewById(R.id.tvAddTitle)
         
         tvAddTitle.text = if (currentTab == "CASH_OUT") "Finminder Cash Out" else "Finminder Cash In"
+        
+        val tvFinminderHint = findViewById<TextView>(R.id.tvFinminderHint)
+        if (currentTab == "CASH_OUT") {
+            tvFinminderHint.text = "Cash-out is a expense where you set a future date to send money, and CashDash reminds you on that date."
+        } else {
+            tvFinminderHint.text = "Cash-in is an income where you expect to receive money from someone on a future date, and CashDash reminds you on that date."
+        }
+        
         btnBack.setOnClickListener { finish() }
 
         etTitle = findViewById(R.id.etTitle)
@@ -73,6 +82,7 @@ class AddFinminderActivity : ThemedActivity() {
         tvSelectedFrequency = findViewById(R.id.tvSelectedFrequency)
         layoutFrequencyOptions = findViewById(R.id.layoutFrequencyOptions)
         btnFreqOneTime = findViewById(R.id.btnFreqOneTime)
+        btnFreqDaily = findViewById(R.id.btnFreqDaily)
         btnFreqWeekly = findViewById(R.id.btnFreqWeekly)
         btnFreqMonthly = findViewById(R.id.btnFreqMonthly)
         scrollView = findViewById(R.id.scrollView)
@@ -117,7 +127,15 @@ class AddFinminderActivity : ThemedActivity() {
                 if (shouldScroll) {
                     scrollView.post { scrollView.smoothScrollTo(0, scrollView.bottom) }
                 }
-            } else if (selectedFrequencyIndex == 1) {
+            } else if (selectedFrequencyIndex == 1) { // Remind daily
+                tvNotificationHint.text = "You will be notified about $title daily."
+                tvNotificationHint.visibility = View.VISIBLE
+                tvNotificationHintWeekly.visibility = View.GONE
+                tvNotificationHintMonthly.visibility = View.GONE
+                if (shouldScroll) {
+                    scrollView.post { scrollView.smoothScrollTo(0, scrollView.bottom) }
+                }
+            } else if (selectedFrequencyIndex == 2) { // Remind weekly
                 tvNotificationHint.visibility = View.GONE
                 tvNotificationHintMonthly.visibility = View.GONE
                 if (selectedDayStr.isNotEmpty()) {
@@ -138,7 +156,7 @@ class AddFinminderActivity : ThemedActivity() {
                         scrollView.post { scrollView.smoothScrollTo(0, scrollView.bottom) }
                     }
                 }
-            } else if (selectedFrequencyIndex == 2) {
+            } else if (selectedFrequencyIndex == 3) { // Remind monthly
                 tvNotificationHint.visibility = View.GONE
                 tvNotificationHintWeekly.visibility = View.GONE
                 val dayOfMonthStr = etDateOfMonth.text.toString().trim()
@@ -228,8 +246,9 @@ class AddFinminderActivity : ThemedActivity() {
         val updateFrequencyTicks = { selectedIndex: Int ->
             val tick = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_check_green)
             btnFreqOneTime.setCompoundDrawablesWithIntrinsicBounds(null, null, if (selectedIndex == 0) tick else null, null)
-            btnFreqWeekly.setCompoundDrawablesWithIntrinsicBounds(null, null, if (selectedIndex == 1) tick else null, null)
-            btnFreqMonthly.setCompoundDrawablesWithIntrinsicBounds(null, null, if (selectedIndex == 2) tick else null, null)
+            btnFreqDaily.setCompoundDrawablesWithIntrinsicBounds(null, null, if (selectedIndex == 1) tick else null, null)
+            btnFreqWeekly.setCompoundDrawablesWithIntrinsicBounds(null, null, if (selectedIndex == 2) tick else null, null)
+            btnFreqMonthly.setCompoundDrawablesWithIntrinsicBounds(null, null, if (selectedIndex == 3) tick else null, null)
         }
 
         btnFrequencyToggle.setOnClickListener {
@@ -258,8 +277,9 @@ class AddFinminderActivity : ThemedActivity() {
                 // Then show the selected one
                 when (index) {
                     0 -> layoutOneTime.visibility = View.VISIBLE
-                    1 -> layoutWeekly.visibility = View.VISIBLE
-                    2 -> layoutMonthly.visibility = View.VISIBLE
+                    1 -> { /* Daily: no layout needed */ }
+                    2 -> layoutWeekly.visibility = View.VISIBLE
+                    3 -> layoutMonthly.visibility = View.VISIBLE
                 }
                 validateForm()
                 updateHintText(true)
@@ -267,8 +287,9 @@ class AddFinminderActivity : ThemedActivity() {
         }
 
         btnFreqOneTime.setOnClickListener { selectFrequency(0, "One time only") }
-        btnFreqWeekly.setOnClickListener { selectFrequency(1, "Repeat every week") }
-        btnFreqMonthly.setOnClickListener { selectFrequency(2, "Repeat every month") }
+        btnFreqDaily.setOnClickListener { selectFrequency(1, "Remind daily") }
+        btnFreqWeekly.setOnClickListener { selectFrequency(2, "Remind every week") }
+        btnFreqMonthly.setOnClickListener { selectFrequency(3, "Remind every month") }
 
         val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
         selectedDateStr = sdf.format(calendarView.date)
@@ -297,12 +318,15 @@ class AddFinminderActivity : ThemedActivity() {
                             if (date != null) calendarView.date = date.time
                         } catch(e: Exception){}
                     }
+                    "Daily" -> {
+                        selectFrequency(1, "Remind daily")
+                    }
                     "Weekly" -> {
-                        selectFrequency(1, "Repeat every week")
+                        selectFrequency(2, "Remind every week")
                         selectDay(item.dateInfo)
                     }
                     "Monthly" -> {
-                        selectFrequency(2, "Repeat every month")
+                        selectFrequency(3, "Remind every month")
                         etDateOfMonth.setText(item.dateInfo)
                     }
                 }
@@ -327,7 +351,7 @@ class AddFinminderActivity : ThemedActivity() {
         val freq = selectedFrequencyIndex
         if (freq == -1) isValid = false
         
-        if (freq == 2) { // Monthly
+        if (freq == 3) { // Monthly
             val dayStr = etDateOfMonth.text.toString().trim()
             if (dayStr.isEmpty()) {
                 isValid = false
@@ -347,7 +371,7 @@ class AddFinminderActivity : ThemedActivity() {
     }
 
     private fun saveFinminder() {
-        val freqType = selectedFrequencyIndex // 0=One time, 1=Weekly, 2=Monthly
+        val freqType = selectedFrequencyIndex // 0=One time, 1=Daily, 2=Weekly, 3=Monthly
         var dateInfo = ""
         var freqStr = ""
         
@@ -355,9 +379,12 @@ class AddFinminderActivity : ThemedActivity() {
             freqStr = "One time"
             dateInfo = selectedDateStr
         } else if (freqType == 1) {
+            freqStr = "Daily"
+            dateInfo = ""
+        } else if (freqType == 2) {
             freqStr = "Weekly"
             dateInfo = selectedDayStr
-        } else if (freqType == 2) {
+        } else if (freqType == 3) {
             freqStr = "Monthly"
             dateInfo = etDateOfMonth.text.toString()
         }

@@ -22,7 +22,7 @@ class AgeSpecificPushActivity : ThemedActivity() {
     private lateinit var btnSendPush: Button
     private lateinit var tvAgeSpecificTitle: TextView
 
-    private val userEmails = mutableListOf<String>()
+    private val userTargets = mutableListOf<Pair<String, String>>() // <Email, DisplayName>
     private val selectedEmails = mutableSetOf<String>()
     private var isAnnouncement = false
 
@@ -65,7 +65,7 @@ class AgeSpecificPushActivity : ThemedActivity() {
 
         cbSelectAll.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
-                selectedEmails.addAll(userEmails)
+                selectedEmails.addAll(userTargets.map { it.first })
             } else {
                 selectedEmails.clear()
             }
@@ -94,7 +94,7 @@ class AgeSpecificPushActivity : ThemedActivity() {
         btnFetchUsers.isEnabled = false
 
         db.collection("users").get().addOnSuccessListener { result ->
-            userEmails.clear()
+            userTargets.clear()
             selectedEmails.clear()
             
             val sdfWithoutComma = SimpleDateFormat("dd MMM yyyy", Locale.US)
@@ -122,7 +122,10 @@ class AgeSpecificPushActivity : ThemedActivity() {
                             }
 
                             if (age in minAge..maxAge) {
-                                userEmails.add(document.id) // Document ID is usually the email
+                                val email = document.id
+                                val profileName = document.getString("profileName")
+                                val displayName = if (!profileName.isNullOrEmpty()) profileName else email.substringBefore("@")
+                                userTargets.add(Pair(email, displayName))
                             }
                         }
                     } catch (e: Exception) {
@@ -134,7 +137,7 @@ class AgeSpecificPushActivity : ThemedActivity() {
             btnFetchUsers.text = "Fetch Users"
             btnFetchUsers.isEnabled = true
 
-            if (userEmails.isEmpty()) {
+            if (userTargets.isEmpty()) {
                 ToastHelper.showToast(this, "No users found in this age range.")
                 layoutUserListContainer.visibility = View.GONE
             } else {
@@ -152,7 +155,12 @@ class AgeSpecificPushActivity : ThemedActivity() {
         layoutUsersInner.removeAllViews()
         val density = resources.displayMetrics.density
 
-        for (email in userEmails) {
+        userTargets.sortBy { it.second.lowercase() }
+
+        for (target in userTargets) {
+            val email = target.first
+            val displayName = target.second
+            
             val layout = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = android.view.Gravity.CENTER_VERTICAL
@@ -171,7 +179,7 @@ class AgeSpecificPushActivity : ThemedActivity() {
                             // Re-attach listener
                             cbSelectAll.setOnCheckedChangeListener { _, selectAllChecked ->
                                 if (selectAllChecked) {
-                                    selectedEmails.addAll(userEmails)
+                                    selectedEmails.addAll(userTargets.map { it.first })
                                 } else {
                                     selectedEmails.clear()
                                 }
@@ -182,7 +190,7 @@ class AgeSpecificPushActivity : ThemedActivity() {
                 }
                 
                 val tv = TextView(this@AgeSpecificPushActivity).apply {
-                    text = email
+                    text = "$displayName - $email"
                     setTextColor(ThemeHelper.resolveColorAttr(this@AgeSpecificPushActivity, R.attr.textPrimaryColor))
                     setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
                     setPadding((8 * density).toInt(), 0, 0, 0)
@@ -202,7 +210,8 @@ class AgeSpecificPushActivity : ThemedActivity() {
                 val cb = childLayout.getChildAt(0) as? CheckBox
                 val tv = childLayout.getChildAt(1) as? TextView
                 if (cb != null && tv != null) {
-                    val email = tv.text.toString()
+                    val fullText = tv.text.toString()
+                    val email = fullText.substringAfterLast(" - ")
                     cb.setOnCheckedChangeListener(null)
                     cb.isChecked = selectedEmails.contains(email)
                     cb.setOnCheckedChangeListener { _, isChecked ->

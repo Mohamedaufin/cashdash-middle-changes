@@ -141,14 +141,7 @@ class AllocatorActivity : ThemedActivity() {
         }
         box.addView(input)
 
-        val errorView = TextView(this).apply {
-            setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
-            visibility = android.view.View.GONE
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(10, 0, 0, 40)
-            }
-        }
-        box.addView(errorView)
+
 
         val buttonContainer = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -185,12 +178,9 @@ class AllocatorActivity : ThemedActivity() {
                 setMargins(15, 0, 0, 0)
             }
             setOnClickListener {
-                errorView.visibility = android.view.View.GONE
                 val name = input.text.toString().trim().replace("|", "-")
                 if (name.equals("Overall", ignoreCase = true)) {
                     input.error = "'Overall' is a reserved name"
-                    errorView.text = "'Overall' is a reserved name"
-                    errorView.visibility = android.view.View.VISIBLE
                     return@setOnClickListener
                 }
 
@@ -198,8 +188,6 @@ class AllocatorActivity : ThemedActivity() {
                 val exists = currentSaved.any { it.equals(name, ignoreCase = true) }
                 if (exists) {
                     input.error = "Allocation name already exists"
-                    errorView.text = "Allocation name already exists"
-                    errorView.visibility = android.view.View.VISIBLE
                     return@setOnClickListener
                 }
 
@@ -401,19 +389,12 @@ class AllocatorActivity : ThemedActivity() {
             setHintTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             backgroundTintList = android.content.res.ColorStateList.valueOf(Color.CYAN)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(0, 0, 0, 10)
+                setMargins(0, 0, 0, 40)
             }
         }
         box.addView(input)
 
-        val errorView = TextView(this).apply {
-            setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
-            visibility = android.view.View.GONE
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(10, 0, 0, 40)
-            }
-        }
-        box.addView(errorView)
+
 
         val buttonContainer = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -450,22 +431,17 @@ class AllocatorActivity : ThemedActivity() {
                 setMargins(15, 0, 0, 0)
             }
             setOnClickListener {
-                errorView.visibility = android.view.View.GONE
                 val newName = input.text.toString().trim().replace("|", "-")
                 if (newName.equals("Overall", ignoreCase = true)) {
                     input.error = "'Overall' is a reserved name"
-                    errorView.text = "'Overall' is a reserved name"
-                    errorView.visibility = android.view.View.VISIBLE
                     return@setOnClickListener
                 }
                 
                 // If it's a completely different name (case-insensitive) but already exists
                 val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                val saved = prefs.getStringSet(KEY, emptySet()) ?: emptySet()
-                if (!newName.equals(name, ignoreCase = true) && saved.any { it.equals(newName, ignoreCase = true) }) {
+                val currentSaved = prefs.getStringSet(KEY, emptySet()) ?: emptySet()
+                if (!newName.equals(name, ignoreCase = true) && currentSaved.any { it.equals(newName, ignoreCase = true) }) {
                     input.error = "Allocation name already exists"
-                    errorView.text = "Allocation name already exists"
-                    errorView.visibility = android.view.View.VISIBLE
                     return@setOnClickListener
                 }
 
@@ -533,7 +509,7 @@ class AllocatorActivity : ThemedActivity() {
         val btnDelete = android.widget.Button(this).apply {
             text = "Delete"
             isAllCaps = false
-            setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
+            setTextColor(ThemeHelper.resolveColorAttr(this@AllocatorActivity, R.attr.textRedColor))
             val tv = android.util.TypedValue()
             this@AllocatorActivity.theme.resolveAttribute(R.attr.cardBackground, tv, true)
             background = androidx.core.content.ContextCompat.getDrawable(this@AllocatorActivity, tv.resourceId)
@@ -555,7 +531,7 @@ class AllocatorActivity : ThemedActivity() {
     }
 
     private fun showAllocationOptions(name: String) {
-        val bottomSheet = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+        val bottomSheet = BottomSheetDialog(this, ThemeHelper.getBottomSheetTheme(this))
 
         val density = resources.displayMetrics.density
         val container = LinearLayout(this).apply {
@@ -619,7 +595,7 @@ class AllocatorActivity : ThemedActivity() {
         val btnDelete = android.widget.Button(this).apply {
             text = "Delete Allocation"
             isAllCaps = false
-            setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
+            setTextColor(ThemeHelper.resolveColorAttr(this@AllocatorActivity, R.attr.textRedColor))
             val tv = android.util.TypedValue()
             this@AllocatorActivity.theme.resolveAttribute(R.attr.cardBackground, tv, true)
             background = androidx.core.content.ContextCompat.getDrawable(this@AllocatorActivity, tv.resourceId)

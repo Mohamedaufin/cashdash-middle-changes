@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:paddingTop="45dp"
+    android:paddingTop="40dp"
     android:paddingBottom="20dp">
     <!-- TOP FILTER BUTTONS -->
     <LinearLayout
@@ -27,7 +27,7 @@
             android:paddingStart="16dp"
             android:textAllCaps="false"
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="@dimen/text_subhead"
+            android:textSize="12dp"
             android:textStyle="bold"
             android:stateListAnimator="@null"
             android:elevation="0dp" />
@@ -46,7 +46,8 @@
             android:paddingStart="16dp"
             android:textAllCaps="false"
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="@dimen/text_body"
+            android:textSize="12dp"
+            android:textStyle="bold"
             android:stateListAnimator="@null"
             android:elevation="0dp" />
         <androidx.appcompat.widget.AppCompatButton
@@ -62,7 +63,8 @@
             android:paddingStart="16dp"
             android:textAllCaps="false"
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="@dimen/text_subhead"
+            android:textSize="12dp"
+            android:textStyle="bold"
             android:stateListAnimator="@null"
             android:elevation="0dp" />
     </LinearLayout>

@@ -83,6 +83,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     private var allocationHandled: Boolean = false
     private var currentChooser: BottomSheetDialog? = null
     private var selectedPaymentApp: String = "CRED"
+    private var currentScanUpiId: String = "" // tracks the UPI ID currently being paid
 
     private val syncReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
@@ -92,26 +93,24 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         }
     }
 
-    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
-        if (ev != null) {
-            scaleGestureDetector.onTouchEvent(ev)
-            
-            // Manual Tap to Focus & Expose
-            if (ev.action == MotionEvent.ACTION_UP && ev.pointerCount == 1) {
-                val factory = previewView.meteringPointFactory
-                val point = factory.createPoint(ev.x, ev.y)
-                val action = FocusMeteringAction.Builder(point, FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AE)
-                    .setAutoCancelDuration(3, TimeUnit.SECONDS)
-                    .build()
-                camera?.cameraControl?.startFocusAndMetering(action)
-            }
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        scaleGestureDetector.onTouchEvent(ev)
+        
+        // Manual Tap to Focus & Expose
+        if (ev.action == MotionEvent.ACTION_UP && ev.pointerCount == 1) {
+            val factory = previewView.meteringPointFactory
+            val point = factory.createPoint(ev.x, ev.y)
+            val action = FocusMeteringAction.Builder(point, FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AE)
+                .setAutoCancelDuration(3, TimeUnit.SECONDS)
+                .build()
+            camera?.cameraControl?.startFocusAndMetering(action)
+        }
 
-            if (ev.pointerCount > 1) isPinching = true
-            if (ev.action == MotionEvent.ACTION_DOWN) isPinching = false
+        if (ev.pointerCount > 1) isPinching = true
+        if (ev.action == MotionEvent.ACTION_DOWN) isPinching = false
 
-            if (ev.pointerCount == 1 && !isPinching && swipeDetector.onTouchEvent(ev)) {
-                return true
-            }
+        if (ev.pointerCount == 1 && !isPinching && swipeDetector.onTouchEvent(ev)) {
+            return true
         }
         return super.dispatchTouchEvent(ev)
     }
@@ -154,14 +153,40 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Solid black system bars for ScannerActivity (edge-to-edge compatible)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        // Determine the badge background and icon tint colors based on the theme
+        val activeTheme = ThemeHelper.getCurrentTheme(this)
+        
+        // Remove edge-to-edge so the system status bar appears with color
+        WindowCompat.setDecorFitsSystemWindows(window, true)
+        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+        
+        // Match system bar color to circular badge color (except White which matches home screen top #FFFFFF)
+        window.statusBarColor = when (activeTheme) {
+            "Blue" -> Color.parseColor("#000520")
+            "White" -> Color.parseColor("#FFFFFF")
+            else -> Color.parseColor("#0C0C0F")
+        }
+        window.navigationBarColor = when (activeTheme) {
+            "White" -> Color.parseColor("#FFFFFF")
+            else -> Color.BLACK
+        }
+        
         androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).apply {
-            isAppearanceLightStatusBars = false
-            isAppearanceLightNavigationBars = false
+            isAppearanceLightStatusBars = activeTheme == "White"
+            isAppearanceLightNavigationBars = activeTheme == "White"
         }
 
         setContentView(R.layout.activity_scanner)
+
+        // Set root background dynamically to match status bar background
+        findViewById<FrameLayout>(R.id.scannerRoot)?.setBackgroundColor(
+            when (activeTheme) {
+                "Blue" -> Color.parseColor("#000520")
+                "White" -> Color.parseColor("#FFFFFF")
+                else -> Color.parseColor("#000000")
+            }
+        )
 
         TutorialManager.showTutorialIfNeeded(
             this,
@@ -179,7 +204,6 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         val btnHistory = findViewById<ImageButton>(R.id.btnHistory)
         val btnMore = findViewById<ImageButton>(R.id.btnMore)
 
-        val activeTheme = ThemeHelper.getCurrentTheme(this)
         val badgeBg = when (activeTheme) {
             "Blue" -> R.drawable.bg_circle_scanner_blue
             "White" -> R.drawable.bg_circle_scanner_white
@@ -205,11 +229,11 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
         if (activeTheme != "Blue") {
             btnGallery.setBackgroundResource(R.drawable.bg_capsule_white)
-            imgGalleryIcon.imageTintList = android.content.res.ColorStateList.valueOf(Color.BLACK)
+            imgGalleryIcon.setColorFilter(Color.BLACK, android.graphics.PorterDuff.Mode.SRC_IN)
             tvGalleryText.setTextColor(Color.BLACK)
         } else {
             btnGallery.setBackgroundResource(R.drawable.bg_capsule_scanner_blue)
-            imgGalleryIcon.imageTintList = android.content.res.ColorStateList.valueOf(Color.WHITE)
+            imgGalleryIcon.setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN)
             tvGalleryText.setTextColor(Color.WHITE)
         }
 
@@ -231,24 +255,25 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
         val root = findViewById<View>(android.R.id.content)
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
-            val systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            val density = resources.displayMetrics.density
+            val topMarginPx = (25 * density).toInt()
             
             // Top buttons
             val closeParams = btnClose.layoutParams as FrameLayout.LayoutParams
-            closeParams.topMargin = systemBars.top + 60
+            closeParams.topMargin = topMarginPx
             btnClose.layoutParams = closeParams
 
             val historyParams = btnHistory.layoutParams as FrameLayout.LayoutParams
-            historyParams.topMargin = systemBars.top + 60
+            historyParams.topMargin = topMarginPx
             btnHistory.layoutParams = historyParams
 
             val flashParams = btnFlashlight.layoutParams as FrameLayout.LayoutParams
-            flashParams.topMargin = systemBars.top + 60
-            flashParams.marginEnd = historyParams.marginEnd + 220
+            flashParams.topMargin = topMarginPx
+            flashParams.marginEnd = historyParams.marginEnd + (75 * density).toInt()
             btnFlashlight.layoutParams = flashParams
 
             val moreParams = btnMore.layoutParams as FrameLayout.LayoutParams
-            moreParams.bottomMargin = systemBars.bottom + 60
+            moreParams.bottomMargin = (25 * density).toInt()
             btnMore.layoutParams = moreParams
             
             insets
@@ -300,7 +325,6 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             }
         })
 
-        checkMoneyScheduleResetDue()
 
         val payAgainUpi = intent.getStringExtra("pay_again_upi")
         if (payAgainUpi != null) {
@@ -625,7 +649,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 FirestoreSyncManager.pushAllDataToCloud(this)
             }
 
-            val dialog = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+            val dialog = BottomSheetDialog(this, ThemeHelper.getBottomSheetTheme(this))
             val view = layoutInflater.inflate(R.layout.layout_payment_bottom_sheet, null)
             dialog.setContentView(view)
 
@@ -633,6 +657,13 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             pendingCategory = null
             pendingTitle = "To: $name"
             allocationHandled = false
+
+            // Check if this UPI ID has a remembered allocation
+            val upiId = (decode(getParam(upi, "pa")) ?: "").trim().lowercase()
+            currentScanUpiId = upiId
+            val savedAlloc = if (upiId.isNotEmpty()) {
+                getSharedPreferences("UpiAllocationPrefs", MODE_PRIVATE).getString("ALLOC_$upiId", null)
+            } else null
 
             val tvInfo = view.findViewById<TextView>(R.id.tvReceiverInfo)
             val isPhonePayment = !id.contains("@") && id.all { it.isDigit() }
@@ -664,8 +695,37 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
             btnCred.visibility = View.VISIBLE
             btnGPay.visibility = View.VISIBLE
-            tvAllocation.visibility = View.GONE
-            btnChoose.visibility = View.GONE
+
+            // Pre-fill saved allocation if available
+            if (savedAlloc != null && !savedAlloc.equals("no choice", ignoreCase = true)) {
+                val categories = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)
+                    .getStringSet("categories", emptySet()) ?: emptySet()
+
+                // Case-insensitive match: handles re-added categories like "medical"→"Medical"
+                val matchedCategory = categories.find { it.equals(savedAlloc, ignoreCase = true) }
+
+                if (matchedCategory != null) {
+                    // If re-added with different case, update the stored mapping to match current name
+                    if (matchedCategory != savedAlloc) {
+                        saveUpiAllocation(upiId, matchedCategory)
+                    }
+                    pendingCategory = matchedCategory
+                    allocationHandled = true
+                    tvAllocation.text = "Allocated to: $matchedCategory"
+                    tvAllocation.visibility = View.VISIBLE
+                    btnChoose.text = "Change"
+                    btnChoose.visibility = View.VISIBLE
+                    paymentActionContainer.visibility = View.VISIBLE
+                    btnPayInitiate.visibility = View.GONE
+                } else {
+                    // Category was deleted and not re-added — show fresh chooser flow
+                    tvAllocation.visibility = View.GONE
+                    btnChoose.visibility = View.GONE
+                }
+            } else {
+                tvAllocation.visibility = View.GONE
+                btnChoose.visibility = View.GONE
+            }
 
             etAmount.addTextChangedListener(object : android.text.TextWatcher {
                 override fun afterTextChanged(s: android.text.Editable?) {
@@ -710,7 +770,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     }
 
     private fun showAllocationChooser(parentDialog: BottomSheetDialog, label: TextView, btn: Button, paymentContainer: LinearLayout, btnPayInit: Button) {
-        val chooser = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+        val chooser = BottomSheetDialog(this, ThemeHelper.getBottomSheetTheme(this))
         currentChooser = chooser
         val view = layoutInflater.inflate(R.layout.layout_allocation_chooser_bottom_sheet, null)
         chooser.setContentView(view)
@@ -776,6 +836,8 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             setOnClickListener {
                 pendingCategory = null
                 allocationHandled = true
+                // Remember "no choice" for this UPI so chooser is skipped next time too
+                // saveUpiAllocation(currentScanUpiId, "no choice") // removed per user request
                 label.text = "No allocation selected"
                 label.visibility = View.VISIBLE
                 btn.text = "Choose"
@@ -796,15 +858,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 setPadding(20, 20, 20, 20)
             })
         } else {
-            val recentCatsStr = getSharedPreferences("ScannerPrefs", MODE_PRIVATE).getString("recent_scanner_allocations", "") ?: ""
-            val recentCats = if (recentCatsStr.isNotEmpty()) recentCatsStr.split("|").toMutableList() else mutableListOf()
-
-            val sortedList = mutableListOf<String>()
-            for (r in recentCats) {
-                if (categories.contains(r)) sortedList.add(r)
-            }
-            val remainingSorted = categories.filter { !sortedList.contains(it) }.sortedBy { it.lowercase() }
-            sortedList.addAll(remainingSorted)
+            val sortedList = categories.sortedBy { it.lowercase() }
 
             for (cat in sortedList) {
                 val row = layoutInflater.inflate(R.layout.item_rigor_category, container, false)
@@ -843,14 +897,9 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 }
 
                 row.setOnClickListener {
-                    val sPrefs = getSharedPreferences("ScannerPrefs", MODE_PRIVATE)
-                    val historyStr = sPrefs.getString("recent_scanner_allocations", "") ?: ""
-                    val history = if (historyStr.isNotEmpty()) historyStr.split("|").toMutableList() else mutableListOf()
-                    history.remove(cat)
-                    history.add(0, cat)
-                    if (history.size > 3) history.subList(3, history.size).clear()
-                    sPrefs.edit().putString("recent_scanner_allocations", history.joinToString("|")).apply()
-                                        pendingCategory = cat
+                    // Save UPI → allocation mapping for future auto-fill
+                    saveUpiAllocation(currentScanUpiId, cat)
+                    pendingCategory = cat
                     allocationHandled = true
                     label.text = "Allocated to: $cat"
                     label.visibility = View.VISIBLE
@@ -1177,275 +1226,12 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     private fun successBeep() { try { (getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(VibrationEffect.createOneShot(150, VibrationEffect.DEFAULT_AMPLITUDE)); MediaPlayer.create(this, android.provider.Settings.System.DEFAULT_NOTIFICATION_URI).start() } catch (_: Exception) {} }
     private fun shake() { /* Visual feedback */ }
 
-    private fun checkMoneyScheduleResetDue() {
-        val prefs = getSharedPreferences("MoneySchedulePrefs", MODE_PRIVATE)
-        val nextDate = prefs.getLong("next_date", -1)
-        val freq = prefs.getInt("frequency", -1)
-
-        if (nextDate <= 0L || freq == -1) return
-
-        val today = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-
-        val next = Calendar.getInstance().apply {
-            timeInMillis = nextDate
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-
-        if (!today.before(next)) {
-            val postponeUntil = prefs.getLong("postpone_until", 0L)
-            val now = System.currentTimeMillis()
-
-            if (now >= postponeUntil) {
-                scannedOnce = true
-                showResetConfirmationDialogInScanner(nextDate, freq)
-            }
-        }
-    }
-
-    private var activeResetDialogInScanner: AlertDialog? = null
-
-    private fun showResetConfirmationDialogInScanner(nextDate: Long, freq: Int) {
-        if (activeResetDialogInScanner?.isShowing == true) return
-
-        val context = this
-        val density = resources.displayMetrics.density
-        val box = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            val p = (28 * density).toInt()
-            setPadding(p, p, p, (24 * density).toInt())
-            setBackgroundResource(ThemeHelper.getDrawable(context, R.drawable.bg_transaction))
-        }
-
-        val titleView = TextView(context).apply {
-            text = "Cycle Reset Due"
-            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_title))
-            setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            setTypeface(null, android.graphics.Typeface.BOLD)
-            gravity = android.view.Gravity.CENTER
-            setPadding(0, 0, 0, (20 * density).toInt())
-        }
-        box.addView(titleView)
-
-        val cal = Calendar.getInstance().apply { timeInMillis = nextDate }
-        val dateStr = "%02d/%02d/%04d".format(
-            cal.get(Calendar.DAY_OF_MONTH),
-            cal.get(Calendar.MONTH) + 1,
-            cal.get(Calendar.YEAR)
-        )
-
-        val content = TextView(context).apply {
-            text = "Your scheduled cycle reset date was on $dateStr. Have you received your money?"
-            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_body))
-            setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            setLineSpacing(8f, 1f)
-            setPadding(0, 0, 0, (28 * density).toInt())
-            gravity = android.view.Gravity.CENTER
-        }
-        box.addView(content)
-
-        val btnReset = Button(context).apply {
-            text = "Yes, Reset cycle now"
-            isAllCaps = false
-            setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, ThemeHelper.getDrawable(context, R.drawable.bg_3d_card))
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt())
-        }
-        box.addView(btnReset)
-
-        val spacer = View(context).apply { layoutParams = LinearLayout.LayoutParams(1, (16 * density).toInt()) }
-        box.addView(spacer)
-
-        val btnRemindLater = Button(context).apply {
-            text = "Remind Me Later"
-            isAllCaps = false
-            setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-            background = androidx.core.content.ContextCompat.getDrawable(context, ThemeHelper.getDrawable(context, R.drawable.bg_3d_card))
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt())
-        }
-        box.addView(btnRemindLater)
-
-        val dialog = AlertDialog.Builder(context)
-            .setView(box)
-            .setCancelable(false)
-            .create()
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        activeResetDialogInScanner = dialog
-
-        btnReset.setOnClickListener {
-            dialog.dismiss()
-            performCycleResetInScanner(nextDate, freq)
-        }
-
-        btnRemindLater.setOnClickListener { btnView ->
-            showPostponeDropdownInScanner(btnView, dialog)
-        }
-
-        dialog.show()
-    }
-
-    private fun showPostponeDropdownInScanner(anchorView: View, parentDialog: AlertDialog) {
-        val context = this
-        val items = listOf("30 minutes", "1 hour", "3 hours", "Custom")
-        val density = resources.displayMetrics.density
-        val btnWidthDp = (anchorView.width / density).toInt()
-
-        DropdownHelper.showBlinkingDropdown(
-            context,
-            anchorView,
-            items,
-            fixedWidthDp = btnWidthDp,
-            horizontalOffsetDp = 0,
-            gravity = android.view.Gravity.CENTER_HORIZONTAL
-        ) { position, _ ->
-            val durationMs = when (position) {
-                0 -> 30L * 60 * 1000        // 30 min
-                1 -> 60L * 60 * 1000        // 1 hour
-                2 -> 3L * 60 * 60 * 1000     // 3 hours
-                3 -> {
-                    showCustomDatePickerInScanner(parentDialog)
-                    return@showBlinkingDropdown
-                }
-                else -> 0L
-            }
-
-            if (durationMs > 0L) {
-                val newPostponeUntil = System.currentTimeMillis() + durationMs
-                savePostponeTimeInScanner(newPostponeUntil)
-                parentDialog.dismiss()
-                val minutes = durationMs / (60 * 1000)
-                ToastHelper.showCustomToast(context, "Rescheduled. Reminding in ${if (minutes >= 60) "${minutes / 60} hour(s)" else "$minutes minutes"}", 1200L)
-                resumeScanning()
-            }
-        }
-    }
-
-    private fun showCustomDatePickerInScanner(parentDialog: AlertDialog) {
-        val context = this
-        val currentCal = Calendar.getInstance()
-        
-        val datePicker = DatePickerDialog(
-            context,
-            ThemeHelper.getDatePickerTheme(context),
-            { _, year, month, dayOfMonth ->
-                val selectedCal = Calendar.getInstance()
-                selectedCal.set(Calendar.YEAR, year)
-                selectedCal.set(Calendar.MONTH, month)
-                selectedCal.set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                
-                showCustomTimePickerInScanner(selectedCal, parentDialog)
-            },
-            currentCal.get(Calendar.YEAR),
-            currentCal.get(Calendar.MONTH),
-            currentCal.get(Calendar.DAY_OF_MONTH)
-        )
-        
-        datePicker.datePicker.minDate = System.currentTimeMillis() - 1000
-        datePicker.show()
-    }
-
-    private fun showCustomTimePickerInScanner(selectedCal: Calendar, parentDialog: AlertDialog) {
-        val context = this
-        val currentCal = Calendar.getInstance()
-
-        val timePicker = android.app.TimePickerDialog(
-            context,
-            ThemeHelper.getDatePickerTheme(context),
-            { _, hourOfDay, minute ->
-                selectedCal.set(Calendar.HOUR_OF_DAY, hourOfDay)
-                selectedCal.set(Calendar.MINUTE, minute)
-                selectedCal.set(Calendar.SECOND, 0)
-                selectedCal.set(Calendar.MILLISECOND, 0)
-
-                val selectedMs = selectedCal.timeInMillis
-                if (selectedMs <= System.currentTimeMillis()) {
-                    ToastHelper.showCustomToast(context, "Please choose a future time", 1000L)
-                } else {
-                    savePostponeTimeInScanner(selectedMs)
-                    parentDialog.dismiss()
-                    
-                    val sdf = java.text.SimpleDateFormat("MMM d, yyyy 'at' h:mm a", java.util.Locale.US)
-                    val formatted = sdf.format(selectedCal.time).lowercase(java.util.Locale.US)
-                    ToastHelper.showCustomToast(context, "Rescheduled. Reminding on $formatted", 1500L)
-                    resumeScanning()
-                }
-            },
-            currentCal.get(Calendar.HOUR_OF_DAY),
-            currentCal.get(Calendar.MINUTE),
-            false
-        )
-        timePicker.show()
-    }
-
-    private fun savePostponeTimeInScanner(timestamp: Long) {
-        val prefs = getSharedPreferences("MoneySchedulePrefs", MODE_PRIVATE)
-        prefs.edit().putLong("postpone_until", timestamp).apply()
-    }
-
-    private fun resumeScanning() {
-        scannedOnce = false
-        if (::cameraProvider.isInitialized) {
-            startCamera()
-        }
-    }
-
-    private fun performCycleResetInScanner(nextDate: Long, freq: Int) {
-        val context = this
-        val prefs = getSharedPreferences("MoneySchedulePrefs", MODE_PRIVATE)
-        
-        prefs.edit().remove("postpone_until").apply()
-
-        CoroutineScope(Dispatchers.IO).launch {
-            val today = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-            
-            val next = Calendar.getInstance().apply {
-                timeInMillis = nextDate
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-
-            while (next.before(today)) {
-                next.add(Calendar.DAY_OF_YEAR, freq)
-            }
-
-            val newNextDateMs = next.timeInMillis
-            prefs.edit().putLong("next_date", newNextDateMs).apply()
-
-            val categoryPrefs = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)
-            val categories = categoryPrefs.getStringSet("categories", emptySet()) ?: emptySet()
-            val graphPrefs = getSharedPreferences("GraphData", MODE_PRIVATE)
-            val graphEditor = graphPrefs.edit()
-            for (cat in categories) {
-                graphEditor.putFloat("SPENT_$cat", 0f)
-            }
-            graphEditor.putFloat("SPENT_no choice", 0f)
-            graphEditor.apply()
-
-            val wPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
-            val initialBal = wPrefs.getInt("initial_balance", 0)
-            wPrefs.edit().putInt("wallet_balance", initialBal).apply()
-
-            FirestoreSyncManager.pushAllDataToCloud(context)
-
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                ToastHelper.showCustomToast(context, "Cycle Reset Successfully!", 1000L)
-                resumeScanning()
-            }
-        }
+    /** Saves a UPI ID → allocation mapping locally and pushes to Firestore. */
+    private fun saveUpiAllocation(upiId: String, category: String) {
+        if (upiId.isBlank() || category.equals("no choice", ignoreCase = true)) return
+        getSharedPreferences("UpiAllocationPrefs", MODE_PRIVATE)
+            .edit().putString("ALLOC_$upiId", category).apply()
+        FirestoreSyncManager.pushAllDataToCloud(this)
     }
 
 

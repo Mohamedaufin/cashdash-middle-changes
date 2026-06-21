@@ -7,7 +7,7 @@
     android:paddingEnd="12dp"
     android:paddingTop="8dp"
     android:paddingBottom="8dp"
-    android:textColor="#e0e0ff"
+    android:textColor="?attr/textPrimaryColor"
     android:textSize="16sp"
     android:ellipsize="marquee"
     android:singleLine="true"/>

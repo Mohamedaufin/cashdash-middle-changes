@@ -173,14 +173,7 @@ class AllocatorFragment : Fragment() {
         }
         box.addView(input)
 
-        val errorView = TextView(requireContext()).apply {
-            setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
-            visibility = android.view.View.GONE
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(10, 0, 0, 40)
-            }
-        }
-        box.addView(errorView)
+
 
         val buttonContainer = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -223,12 +216,9 @@ class AllocatorFragment : Fragment() {
                 setMargins((8 * density).toInt(), 0, 0, 0)
             }
             setOnClickListener {
-                errorView.visibility = android.view.View.GONE
                 val name = input.text.toString().trim().replace("|", "-")
                 if (name.equals("Overall", ignoreCase = true)) {
                     input.error = "'Overall' is a reserved name"
-                    errorView.text = "'Overall' is a reserved name"
-                    errorView.visibility = android.view.View.VISIBLE
                     return@setOnClickListener
                 }
                 
@@ -236,8 +226,6 @@ class AllocatorFragment : Fragment() {
                 val exists = currentSaved.any { it.equals(name, ignoreCase = true) }
                 if (exists) {
                     input.error = "Allocation name already exists"
-                    errorView.text = "Allocation name already exists"
-                    errorView.visibility = android.view.View.VISIBLE
                     return@setOnClickListener
                 }
 
@@ -363,19 +351,12 @@ class AllocatorFragment : Fragment() {
             background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_glass_input))
             setPadding(40, 40, 40, 40)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(0, 0, 0, 10)
+                setMargins(0, 0, 0, 40)
             }
         }
         box.addView(input)
 
-        val errorView = TextView(requireContext()).apply {
-            setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
-            visibility = android.view.View.GONE
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(10, 0, 0, 40)
-            }
-        }
-        box.addView(errorView)
+
 
         val buttonContainer = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -413,20 +394,15 @@ class AllocatorFragment : Fragment() {
             minHeight = 150
             setPadding(30,30,30,30)
             setOnClickListener {
-                errorView.visibility = android.view.View.GONE
                 val newName = input.text.toString().trim().replace("|", "-")
                 if (newName.equals("Overall", ignoreCase = true)) {
                     input.error = "'Overall' is a reserved name"
-                    errorView.text = "'Overall' is a reserved name"
-                    errorView.visibility = android.view.View.VISIBLE
                     return@setOnClickListener
                 }
                 
                 val currentSaved = requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE).getStringSet(KEY, emptySet()) ?: emptySet()
                 if (!newName.equals(name, ignoreCase = true) && currentSaved.any { it.equals(newName, ignoreCase = true) }) {
                     input.error = "Allocation name already exists"
-                    errorView.text = "Allocation name already exists"
-                    errorView.visibility = android.view.View.VISIBLE
                     return@setOnClickListener
                 }
 
@@ -501,7 +477,7 @@ class AllocatorFragment : Fragment() {
         val btnDelete = Button(requireContext()).apply {
             text = "Delete"
             isAllCaps = false
-            setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
+            setTextColor(ThemeHelper.resolveColorAttr(requireContext(), R.attr.textRedColor))
             val tv = android.util.TypedValue(); context.theme.resolveAttribute(R.attr.cardBackground, tv, true)
             background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
             stateListAnimator = null
@@ -522,7 +498,7 @@ class AllocatorFragment : Fragment() {
     }
 
     private fun showAllocationOptions(name: String) {
-        val bottomSheet = BottomSheetDialog(requireContext(), R.style.BottomSheetDialogTheme)
+        val bottomSheet = BottomSheetDialog(requireContext(), ThemeHelper.getBottomSheetTheme(requireContext()))
         
         val density = requireContext().resources.displayMetrics.density
         val container = LinearLayout(requireContext()).apply {
@@ -675,7 +651,7 @@ class AllocatorFragment : Fragment() {
         val btnDelete = Button(requireContext()).apply {
             text = "Delete Allocation"
             isAllCaps = false
-            setTextColor(android.graphics.Color.parseColor("#FF4D4D"))
+            setTextColor(ThemeHelper.resolveColorAttr(requireContext(), R.attr.textRedColor))
             val tv = android.util.TypedValue()
             requireContext().theme.resolveAttribute(R.attr.cardBackground, tv, true)
             background = androidx.core.content.ContextCompat.getDrawable(requireContext(), tv.resourceId)

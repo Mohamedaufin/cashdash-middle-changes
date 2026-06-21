@@ -63,6 +63,15 @@
             android:padding="20dp"
             android:animateLayoutChanges="true">
 
+            <TextView
+                android:id="@+id/tvFinminderHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="13sp"
+                android:layout_marginBottom="24dp"
+                android:lineSpacingExtra="4dp" />
+
             <!-- Title Field -->
             <TextView
                 android:layout_width="wrap_content"
@@ -85,26 +94,16 @@
                 android:inputType="textCapWords"
                 android:layout_marginBottom="20dp"/>
 
-            <!-- Quantity Data Field -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Quant. data"
-                android:textColor="?attr/textMutedColor"
-                android:textSize="@dimen/text_body"
-                android:layout_marginBottom="8dp"/>
-            
             <EditText
                 android:id="@+id/etQuantity"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
                 android:background="?attr/inputBackground"
+                android:paddingHorizontal="16dp"
+                android:inputType="textCapSentences"
                 android:hint="e.g. ₹100, 1kg, 2L"
                 android:textColor="?attr/textPrimaryColor"
                 android:textColorHint="@color/text_dim"
-                android:padding="16dp"
-                android:singleLine="true"
-                android:inputType="textCapSentences"
                 android:layout_marginBottom="20dp"/>
 
             <!-- Expandable Frequency Dropdown -->
@@ -169,7 +168,25 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#1AFFFFFF" />
+                        android:background="?attr/dividerColor" />
+
+                    <TextView
+                        android:id="@+id/btnFreqDaily"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp"
+                        android:text="Remind daily"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textSize="@dimen/text_body"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground"/>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="?attr/dividerColor" />
                         
                     <TextView
                         android:id="@+id/btnFreqWeekly"
@@ -177,7 +194,7 @@
                         android:layout_height="50dp"
                         android:gravity="center_vertical"
                         android:paddingHorizontal="16dp"
-                        android:text="Repeat every week"
+                        android:text="Remind every week"
                         android:textColor="?attr/textPrimaryColor"
                         android:textSize="@dimen/text_body"
                         android:clickable="true"
@@ -187,7 +204,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#1AFFFFFF" />
+                        android:background="?attr/dividerColor" />
                         
                     <TextView
                         android:id="@+id/btnFreqMonthly"
@@ -195,7 +212,7 @@
                         android:layout_height="50dp"
                         android:gravity="center_vertical"
                         android:paddingHorizontal="16dp"
-                        android:text="Repeat every month"
+                        android:text="Remind every month"
                         android:textColor="?attr/textPrimaryColor"
                         android:textSize="@dimen/text_body"
                         android:clickable="true"
@@ -303,17 +320,17 @@
                             android:visibility="gone">
         
                             <TextView android:id="@+id/btnDayMonday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Monday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
-                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1AFFFFFF" />
+                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/dividerColor" />
                             <TextView android:id="@+id/btnDayTuesday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Tuesday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
-                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1AFFFFFF" />
+                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/dividerColor" />
                             <TextView android:id="@+id/btnDayWednesday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Wednesday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
-                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1AFFFFFF" />
+                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/dividerColor" />
                             <TextView android:id="@+id/btnDayThursday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Thursday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
-                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1AFFFFFF" />
+                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/dividerColor" />
                             <TextView android:id="@+id/btnDayFriday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Friday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
-                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1AFFFFFF" />
+                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/dividerColor" />
                             <TextView android:id="@+id/btnDaySaturday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Saturday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
-                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1AFFFFFF" />
+                            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/dividerColor" />
                             <TextView android:id="@+id/btnDaySunday" android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:paddingHorizontal="16dp" android:text="Sunday" android:textColor="?attr/textPrimaryColor" android:textSize="@dimen/text_body" android:background="?android:attr/selectableItemBackground"/>
                         </LinearLayout>
                     </LinearLayout>

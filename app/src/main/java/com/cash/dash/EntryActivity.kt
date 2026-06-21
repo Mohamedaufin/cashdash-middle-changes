@@ -454,7 +454,7 @@ class EntryActivity : ThemedActivity() {
     }
 
     private fun showDobPickerDialog(tvDob: TextView) {
-        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this, ThemeHelper.getBottomSheetTheme(this))
         val sheetView = layoutInflater.inflate(R.layout.layout_dob_bottom_sheet, null)
         dialog.setContentView(sheetView)
 

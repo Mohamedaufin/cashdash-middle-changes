@@ -22,11 +22,17 @@ class FinminderActivity : ThemedActivity() {
     private lateinit var headerRow: View
     private var currentTab = "CASH_OUT"
 
+    private val syncReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+            loadData()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_finminder)
 
-        val btnBack = findViewById<View>(R.id.btnBack)
+        val btnBack = findViewById<android.widget.ImageView>(R.id.btnBack)
         val btnMore = findViewById<android.widget.ImageButton>(R.id.btnMore)
         val toggleMode = findViewById<com.google.android.material.button.MaterialButtonToggleGroup>(R.id.toggleMode)
         val btnAdd = findViewById<Button>(R.id.btnAdd)
@@ -67,7 +73,15 @@ class FinminderActivity : ThemedActivity() {
 
     override fun onResume() {
         super.onResume()
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).registerReceiver(
+            syncReceiver, android.content.IntentFilter(FirestoreSyncManager.ACTION_SYNC_UPDATE)
+        )
         loadData()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).unregisterReceiver(syncReceiver)
     }
 
 
@@ -110,6 +124,11 @@ class FinminderActivity : ThemedActivity() {
         if (filtered.isEmpty()) {
             tvInstruction.visibility = View.GONE
             tvEmptyState?.visibility = View.VISIBLE
+            if (currentTab == "CASH_OUT") {
+                tvEmptyState?.text = "Add your expense with date and CashDash will remind you on the particular date."
+            } else {
+                tvEmptyState?.text = "Cash-in is a type of finminder where you expect to receive money from someone on a particular date, and CashDash reminds you on that date."
+            }
         } else {
             tvInstruction.visibility = View.VISIBLE
             tvInstruction.text = "Press and hold on any transaction to edit."
@@ -262,6 +281,7 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
         holder.tvQuantData.text = item.quantity
         
         val freqText = when (item.frequency) {
+            "Daily" -> "(daily)"
             "Weekly" -> "(weekly)"
             "Monthly" -> "(monthly)"
             else -> "(one time)"
@@ -271,7 +291,22 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
         val typeText = if (item.type == "CASH_OUT") "cash-out" else "cash-in"
         holder.layoutExtendedInfo.visibility = if (item.frequency == "One time") View.GONE else View.VISIBLE
 
-        val displayDate = if (item.frequency == "Weekly") {
+        val displayDate = if (item.frequency == "Daily") {
+            try {
+                val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+                val today = java.util.Calendar.getInstance()
+                val date1 = sdf.format(today.time)
+                today.add(java.util.Calendar.DATE, 1)
+                val date2 = sdf.format(today.time)
+                
+                holder.tvExtendedInfo1.text = "• Daily $typeText is set to repeat every day"
+                holder.tvExtendedInfo2.text = "• Next target dates are $date1 and $date2"
+                date1
+            } catch (e: Exception) {
+                holder.layoutExtendedInfo.visibility = View.GONE
+                ""
+            }
+        } else if (item.frequency == "Weekly") {
             try {
                 val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
                 val today = java.util.Calendar.getInstance()
@@ -388,7 +423,7 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
     }
 
     private fun showOptionsBottomSheet(context: android.content.Context, item: FinminderItem) {
-        val bottomSheet = com.google.android.material.bottomsheet.BottomSheetDialog(context, R.style.BottomSheetDialogTheme)
+        val bottomSheet = com.google.android.material.bottomsheet.BottomSheetDialog(context, ThemeHelper.getBottomSheetTheme(context))
         val density = context.resources.displayMetrics.density
         val container = android.widget.LinearLayout(context).apply {
             orientation = android.widget.LinearLayout.VERTICAL
@@ -445,11 +480,11 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
             
             if (item.frequency == "One time") {
                 text = "Mark task as completed"
-                setTextColor(android.graphics.Color.parseColor("#4CAF50"))
+                setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textGreenColor))
             } else {
                 val modeText = if (item.type == "CASH_OUT") "cash-out" else "cash-in"
                 text = "Delete $modeText"
-                setTextColor(android.graphics.Color.parseColor("#FF4D4D")) // Red color for delete
+                setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textRedColor)) // Red color for delete
             }
             
             setOnClickListener {

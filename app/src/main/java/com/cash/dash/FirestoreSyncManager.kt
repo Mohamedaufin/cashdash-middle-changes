@@ -54,6 +54,7 @@ object FirestoreSyncManager {
                 val scannerHistPrefs = appContext.getSharedPreferences("ScannerHistory", Context.MODE_PRIVATE)
                 val localScanPrefs = appContext.getSharedPreferences("LocalScanPrefs", Context.MODE_PRIVATE)
                 val finminderPrefs = appContext.getSharedPreferences("FinminderPrefs", Context.MODE_PRIVATE)
+                val upiAllocPrefs = appContext.getSharedPreferences("UpiAllocationPrefs", Context.MODE_PRIVATE)
 
                 val userDocRef = db.collection("users").document(email)
                 val configColl = userDocRef.collection("config")
@@ -192,6 +193,11 @@ object FirestoreSyncManager {
                 // 9. FinminderPrefs
                 batch.set(configColl.document("finminder"), hashMapOf("FinminderPrefs" to finminderPrefs.all))
 
+                // 10. UpiAllocationPrefs (UPI ID → allocation memory, stored as flat string map)
+                // Keys are "ALLOC_<upi_id>", values are category names — very space-efficient
+                val allocMap = upiAllocPrefs.all.filterValues { it is String }
+                batch.set(configColl.document("upi_allocations"), hashMapOf("data" to allocMap))
+
                 // ⚡ Final Atomic Execution (1 Trip vs 9 Trip)
                 Tasks.await(batch.commit())
 
@@ -230,8 +236,9 @@ object FirestoreSyncManager {
             val tUndo = userDoc.document("undo_details").get()
             val tScannerMeta = userDoc.document("scanner_metadata").get()
             val tFinminder = userDoc.document("finminder").get()
+            val tUpiAlloc = userDoc.document("upi_allocations").get()
 
-            Tasks.whenAllComplete(tProfile, tWallet, tCategories, tHistory, tAnalytics, tScanner, tUndo, tScannerMeta, tFinminder)
+            Tasks.whenAllComplete(tProfile, tWallet, tCategories, tHistory, tAnalytics, tScanner, tUndo, tScannerMeta, tFinminder, tUpiAlloc)
                 .addOnCompleteListener { task ->
                     if (!task.isSuccessful) {
                         Log.e(TAG, "Failed to pull cloud data for $docId: ${task.exception?.message}")
@@ -293,8 +300,8 @@ object FirestoreSyncManager {
 
                         isSyncingFromCloud = true
                         walletPrefs.edit().clear().apply()
+                        val savedPostpone = schedulePrefs.getLong("postpone_until", 0L)
                         schedulePrefs.edit().clear().apply()
-
                         val wEdit = walletPrefs.edit()
                             .putInt("initial_balance", walletDoc.getLong("initial_balance")?.toInt() ?: 0)
                             .putInt("wallet_balance", walletDoc.getLong("current_balance")?.toInt() ?: 0)
@@ -311,6 +318,7 @@ object FirestoreSyncManager {
                         schedulePrefs.edit()
                             .putLong("next_date", walletDoc.getLong("next_date_ms") ?: 0L)
                             .putInt("frequency", walletDoc.getLong("frequency")?.toInt() ?: 30)
+                            .putLong("postpone_until", savedPostpone)
                             .putBoolean("cycle_initialized", walletDoc.getBoolean("cycle_initialized") ?: false)
                             .apply()
                         isSyncingFromCloud = false
@@ -519,6 +527,22 @@ object FirestoreSyncManager {
                         }
                     }
 
+                    // 10. UpiAllocationPrefs
+                    val upiAllocDoc = tUpiAlloc.result
+                    if (upiAllocDoc != null && upiAllocDoc.exists()) {
+                        val allocData = upiAllocDoc.get("data") as? Map<String, Any>
+                        if (allocData != null) {
+                            isSyncingFromCloud = true
+                            val edit = context.getSharedPreferences("UpiAllocationPrefs", Context.MODE_PRIVATE).edit()
+                            edit.clear().apply()
+                            for ((k, v) in allocData) {
+                                if (v is String) edit.putString(k, v)
+                            }
+                            edit.apply()
+                            isSyncingFromCloud = false
+                        }
+                    }
+
                     // Log.d(TAG, "Pull complete for $docId. Migration flow: $isFallback")
                     
                     if (isFallback) {
@@ -572,6 +596,17 @@ object FirestoreSyncManager {
         listeners.add(userDoc.document("profile").addSnapshotListener { snapshot, e ->
             if (e != null) { Log.e(TAG, "❌ Profile Sync Error: ${e.message}"); return@addSnapshotListener }
             if (snapshot == null || !snapshot.exists()) return@addSnapshotListener
+
+            val status = snapshot.getString("account_status") ?: "active"
+            if (status == "admin_deleted") {
+                CashDashApplication.isDeletingAccount = true
+                val intent = android.content.Intent(appContext, EntryActivity::class.java).apply {
+                    flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    putExtra("show_ban_message", true)
+                }
+                appContext.startActivity(intent)
+                return@addSnapshotListener
+            }
 
             isSyncingFromCloud = true
             val prefs = appContext.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)

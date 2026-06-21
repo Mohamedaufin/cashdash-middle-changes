@@ -73,13 +73,6 @@ class ThemeActivity : ThemedActivity() {
         btnGradient2 = findViewById(R.id.btnGradient2)
         btnApply = findViewById(R.id.btnApply)
 
-        // Handle System Insets
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { v, insets ->
-            val systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
-            val extraPadding = (resources.displayMetrics.heightPixels * 0.03).toInt() 
-            v.setPadding(0, systemBars.top + extraPadding, 0, systemBars.bottom)
-            insets
-        }
 
         // Load existing settings
         val themePrefs = getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
