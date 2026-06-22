@@ -125,9 +125,9 @@ class FinminderActivity : ThemedActivity() {
             tvInstruction.visibility = View.GONE
             tvEmptyState?.visibility = View.VISIBLE
             if (currentTab == "CASH_OUT") {
-                tvEmptyState?.text = "Add your expense with date and CashDash will remind you on the particular date."
+                tvEmptyState?.text = "Cash-out is a expense where you set a future date to send money, and CashDash reminds you on that date."
             } else {
-                tvEmptyState?.text = "Cash-in is a type of finminder where you expect to receive money from someone on a particular date, and CashDash reminds you on that date."
+                tvEmptyState?.text = "Cash-in is an income where you expect to receive money from someone on a future date, and CashDash reminds you on that date."
             }
         } else {
             tvInstruction.visibility = View.VISIBLE
@@ -144,9 +144,8 @@ class FinminderActivity : ThemedActivity() {
         loadData() // Refresh list
 
         val snackbar = Snackbar.make(rvFinminder, "Tap here to undo this cashout", Snackbar.LENGTH_INDEFINITE)
-        snackbar.view.setBackgroundColor(android.graphics.Color.WHITE)
         val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-        textView.setTextColor(android.graphics.Color.BLACK)
+        textView.setTextColor(android.graphics.Color.WHITE)
         
         var timer: CountDownTimer? = null
         

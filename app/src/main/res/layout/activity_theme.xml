@@ -88,16 +88,11 @@
                     android:orientation="vertical"
                     android:clickable="true"
                     android:focusable="true">
-                    <View
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:background="@drawable/bg_solid_circle"
-                        android:backgroundTint="?attr/textPrimaryColor"
-                        android:layout_marginBottom="8dp"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="System"
+                        android:text="System\nDefault"
+                        android:gravity="center"
                         android:textColor="?attr/textMutedColor"
                         android:textSize="@dimen/text_body" />
                 </LinearLayout>

@@ -36,10 +36,24 @@ class FloatingWidgetService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.Main + Job())
 
     private fun getThemedContext(): Context {
-        val currentNightMode = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
-        val isSystemDark = currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES
-        val themeResId = if (!isSystemDark) R.style.Theme_Cashdash_White else R.style.Theme_Cashdash
+        val theme = ThemeHelper.getCurrentTheme(this)
+        val themeResId = when (theme) {
+            "Blue" -> R.style.Theme_Cashdash_Blue
+            "White" -> R.style.Theme_Cashdash_White
+            else -> R.style.Theme_Cashdash
+        }
         return androidx.appcompat.view.ContextThemeWrapper(this, themeResId)
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (isWidgetShowing) {
+            if (trackerView != null) {
+                showTracker()
+            } else {
+                showBubble()
+            }
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -542,11 +556,11 @@ class FloatingWidgetService : Service() {
         allocDialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 
-    private suspend fun getSpentForCategory(db: AppDatabase, category: String): Float {
+    private suspend fun getSpentForCategory(db: AppDatabase, category: String): Float = withContext(Dispatchers.IO) {
         val startCal = Calendar.getInstance().apply { set(Calendar.DAY_OF_MONTH, 1) }
         val endCal = Calendar.getInstance().apply { set(Calendar.DAY_OF_MONTH, getActualMaximum(Calendar.DAY_OF_MONTH)) }
         val txns = db.transactionDao().getTransactionsInRange(startCal.timeInMillis, endCal.timeInMillis)
-        return txns.filter { it.category == category }.sumOf { it.amount.toDouble() }.toFloat()
+        txns.filter { it.category == category }.sumOf { it.amount.toDouble() }.toFloat()
     }
 
     private fun saveExpense(title: String, amount: Float, category: String) {

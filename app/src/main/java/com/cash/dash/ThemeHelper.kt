@@ -14,7 +14,8 @@ object ThemeHelper {
     fun getCurrentTheme(context: Context): String {
         val savedTheme = getSavedTheme(context)
         if (savedTheme == "System") {
-            val currentNightMode = context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+            val systemConfig = android.content.res.Resources.getSystem().configuration
+            val currentNightMode = systemConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
             return if (currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
                 "Black"
             } else {

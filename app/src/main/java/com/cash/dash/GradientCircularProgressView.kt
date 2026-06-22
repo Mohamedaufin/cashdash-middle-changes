@@ -96,7 +96,16 @@ class GradientCircularProgressView @JvmOverloads constructor(
     }
 
     private fun updateGradient(w: Float, h: Float) {
-        val theme = currentThemeName ?: ThemeHelper.getCurrentTheme(context)
+        var theme = currentThemeName ?: ThemeHelper.getCurrentTheme(context)
+        if (theme == "System") {
+            val systemConfig = context.resources.configuration
+            val currentNightMode = systemConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+            theme = if (currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
+                "Black"
+            } else {
+                "White"
+            }
+        }
         
         // Dynamic Track Color based on Theme and Compatibility Rules
         var trackColor = when (theme) {

@@ -24,7 +24,8 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
         val tPrefs = getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
         val savedTheme = tPrefs.getString("current_theme", "Black") ?: "Black"
         val targetMode = if (savedTheme == "System") {
-            val currentNightMode = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+            val systemConfig = android.content.res.Resources.getSystem().configuration
+            val currentNightMode = systemConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
             if (currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
                 AppCompatDelegate.MODE_NIGHT_YES
             } else {
