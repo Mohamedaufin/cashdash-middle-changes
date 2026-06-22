@@ -62,6 +62,9 @@ object FirestoreSyncManager {
                 // 🚀 Consolidate all 8 writes into a single high-performance atomic network blast
                 val batch = db.batch()
 
+                val currentTimestamp = System.currentTimeMillis()
+                userPrefs.edit().putLong("last_local_modification", currentTimestamp).apply()
+
                 // 1. App Settings / User Config
                 val userConfigData = hashMapOf<String, Any>(
                     "name" to (userPrefs.getString("user_name", "User") ?: "User"),
@@ -71,7 +74,8 @@ object FirestoreSyncManager {
                     "setup_complete" to !userPrefs.getBoolean("isFirstLaunch", true),
                     "wallet_popup_shown" to userPrefs.getBoolean("WalletPopupShown", false),
                     "account_creation_time" to userPrefs.getLong("account_creation_time", 0L),
-                    "account_status" to "active"
+                    "account_status" to "active",
+                    "last_local_modification" to currentTimestamp
                 )
                 val lastActiveStr = userPrefs.getString("lastActiveTime", "") ?: ""
                 if (lastActiveStr.isNotEmpty()) {
@@ -266,8 +270,20 @@ object FirestoreSyncManager {
 
                     val profileData = profileDoc.data
 
-                    // 1. Profile
                     val userPrefs = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+                    
+                    // 🛡️ Prevent Stale Cloud Overwrite
+                    val cloudTimestamp = profileDoc.getLong("last_local_modification") ?: 0L
+                    val localTimestamp = userPrefs.getLong("last_local_modification", 0L)
+
+                    if (localTimestamp > cloudTimestamp) {
+                        Log.w(TAG, "Cloud data is stale compared to local. Aborting pull and initiating push.")
+                        pushAllDataToCloud(context)
+                        onComplete(true, true, false, profileData)
+                        return@addOnCompleteListener
+                    }
+
+                    // 1. Profile
                     val editor = userPrefs.edit()
 
                     // Only clear if we are sure we want a full mirror,

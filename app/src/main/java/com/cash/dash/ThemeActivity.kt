@@ -21,6 +21,7 @@ class ThemeActivity : ThemedActivity() {
     private lateinit var tvTitle: TextView
     private lateinit var header: View
     
+    private lateinit var themeSystem: View
     private lateinit var themeBlack: View
     private lateinit var themeBlue: View
     private lateinit var themeWhite: View
@@ -57,6 +58,7 @@ class ThemeActivity : ThemedActivity() {
         btnBack.setOnClickListener { handleBackAction() }
 
         // Initialize App Theme Views
+        themeSystem = findViewById(R.id.themeSystem)
         themeBlack = findViewById(R.id.themeBlack)
         themeBlue = findViewById(R.id.themeBlue)
         themeWhite = findViewById(R.id.themeWhite)
@@ -98,6 +100,7 @@ class ThemeActivity : ThemedActivity() {
     }
 
     private fun initClickListeners() {
+        themeSystem.setOnClickListener { selectedAppTheme = "System"; applyThemePreview("System") }
         themeBlack.setOnClickListener { selectedAppTheme = "Black"; applyThemePreview("Black") }
         themeBlue.setOnClickListener { selectedAppTheme = "Blue"; applyThemePreview("Blue") }
         themeWhite.setOnClickListener { selectedAppTheme = "White"; applyThemePreview("White") }
@@ -140,6 +143,7 @@ class ThemeActivity : ThemedActivity() {
         val activeText = ThemeHelper.resolveColorAttr(ctx, R.attr.textPrimaryColor)
         val mutedText = ThemeHelper.resolveColorAttr(ctx, R.attr.textMutedColor)
 
+        updateCardSelection(ctx, themeSystem, selectedAppTheme == "System", activeText, mutedText)
         updateCardSelection(ctx, themeBlack, selectedAppTheme == "Black", activeText, mutedText)
         updateCardSelection(ctx, themeBlue, selectedAppTheme == "Blue", activeText, mutedText)
         updateCardSelection(ctx, themeWhite, selectedAppTheme == "White", activeText, mutedText)
@@ -227,6 +231,14 @@ class ThemeActivity : ThemedActivity() {
     private fun getThemeResId(name: String): Int = when(name) {
         "Blue" -> R.style.Theme_Cashdash_Blue
         "White" -> R.style.Theme_Cashdash_White
+        "System" -> {
+            val currentNightMode = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+            if (currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
+                R.style.Theme_Cashdash
+            } else {
+                R.style.Theme_Cashdash_White
+            }
+        }
         else -> R.style.Theme_Cashdash
     }
 

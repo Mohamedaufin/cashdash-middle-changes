@@ -32,24 +32,6 @@ class MoneyScheduleActivity : ThemedActivity() {
             val rgFrequency = findViewById<RadioGroup>(R.id.rgFrequency)
             val calendarView = findViewById<CalendarView>(R.id.calendarView)
             val btnSave = findViewById<Button>(R.id.btnSaveSchedule)
-            val btnInfo = findViewById<ImageView>(R.id.btnInfoReset)
-            
-            // Apply background and tint based on theme
-            val bgTv = android.util.TypedValue()
-            val currentTheme = ThemeHelper.getCurrentTheme(this)
-            
-            if (currentTheme == "Blue") {
-                btnInfo.setBackgroundResource(R.drawable.bg_info_circle_white)
-                btnInfo.setColorFilter(Color.BLACK)
-            } else if (currentTheme == "Black") {
-                btnInfo.setBackgroundResource(R.drawable.bg_info_circle_black)
-                btnInfo.setColorFilter(Color.WHITE)
-            } else {
-                btnInfo.setColorFilter(com.cash.dash.ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor))
-                if (theme.resolveAttribute(R.attr.infoIconBackground, bgTv, true)) {
-                    btnInfo.setBackgroundResource(bgTv.resourceId)
-                }
-            }
             tvCyclePreview = findViewById(R.id.tvCyclePreview)
             etCustomDays = findViewById(R.id.etCustomDays)
             
@@ -110,7 +92,6 @@ class MoneyScheduleActivity : ThemedActivity() {
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             })
 
-            btnInfo.setOnClickListener { showResetInfoDialog() }
 
             // -------------------------------------------
             // 2️⃣ Capture new date when user selects a new one

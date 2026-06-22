@@ -6,9 +6,22 @@ object ThemeHelper {
     private const val PREFS_NAME = "ThemePrefs"
     private const val KEY_THEME = "current_theme"
 
-    fun getCurrentTheme(context: Context): String {
+    fun getSavedTheme(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getString(KEY_THEME, "Black") ?: "Black"
+    }
+
+    fun getCurrentTheme(context: Context): String {
+        val savedTheme = getSavedTheme(context)
+        if (savedTheme == "System") {
+            val currentNightMode = context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+            return if (currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
+                "Black"
+            } else {
+                "White"
+            }
+        }
+        return savedTheme
     }
 
     fun isWhiteTheme(context: Context): Boolean {

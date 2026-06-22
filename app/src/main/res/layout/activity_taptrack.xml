@@ -21,37 +21,39 @@
             android:paddingBottom="75dp">
 
             <!-- TOP NAV BAR -->
-            <LinearLayout
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="25dp"
-                android:orientation="horizontal"
-                android:paddingTop="20dp"
-                android:paddingBottom="20dp"
-                android:paddingStart="25dp"
-                android:paddingEnd="25dp">
+                android:paddingTop="4dp"
+                android:layout_marginBottom="25dp">
 
-                <ImageButton
+                <ImageView
                     android:id="@+id/btnBack"
-                    android:layout_width="45dp"
-                    android:layout_height="45dp"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
                     android:background="?attr/roundBackground"
-                    android:padding="10dp"
+                    android:padding="12dp"
                     android:src="@drawable/ic_back_arrow1"
-                    android:scaleType="fitCenter"
-                    app:tint="?attr/textPrimaryColor"/>
+                    app:tint="?attr/textPrimaryColor"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
 
                 <TextView
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="20dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="60dp"
                     android:text="TapTrack"
                     android:textColor="?attr/textPrimaryColor"
                     android:textSize="@dimen/text_title"
                     android:textStyle="bold"
-                    android:layout_gravity="center_vertical" />
-            </LinearLayout>
+                    android:gravity="center"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <!-- Instructions -->
             <LinearLayout
