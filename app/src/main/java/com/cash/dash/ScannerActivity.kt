@@ -836,8 +836,8 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             setOnClickListener {
                 pendingCategory = null
                 allocationHandled = true
-                // Remember "no choice" for this UPI so chooser is skipped next time too
-                // saveUpiAllocation(currentScanUpiId, "no choice") // removed per user request
+                // Register "no choice" for this UPI to clear/reset the saved allocation preference
+                saveUpiAllocation(currentScanUpiId, "no choice")
                 label.text = "No allocation selected"
                 label.visibility = View.VISIBLE
                 btn.text = "Choose"
@@ -1228,9 +1228,14 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
     /** Saves a UPI ID → allocation mapping locally and pushes to Firestore. */
     private fun saveUpiAllocation(upiId: String, category: String) {
-        if (upiId.isBlank() || category.equals("no choice", ignoreCase = true)) return
-        getSharedPreferences("UpiAllocationPrefs", MODE_PRIVATE)
-            .edit().putString("ALLOC_$upiId", category).apply()
+        if (upiId.isBlank()) return
+        if (category.equals("no choice", ignoreCase = true)) {
+            getSharedPreferences("UpiAllocationPrefs", MODE_PRIVATE)
+                .edit().remove("ALLOC_$upiId").apply()
+        } else {
+            getSharedPreferences("UpiAllocationPrefs", MODE_PRIVATE)
+                .edit().putString("ALLOC_$upiId", category).apply()
+        }
         FirestoreSyncManager.pushAllDataToCloud(this)
     }
 

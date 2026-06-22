@@ -414,6 +414,9 @@ class EntryActivity : ThemedActivity() {
             editor.putString(KEY_PHONE, phone)
             editor.putString("user_dob", selectedDob)
             editor.putLong("account_creation_time", System.currentTimeMillis())
+            
+            val themePrefs = getSharedPreferences("ThemePrefs", MODE_PRIVATE)
+            themePrefs.edit().putString("current_theme", "System").apply()
         }
         editor.apply()
 
