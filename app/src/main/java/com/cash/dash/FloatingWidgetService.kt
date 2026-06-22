@@ -314,12 +314,22 @@ class FloatingWidgetService : Service() {
             }
 
             withContext(Dispatchers.Main) {
+                val themedContext = getThemedContext()
                 tvWalletHint?.text = "Wallet: ₹$currentWallet / ₹$walletMax"
                 
-                // Pre-fill memory
-                val initialAlloc = if (savedAlloc != null && categoriesList.contains(savedAlloc)) {
-                    savedAlloc
+                // Pre-fill memory case-insensitively
+                val matchedCategory = if (savedAlloc != null) {
+                    categoriesList.find { it.equals(savedAlloc, ignoreCase = true) }
                 } else null
+
+                if (matchedCategory != null) {
+                    if (matchedCategory != savedAlloc && currentAppName.isNotBlank()) {
+                        getSharedPreferences("AppAllocationPrefs", Context.MODE_PRIVATE)
+                            .edit().putString("ALLOC_$currentAppName", matchedCategory).apply()
+                        FirestoreSyncManager.pushAllDataToCloud(this@FloatingWidgetService)
+                    }
+                }
+                val initialAlloc = matchedCategory
                 
                 selectedAllocation = initialAlloc
                 tvSelectedAllocation?.text = if (initialAlloc != null) {
@@ -331,11 +341,25 @@ class FloatingWidgetService : Service() {
                 layoutAllocationExpandable?.removeAllViews()
                 
                 val density = resources.displayMetrics.density
+
+                val updateDropdownTicks = {
+                    val count = layoutAllocationExpandable?.childCount ?: 0
+                    val tick = androidx.core.content.ContextCompat.getDrawable(themedContext, R.drawable.ic_check_green)
+                    for (i in 0 until count) {
+                        val child = layoutAllocationExpandable?.getChildAt(i) as? TextView
+                        if (child != null) {
+                            val rawCat = child.tag as? String
+                            val showTick = rawCat != null && rawCat == selectedAllocation && rawCat != "Create new allocation"
+                            child.setCompoundDrawablesWithIntrinsicBounds(null, null, if (showTick) tick else null, null)
+                        }
+                    }
+                }
+
                 for (catInfo in displayList) {
                     val rawCat = categoriesList[displayList.indexOf(catInfo)]
-                    val themedContext = getThemedContext() // ensure we use local variable for the iteration
                     val tv = TextView(themedContext).apply {
                         text = catInfo
+                        tag = rawCat
                         setTextColor(ThemeHelper.resolveColorAttr(themedContext, R.attr.textPrimaryColor))
                         textSize = 14f
                         setPadding((12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt())
@@ -349,15 +373,24 @@ class FloatingWidgetService : Service() {
                             layoutAllocationExpandable?.visibility = View.GONE
                             imgAllocationArrow?.rotation = 0f
                             
-                            if (rawCat == "Create new allocation") {
+                            if (rawCat != "Create new allocation") {
+                                if (currentAppName.isNotBlank()) {
+                                    getSharedPreferences("AppAllocationPrefs", Context.MODE_PRIVATE)
+                                        .edit().putString("ALLOC_$currentAppName", rawCat).apply()
+                                    FirestoreSyncManager.pushAllDataToCloud(this@FloatingWidgetService)
+                                }
+                            } else {
                                 val amountStr = edtAmount?.text.toString().trim()
                                 val amount = amountStr.toFloatOrNull() ?: 0f
                                 showCreateAllocationDialog(edtTitle?.text.toString().trim(), amount)
                             }
+                            updateDropdownTicks()
                         }
                     }
                     layoutAllocationExpandable?.addView(tv)
                 }
+
+                updateDropdownTicks()
 
                 layoutAllocationBtn?.setOnClickListener {
                     isDropdownExpanded = !isDropdownExpanded
