@@ -683,10 +683,15 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             // Auto-Fill Amount from QR
             val qrAmount = getParam(upi, "am")
             if (!qrAmount.isNullOrEmpty()) {
-                val parsed = qrAmount.toDoubleOrNull()?.toInt() ?: 0
-                if (parsed > 0) {
-                    etAmount.setText(parsed.toString())
-                    btnPayInitiate.text = "Pay ₹$parsed"
+                val parsedDouble = qrAmount.toDoubleOrNull() ?: 0.0
+                if (parsedDouble > 0) {
+                    val amountText = if (parsedDouble % 1.0 == 0.0) {
+                        parsedDouble.toInt().toString()
+                    } else {
+                        qrAmount
+                    }
+                    etAmount.setText(amountText)
+                    btnPayInitiate.text = "Pay ₹$amountText"
                 }
             }
 
@@ -738,7 +743,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
             btnPayInitiate.setOnClickListener {
                 val amtStr = etAmount.text.toString()
-                if (amtStr.isEmpty() || amtStr.toIntOrNull() == 0) {
+                if (amtStr.isEmpty() || (amtStr.toDoubleOrNull()?.toInt() ?: 0) == 0) {
                     toast("Please enter an amount")
                     return@setOnClickListener
                 }
@@ -751,7 +756,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 if (!allocationHandled) { toast("Please select an allocation or skip"); return@setOnClickListener }
                 val amtStr = etAmount.text.toString()
                 if (amtStr.isEmpty()) return@setOnClickListener
-                pendingAmount = amtStr.toIntOrNull() ?: 0
+                pendingAmount = amtStr.toDoubleOrNull()?.toInt() ?: 0
                 selectedPaymentApp = "CRED"
                 dialog.dismiss()
                 payUPI(upi, amtStr, "com.dreamplug.androidapp")
@@ -1220,7 +1225,16 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             .apply()
     }
 
-    private fun getParam(t: String, k: String) = Regex("$k=([^&]*)").find(t)?.groupValues?.get(1)
+    private fun getParam(t: String, k: String): String? {
+        return try {
+            val uri = android.net.Uri.parse(t)
+            uri.getQueryParameter(k.lowercase()) 
+                ?: uri.getQueryParameter(k.uppercase())
+                ?: Regex("(?i)$k=([^&]*)").find(t)?.groupValues?.get(1)
+        } catch (e: Exception) {
+            Regex("(?i)$k=([^&]*)").find(t)?.groupValues?.get(1)
+        }
+    }
     private fun decode(v: String?) = v?.let { URLDecoder.decode(it, "UTF-8") }
     private fun toast(s: String) = ToastHelper.showToast(this, s)
     private fun successBeep() { try { (getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(VibrationEffect.createOneShot(150, VibrationEffect.DEFAULT_AMPLITUDE)); MediaPlayer.create(this, android.provider.Settings.System.DEFAULT_NOTIFICATION_URI).start() } catch (_: Exception) {} }

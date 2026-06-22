@@ -40,6 +40,9 @@ class MoneyScheduleActivity : ThemedActivity() {
             val budget = wPrefs.getInt("initial_balance", 0)
             tvCycleSubTitle.text = "Select when your current budget (₹$budget) should expire"
 
+            val tvResetFrequencySubTitle = findViewById<TextView>(R.id.tvResetFrequencySubTitle)
+            tvResetFrequencySubTitle.text = "How often your wallet automatically refill to ₹$budget / ₹$budget"
+
             val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
 
             // -------------------------------------------
@@ -228,21 +231,32 @@ class MoneyScheduleActivity : ThemedActivity() {
             }
 
             val sdf = java.text.SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
-            val sdfYear = java.text.SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
             
-            val startCal = Calendar.getInstance().apply { 
+            val startCal1 = Calendar.getInstance().apply { 
                 timeInMillis = selectedDateMillis
                 add(Calendar.DAY_OF_YEAR, 1) 
             }
-            val endCal = Calendar.getInstance().apply {
-                timeInMillis = startCal.timeInMillis
+            val endCal1 = Calendar.getInstance().apply {
+                timeInMillis = startCal1.timeInMillis
                 add(Calendar.DAY_OF_YEAR, days - 1)
             }
 
-            val startStr = sdf.format(startCal.time)
-            val endStr = sdfYear.format(endCal.time)
+            val startCal2 = Calendar.getInstance().apply {
+                timeInMillis = endCal1.timeInMillis
+                add(Calendar.DAY_OF_YEAR, 1)
+            }
+            val endCal2 = Calendar.getInstance().apply {
+                timeInMillis = startCal2.timeInMillis
+                add(Calendar.DAY_OF_YEAR, days - 1)
+            }
+
+            val startStr1 = sdf.format(startCal1.time)
+            val endStr1 = sdf.format(endCal1.time)
+            val startStr2 = sdf.format(startCal2.time)
+            val endStr2 = sdf.format(endCal2.time)
             
-            tvCyclePreview.text = "Next cycle: $startStr — $endStr"
+            tvCyclePreview.text = "Next 2 cycles:\n• $startStr1 — $endStr1\n• $startStr2 — $endStr2"
+            tvCyclePreview.setLineSpacing(6 * resources.displayMetrics.density, 1f)
             tvCyclePreview.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_body))
             tvCyclePreview.visibility = View.VISIBLE
         }

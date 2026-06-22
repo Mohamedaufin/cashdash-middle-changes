@@ -421,8 +421,10 @@ class MainActivity : ThemedActivity() {
         updateUserMetadata()
         
         val result = intent.getStringExtra("payment_status")
-        when (result) {
-            "failed" -> Snackbar.make(findViewById(android.R.id.content), "❌ Payment Failed or Cancelled", Snackbar.LENGTH_LONG).show()
+        if (result == "failed") {
+            val snackbar = Snackbar.make(findViewById(android.R.id.content), "❌ Payment Failed or Cancelled", Snackbar.LENGTH_LONG)
+            snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)?.setTextColor(android.graphics.Color.WHITE)
+            snackbar.show()
         }
         intent.removeExtra("payment_status")
 
