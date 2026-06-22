@@ -30,6 +30,14 @@ object ThemeHelper {
 
     fun applyTheme(activity: android.app.Activity) {
         val theme = getCurrentTheme(activity)
+        val targetMode = if (theme == "White") {
+            androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+        } else {
+            androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+        }
+        if (androidx.appcompat.app.AppCompatDelegate.getDefaultNightMode() != targetMode) {
+            androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(targetMode)
+        }
         if (activity is TaptrackActivity) {
             if (theme == "White") {
                 activity.setTheme(R.style.Theme_Cashdash_White)
