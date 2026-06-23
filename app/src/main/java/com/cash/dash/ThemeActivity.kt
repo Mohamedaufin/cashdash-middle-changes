@@ -78,7 +78,7 @@ class ThemeActivity : ThemedActivity() {
 
         // Load existing settings
         val themePrefs = getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
-        initialAppTheme = themePrefs.getString("current_theme", "Black") ?: "Black"
+        initialAppTheme = themePrefs.getString("current_theme", "System") ?: "System"
         selectedAppTheme = initialAppTheme
 
         val bbPrefs = getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
@@ -168,7 +168,20 @@ class ThemeActivity : ThemedActivity() {
     private fun updateCardSelection(ctx: Context, card: View, isSelected: Boolean, activeText: Int, mutedText: Int) {
         val resId = getResIdFromAttr(ctx, R.attr.cardBackground)
         card.setBackgroundResource(resId)
-        val text = (card as LinearLayout).getChildAt(1) as TextView
+        val text = when (card) {
+            is LinearLayout -> {
+                var foundText: TextView? = null
+                for (i in 0 until card.childCount) {
+                    val child = card.getChildAt(i)
+                    if (child is TextView) {
+                        foundText = child
+                        break
+                    }
+                }
+                foundText ?: throw IllegalStateException("TextView not found in card")
+            }
+            else -> card as TextView
+        }
         text.setTextColor(if (isSelected) activeText else mutedText)
         text.setTypeface(null, if (isSelected) Typeface.BOLD else Typeface.NORMAL)
         card.animate().scaleX(if (isSelected) 1.08f else 1.0f).scaleY(if (isSelected) 1.08f else 1.0f).setDuration(200).start()
@@ -232,7 +245,8 @@ class ThemeActivity : ThemedActivity() {
         "Blue" -> R.style.Theme_Cashdash_Blue
         "White" -> R.style.Theme_Cashdash_White
         "System" -> {
-            val currentNightMode = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+            val systemConfig = android.content.res.Resources.getSystem().configuration
+            val currentNightMode = systemConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
             if (currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
                 R.style.Theme_Cashdash
             } else {
