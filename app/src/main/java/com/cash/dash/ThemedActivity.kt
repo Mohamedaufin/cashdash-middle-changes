@@ -44,12 +44,8 @@ open class ThemedActivity : AppCompatActivity() {
         isActivityResumed = true
         
         val currentTheme = ThemeHelper.getCurrentTheme(this)
-        if (lastAppliedTheme != null && lastAppliedTheme != currentTheme) {
-            if (ThemeHelper.getSavedTheme(this) == "System") {
-                showThemeChangeRestartDialog(currentTheme)
-            } else {
-                recreate()
-            }
+        if (lastAppliedTheme != null && lastAppliedTheme != currentTheme && ThemeHelper.getSavedTheme(this) == "System") {
+            showThemeChangeRestartDialog(currentTheme)
         }
         lastAppliedTheme = currentTheme
     }

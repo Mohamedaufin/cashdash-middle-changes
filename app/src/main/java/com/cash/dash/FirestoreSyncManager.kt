@@ -311,6 +311,17 @@ object FirestoreSyncManager {
                     profileDoc.getLong("account_creation_time")?.let { editor.putLong("account_creation_time", it) }
                     editor.apply()
 
+                    val cloudTheme = profileDoc.getString("current_theme")
+                    if (cloudTheme != null) {
+                        val themePrefs = context.getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
+                        val localTheme = themePrefs.getString("current_theme", "System")
+                        if (cloudTheme != localTheme) {
+                            themePrefs.edit().putString("current_theme", cloudTheme).apply()
+                        }
+                    } else {
+                        pushAllDataToCloud(context)
+                    }
+
                     isSyncingFromCloud = false
 
                     // 2. Wallet & Schedule
@@ -639,41 +650,7 @@ object FirestoreSyncManager {
             snapshot.getBoolean("setup_complete")?.let { editor.putBoolean("isFirstLaunch", !it) }
             editor.apply()
 
-            val cloudTheme = snapshot.getString("current_theme")
-            if (cloudTheme != null) {
-                val themePrefs = appContext.getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
-                val localTheme = themePrefs.getString("current_theme", "System") ?: "System"
-                if (cloudTheme != localTheme) {
-                    themePrefs.edit().putString("current_theme", cloudTheme).apply()
-                    val targetMode = if (cloudTheme == "System") {
-                        val systemConfig = android.content.res.Resources.getSystem().configuration
-                        val currentNightMode = systemConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
-                        if (currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
-                            androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
-                        } else {
-                            androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
-                        }
-                    } else {
-                        if (cloudTheme == "White") {
-                            androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
-                        } else {
-                            androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
-                        }
-                    }
-                    syncHandler.post {
-                        val currentMode = androidx.appcompat.app.AppCompatDelegate.getDefaultNightMode()
-                        if (currentMode != targetMode) {
-                            androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(targetMode)
-                        } else {
-                            CashDashApplication.getActiveActivity()?.let { activeActivity ->
-                                if (!activeActivity.isFinishing && !activeActivity.isDestroyed) {
-                                    activeActivity.recreate()
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+
 
             isSyncingFromCloud = false
             notifyUI(appContext)
