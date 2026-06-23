@@ -125,7 +125,7 @@ class FinminderActivity : ThemedActivity() {
             tvInstruction.visibility = View.GONE
             tvEmptyState?.visibility = View.VISIBLE
             if (currentTab == "CASH_OUT") {
-                tvEmptyState?.text = "Cash-out is a expense where you set a future date to send money, and CashDash reminds you on that date."
+                tvEmptyState?.text = "Cash-out is an expense where you set a future date to send money, and CashDash reminds you on that date."
             } else {
                 tvEmptyState?.text = "Cash-in is an income where you expect to receive money from someone on a future date, and CashDash reminds you on that date."
             }
