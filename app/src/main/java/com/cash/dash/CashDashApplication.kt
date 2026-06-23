@@ -22,7 +22,7 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
     private var themePrefsListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
     override fun onCreate() {
         val tPrefs = getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
-        val savedTheme = tPrefs.getString("current_theme", "Black") ?: "Black"
+        val savedTheme = tPrefs.getString("current_theme", "System") ?: "System"
         val targetMode = if (savedTheme == "System") {
             val systemConfig = android.content.res.Resources.getSystem().configuration
             val currentNightMode = systemConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK

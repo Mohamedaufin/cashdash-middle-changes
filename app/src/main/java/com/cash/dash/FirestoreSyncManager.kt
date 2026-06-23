@@ -22,7 +22,7 @@ object FirestoreSyncManager {
     private var listeners = mutableListOf<ListenerRegistration>()
     
     // ⚡ INSTANT SYNC STATE
-    private var isSyncingFromCloud = false
+    var isSyncingFromCloud = false
     private val prefListeners = mutableMapOf<String, android.content.SharedPreferences.OnSharedPreferenceChangeListener>()
     
     private val syncExecutor = java.util.concurrent.Executors.newSingleThreadExecutor()
@@ -65,6 +65,9 @@ object FirestoreSyncManager {
                 val currentTimestamp = System.currentTimeMillis()
                 userPrefs.edit().putLong("last_local_modification", currentTimestamp).apply()
 
+                val themePrefs = appContext.getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
+                val currentTheme = themePrefs.getString("current_theme", "System") ?: "System"
+
                 // 1. App Settings / User Config
                 val userConfigData = hashMapOf<String, Any>(
                     "name" to (userPrefs.getString("user_name", "User") ?: "User"),
@@ -75,6 +78,7 @@ object FirestoreSyncManager {
                     "wallet_popup_shown" to userPrefs.getBoolean("WalletPopupShown", false),
                     "account_creation_time" to userPrefs.getLong("account_creation_time", 0L),
                     "account_status" to "active",
+                    "current_theme" to currentTheme,
                     "last_local_modification" to currentTimestamp
                 )
                 val lastActiveStr = userPrefs.getString("lastActiveTime", "") ?: ""
@@ -306,6 +310,20 @@ object FirestoreSyncManager {
                     profileDoc.getBoolean("wallet_popup_shown")?.let { editor.putBoolean("WalletPopupShown", it) }
                     profileDoc.getLong("account_creation_time")?.let { editor.putLong("account_creation_time", it) }
                     editor.apply()
+
+                    val cloudTheme = profileDoc.getString("current_theme")
+                    if (cloudTheme != null) {
+                        if (context !is EntryActivity && context !is SplashActivity) {
+                            val themePrefs = context.getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
+                            val localTheme = themePrefs.getString("current_theme", "System")
+                            if (cloudTheme != localTheme) {
+                                themePrefs.edit().putString("current_theme", cloudTheme).apply()
+                            }
+                        }
+                    } else {
+                        pushAllDataToCloud(context)
+                    }
+
                     isSyncingFromCloud = false
 
                     // 2. Wallet & Schedule
@@ -596,7 +614,8 @@ object FirestoreSyncManager {
 
         val prefsToWatch = listOf(
             "AppPrefs", "WalletPrefs", "CategoryPrefs", "GraphData",
-            "CategoryWeekData", "MoneySchedulePrefs", "ScannerHistory", "LocalScanPrefs", "ScannerMetadataPrefs", "FinminderPrefs"
+            "CategoryWeekData", "MoneySchedulePrefs", "ScannerHistory", "LocalScanPrefs", "ScannerMetadataPrefs", "FinminderPrefs",
+            "ThemePrefs"
         )
 
         prefsToWatch.forEach { name ->
@@ -633,6 +652,16 @@ object FirestoreSyncManager {
             snapshot.getString("email")?.let { editor.putString("user_email", it) }
             snapshot.getBoolean("setup_complete")?.let { editor.putBoolean("isFirstLaunch", !it) }
             editor.apply()
+
+            val cloudTheme = snapshot.getString("current_theme")
+            if (cloudTheme != null) {
+                val themePrefs = appContext.getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
+                val localTheme = themePrefs.getString("current_theme", "System")
+                if (cloudTheme != localTheme) {
+                    themePrefs.edit().putString("current_theme", cloudTheme).apply()
+                }
+            }
+
             isSyncingFromCloud = false
             notifyUI(appContext)
         })
