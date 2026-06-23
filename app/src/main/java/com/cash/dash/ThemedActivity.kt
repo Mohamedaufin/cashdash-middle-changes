@@ -30,6 +30,24 @@ open class ThemedActivity : AppCompatActivity() {
         window.statusBarColor = android.graphics.Color.TRANSPARENT
         androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = isWhite
     }
+    
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        val themePrefs = getSharedPreferences("ThemePrefs", android.content.Context.MODE_PRIVATE)
+        val savedTheme = themePrefs.getString("current_theme", "System") ?: "System"
+        if (savedTheme == "System") {
+            super.onConfigurationChanged(newConfig)
+            recreate()
+        } else {
+            val targetNightMode = if (savedTheme == "White") {
+                android.content.res.Configuration.UI_MODE_NIGHT_NO
+            } else {
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+            }
+            newConfig.uiMode = (newConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK.inv()) or targetNightMode
+            resources.configuration.updateFrom(newConfig)
+            super.onConfigurationChanged(newConfig)
+        }
+    }
     override fun attachBaseContext(newBase: android.content.Context) {
         val configuration = android.content.res.Configuration(newBase.resources.configuration)
         if (configuration.fontScale > 1.0f) {
