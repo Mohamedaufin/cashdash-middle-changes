@@ -244,9 +244,18 @@ class ThemeActivity : ThemedActivity() {
         updateUI(wrapper)
     }
 
+    private fun isTextViewBold(tv: TextView): Boolean {
+        val tf = tv.typeface
+        if (tf != null && (tf.isBold || (tf.style and Typeface.BOLD) != 0)) return true
+        val paintTf = tv.paint.typeface
+        if (paintTf != null && (paintTf.isBold || (paintTf.style and Typeface.BOLD) != 0)) return true
+        if (tv.paint.isFakeBoldText) return true
+        return false
+    }
+
     private fun updateGlobalTextColors(root: View, primary: Int, muted: Int) {
         if (root is TextView && root != btnApply && root != btnModeGradient && root != btnModeSingle && root != btnGradient1 && root != btnGradient2) {
-            if (root.typeface?.isBold == true || root.id == R.id.tvTitle) root.setTextColor(primary)
+            if (isTextViewBold(root) || root.id == R.id.tvTitle) root.setTextColor(primary)
             else root.setTextColor(muted)
         } else if (root is android.view.ViewGroup) {
             for (i in 0 until root.childCount) updateGlobalTextColors(root.getChildAt(i), primary, muted)
