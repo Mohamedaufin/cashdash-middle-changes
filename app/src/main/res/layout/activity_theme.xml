@@ -92,6 +92,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="System Default"
+                        android:gravity="center"
                         android:textColor="?attr/textMutedColor"
                         android:textSize="@dimen/text_body" />
                     <TextView
@@ -99,6 +100,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="(--)"
+                        android:gravity="center"
                         android:textColor="?attr/textMutedColor"
                         android:textSize="11sp"
                         android:layout_marginTop="4dp" />
