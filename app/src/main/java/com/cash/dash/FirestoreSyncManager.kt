@@ -311,17 +311,6 @@ object FirestoreSyncManager {
                     profileDoc.getLong("account_creation_time")?.let { editor.putLong("account_creation_time", it) }
                     editor.apply()
 
-                    val cloudTheme = profileDoc.getString("current_theme")
-                    if (cloudTheme != null) {
-                        val themePrefs = context.getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
-                        val localTheme = themePrefs.getString("current_theme", "System")
-                        if (cloudTheme != localTheme) {
-                            themePrefs.edit().putString("current_theme", cloudTheme).apply()
-                        }
-                    } else {
-                        pushAllDataToCloud(context)
-                    }
-
                     isSyncingFromCloud = false
 
                     // 2. Wallet & Schedule
