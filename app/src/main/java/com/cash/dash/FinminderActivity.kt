@@ -144,6 +144,7 @@ class FinminderActivity : ThemedActivity() {
         loadData() // Refresh list
 
         val snackbar = Snackbar.make(rvFinminder, "Tap here to undo this cashout", Snackbar.LENGTH_INDEFINITE)
+        snackbar.setBackgroundTint(android.graphics.Color.parseColor("#1A1B1F"))
         val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
         textView.setTextColor(android.graphics.Color.WHITE)
         
@@ -155,7 +156,7 @@ class FinminderActivity : ThemedActivity() {
             loadData()
             snackbar.dismiss()
         }
-        snackbar.setActionTextColor(android.graphics.Color.RED)
+        snackbar.setActionTextColor(android.graphics.Color.parseColor("#FF5252"))
 
         timer = object : CountDownTimer(7000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
@@ -165,6 +166,7 @@ class FinminderActivity : ThemedActivity() {
                     loadData()
                     snackbar.dismiss()
                 }
+                snackbar.setActionTextColor(android.graphics.Color.parseColor("#FF5252"))
             }
             override fun onFinish() {
                 snackbar.dismiss()
