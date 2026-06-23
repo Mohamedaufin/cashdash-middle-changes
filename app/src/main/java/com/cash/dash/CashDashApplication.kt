@@ -21,20 +21,7 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
     private var walletPrefsListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
     private var themePrefsListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
     override fun onCreate() {
-        val tPrefs = getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
-        val savedTheme = tPrefs.getString("current_theme", "System") ?: "System"
-        val targetMode = if (savedTheme == "System") {
-            val systemConfig = android.content.res.Resources.getSystem().configuration
-            val currentNightMode = systemConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
-            if (currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
-                AppCompatDelegate.MODE_NIGHT_YES
-            } else {
-                AppCompatDelegate.MODE_NIGHT_NO
-            }
-        } else {
-            if (savedTheme == "White") AppCompatDelegate.MODE_NIGHT_NO else AppCompatDelegate.MODE_NIGHT_YES
-        }
-        AppCompatDelegate.setDefaultNightMode(targetMode)
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         super<Application>.onCreate()
         
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
