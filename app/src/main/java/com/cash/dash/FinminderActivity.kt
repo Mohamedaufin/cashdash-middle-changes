@@ -280,10 +280,10 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
         holder.tvQuantData.text = item.quantity
         
         val freqText = when (item.frequency) {
-            "Daily" -> "(daily)"
-            "Weekly" -> "(weekly)"
-            "Monthly" -> "(monthly)"
-            else -> "(one time)"
+            "Daily" -> "(Daily)"
+            "Weekly" -> "(Weekly)"
+            "Monthly" -> "(Monthly)"
+            else -> "(One time)"
         }
         holder.tvFrequencyInfo.text = freqText
         
