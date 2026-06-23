@@ -68,7 +68,7 @@ class AddFinminderActivity : ThemedActivity() {
         
         val tvFinminderHint = findViewById<TextView>(R.id.tvFinminderHint)
         if (currentTab == "CASH_OUT") {
-            tvFinminderHint.text = "Cash-out is a expense where you set a future date to send money, and CashDash reminds you on that date."
+            tvFinminderHint.text = "Cash-out is an expense where you set a future date to send money, and CashDash reminds you on that date."
         } else {
             tvFinminderHint.text = "Cash-in is an income where you expect to receive money from someone on a future date, and CashDash reminds you on that date."
         }

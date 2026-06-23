@@ -521,6 +521,8 @@ class HomeFragment : Fragment() {
 
         val context = requireContext()
         val density = resources.displayMetrics.density
+        var resetDemoAnim: android.animation.ValueAnimator? = null
+        
         val box = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             val p = (28 * density).toInt()
@@ -550,10 +552,61 @@ class HomeFragment : Fragment() {
             setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_body))
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setLineSpacing(8f, 1f)
-            setPadding(0, 0, 0, (28 * density).toInt())
+            setPadding(0, 0, 0, (16 * density).toInt())
             gravity = android.view.Gravity.CENTER
         }
         box.addView(content)
+
+        // 📊 Live demo of allocation spent bar resetting to 0% in reverse
+        val demoRow = layoutInflater.inflate(R.layout.item_rigor_category, box, false)
+        val lp = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            bottomMargin = (24 * density).toInt()
+        }
+        demoRow.layoutParams = lp
+
+        val txtName = demoRow.findViewById<TextView>(R.id.categoryName)
+        val spentBar = demoRow.findViewById<View>(R.id.spentBar)
+        val progressOuter = demoRow.findViewById<View>(R.id.progressOuter)
+        val txtSpent = demoRow.findViewById<TextView>(R.id.txtSpent)
+        val txtLimit = demoRow.findViewById<TextView>(R.id.txtLimit)
+        val iconView = demoRow.findViewById<ImageView>(R.id.categoryIcon)
+
+        txtName.text = "Food"
+        iconView.setImageResource(R.drawable.ic_category_food)
+        txtLimit.text = "Limit: ₹850"
+
+        box.addView(demoRow)
+
+        val anim = android.animation.ValueAnimator.ofFloat(0.0f, 1.0f).apply {
+            duration = 3000 // 3 seconds loop
+            repeatCount = android.animation.ValueAnimator.INFINITE
+        }
+        anim.addUpdateListener { valueAnimator ->
+            val fraction = valueAnimator.animatedValue as Float
+            val progressVal = when {
+                fraction < 0.2f -> 1.0f
+                fraction > 0.8f -> 0.0f
+                else -> 1.0f - ((fraction - 0.2f) / 0.6f)
+            }
+            
+            val currentSpent = (850 * progressVal).toInt()
+            txtSpent.text = "Spent: ₹$currentSpent"
+            
+            val maxWidth = progressOuter.width
+            spentBar.layoutParams.width = (maxWidth * progressVal).toInt()
+            spentBar.requestLayout()
+
+            if (progressVal >= 1.0f) {
+                spentBar.setBackgroundResource(R.drawable.bg_glass_progress_fill_red)
+            } else {
+                spentBar.setBackgroundResource(R.drawable.bg_glass_progress_fill)
+            }
+        }
+        demoRow.post { anim.start() }
+        resetDemoAnim = anim
 
         val btnReset = Button(context).apply {
             text = "Yes, Reset cycle now"
@@ -659,6 +712,7 @@ class HomeFragment : Fragment() {
             .setCancelable(false)
             .create()
         dialog?.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog?.setOnDismissListener { resetDemoAnim?.cancel() }
         activeResetDialog = dialog
 
         btnReset.setOnClickListener {
