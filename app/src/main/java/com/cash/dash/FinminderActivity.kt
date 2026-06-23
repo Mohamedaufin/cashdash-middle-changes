@@ -131,7 +131,7 @@ class FinminderActivity : ThemedActivity() {
             }
         } else {
             tvInstruction.visibility = View.VISIBLE
-            tvInstruction.text = "Press and hold on any transaction to edit."
+            tvInstruction.text = "Press and hold on any transaction to edit it."
             tvEmptyState?.visibility = View.GONE
         }
         

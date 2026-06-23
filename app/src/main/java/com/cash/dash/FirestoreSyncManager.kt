@@ -63,7 +63,7 @@ object FirestoreSyncManager {
                 val batch = db.batch()
 
                 val currentTimestamp = System.currentTimeMillis()
-                userPrefs.edit().putLong("last_local_modification", currentTimestamp).apply()
+                userPrefs.edit().putLong("last_local_modification", currentTimestamp).commit()
 
                 // 1. App Settings / User Config
                 val userConfigData = hashMapOf<String, Any>(

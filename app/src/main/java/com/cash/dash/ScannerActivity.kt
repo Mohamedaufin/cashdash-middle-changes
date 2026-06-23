@@ -68,6 +68,8 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     private var userManuallyToggled = false
     private var scannedOnce = false
     private var processing = false
+    private var proceedingToPay = false
+    private var isFinishingFromPayment = false
 
     // Sensors & Gestures
     private lateinit var sensorManager: SensorManager
@@ -95,7 +97,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         scaleGestureDetector.onTouchEvent(ev)
-        
+
         // Manual Tap to Focus & Expose
         if (ev.action == MotionEvent.ACTION_UP && ev.pointerCount == 1) {
             val factory = previewView.meteringPointFactory
@@ -127,6 +129,11 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
     override fun onResume() {
         super.onResume()
+        if (isFinishingFromPayment || proceedingToPay) {
+            window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+            findViewById<android.view.View>(R.id.scannerRoot)?.visibility = android.view.View.INVISIBLE
+            return
+        }
         lightSensor?.let {
             sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
         }
@@ -147,31 +154,22 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     override fun onPause() {
         super.onPause()
         sensorManager.unregisterListener(this)
+        if (proceedingToPay) {
+            window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+            findViewById<android.view.View>(R.id.scannerRoot)?.visibility = android.view.View.INVISIBLE
+        }
     }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         // Determine the badge background and icon tint colors based on the theme
         val activeTheme = ThemeHelper.getCurrentTheme(this)
-        
-        // Remove edge-to-edge so the system status bar appears with color
-        WindowCompat.setDecorFitsSystemWindows(window, true)
-        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-        
-        // Match system bar color to circular badge color (except White which matches home screen top #FFFFFF)
-        window.statusBarColor = when (activeTheme) {
-            "Blue" -> Color.parseColor("#000520")
-            "White" -> Color.parseColor("#FFFFFF")
-            else -> Color.parseColor("#0C0C0F")
-        }
-        window.navigationBarColor = when (activeTheme) {
-            "White" -> Color.parseColor("#FFFFFF")
-            else -> Color.BLACK
-        }
-        
+
+        // Use Edge-to-Edge and fitsSystemWindows to color the status bar and navigation bar.
+        // The background color of scannerRoot will fill the status bar area automatically.
+
         androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).apply {
             isAppearanceLightStatusBars = activeTheme == "White"
             isAppearanceLightNavigationBars = activeTheme == "White"
@@ -257,7 +255,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
             val density = resources.displayMetrics.density
             val topMarginPx = (25 * density).toInt()
-            
+
             // Top buttons
             val closeParams = btnClose.layoutParams as FrameLayout.LayoutParams
             closeParams.topMargin = topMarginPx
@@ -275,20 +273,20 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             val moreParams = btnMore.layoutParams as FrameLayout.LayoutParams
             moreParams.bottomMargin = (25 * density).toInt()
             btnMore.layoutParams = moreParams
-            
+
             insets
         }
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
-        
+
         scaleGestureDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
             override fun onScale(detector: ScaleGestureDetector): Boolean {
                 val state = camera?.cameraInfo?.zoomState?.value ?: return false
                 val currentZoom = state.zoomRatio
                 val delta = detector.scaleFactor
                 val maxZoom = state.maxZoomRatio
-                val nextZoom = (currentZoom * delta).coerceIn(1.0f, maxZoom) 
+                val nextZoom = (currentZoom * delta).coerceIn(1.0f, maxZoom)
                 camera?.cameraControl?.setZoomRatio(nextZoom)
                 return true
             }
@@ -302,7 +300,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
         btnClose.setOnClickListener { onBackPressed() }
         btnGallery.setOnClickListener { openGallery() }
-        
+
         btnHistory.setOnClickListener {
             val localPrefs = getSharedPreferences("LocalScanPrefs", MODE_PRIVATE)
             val lastUpi = localPrefs.getString("last_upi", null)
@@ -362,15 +360,15 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 val now = System.currentTimeMillis()
                 if (now - lastAutoZoomTime < 600) return@Builder false
                 lastAutoZoomTime = now
-                
+
                 val currentZoom = camera?.cameraInfo?.zoomState?.value?.zoomRatio ?: 1.0f
                 if (zoomRatio > currentZoom) {
                     val aggressiveRatio = (zoomRatio * 1.25f).coerceIn(1.0f, camera?.cameraInfo?.zoomState?.value?.maxZoomRatio ?: 10.0f)
                     camera?.cameraControl?.setZoomRatio(aggressiveRatio)
-                    
+
                     // RE-FOCUS LOCK: Immediately snap focus into the box at the new zoom level.
                     // This ensures we dont wait for standard AF to 'drift' into focus.
-                    rootFocusAndMetering() 
+                    rootFocusAndMetering()
                     true
                 } else false
             }.build()
@@ -410,8 +408,8 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     }
 
     private fun rootFocusAndMetering() {
-        // GPay Settling Strategy: 
-        // We wait slightly longer (1.5s) to let the hardware's internal 
+        // GPay Settling Strategy:
+        // We wait slightly longer (1.5s) to let the hardware's internal
         // "cold-start" CAF find a baseline before we force a lock.
         previewView.postDelayed({
             try {
@@ -426,8 +424,8 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 val boxPoint = factory.createPoint(0.5f, 0.5f, 0.6f)
 
                 // Adaptive Lock: Set a 7-second duration.
-                // This 'Box Lock' is now the priority, but it will 'reset' and refresh 
-                // every 7 seconds if the user hasn't scanned anything yet, preventing 
+                // This 'Box Lock' is now the priority, but it will 'reset' and refresh
+                // every 7 seconds if the user hasn't scanned anything yet, preventing
                 // the camera from getting stuck in a blurred state.
                 val action = FocusMeteringAction.Builder(boxPoint, FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AE)
                     .setAutoCancelDuration(7, TimeUnit.SECONDS)
@@ -458,9 +456,9 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                     return@addOnSuccessListener // prevent multiple decodes
                 }
             }
-        }?.addOnCompleteListener { 
+        }?.addOnCompleteListener {
             proxy.close()
-            processing = false 
+            processing = false
         }
     }
 
@@ -547,7 +545,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             // Gather potential response sources
             val responseExtra = data?.getStringExtra("response") ?: ""
             val dataUriString = data?.data?.toString() ?: ""
-            
+
             val rawResponse = when {
                 responseExtra.isNotEmpty() -> responseExtra
                 dataUriString.isNotEmpty() -> dataUriString
@@ -555,7 +553,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             }
 
             val params = parseUpiResponse(rawResponse)
-            
+
             // Helper to retrieve params case-insensitively and check direct extras
             fun getParam(vararg keys: String): String {
                 for (key in keys) {
@@ -571,10 +569,10 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
             val status = getParam("Status", "status")
 
-            val isSuccess = status.equals("SUCCESS", ignoreCase = true) || 
-                            status.equals("SUBMITTED", ignoreCase = true) || 
-                            (status.isEmpty() && rawResponse.contains("SUCCESS", ignoreCase = true))
-                            
+            val isSuccess = status.equals("SUCCESS", ignoreCase = true) ||
+                    status.equals("SUBMITTED", ignoreCase = true) ||
+                    (status.isEmpty() && rawResponse.contains("SUCCESS", ignoreCase = true))
+
             // Restore globals if the activity was recreated
             val prefs = getSharedPreferences("PendingTransactionPrefs", Context.MODE_PRIVATE)
             if (pendingAmount == 0) {
@@ -593,8 +591,10 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             alarmManager.cancel(pendingIntent)
 
             if (isSuccess) {
+                isFinishingFromPayment = true
                 redirectSuccess()
             } else {
+                isFinishingFromPayment = true
                 redirectFailed()
             }
         }
@@ -620,7 +620,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             options.inSampleSize = inSampleSize
             val bmp = contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, options) }
 
-            if (bmp == null) { toast("⚠ Could not load image"); return }
+            if (bmp == null) { toast("ΓÜá Could not load image"); return }
 
             val img = InputImage.fromBitmap(bmp, 0)
             BarcodeScanning.getClient().process(img).addOnSuccessListener { codes ->
@@ -632,8 +632,8 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                         return@addOnSuccessListener
                     }
                 }
-                toast("⚠ No UPI QR found in image")
-            }.addOnFailureListener { toast("⚠ Error scanning image") }
+                toast("ΓÜá No UPI QR found in image")
+            }.addOnFailureListener { toast("ΓÜá Error scanning image") }
         } catch (e: Exception) {}
     }
 
@@ -641,6 +641,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     @SuppressLint("MissingInflatedId")
     private fun showAmountDialog(upi: String) {
         try {
+            proceedingToPay = false
             val name = (decode(getParam(upi,"pn")) ?: "Unknown").replace("|", "-")
             val id = (decode(getParam(upi,"pa")) ?: "Unknown").replace("|", "-")
 
@@ -650,6 +651,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             }
 
             val dialog = BottomSheetDialog(this, ThemeHelper.getBottomSheetTheme(this))
+            currentChooser = dialog
             val view = layoutInflater.inflate(R.layout.layout_payment_bottom_sheet, null)
             dialog.setContentView(view)
 
@@ -672,10 +674,10 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             val etAmount = view.findViewById<EditText>(R.id.etPaymentAmount)
             val tvAllocation = view.findViewById<TextView>(R.id.tvAllocationLabel)
             val btnChoose = view.findViewById<Button>(R.id.btnChooseAllocation)
-            
+
             val btnCred = view.findViewById<Button>(R.id.btnPayCred)
             val btnGPay = view.findViewById<Button>(R.id.btnPayGPay)
-            
+
             val paymentActionContainer = view.findViewById<LinearLayout>(R.id.paymentActionContainer)
             val btnPayInitiate = view.findViewById<Button>(R.id.btnPayInitiate)
             val tvWalletBalance = view.findViewById<TextView>(R.id.tvWalletBalance)
@@ -691,12 +693,12 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                         qrAmount
                     }
                     etAmount.setText(amountText)
-                    btnPayInitiate.text = "Pay ₹$amountText"
+                    btnPayInitiate.text = "Pay Γé╣$amountText"
                 }
             }
 
             val balance = getSharedPreferences("WalletPrefs", MODE_PRIVATE).getInt("wallet_balance", 0)
-            tvWalletBalance.text = "Wallet Balance: ₹$balance"
+            tvWalletBalance.text = "Wallet Balance: Γé╣$balance"
 
             btnCred.visibility = View.VISIBLE
             btnGPay.visibility = View.VISIBLE
@@ -706,7 +708,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 val categories = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)
                     .getStringSet("categories", emptySet()) ?: emptySet()
 
-                // Case-insensitive match: handles re-added categories like "medical"→"Medical"
+                // Case-insensitive match: handles re-added categories like "medical"ΓåÆ"Medical"
                 val matchedCategory = categories.find { it.equals(savedAlloc, ignoreCase = true) }
 
                 if (matchedCategory != null) {
@@ -723,7 +725,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                     paymentActionContainer.visibility = View.VISIBLE
                     btnPayInitiate.visibility = View.GONE
                 } else {
-                    // Category was deleted and not re-added — show fresh chooser flow
+                    // Category was deleted and not re-added ΓÇö show fresh chooser flow
                     tvAllocation.visibility = View.GONE
                     btnChoose.visibility = View.GONE
                 }
@@ -735,7 +737,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             etAmount.addTextChangedListener(object : android.text.TextWatcher {
                 override fun afterTextChanged(s: android.text.Editable?) {
                     val amt = s.toString()
-                    btnPayInitiate.text = if (amt.isNotEmpty()) "Pay ₹$amt" else "Pay ₹0"
+                    btnPayInitiate.text = if (amt.isNotEmpty()) "Pay Γé╣$amt" else "Pay Γé╣0"
                 }
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -754,6 +756,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
             btnCred.setOnClickListener {
                 if (!allocationHandled) { toast("Please select an allocation or skip"); return@setOnClickListener }
+                proceedingToPay = true
                 val amtStr = etAmount.text.toString()
                 if (amtStr.isEmpty()) return@setOnClickListener
                 pendingAmount = amtStr.toDoubleOrNull()?.toInt() ?: 0
@@ -763,15 +766,19 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             }
 
             btnGPay.setOnClickListener {
-                toast("Coming Soon! 🚀")
+                proceedingToPay = true
+                toast("Coming Soon! ≡ƒÜÇ")
+                dialog.dismiss()
             }
 
             dialog.setOnDismissListener {
-                scannedOnce = false
-                startCamera()
+                if (!proceedingToPay) {
+                    scannedOnce = false
+                    startCamera()
+                }
             }
             dialog.show()
-        } catch (e: Exception) { toast("⚠ Error opening payment dialog") }
+        } catch (e: Exception) { toast("ΓÜá Error opening payment dialog") }
     }
 
     private fun showAllocationChooser(parentDialog: BottomSheetDialog, label: TextView, btn: Button, paymentContainer: LinearLayout, btnPayInit: Button) {
@@ -863,7 +870,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 setPadding(20, 20, 20, 20)
             })
         } else {
-            val sortedList = categories.sortedBy { it.lowercase() }
+            val sortedList = categories.filter { it.isNotBlank() }.sortedBy { it.lowercase() }
 
             for (cat in sortedList) {
                 val row = layoutInflater.inflate(R.layout.item_rigor_category, container, false)
@@ -880,8 +887,8 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 val limit = prefs.getInt("LIMIT_$cat", 0)
                 val spent = spentPrefs.getFloat("SPENT_$cat", 0f)
 
-                txtSpent.text = "Spent: ₹${spent.toInt()}"
-                txtLimit.text = if (limit > 0) "Limit: ₹$limit" else "Limit: —"
+                txtSpent.text = "Spent: Γé╣${spent.toInt()}"
+                txtLimit.text = if (limit > 0) "Limit: Γé╣$limit" else "Limit: ΓÇö"
 
                 val progress = if (limit > 0) (spent / limit).coerceIn(0f, 1f) else 0f
 
@@ -902,7 +909,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 }
 
                 row.setOnClickListener {
-                    // Save UPI → allocation mapping for future auto-fill
+                    // Save UPI ΓåÆ allocation mapping for future auto-fill
                     saveUpiAllocation(currentScanUpiId, cat)
                     pendingCategory = cat
                     allocationHandled = true
@@ -1013,34 +1020,34 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 if (catName.isNotEmpty()) {
                     val prefs = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)
                     val editor = prefs.edit()
-                    
+
                     val existing = prefs.getStringSet("categories", emptySet())?.toMutableSet() ?: mutableSetOf()
-                    
+
                     val limitStr = inputLimit.text.toString()
                     val newLimit = if (limitStr.isNotEmpty()) limitStr.toIntOrNull() ?: 0 else 0
-                    
+
                     val walletPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
                     val totalBalance = walletPrefs.getInt("initial_balance", 0).coerceAtLeast(0)
-                    
+
                     var currentSumOfLimits = 0
                     for (cat in existing) {
                         currentSumOfLimits += prefs.getInt("LIMIT_$cat", 0)
                     }
                     val maxAllowed = totalBalance - currentSumOfLimits
-                    
+
                     if (newLimit > maxAllowed) {
-                        toast("Exceeds total balance! Max allowed: ₹$maxAllowed")
+                        toast("Exceeds total balance! Max allowed: Γé╣$maxAllowed")
                         return@setOnClickListener
                     }
 
                     existing.add(catName)
                     editor.putStringSet("categories", existing)
-                    
+
                     if (newLimit > 0) {
                         editor.putInt("LIMIT_$catName", newLimit)
                     }
                     editor.apply()
-                    
+
                     FirestoreSyncManager.pushAllDataToCloud(this@ScannerActivity)
                     parentDialog.dismiss()
                     showAllocationChooser(parentDialog, label, btn, paymentContainer, btnPayInit)
@@ -1060,7 +1067,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             val uri = Uri.parse(upiUri)
             val params = uri.queryParameterNames
             val builder = Uri.parse("upi://pay").buildUpon()
-            
+
             val formattedAmt = String.format(java.util.Locale.US, "%.2f", newAmount.toDoubleOrNull() ?: 0.0)
             builder.appendQueryParameter("am", formattedAmt)
 
@@ -1101,7 +1108,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     private fun scheduleRecoveryNotification(amount: String, upiId: String) {
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
         val intent = Intent(this, PaymentRecoveryAlarmReceiver::class.java)
-        
+
         val pendingIntent = android.app.PendingIntent.getBroadcast(
             this,
             99,
@@ -1142,7 +1149,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             .putString("pending_title", pendingTitle)
             .putString("pending_app", selectedPaymentApp)
             .apply()
-            
+
         scheduleRecoveryNotification(amount, upiId)
     }
 
@@ -1188,19 +1195,23 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             putExtra("payment_app", selectedPaymentApp)
             putExtra("upi_uri", lastUpi)
             putExtra("timestamp", System.currentTimeMillis())
+            flags = Intent.FLAG_ACTIVITY_NO_ANIMATION
         }
         startActivity(intent)
         finish()
+        overridePendingTransition(0, 0)
     }
 
     private fun redirectFailed() {
-        startActivity(Intent(this, MainActivity::class.java).apply {
+        val intent = Intent(this, MainActivity::class.java).apply {
             putExtra("payment_detected", true)
             putExtra("result", "Transaction Failed")
             putExtra("payment_status", "failed")
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-        })
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_NO_ANIMATION
+        }
+        startActivity(intent)
         finish()
+        overridePendingTransition(0, 0)
     }
 
     private fun saveExpense(category: String, amount: Int, titleText: String) {
@@ -1228,7 +1239,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     private fun getParam(t: String, k: String): String? {
         return try {
             val uri = android.net.Uri.parse(t)
-            uri.getQueryParameter(k.lowercase()) 
+            uri.getQueryParameter(k.lowercase())
                 ?: uri.getQueryParameter(k.uppercase())
                 ?: Regex("(?i)$k=([^&]*)").find(t)?.groupValues?.get(1)
         } catch (e: Exception) {
@@ -1240,7 +1251,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     private fun successBeep() { try { (getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(VibrationEffect.createOneShot(150, VibrationEffect.DEFAULT_AMPLITUDE)); MediaPlayer.create(this, android.provider.Settings.System.DEFAULT_NOTIFICATION_URI).start() } catch (_: Exception) {} }
     private fun shake() { /* Visual feedback */ }
 
-    /** Saves a UPI ID → allocation mapping locally and pushes to Firestore. */
+    /** Saves a UPI ID ΓåÆ allocation mapping locally and pushes to Firestore. */
     private fun saveUpiAllocation(upiId: String, category: String) {
         if (upiId.isBlank()) return
         if (category.equals("no choice", ignoreCase = true)) {
@@ -1255,9 +1266,9 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
 
     private fun createShortcut() {
-        val isXiaomi = "xiaomi".equals(android.os.Build.MANUFACTURER, ignoreCase = true) || 
-            "poco".equals(android.os.Build.MANUFACTURER, ignoreCase = true) || 
-            "redmi".equals(android.os.Build.MANUFACTURER, ignoreCase = true)
+        val isXiaomi = "xiaomi".equals(android.os.Build.MANUFACTURER, ignoreCase = true) ||
+                "poco".equals(android.os.Build.MANUFACTURER, ignoreCase = true) ||
+                "redmi".equals(android.os.Build.MANUFACTURER, ignoreCase = true)
 
         if (isXiaomi && !isMiuiBackgroundStartActivityAllowed(this)) {
             androidx.appcompat.app.AlertDialog.Builder(this)

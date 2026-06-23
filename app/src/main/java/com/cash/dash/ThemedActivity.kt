@@ -26,8 +26,7 @@ open class ThemedActivity : AppCompatActivity() {
         
         super.onCreate(savedInstanceState)
         
-        // Make status bar transparent for edge-to-edge
-        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        // Make status bar icons light/dark
         androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = isWhite
     }
     

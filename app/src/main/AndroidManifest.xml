@@ -60,18 +60,18 @@
         <activity android:configChanges="uiMode"
             android:name=".AdminActivity"
             android:exported="false"
-            android:screenOrientation="portrait"
+            
             android:windowSoftInputMode="adjustResize" />
 
         <activity android:configChanges="uiMode"
             android:name=".AdminLogsActivity"
             android:exported="false"
-            android:screenOrientation="portrait" />
+             />
 
         <activity android:configChanges="uiMode"
             android:name=".SplashActivity"
             android:theme="@style/Theme.Cashdash.Splash"
-            android:screenOrientation="portrait"
+            
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -81,46 +81,46 @@
 
         <activity android:configChanges="uiMode"
             android:name=".AgeSpecificPushActivity"
-            android:screenOrientation="portrait"
+            
             android:exported="false" />
 
         <activity android:configChanges="uiMode"
             android:name=".EntryActivity"
-            android:screenOrientation="portrait"
+            
             android:exported="false" />
 
         <!-- 🏠 Main Flow Activities -->
-        <activity android:configChanges="uiMode" android:name=".MainActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".AllocatorActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".SetLimitActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".ProfileActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".MenuActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".TaptrackActivity" android:screenOrientation="portrait" android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".MainActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".AllocatorActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".SetLimitActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".ProfileActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".MenuActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".TaptrackActivity"  android:exported="false" />
 
 
-        <activity android:configChanges="uiMode" android:name=".MoneyScheduleActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".HistoryActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".RigorActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".CategoryAnalysisActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".SearchActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".DetailHistoryActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".BalanceSetupActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".HelpActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".ContactSupportActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".SuccessActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".ThemeActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".ReportActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".StatementActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".StatementSelectionActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".WebViewActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".FinminderActivity" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".AddFinminderActivity" android:screenOrientation="portrait" android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".MoneyScheduleActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".HistoryActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".RigorActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".CategoryAnalysisActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".SearchActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".DetailHistoryActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".BalanceSetupActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".HelpActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".ContactSupportActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".SuccessActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".ThemeActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".ReportActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".StatementActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".StatementSelectionActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".WebViewActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".FinminderActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".AddFinminderActivity"  android:exported="false" />
 
         <activity android:configChanges="uiMode" 
             android:name=".NotificationActivity" 
             android:exported="true"
             android:launchMode="singleTop"
-            android:screenOrientation="portrait"
+            
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="NotificationActivity" />
@@ -131,7 +131,7 @@
         <!-- 📷 QR Scanner + Deep Link -->
         <activity android:configChanges="uiMode"
             android:name=".ScannerActivity"
-            android:screenOrientation="portrait"
+            
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -203,6 +203,25 @@
                 android:resource="@xml/tracker_widget_info" />
         </receiver>
 
+        <receiver
+            android:name=".TaptrackWidget"
+            android:label="TapTrack"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.cash.dash.TAPTRACK_WIDGET_TOGGLE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/taptrack_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".TaptrackWidgetPinReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+
         <activity android:configChanges="uiMode"
             android:name=".WidgetLaunchActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
@@ -238,6 +257,12 @@
         <receiver
             android:name=".PaymentRecoveryAlarmReceiver"
             android:exported="false" />
+
+        <!-- Override MLKit library's portrait lock for Android 16 compatibility -->
+        <activity
+            android:name="com.google.mlkit.vision.codescanner.internal.GmsBarcodeScanningDelegateActivity"
+            tools:node="merge"
+            tools:remove="screenOrientation" />
 
     </application>
 
