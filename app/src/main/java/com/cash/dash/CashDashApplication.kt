@@ -20,107 +20,17 @@ import android.content.SharedPreferences
 class CashDashApplication : Application(), DefaultLifecycleObserver {
     private var walletPrefsListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
     private var themePrefsListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
-    override fun onCreate() {
-        val tPrefs = getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
-        val savedTheme = tPrefs.getString("current_theme", "System") ?: "System"
-        val targetMode = if (savedTheme == "System") {
-            val systemConfig = android.content.res.Resources.getSystem().configuration
-            val currentNightMode = systemConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
-            if (currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
-                AppCompatDelegate.MODE_NIGHT_YES
-            } else {
-                AppCompatDelegate.MODE_NIGHT_NO
-            }
-        } else {
-            if (savedTheme == "White") AppCompatDelegate.MODE_NIGHT_NO else AppCompatDelegate.MODE_NIGHT_YES
-        }
-        AppCompatDelegate.setDefaultNightMode(targetMode)
-        super<Application>.onCreate()
-        
-        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
-        
-        // Start Security Monitoring globally
-        SecurityManager.startListening(this)
-        
-        // Migrate legacy data to Room if needed
-        MigrationManager.checkAndMigrate(this)
-        
-        createNotificationChannel()
-        com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("all_users")
-        
-        val walletPrefs = getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
-        walletPrefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == "wallet_balance" || key == "initial_balance" || key == "balance_bar_mode" || key == "balance_bar_type") {
-                Finminder.pushUpdate(this)
-            }
-        }
-        walletPrefs.registerOnSharedPreferenceChangeListener(walletPrefsListener)
-        
-        val themePrefs = getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
-        themePrefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == "current_theme") {
-                Finminder.pushUpdate(this)
-            }
-        }
-        themePrefs.registerOnSharedPreferenceChangeListener(themePrefsListener)
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelId = "cashdash_urgent_heads_up_v10"
-            val channelName = "Urgent Support (V10)"
-            val importance = NotificationManager.IMPORTANCE_HIGH
-            
-            val channel = NotificationChannel(channelId, channelName, importance).apply {
-                description = "Critical heads-up alerts for your support queries"
-                enableLights(true)
-                lightColor = Color.YELLOW
-                enableVibration(true)
-                vibrationPattern = longArrayOf(0, 500, 200, 500)
-                setShowBadge(true)
-                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
-                
-                val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                val audioAttributes = AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                    .build()
-                setSound(defaultSoundUri, audioAttributes)
-            }
-            
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
-    }
-
-    override fun onStart(owner: LifecycleOwner) {
-        super.onStart(owner)
-        isAppInForeground = true
-        setupRealtimePresence(this)
-        try {
-            startService(Intent(this, TaskMonitorService::class.java))
-        } catch (e: Exception) {
-            Log.e("CashDashApplication", "Failed to start TaskMonitorService", e)
-        }
-    }
-
-    override fun onStop(owner: LifecycleOwner) {
-        super.onStop(owner)
-        isAppInForeground = false
-        setOfflineImmediate(this)
-    }
-
-    override fun onTrimMemory(level: Int) {
-        super.onTrimMemory(level)
-        if (level == TRIM_MEMORY_UI_HIDDEN) {
-            setOfflineImmediate(this)
-        }
-    }
 
     companion object {
         var isAppInForeground = false
         var presenceListener: com.google.firebase.database.ValueEventListener? = null
         var isDeletingAccount = false
+
+        private var activeActivityRef: java.lang.ref.WeakReference<android.app.Activity>? = null
+
+        fun getActiveActivity(): android.app.Activity? {
+            return activeActivityRef?.get()
+        }
 
         fun setupRealtimePresence(context: Context) {
             if (isDeletingAccount) return
@@ -217,6 +127,119 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
 
             db.collection("users").document(email).update(updates).addOnFailureListener { }
             db.collection("users").document(email).collection("config").document("profile").update(updates).addOnFailureListener { }
+        }
+    }
+
+    override fun onCreate() {
+        val tPrefs = getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
+        val savedTheme = tPrefs.getString("current_theme", "System") ?: "System"
+        val targetMode = if (savedTheme == "System") {
+            val systemConfig = android.content.res.Resources.getSystem().configuration
+            val currentNightMode = systemConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+            if (currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
+                AppCompatDelegate.MODE_NIGHT_YES
+            } else {
+                AppCompatDelegate.MODE_NIGHT_NO
+            }
+        } else {
+            if (savedTheme == "White") AppCompatDelegate.MODE_NIGHT_NO else AppCompatDelegate.MODE_NIGHT_YES
+        }
+        AppCompatDelegate.setDefaultNightMode(targetMode)
+        super<Application>.onCreate()
+        
+        registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
+            override fun onActivityCreated(activity: android.app.Activity, savedInstanceState: android.os.Bundle?) {}
+            override fun onActivityStarted(activity: android.app.Activity) {}
+            override fun onActivityResumed(activity: android.app.Activity) {
+                activeActivityRef = java.lang.ref.WeakReference(activity)
+            }
+            override fun onActivityPaused(activity: android.app.Activity) {
+                if (activeActivityRef?.get() == activity) {
+                    activeActivityRef = null
+                }
+            }
+            override fun onActivityStopped(activity: android.app.Activity) {}
+            override fun onActivitySaveInstanceState(activity: android.app.Activity, outState: android.os.Bundle) {}
+            override fun onActivityDestroyed(activity: android.app.Activity) {}
+        })
+
+        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
+        
+        // Start Security Monitoring globally
+        SecurityManager.startListening(this)
+        
+        // Migrate legacy data to Room if needed
+        MigrationManager.checkAndMigrate(this)
+        
+        createNotificationChannel()
+        com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("all_users")
+        
+        val walletPrefs = getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
+        walletPrefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "wallet_balance" || key == "initial_balance" || key == "balance_bar_mode" || key == "balance_bar_type") {
+                Finminder.pushUpdate(this)
+            }
+        }
+        walletPrefs.registerOnSharedPreferenceChangeListener(walletPrefsListener)
+        
+        val themePrefs = getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
+        themePrefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "current_theme") {
+                Finminder.pushUpdate(this)
+            }
+        }
+        themePrefs.registerOnSharedPreferenceChangeListener(themePrefsListener)
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channelId = "cashdash_urgent_heads_up_v10"
+            val channelName = "Urgent Support (V10)"
+            val importance = NotificationManager.IMPORTANCE_HIGH
+            
+            val channel = NotificationChannel(channelId, channelName, importance).apply {
+                description = "Critical heads-up alerts for your support queries"
+                enableLights(true)
+                lightColor = Color.YELLOW
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 500, 200, 500)
+                setShowBadge(true)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+                
+                val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                val audioAttributes = AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                    .build()
+                setSound(defaultSoundUri, audioAttributes)
+            }
+            
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    override fun onStart(owner: LifecycleOwner) {
+        super.onStart(owner)
+        isAppInForeground = true
+        setupRealtimePresence(this)
+        try {
+            startService(Intent(this, TaskMonitorService::class.java))
+        } catch (e: Exception) {
+            Log.e("CashDashApplication", "Failed to start TaskMonitorService", e)
+        }
+    }
+
+    override fun onStop(owner: LifecycleOwner) {
+        super.onStop(owner)
+        isAppInForeground = false
+        setOfflineImmediate(this)
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level == TRIM_MEMORY_UI_HIDDEN) {
+            setOfflineImmediate(this)
         }
     }
 }
