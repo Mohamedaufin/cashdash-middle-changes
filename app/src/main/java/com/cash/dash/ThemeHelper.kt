@@ -8,14 +8,13 @@ object ThemeHelper {
 
     fun getSavedTheme(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_THEME, "System") ?: "System"
+        return prefs.getString(KEY_THEME, "Black") ?: "Black"
     }
 
     fun getCurrentTheme(context: Context): String {
         val savedTheme = getSavedTheme(context)
         if (savedTheme == "System") {
-            val systemConfig = android.content.res.Resources.getSystem().configuration
-            val currentNightMode = systemConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+            val currentNightMode = context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
             return if (currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
                 "Black"
             } else {
@@ -31,14 +30,6 @@ object ThemeHelper {
 
     fun applyTheme(activity: android.app.Activity) {
         val theme = getCurrentTheme(activity)
-        val targetMode = if (theme == "White") {
-            androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
-        } else {
-            androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
-        }
-        if (androidx.appcompat.app.AppCompatDelegate.getDefaultNightMode() != targetMode) {
-            androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(targetMode)
-        }
         if (activity is TaptrackActivity) {
             if (theme == "White") {
                 activity.setTheme(R.style.Theme_Cashdash_White)
