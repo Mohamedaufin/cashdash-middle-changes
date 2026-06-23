@@ -41,7 +41,7 @@ class MoneyScheduleActivity : ThemedActivity() {
             tvCycleSubTitle.text = "Select when your current budget (₹$budget) should expire"
 
             val tvResetFrequencySubTitle = findViewById<TextView>(R.id.tvResetFrequencySubTitle)
-            tvResetFrequencySubTitle.text = "How often your wallet automatically refill to ₹$budget / ₹$budget"
+            tvResetFrequencySubTitle.text = "How often do you want your wallet automatically refill to ₹$budget/₹$budget?"
 
             val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
 
@@ -255,7 +255,7 @@ class MoneyScheduleActivity : ThemedActivity() {
             val startStr2 = sdf.format(startCal2.time)
             val endStr2 = sdf.format(endCal2.time)
             
-            tvCyclePreview.text = "Next 2 cycles:\n• $startStr1 — $endStr1\n• $startStr2 — $endStr2"
+            tvCyclePreview.text = "Example: \n• $startStr1 — $endStr1\n• $startStr2 — $endStr2 will be your next 2 cycles."
             tvCyclePreview.setLineSpacing(6 * resources.displayMetrics.density, 1f)
             tvCyclePreview.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_body))
             tvCyclePreview.visibility = View.VISIBLE
@@ -264,6 +264,9 @@ class MoneyScheduleActivity : ThemedActivity() {
 
     private fun showResetConfirmationDialog() {
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+        val wPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
+        val budget = wPrefs.getInt("initial_balance", 0)
+        
         val density = resources.displayMetrics.density
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -283,7 +286,7 @@ class MoneyScheduleActivity : ThemedActivity() {
         box.addView(titleView)
 
         val content = TextView(this).apply {
-            text = "This will instantly refill your wallet and set all allocation spending bars to ₹0."
+            text = "This will instantly refill your wallet to ₹$budget/₹$budget and set all allocation spending bars to ₹0."
             setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_body))
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setLineSpacing(8f, 1f)
