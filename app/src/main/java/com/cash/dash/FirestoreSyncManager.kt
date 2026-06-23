@@ -313,12 +313,10 @@ object FirestoreSyncManager {
 
                     val cloudTheme = profileDoc.getString("current_theme")
                     if (cloudTheme != null) {
-                        if (context !is EntryActivity && context !is SplashActivity) {
-                            val themePrefs = context.getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
-                            val localTheme = themePrefs.getString("current_theme", "System")
-                            if (cloudTheme != localTheme) {
-                                themePrefs.edit().putString("current_theme", cloudTheme).apply()
-                            }
+                        val themePrefs = context.getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
+                        val localTheme = themePrefs.getString("current_theme", "System")
+                        if (cloudTheme != localTheme) {
+                            themePrefs.edit().putString("current_theme", cloudTheme).apply()
                         }
                     } else {
                         pushAllDataToCloud(context)
@@ -614,8 +612,7 @@ object FirestoreSyncManager {
 
         val prefsToWatch = listOf(
             "AppPrefs", "WalletPrefs", "CategoryPrefs", "GraphData",
-            "CategoryWeekData", "MoneySchedulePrefs", "ScannerHistory", "LocalScanPrefs", "ScannerMetadataPrefs", "FinminderPrefs",
-            "ThemePrefs"
+            "CategoryWeekData", "MoneySchedulePrefs", "ScannerHistory", "LocalScanPrefs", "ScannerMetadataPrefs", "FinminderPrefs"
         )
 
         prefsToWatch.forEach { name ->
@@ -653,14 +650,7 @@ object FirestoreSyncManager {
             snapshot.getBoolean("setup_complete")?.let { editor.putBoolean("isFirstLaunch", !it) }
             editor.apply()
 
-            val cloudTheme = snapshot.getString("current_theme")
-            if (cloudTheme != null) {
-                val themePrefs = appContext.getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
-                val localTheme = themePrefs.getString("current_theme", "System")
-                if (cloudTheme != localTheme) {
-                    themePrefs.edit().putString("current_theme", cloudTheme).apply()
-                }
-            }
+
 
             isSyncingFromCloud = false
             notifyUI(appContext)

@@ -7,8 +7,6 @@ import androidx.activity.enableEdgeToEdge
 
 open class ThemedActivity : AppCompatActivity() {
     private var lastAppliedTheme: String? = null
-    private var lastSavedTheme: String? = null
-    private var themeListener: android.content.SharedPreferences.OnSharedPreferenceChangeListener? = null
     private var isActivityResumed = false
 
     companion object {
@@ -39,34 +37,14 @@ open class ThemedActivity : AppCompatActivity() {
         // Make status bar transparent for edge-to-edge
         window.statusBarColor = android.graphics.Color.TRANSPARENT
         androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = isWhite
-
-        lastSavedTheme = ThemeHelper.getSavedTheme(this)
-        val themePrefs = getSharedPreferences("ThemePrefs", MODE_PRIVATE)
-        themeListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == "current_theme") {
-                val newSavedTheme = themePrefs.getString("current_theme", "System") ?: "System"
-                val originalTheme = lastSavedTheme
-                if (originalTheme != null && originalTheme != newSavedTheme) {
-                    if (FirestoreSyncManager.isSyncingFromCloud) {
-                        if (this !is EntryActivity && this !is SplashActivity) {
-                            showAccountThemePreferenceDialog(originalTheme, newSavedTheme)
-                        }
-                    } else {
-                        lastSavedTheme = newSavedTheme
-                    }
-                }
-            }
-        }
-        themePrefs.registerOnSharedPreferenceChangeListener(themeListener)
     }
 
     override fun onResume() {
         super.onResume()
         isActivityResumed = true
-        lastSavedTheme = ThemeHelper.getSavedTheme(this)
         
         val currentTheme = ThemeHelper.getCurrentTheme(this)
-        if (lastAppliedTheme != null && lastAppliedTheme != currentTheme) {
+        if (lastAppliedTheme != null && lastAppliedTheme != currentTheme && ThemeHelper.getSavedTheme(this) == "System") {
             showThemeChangeRestartDialog(currentTheme)
         }
         lastAppliedTheme = currentTheme
@@ -74,10 +52,6 @@ open class ThemedActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        themeListener?.let {
-            getSharedPreferences("ThemePrefs", MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(it)
-        }
-        isThemeDialogShowing = false
     }
 
     override fun onPause() {
@@ -125,51 +99,7 @@ open class ThemedActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun showAccountThemePreferenceDialog(originalTheme: String, cloudTheme: String) {
-        if (isThemeDialogShowing) return
-        isThemeDialogShowing = true
 
-        val cloudThemeName = when (cloudTheme) {
-            "System" -> "System Default"
-            else -> cloudTheme
-        }
-        val originalThemeName = when (originalTheme) {
-            "System" -> "system default"
-            else -> "$originalTheme theme"
-        }
-
-        val message = "Your CashDash theme preference is $cloudThemeName, it is currently set to $originalThemeName. Do you want app to restart it?"
-
-        val targetThemeResId = when (cloudTheme) {
-            "White" -> R.style.Theme_Cashdash_White
-            "Blue" -> R.style.Theme_Cashdash_Blue
-            else -> R.style.Theme_Cashdash
-        }
-        val themedContext = androidx.appcompat.view.ContextThemeWrapper(this, targetThemeResId)
-
-        AlertDialogHelper.createFlatDialogBuilder(themedContext)
-            .setTitle("Theme Preference Sync")
-            .setMessage(message)
-            .setPositiveButton("Yes") {
-                isThemeDialogShowing = false
-                lastSavedTheme = cloudTheme
-                val intent = android.content.Intent(this, SplashActivity::class.java).apply {
-                    flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
-                }
-                startActivity(intent)
-                finish()
-            }
-            .setNegativeButton("No") {
-                isThemeDialogShowing = false
-                // Revert SharedPreferences to originalTheme
-                getSharedPreferences("ThemePrefs", MODE_PRIVATE).edit().putString("current_theme", originalTheme).apply()
-                lastSavedTheme = originalTheme
-                // Sync the reversion back to Firebase
-                FirestoreSyncManager.pushAllDataToCloud(this)
-            }
-            .setCancelable(false)
-            .show()
-    }
     override fun attachBaseContext(newBase: android.content.Context) {
         val configuration = android.content.res.Configuration(newBase.resources.configuration)
         if (configuration.fontScale > 1.0f) {
