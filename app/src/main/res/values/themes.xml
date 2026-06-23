@@ -137,6 +137,8 @@
 
     <style name="Theme.Cashdash.White" parent="Base.Theme.Cashdash">
         <item name="colorPrimary">#1A1A1A</item>
+        <item name="buttonStyle">@style/Widget.AppCompat.Button</item>
+        <item name="materialButtonStyle">@style/Widget.AppCompat.Button</item>
         <item name="android:autofilledHighlight">@android:color/transparent</item>
         <item name="mainBackground">@drawable/bg_main_gradient_white</item>
         <item name="bottomNavBackground">@drawable/bg_3d_bottom_nav_white</item>
