@@ -215,7 +215,9 @@ class EntryActivity : ThemedActivity() {
     }
 
     private fun applyThemedButtonColors(isLogin: Boolean, btnAction: Button, btnSelectRegister: Button) {
-        val isWhiteTheme = ThemeHelper.isWhiteTheme(this)
+        val themePrefs = getSharedPreferences("ThemePrefs", MODE_PRIVATE)
+        val currentTheme = themePrefs.getString("current_theme", "Black")
+        val isWhiteTheme = currentTheme == "White"
 
         if (isWhiteTheme) {
             val darkText = Color.parseColor("#1A1A1A")
