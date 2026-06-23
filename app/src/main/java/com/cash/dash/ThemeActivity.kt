@@ -25,6 +25,7 @@ class ThemeActivity : ThemedActivity() {
     private lateinit var themeBlack: View
     private lateinit var themeBlue: View
     private lateinit var themeWhite: View
+    private lateinit var tvSystemSub: TextView
     
     private lateinit var btnModeGradient: TextView
     private lateinit var btnModeSingle: TextView
@@ -62,6 +63,15 @@ class ThemeActivity : ThemedActivity() {
         themeBlack = findViewById(R.id.themeBlack)
         themeBlue = findViewById(R.id.themeBlue)
         themeWhite = findViewById(R.id.themeWhite)
+        tvSystemSub = findViewById(R.id.tvSystemSub)
+
+        val systemConfig = android.content.res.Resources.getSystem().configuration
+        val currentNightMode = systemConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+        tvSystemSub.text = if (currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
+            "(Black)"
+        } else {
+            "(White)"
+        }
 
         // Initialize Balance Bar Views
         btnModeGradient = findViewById(R.id.btnModeGradient)
@@ -168,22 +178,24 @@ class ThemeActivity : ThemedActivity() {
     private fun updateCardSelection(ctx: Context, card: View, isSelected: Boolean, activeText: Int, mutedText: Int) {
         val resId = getResIdFromAttr(ctx, R.attr.cardBackground)
         card.setBackgroundResource(resId)
-        val text = when (card) {
-            is LinearLayout -> {
-                var foundText: TextView? = null
-                for (i in 0 until card.childCount) {
-                    val child = card.getChildAt(i)
-                    if (child is TextView) {
-                        foundText = child
-                        break
+        if (card is LinearLayout) {
+            var isFirstText = true
+            for (i in 0 until card.childCount) {
+                val child = card.getChildAt(i)
+                if (child is TextView) {
+                    if (child.id == R.id.tvSystemSub) {
+                        child.setTextColor(mutedText)
+                    } else if (isFirstText) {
+                        child.setTextColor(if (isSelected) activeText else mutedText)
+                        child.setTypeface(null, if (isSelected) Typeface.BOLD else Typeface.NORMAL)
+                        isFirstText = false
                     }
                 }
-                foundText ?: throw IllegalStateException("TextView not found in card")
             }
-            else -> card as TextView
+        } else if (card is TextView) {
+            card.setTextColor(if (isSelected) activeText else mutedText)
+            card.setTypeface(null, if (isSelected) Typeface.BOLD else Typeface.NORMAL)
         }
-        text.setTextColor(if (isSelected) activeText else mutedText)
-        text.setTypeface(null, if (isSelected) Typeface.BOLD else Typeface.NORMAL)
         card.animate().scaleX(if (isSelected) 1.08f else 1.0f).scaleY(if (isSelected) 1.08f else 1.0f).setDuration(200).start()
     }
 
