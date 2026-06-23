@@ -306,7 +306,7 @@ class FloatingWidgetService : Service() {
 
             val prefsCat = getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
             val savedCategories = prefsCat.getStringSet("categories", emptySet()) ?: emptySet()
-            val categoriesList = savedCategories.toMutableList()
+            val categoriesList = savedCategories.filter { it.isNotBlank() }.sortedBy { it.lowercase() }.toMutableList()
             if (categoriesList.isEmpty()) {
                 categoriesList.add("Create new allocation")
             }

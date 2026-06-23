@@ -7,8 +7,10 @@ import android.graphics.Color
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
+import androidx.appcompat.widget.PopupMenu
 import androidx.appcompat.widget.SwitchCompat
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -18,6 +20,7 @@ class TaptrackActivity : ThemedActivity() {
     private lateinit var switchTaptrack: SwitchCompat
     private lateinit var tvTaptrackStatus: TextView
     private lateinit var iconTaptrackStatus: ImageView
+    private lateinit var btnMore: ImageButton
     
     private lateinit var layoutOverlayPermission: LinearLayout
     private lateinit var switchOverlay: SwitchCompat
@@ -48,6 +51,11 @@ class TaptrackActivity : ThemedActivity() {
         )
         tvTaptrackStatus = findViewById(R.id.tvTaptrackStatus)
         iconTaptrackStatus = findViewById(R.id.iconTaptrackStatus)
+        btnMore = findViewById(R.id.btnMore)
+
+        btnMore.setOnClickListener {
+            triggerPinTaptrackWidget()
+        }
 
         findViewById<View>(R.id.masterToggleContainer).setOnClickListener {
             switchTaptrack.toggle()
@@ -177,16 +185,26 @@ class TaptrackActivity : ThemedActivity() {
     private fun updateMasterToggleUI() {
         val hasOverlay = Settings.canDrawOverlays(this)
         val hasUsage = hasUsageStatsPermission()
+        val allPermissionsGranted = hasOverlay && hasUsage
         
         val tvTapTrackHint = findViewById<TextView>(R.id.tvTapTrackHint)
-        if (hasOverlay && hasUsage) {
+        val tvWidgetHint = findViewById<TextView>(R.id.tvWidgetHint)
+        val tvWidgetHint2 = findViewById<TextView>(R.id.tvWidgetHint2)
+
+        if (allPermissionsGranted) {
             tvTapTrackHint.visibility = View.VISIBLE
+            tvWidgetHint.visibility = View.VISIBLE
+            tvWidgetHint2.visibility = View.VISIBLE
+            btnMore.visibility = View.VISIBLE
         } else {
             tvTapTrackHint.visibility = View.GONE
+            tvWidgetHint.visibility = View.GONE
+            tvWidgetHint2.visibility = View.GONE
+            btnMore.visibility = View.GONE
         }
 
         if (switchTaptrack.isChecked) {
-            if (hasOverlay && hasUsage) {
+            if (allPermissionsGranted) {
                 tvTaptrackStatus.text = "TapTrack is active"
                 val activeColor = if (ThemeHelper.isWhiteTheme(this)) "#008000" else "#1DD15D"
                 iconTaptrackStatus.setColorFilter(Color.parseColor(activeColor)) // Green
@@ -197,6 +215,32 @@ class TaptrackActivity : ThemedActivity() {
         } else {
             tvTaptrackStatus.text = "TapTrack is off"
             iconTaptrackStatus.setColorFilter(ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor))
+        }
+
+        // Keep home screen widget in sync
+        TaptrackWidget.refreshAllWidgets(this)
+    }
+
+    private fun triggerPinTaptrackWidget() {
+        val appWidgetManager = getSystemService(android.appwidget.AppWidgetManager::class.java)
+        val myProvider = android.content.ComponentName(this, TaptrackWidget::class.java)
+
+        if (appWidgetManager.isRequestPinAppWidgetSupported) {
+            val intent = Intent(this, TaptrackWidgetPinReceiver::class.java)
+            val successCallback = android.app.PendingIntent.getBroadcast(
+                this, 1, intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_MUTABLE
+            )
+            val bundle = android.os.Bundle()
+            val preview = android.widget.RemoteViews(packageName, R.layout.layout_taptrack_widget)
+            bundle.putParcelable(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_PREVIEW, preview)
+
+            val success = appWidgetManager.requestPinAppWidget(myProvider, bundle, successCallback)
+            if (!success) {
+                ToastHelper.showToast(this, "Your launcher doesn't support adding widgets from here")
+            }
+        } else {
+            ToastHelper.showToast(this, "Widget pinning not supported by your launcher")
         }
     }
 

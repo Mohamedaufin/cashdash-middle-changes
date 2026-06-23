@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- We handle Edge-to-Edge centrally in ThemedActivity.kt, so we can ignore this warning project-wide -->
+    <issue id="EdgeToEdge" severity="ignore" />
+</lint>

@@ -27,8 +27,8 @@ object HistoryDataManager {
 
         val rawEntry = "EXP|$timestamp|$title|$category|${amount.toInt()}|$hWeek|$hDay|$hMonth|$hYear"
 
-        // 1. Save to Room (Async)
         CoroutineScope(Dispatchers.IO).launch {
+            // 1. Save to Room (Async)
             val entity = TransactionEntity(
                 timestamp = timestamp,
                 title = title,
@@ -41,45 +41,45 @@ object HistoryDataManager {
                 rawEntry = rawEntry
             )
             AppDatabase.getDatabase(context).transactionDao().insert(entity)
+
+            // 2. Save to SharedPreferences (Legacy Support)
+            val prefs = context.getSharedPreferences("GraphData", Context.MODE_PRIVATE)
+            val historySet = prefs.getStringSet("HISTORY_LIST", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+            historySet.add(rawEntry)
+            
+            val editor = prefs.edit()
+            editor.putStringSet("HISTORY_LIST", historySet)
+            
+            // Update Spent and Slot keys
+            editor.putFloat("SPENT_$category", prefs.getFloat("SPENT_$category", 0f) + amount)
+            editor.putFloat("DAY_${hWeek}_${hDay}_${hMonth}_${hYear}", prefs.getFloat("DAY_${hWeek}_${hDay}_${hMonth}_${hYear}", 0f) + amount)
+            editor.putFloat("WEEK_${hWeek}_${hMonth}_${hYear}", prefs.getFloat("WEEK_${hWeek}_${hMonth}_${hYear}", 0f) + amount)
+            editor.putFloat("MONTH_${hMonth}_${hYear}", prefs.getFloat("MONTH_${hMonth}_${hYear}", 0f) + amount)
+            
+            // Metadata
+            editor.putString("TRANS_${timestamp}_TITLE", title)
+            editor.putString("TRANS_${timestamp}_CATEGORY", category)
+            editor.putInt("TRANS_${timestamp}_AMOUNT", amount.toInt())
+            editor.putInt("TRANS_${timestamp}_WEEK", hWeek)
+            editor.putInt("TRANS_${timestamp}_DAY", hDay)
+            editor.putInt("TRANS_${timestamp}_MONTH", hMonth)
+            editor.putInt("TRANS_${timestamp}_YEAR", hYear)
+            
+            editor.commit()
+
+            // 3. Update Wallet Balance
+            val prefsWallet = context.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
+            val currentBal = prefsWallet.getInt("wallet_balance", 0)
+            prefsWallet.edit().putInt("wallet_balance", currentBal - amount.toInt()).commit()
+
+            // CategoryWeekData
+            val prefsWeek = context.getSharedPreferences("CategoryWeekData", Context.MODE_PRIVATE)
+            val catWeekKey = "${category}_W${hWeek + 1}"
+            prefsWeek.edit().putInt(catWeekKey, prefsWeek.getInt(catWeekKey, 0) + amount.toInt()).commit()
+
+            // 4. Trigger Firestore Sync
+            FirestoreSyncManager.pushAllDataToCloud(context)
         }
-
-        // 2. Save to SharedPreferences (Legacy Support)
-        val prefs = context.getSharedPreferences("GraphData", Context.MODE_PRIVATE)
-        val historySet = prefs.getStringSet("HISTORY_LIST", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
-        historySet.add(rawEntry)
-        
-        val editor = prefs.edit()
-        editor.putStringSet("HISTORY_LIST", historySet)
-        
-        // Update Spent and Slot keys
-        editor.putFloat("SPENT_$category", prefs.getFloat("SPENT_$category", 0f) + amount)
-        editor.putFloat("DAY_${hWeek}_${hDay}_${hMonth}_${hYear}", prefs.getFloat("DAY_${hWeek}_${hDay}_${hMonth}_${hYear}", 0f) + amount)
-        editor.putFloat("WEEK_${hWeek}_${hMonth}_${hYear}", prefs.getFloat("WEEK_${hWeek}_${hMonth}_${hYear}", 0f) + amount)
-        editor.putFloat("MONTH_${hMonth}_${hYear}", prefs.getFloat("MONTH_${hMonth}_${hYear}", 0f) + amount)
-        
-        // Metadata
-        editor.putString("TRANS_${timestamp}_TITLE", title)
-        editor.putString("TRANS_${timestamp}_CATEGORY", category)
-        editor.putInt("TRANS_${timestamp}_AMOUNT", amount.toInt())
-        editor.putInt("TRANS_${timestamp}_WEEK", hWeek)
-        editor.putInt("TRANS_${timestamp}_DAY", hDay)
-        editor.putInt("TRANS_${timestamp}_MONTH", hMonth)
-        editor.putInt("TRANS_${timestamp}_YEAR", hYear)
-        
-        editor.apply()
-
-        // 3. Update Wallet Balance
-        val prefsWallet = context.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
-        val currentBal = prefsWallet.getInt("wallet_balance", 0)
-        prefsWallet.edit().putInt("wallet_balance", currentBal - amount.toInt()).apply()
-
-        // CategoryWeekData
-        val prefsWeek = context.getSharedPreferences("CategoryWeekData", Context.MODE_PRIVATE)
-        val catWeekKey = "${category}_W${hWeek + 1}"
-        prefsWeek.edit().putInt(catWeekKey, prefsWeek.getInt(catWeekKey, 0) + amount.toInt()).apply()
-
-        // 3. Trigger Firestore Sync
-        FirestoreSyncManager.pushAllDataToCloud(context)
     }
 
     fun deleteTransaction(context: Context, rawEntry: String) {
