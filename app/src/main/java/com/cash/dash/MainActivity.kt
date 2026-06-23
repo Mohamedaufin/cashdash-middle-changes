@@ -69,6 +69,16 @@ class MainActivity : ThemedActivity() {
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+        val appPrefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
+        val isFirstLaunch = appPrefs.getBoolean("isFirstLaunch", true)
+
+        if (currentUser == null || isFirstLaunch) {
+            startActivity(Intent(this, SplashActivity::class.java))
+            finish()
+            return
+        }
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 

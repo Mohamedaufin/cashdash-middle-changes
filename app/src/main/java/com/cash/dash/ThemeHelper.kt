@@ -8,7 +8,7 @@ object ThemeHelper {
 
     fun getSavedTheme(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_THEME, "Black") ?: "Black"
+        return prefs.getString(KEY_THEME, "System") ?: "System"
     }
 
     fun getCurrentTheme(context: Context): String {

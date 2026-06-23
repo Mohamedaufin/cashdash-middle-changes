@@ -78,7 +78,7 @@ class ThemeActivity : ThemedActivity() {
 
         // Load existing settings
         val themePrefs = getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
-        initialAppTheme = themePrefs.getString("current_theme", "Black") ?: "Black"
+        initialAppTheme = themePrefs.getString("current_theme", "System") ?: "System"
         selectedAppTheme = initialAppTheme
 
         val bbPrefs = getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
