@@ -6,16 +6,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.enableEdgeToEdge
 
 open class ThemedActivity : AppCompatActivity() {
-    private var lastAppliedTheme: String? = null
-    private var isActivityResumed = false
-
-    companion object {
-        private var isThemeDialogShowing = false
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeHelper.applyTheme(this)
-        lastAppliedTheme = ThemeHelper.getCurrentTheme(this)
         
         val isWhite = ThemeHelper.isWhiteTheme(this)
         val statusBarStyle = if (isWhite) {
@@ -38,68 +30,6 @@ open class ThemedActivity : AppCompatActivity() {
         window.statusBarColor = android.graphics.Color.TRANSPARENT
         androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = isWhite
     }
-
-    override fun onResume() {
-        super.onResume()
-        isActivityResumed = true
-        
-        val currentTheme = ThemeHelper.getCurrentTheme(this)
-        if (lastAppliedTheme != null && lastAppliedTheme != currentTheme && ThemeHelper.getSavedTheme(this) == "System") {
-            showThemeChangeRestartDialog(currentTheme)
-        }
-        lastAppliedTheme = currentTheme
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        isActivityResumed = false
-    }
-
-    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
-        super.onConfigurationChanged(newConfig)
-        
-        if (isActivityResumed && ThemeHelper.getSavedTheme(this) == "System") {
-            val newNightMode = newConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
-            val targetTheme = if (newNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) "Black" else "White"
-            
-            if (lastAppliedTheme != null && lastAppliedTheme != targetTheme) {
-                showThemeChangeRestartDialog(targetTheme)
-            }
-        }
-    }
-
-    private fun showThemeChangeRestartDialog(targetTheme: String) {
-        if (isThemeDialogShowing) return
-        isThemeDialogShowing = true
-        
-        val targetThemeName = if (targetTheme == "Black") "dark" else "light"
-        val targetThemeResId = if (targetTheme == "White") R.style.Theme_Cashdash_White else R.style.Theme_Cashdash
-        val themedContext = androidx.appcompat.view.ContextThemeWrapper(this, targetThemeResId)
-        
-        AlertDialogHelper.createFlatDialogBuilder(themedContext)
-            .setTitle("Theme Change Detected")
-            .setMessage("Do you want to restart CashDash to apply $targetThemeName theme?")
-            .setPositiveButton("Restart") {
-                isThemeDialogShowing = false
-                val intent = android.content.Intent(this, SplashActivity::class.java).apply {
-                    flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
-                }
-                startActivity(intent)
-                finish()
-            }
-            .setNegativeButton("Cancel") {
-                isThemeDialogShowing = false
-                lastAppliedTheme = targetTheme
-            }
-            .setCancelable(false)
-            .show()
-    }
-
-
     override fun attachBaseContext(newBase: android.content.Context) {
         val configuration = android.content.res.Configuration(newBase.resources.configuration)
         if (configuration.fontScale > 1.0f) {
