@@ -77,7 +77,7 @@
         android:id="@+id/tvWidgetInstruction"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Tap ⋮ to create a widget and check out today's Finminder."
+        android:text="Tap ⋮ to add a widget and view your daily Finminders from home screen."
         android:textColor="?attr/textMutedColor"
         android:textSize="11dp"
         android:gravity="center"

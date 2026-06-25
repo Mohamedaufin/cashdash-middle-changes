@@ -121,8 +121,11 @@ class FinminderActivity : ThemedActivity() {
         
         val tvInstruction = findViewById<TextView>(R.id.tvInstruction)
         val tvEmptyState = findViewById<TextView>(R.id.tvEmptyState)
+        val tvWidgetInstruction = findViewById<TextView>(R.id.tvWidgetInstruction)
+        
         if (filtered.isEmpty()) {
             tvInstruction.visibility = View.GONE
+            tvWidgetInstruction?.visibility = View.GONE
             tvEmptyState?.visibility = View.VISIBLE
             if (currentTab == "CASH_OUT") {
                 tvEmptyState?.text = "Cash-out is an expense where you set a future date to send money, and CashDash reminds you on that date."
@@ -132,6 +135,7 @@ class FinminderActivity : ThemedActivity() {
         } else {
             tvInstruction.visibility = View.VISIBLE
             tvInstruction.text = "Press and hold on any transaction to edit it."
+            tvWidgetInstruction?.visibility = View.VISIBLE
             tvEmptyState?.visibility = View.GONE
         }
         
@@ -417,9 +421,8 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
         val p = (16 * density).toInt()
         holder.itemView.setPadding(p, p, p, p)
         
-        holder.itemView.setOnLongClickListener {
+        holder.itemView.setOnFastLongClickListener {
             showOptionsBottomSheet(holder.itemView.context, item)
-            true
         }
     }
 

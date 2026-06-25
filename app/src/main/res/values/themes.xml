@@ -137,8 +137,7 @@
 
     <style name="Theme.Cashdash.White" parent="Base.Theme.Cashdash">
         <item name="colorPrimary">#1A1A1A</item>
-        <item name="buttonStyle">@style/Widget.AppCompat.Button</item>
-        <item name="materialButtonStyle">@style/Widget.AppCompat.Button</item>
+
         <item name="android:autofilledHighlight">@android:color/transparent</item>
         <item name="mainBackground">@drawable/bg_main_gradient_white</item>
         <item name="bottomNavBackground">@drawable/bg_3d_bottom_nav_white</item>
@@ -147,7 +146,7 @@
         <item name="keypadBackground">@drawable/bg_glass_3d_keypad_white</item>
         <item name="inputBackground">@drawable/bg_glass_input_white</item>
         <item name="panelBackground">@drawable/bg_glass_panel_white</item>
-        <item name="transactionBackground">@drawable/bg_glass_transaction_white</item>
+        <item name="transactionBackground">@drawable/bg_transaction_bordered_white</item>
         <item name="iconBackground">@drawable/bg_icon_dark_white</item>
         <item name="transactionItemBackground">@drawable/bg_transaction_white</item>
         <item name="keypadRoundedBackground">@drawable/keypad_white_rounded_white</item>
@@ -167,9 +166,7 @@
         <item name="navActiveColor">#1A1A1A</item>
         <item name="navInactiveColor">#5F6D7E</item>
         <item name="infoIconBackground">@drawable/bg_white_circle_bordered_white</item>
-        <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="O">true</item>
         <item name="progressTrackColor">#E2E8F0</item>
         <item name="dividerColor">#20000000</item>
@@ -208,15 +205,16 @@
     </style>
 
     <!-- BOTTOM SHEET STYLE (Transparent background so we can use bg_main_gradient) -->
-    <style name="BottomSheetDialogTheme" parent="Theme.Design.BottomSheetDialog">
+    <style name="BottomSheetDialogTheme" parent="ThemeOverlay.Material3.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/BottomSheetStyle</item>
     </style>
 
-    <style name="BottomSheetStyle" parent="Widget.Design.BottomSheet.Modal">
+    <style name="BottomSheetStyle" parent="Widget.Material3.BottomSheet.Modal">
         <item name="android:background">@android:color/transparent</item>
+        <item name="backgroundTint">@android:color/transparent</item>
     </style>
 
-    <style name="BottomSheetDialogThemeWhite" parent="Theme.Design.Light.BottomSheetDialog">
+    <style name="BottomSheetDialogThemeWhite" parent="ThemeOverlay.Material3.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/BottomSheetStyle</item>
     </style>
 

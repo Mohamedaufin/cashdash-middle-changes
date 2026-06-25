@@ -37,18 +37,7 @@ class TaptrackActivity : ThemedActivity() {
         }
 
         switchTaptrack = findViewById(R.id.switchTaptrack)
-        val isWhiteTheme = ThemeHelper.isWhiteTheme(this)
-        val activeColorStr = if (isWhiteTheme) "#008000" else "#1DD15D"
-        switchTaptrack.trackTintList = android.content.res.ColorStateList(
-            arrayOf(
-                intArrayOf(android.R.attr.state_checked),
-                intArrayOf()
-            ),
-            intArrayOf(
-                Color.parseColor(activeColorStr),
-                Color.parseColor("#757575")
-            )
-        )
+
         tvTaptrackStatus = findViewById(R.id.tvTaptrackStatus)
         iconTaptrackStatus = findViewById(R.id.iconTaptrackStatus)
         btnMore = findViewById(R.id.btnMore)
@@ -111,7 +100,7 @@ class TaptrackActivity : ThemedActivity() {
                 .setTitleTextSize(16f)
                 .setMessageTextSize(14f)
                 .setTitleTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL))
-                .setPositiveTextColor(android.graphics.Color.WHITE)
+                .setPositiveTextColor(ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor))
                 .setPositiveButton("I Agree") {
                     val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
                     startActivity(intent)

@@ -601,8 +601,10 @@ object FirestoreSyncManager {
 
         prefsToWatch.forEach { name ->
             val p = appContext.getSharedPreferences(name, Context.MODE_PRIVATE)
-            val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
-                triggerInstantPush(appContext)
+            val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                if (key != "last_local_modification") {
+                    triggerInstantPush(appContext)
+                }
             }
             p.registerOnSharedPreferenceChangeListener(listener)
             prefListeners[name] = listener

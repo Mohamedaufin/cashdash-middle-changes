@@ -355,9 +355,8 @@ class AllocatorActivity : ThemedActivity() {
             startActivity(intent)
         }
 
-        view.setOnLongClickListener {
+        view.setOnFastLongClickListener {
             showAllocationOptions(name)
-            true
         }
 
         categoryContainer.addView(view)
@@ -589,7 +588,7 @@ class AllocatorActivity : ThemedActivity() {
                 showRenameCategoryDialog(name)
             }
         }
-
+        container.addView(btnRename)
 
         // DELETE OPTION
         val btnDelete = android.widget.Button(this).apply {

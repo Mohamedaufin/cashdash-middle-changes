@@ -39,14 +39,7 @@ object ThemeHelper {
         if (androidx.appcompat.app.AppCompatDelegate.getDefaultNightMode() != targetMode) {
             androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(targetMode)
         }
-        if (activity is TaptrackActivity) {
-            if (theme == "White") {
-                activity.setTheme(R.style.Theme_Cashdash_White)
-            } else {
-                activity.setTheme(R.style.Theme_Cashdash)
-            }
-            return
-        }
+        // Removed hardcoded override for TaptrackActivity so it follows standard theme logic
         if (activity is SplashActivity) {
             when (theme) {
                 "Blue" -> activity.setTheme(R.style.Theme_Cashdash_Blue_Splash)
