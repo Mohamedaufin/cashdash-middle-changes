@@ -198,7 +198,7 @@ class FloatingWidgetService : Service() {
                     tvMessage.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
                     tvTitle.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
                     btnPositive.text = "I Agree"
-                    btnPositive.setTextColor(android.graphics.Color.WHITE)
+                    btnPositive.setTextColor(ThemeHelper.resolveColorAttr(themedContext, R.attr.textPrimaryColor))
                     btnNegative.text = "Cancel"
                     btnNegative.visibility = View.VISIBLE
 
@@ -377,6 +377,8 @@ class FloatingWidgetService : Service() {
                         setTextColor(ThemeHelper.resolveColorAttr(themedContext, R.attr.textPrimaryColor))
                         textSize = 14f
                         setPadding((12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt())
+                        minHeight = (48 * density).toInt()
+                        gravity = android.view.Gravity.CENTER_VERTICAL
                         isClickable = true
                         isFocusable = true
                         
@@ -407,6 +409,11 @@ class FloatingWidgetService : Service() {
                 updateDropdownTicks()
 
                 layoutAllocationBtn?.setOnClickListener {
+                    val imm = themedContext.getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                    imm.hideSoftInputFromWindow(layoutAllocationBtn.windowToken, 0)
+                    edtTitle?.clearFocus()
+                    edtAmount?.clearFocus()
+                    
                     isDropdownExpanded = !isDropdownExpanded
                     if (isDropdownExpanded) {
                         layoutAllocationExpandable?.visibility = View.VISIBLE

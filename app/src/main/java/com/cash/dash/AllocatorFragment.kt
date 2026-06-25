@@ -315,9 +315,8 @@ class AllocatorFragment : Fragment() {
             startActivity(intent)
         }
 
-        view.setOnLongClickListener {
+        view.setOnFastLongClickListener {
             showAllocationOptions(name)
-            true
         }
 
         categoryContainer.addView(view)

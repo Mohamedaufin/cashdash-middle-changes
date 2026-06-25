@@ -969,7 +969,7 @@ class HomeFragment : Fragment() {
             .setTitleTextSize(16f)
             .setMessageTextSize(14f)
             .setTitleTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL))
-            .setPositiveTextColor(android.graphics.Color.WHITE)
+            .setPositiveTextColor(ThemeHelper.resolveColorAttr(requireContext(), R.attr.textPrimaryColor))
             .setPositiveButton("I Agree") {
                 val prefs = requireContext().getSharedPreferences("SmartAssistantPrefs", android.content.Context.MODE_PRIVATE)
                 prefs.edit().putBoolean("tracking_enabled", true).apply()

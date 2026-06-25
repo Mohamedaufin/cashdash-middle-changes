@@ -71,9 +71,8 @@ class TransactionAdapter(
             onItemClick?.invoke(item)
         }
 
-        holder.itemView.setOnLongClickListener {
+        holder.itemView.setOnFastLongClickListener {
             onItemLongClick?.invoke(item)
-            true
         }
     }
 

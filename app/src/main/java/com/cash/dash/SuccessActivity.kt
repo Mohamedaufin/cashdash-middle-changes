@@ -74,7 +74,7 @@ class SuccessActivity : ThemedActivity() {
             goToMain()
         }
 
-        findViewById<MaterialButton>(R.id.btnPayAgain).setOnClickListener {
+        findViewById<View>(R.id.btnPayAgain).setOnClickListener {
             if (upiUri.isNotEmpty()) {
                 val payAgainIntent = Intent(this, ScannerActivity::class.java).apply {
                     putExtra("pay_again_upi", upiUri)

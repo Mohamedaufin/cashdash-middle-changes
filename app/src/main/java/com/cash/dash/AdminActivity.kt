@@ -598,7 +598,7 @@ class AdminActivity : ThemedActivity() {
                     val btnNo = dialogView.findViewById<android.widget.Button>(R.id.btnConfirmCancel)
 
                     btnYes.text = "Resolve"
-                    btnYes.setTextColor(android.graphics.Color.WHITE)
+                    btnYes.setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textPrimaryColor))
                     btnYes.setOnClickListener {
                         confirmDialog.dismiss()
                         val batch = db.batch()

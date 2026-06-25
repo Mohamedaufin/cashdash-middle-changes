@@ -620,7 +620,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             options.inSampleSize = inSampleSize
             val bmp = contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, options) }
 
-            if (bmp == null) { toast("ΓÜá Could not load image"); return }
+            if (bmp == null) { toast("⚠️ Could not load image"); return }
 
             val img = InputImage.fromBitmap(bmp, 0)
             BarcodeScanning.getClient().process(img).addOnSuccessListener { codes ->
@@ -632,8 +632,8 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                         return@addOnSuccessListener
                     }
                 }
-                toast("ΓÜá No UPI QR found in image")
-            }.addOnFailureListener { toast("ΓÜá Error scanning image") }
+                toast("⚠️ No UPI QR found in image")
+            }.addOnFailureListener { toast("⚠️ Error scanning image") }
         } catch (e: Exception) {}
     }
 
@@ -693,12 +693,12 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                         qrAmount
                     }
                     etAmount.setText(amountText)
-                    btnPayInitiate.text = "Pay Γé╣$amountText"
+                    btnPayInitiate.text = "Pay ₹$amountText"
                 }
             }
 
             val balance = getSharedPreferences("WalletPrefs", MODE_PRIVATE).getInt("wallet_balance", 0)
-            tvWalletBalance.text = "Wallet Balance: Γé╣$balance"
+            tvWalletBalance.text = "Wallet Balance: ₹$balance"
 
             btnCred.visibility = View.VISIBLE
             btnGPay.visibility = View.VISIBLE
@@ -708,7 +708,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 val categories = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)
                     .getStringSet("categories", emptySet()) ?: emptySet()
 
-                // Case-insensitive match: handles re-added categories like "medical"ΓåÆ"Medical"
+                // Case-insensitive match: handles re-added categories like "medical"→"Medical"
                 val matchedCategory = categories.find { it.equals(savedAlloc, ignoreCase = true) }
 
                 if (matchedCategory != null) {
@@ -725,7 +725,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                     paymentActionContainer.visibility = View.VISIBLE
                     btnPayInitiate.visibility = View.GONE
                 } else {
-                    // Category was deleted and not re-added ΓÇö show fresh chooser flow
+                    // Category was deleted and not re-added — show fresh chooser flow
                     tvAllocation.visibility = View.GONE
                     btnChoose.visibility = View.GONE
                 }
@@ -737,7 +737,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             etAmount.addTextChangedListener(object : android.text.TextWatcher {
                 override fun afterTextChanged(s: android.text.Editable?) {
                     val amt = s.toString()
-                    btnPayInitiate.text = if (amt.isNotEmpty()) "Pay Γé╣$amt" else "Pay Γé╣0"
+                    btnPayInitiate.text = if (amt.isNotEmpty()) "Pay ₹$amt" else "Pay ₹0"
                 }
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -767,7 +767,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
 
             btnGPay.setOnClickListener {
                 proceedingToPay = true
-                toast("Coming Soon! ≡ƒÜÇ")
+                toast("Coming Soon! 🚀")
                 dialog.dismiss()
             }
 
@@ -778,7 +778,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 }
             }
             dialog.show()
-        } catch (e: Exception) { toast("ΓÜá Error opening payment dialog") }
+        } catch (e: Exception) { toast("⚠️ Error opening payment dialog") }
     }
 
     private fun showAllocationChooser(parentDialog: BottomSheetDialog, label: TextView, btn: Button, paymentContainer: LinearLayout, btnPayInit: Button) {
@@ -887,8 +887,8 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 val limit = prefs.getInt("LIMIT_$cat", 0)
                 val spent = spentPrefs.getFloat("SPENT_$cat", 0f)
 
-                txtSpent.text = "Spent: Γé╣${spent.toInt()}"
-                txtLimit.text = if (limit > 0) "Limit: Γé╣$limit" else "Limit: ΓÇö"
+                txtSpent.text = "Spent: ₹${spent.toInt()}"
+                txtLimit.text = if (limit > 0) "Limit: ₹$limit" else "Limit: —"
 
                 val progress = if (limit > 0) (spent / limit).coerceIn(0f, 1f) else 0f
 
@@ -909,7 +909,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 }
 
                 row.setOnClickListener {
-                    // Save UPI ΓåÆ allocation mapping for future auto-fill
+                    // Save UPI -> allocation mapping for future auto-fill
                     saveUpiAllocation(currentScanUpiId, cat)
                     pendingCategory = cat
                     allocationHandled = true
@@ -1036,7 +1036,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                     val maxAllowed = totalBalance - currentSumOfLimits
 
                     if (newLimit > maxAllowed) {
-                        toast("Exceeds total balance! Max allowed: Γé╣$maxAllowed")
+                        toast("Exceeds total balance! Max allowed: ₹$maxAllowed")
                         return@setOnClickListener
                     }
 
@@ -1251,7 +1251,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     private fun successBeep() { try { (getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(VibrationEffect.createOneShot(150, VibrationEffect.DEFAULT_AMPLITUDE)); MediaPlayer.create(this, android.provider.Settings.System.DEFAULT_NOTIFICATION_URI).start() } catch (_: Exception) {} }
     private fun shake() { /* Visual feedback */ }
 
-    /** Saves a UPI ID ΓåÆ allocation mapping locally and pushes to Firestore. */
+    /** Saves a UPI ID → allocation mapping locally and pushes to Firestore. */
     private fun saveUpiAllocation(upiId: String, category: String) {
         if (upiId.isBlank()) return
         if (category.equals("no choice", ignoreCase = true)) {

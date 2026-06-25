@@ -216,17 +216,22 @@ class AddFinminderActivity : ThemedActivity() {
             }
         }
         
+        val ivDayArrow = findViewById<android.widget.ImageView>(R.id.ivDayArrow)
+        
         btnDayToggle.setOnClickListener {
             val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
             imm.hideSoftInputFromWindow(btnDayToggle.windowToken, 0)
             if (layoutDayOptions.visibility != View.VISIBLE) {
                 updateDayTicks(selectedDayStr)
             }
-            layoutDayOptions.visibility = if (layoutDayOptions.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+            val isExpanding = layoutDayOptions.visibility != View.VISIBLE
+            layoutDayOptions.visibility = if (isExpanding) View.VISIBLE else View.GONE
+            ivDayArrow.animate().rotation(if (isExpanding) 180f else 0f).setDuration(200).start()
         }
         
         val selectDay = { text: String ->
             layoutDayOptions.visibility = View.GONE
+            ivDayArrow.animate().rotation(0f).setDuration(200).start()
             if (text != selectedDayStr) {
                 selectedDayStr = text
                 tvSelectedDay.text = text
@@ -251,17 +256,22 @@ class AddFinminderActivity : ThemedActivity() {
             btnFreqMonthly.setCompoundDrawablesWithIntrinsicBounds(null, null, if (selectedIndex == 3) tick else null, null)
         }
 
+        val ivFrequencyArrow = findViewById<android.widget.ImageView>(R.id.ivFrequencyArrow)
+
         btnFrequencyToggle.setOnClickListener {
             val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
             imm.hideSoftInputFromWindow(btnFrequencyToggle.windowToken, 0)
             if (layoutFrequencyOptions.visibility != View.VISIBLE) {
                 updateFrequencyTicks(selectedFrequencyIndex)
             }
-            layoutFrequencyOptions.visibility = if (layoutFrequencyOptions.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+            val isExpanding = layoutFrequencyOptions.visibility != View.VISIBLE
+            layoutFrequencyOptions.visibility = if (isExpanding) View.VISIBLE else View.GONE
+            ivFrequencyArrow.animate().rotation(if (isExpanding) 180f else 0f).setDuration(200).start()
         }
 
         val selectFrequency = { index: Int, text: String ->
             layoutFrequencyOptions.visibility = View.GONE
+            ivFrequencyArrow.animate().rotation(0f).setDuration(200).start()
             if (index == selectedFrequencyIndex) {
                 // Do nothing if selecting the same frequency (avoids layout reloading/glitch)
                 Unit

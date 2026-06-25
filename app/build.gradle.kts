@@ -22,8 +22,8 @@ android {
         applicationId = "com.cash.dash"
         minSdk = 26
         targetSdk = 35
-        versionCode = 12
-        versionName = "0.3.9"
+        versionCode = 13
+        versionName = "0.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
