@@ -233,8 +233,10 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
             ))
             rtdbStatusRef.onDisconnect().cancel()
 
-            db.collection("users").document(email).update(updates).addOnFailureListener { }
-            db.collection("users").document(email).collection("config").document("profile").update(updates).addOnFailureListener { }
+            if (updates.isNotEmpty()) {
+                db.collection("users").document(email).update(updates).addOnFailureListener { }
+                db.collection("users").document(email).collection("config").document("profile").update(updates).addOnFailureListener { }
+            }
         }
     }
 }

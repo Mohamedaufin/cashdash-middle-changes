@@ -90,6 +90,9 @@ class EntryActivity : ThemedActivity() {
         }
 
         tvBack.setOnClickListener {
+            val transition = android.transition.AutoTransition()
+            transition.duration = 150
+            android.transition.TransitionManager.beginDelayedTransition(findViewById(android.R.id.content) as android.view.ViewGroup, transition)
             layoutSelection.visibility = View.VISIBLE
             layoutAuthForm.visibility = View.GONE
             tvForgotPassword.visibility = View.GONE
@@ -107,7 +110,9 @@ class EntryActivity : ThemedActivity() {
         }
 
         btnAction.setOnClickListener {
-            handleAuth(isLoginFlow, edtName, edtPhone, edtEmail, edtPassword, btnAction, tvForgotPassword, progressBar, tvStatus, prefs)
+            animateAndStart(btnAction) {
+                handleAuth(isLoginFlow, edtName, edtPhone, edtEmail, edtPassword, btnAction, tvForgotPassword, progressBar, tvStatus, prefs)
+            }
         }
 
         tvForgotPassword.setOnTouchListener { view, event ->
@@ -146,6 +151,20 @@ class EntryActivity : ThemedActivity() {
         checkAdminDeletionReason()
     }
 
+    private fun animateAndStart(view: View, action: () -> Unit) {
+        view.animate()
+            .scaleX(0.85f).scaleY(0.85f)
+            .setDuration(7)
+            .withEndAction {
+                view.animate()
+                    .scaleX(1f).scaleY(1f)
+                    .setDuration(8)
+                    .withEndAction { action() }
+                    .start()
+            }
+            .start()
+    }
+
     private fun showAuthForm(isLogin: Boolean, selection: View, form: View, edtName: EditText, edtPhone: EditText, tvDob: TextView, edtEmail: EditText, edtPassword: EditText, btnAction: Button, tvForgot: View) {
         val autofillManager = getSystemService(AutofillManager::class.java)
 
@@ -158,6 +177,9 @@ class EntryActivity : ThemedActivity() {
         edtEmail.clearFocus()
         edtPassword.clearFocus()
 
+        val transition = android.transition.AutoTransition()
+        transition.duration = 150
+        android.transition.TransitionManager.beginDelayedTransition(findViewById(android.R.id.content) as android.view.ViewGroup, transition)
         selection.visibility = View.GONE
         form.visibility = View.VISIBLE
         if (isLogin) {
