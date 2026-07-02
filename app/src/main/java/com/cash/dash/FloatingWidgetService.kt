@@ -230,10 +230,12 @@ class FloatingWidgetService : Service() {
                 val serviceIntent = Intent(this, AppUsageTrackerService::class.java)
                 androidx.core.content.ContextCompat.startForegroundService(this, serviceIntent)
                 prefs.edit().putBoolean("tracking_enabled", true).apply()
+                TaptrackWidget.refreshAllWidgets(this@FloatingWidgetService)
                 trackerBody?.visibility = View.VISIBLE
                 populateTrackerData()
             } else {
                 prefs.edit().putBoolean("tracking_enabled", false).apply()
+                TaptrackWidget.refreshAllWidgets(this@FloatingWidgetService)
                 
                 // Stop the AppUsageTrackerService
                 stopService(Intent(this@FloatingWidgetService, AppUsageTrackerService::class.java))

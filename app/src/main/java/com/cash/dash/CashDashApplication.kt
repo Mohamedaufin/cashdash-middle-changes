@@ -162,9 +162,14 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
                         )
                         rtdbStatusRef.onDisconnect().setValue(disconnectData)
                         
+                        val sdf = java.text.SimpleDateFormat("dd/MM/yyyy, h:mm a", java.util.Locale.ENGLISH)
+                        sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
+                        val lastActiveStr = sdf.format(java.util.Date())
+
                         val onlineData = mapOf(
                             "state" to "Online",
-                            "last_changed" to com.google.firebase.database.ServerValue.TIMESTAMP
+                            "last_changed" to com.google.firebase.database.ServerValue.TIMESTAMP,
+                            "last_active_str" to lastActiveStr
                         )
                         rtdbStatusRef.setValue(onlineData)
                     }
@@ -183,8 +188,12 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
             }.format(java.util.Date())
             val name = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).getString("user_name", "User") ?: "User"
 
+            val sdf = java.text.SimpleDateFormat("dd/MM/yyyy, h:mm a", java.util.Locale.ENGLISH)
+            sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
+            val lastActive = sdf.format(java.util.Date())
+            context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).edit().putString("lastActiveTime", lastActive).apply()
+
             val updates = hashMapOf<String, Any>(
-                "status" to "Online",
                 "appVersion" to appVersion,
                 "name" to name,
                 "activeDates" to com.google.firebase.firestore.FieldValue.arrayUnion(todayStr)
@@ -212,13 +221,16 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
             val sdf = java.text.SimpleDateFormat("dd/MM/yyyy, h:mm a", java.util.Locale.ENGLISH)
             sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
             val lastActive = sdf.format(java.util.Date())
-            updates["status"] = "Offline"
-            updates["lastActiveTime"] = lastActive
+            // No longer updating status/lastActiveTime in Firestore
 
             val prefs = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
             prefs.edit().putString("lastActiveTime", lastActive).commit()
 
-            rtdbStatusRef.setValue(mapOf("state" to "Offline", "last_changed" to com.google.firebase.database.ServerValue.TIMESTAMP))
+            rtdbStatusRef.setValue(mapOf(
+                "state" to "Offline", 
+                "last_changed" to com.google.firebase.database.ServerValue.TIMESTAMP,
+                "last_active_str" to lastActive
+            ))
             rtdbStatusRef.onDisconnect().cancel()
 
             db.collection("users").document(email).update(updates).addOnFailureListener { }

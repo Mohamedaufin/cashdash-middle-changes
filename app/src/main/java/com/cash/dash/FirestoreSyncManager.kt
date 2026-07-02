@@ -23,7 +23,43 @@ object FirestoreSyncManager {
     
     // ⚡ INSTANT SYNC STATE
     private var isSyncingFromCloud = false
+    @Volatile var isInitialSyncCompleted = false
+    @Volatile var isInitialPullStarted = false
     private val prefListeners = mutableMapOf<String, android.content.SharedPreferences.OnSharedPreferenceChangeListener>()
+    
+    fun updateLastActiveTime(context: Context) {
+        val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser ?: return
+        val email = user.email ?: return
+        
+        val sdf = java.text.SimpleDateFormat("dd/MM/yyyy, h:mm a", java.util.Locale.ENGLISH)
+        sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
+        val lastActive = sdf.format(java.util.Date())
+        
+        val todayStr = java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.ENGLISH).apply {
+            timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
+        }.format(java.util.Date())
+
+        val userPrefs = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+        isSyncingFromCloud = true
+        userPrefs.edit().putString("lastActiveTime", lastActive).apply()
+        isSyncingFromCloud = false
+
+        val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+        val userDocRef = db.collection("users").document(email)
+        val configProfileRef = userDocRef.collection("config").document("profile")
+        
+        val updateData = mapOf(
+            "lastActiveTime" to lastActive,
+            "activeDates" to com.google.firebase.firestore.FieldValue.arrayUnion(todayStr)
+        )
+        
+        val profileUpdateData = mapOf("lastActiveTime" to lastActive)
+
+        db.batch().apply {
+            set(userDocRef, updateData, com.google.firebase.firestore.SetOptions.merge())
+            set(configProfileRef, profileUpdateData, com.google.firebase.firestore.SetOptions.merge())
+        }.commit()
+    }
     
     private val syncExecutor = java.util.concurrent.Executors.newSingleThreadExecutor()
     private val syncHandler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -36,6 +72,10 @@ object FirestoreSyncManager {
     // High level wrapper to blindly sync everything
     fun pushAllDataToCloud(context: Context) {
         if (CashDashApplication.isDeletingAccount) return
+        if (!isInitialSyncCompleted) {
+            Log.w(TAG, "pushAllDataToCloud: Blocked because initial pull from cloud is not completed yet.")
+            return
+        }
         val appContext = context.applicationContext
         val user = FirebaseAuth.getInstance().currentUser ?: return
         val email = user.email ?: return 
@@ -59,13 +99,23 @@ object FirestoreSyncManager {
                 val userDocRef = db.collection("users").document(email)
                 val configColl = userDocRef.collection("config")
 
-                // 🚀 Consolidate all 8 writes into a single high-performance atomic network blast
                 val batch = db.batch()
+                val hashPrefs = appContext.getSharedPreferences("SyncHashes", Context.MODE_PRIVATE)
+                val hashEditor = hashPrefs.edit()
+                var hasChanges = false
 
-                val currentTimestamp = System.currentTimeMillis()
-                userPrefs.edit().putLong("last_local_modification", currentTimestamp).commit()
+                fun checkHash(payload: Any, key: String): Boolean {
+                    val currentHash = payload.hashCode()
+                    val changed = hashPrefs.getInt(key, 0) != currentHash
+                    if (changed) {
+                        hashEditor.putInt(key, currentHash)
+                        hasChanges = true
+                    }
+                    return changed
+                }
 
                 // 1. App Settings / User Config
+                // Temporarily build without last_local_modification to check for real changes
                 val userConfigData = hashMapOf<String, Any>(
                     "name" to (userPrefs.getString("user_name", "User") ?: "User"),
                     "email" to email,
@@ -74,14 +124,13 @@ object FirestoreSyncManager {
                     "setup_complete" to !userPrefs.getBoolean("isFirstLaunch", true),
                     "wallet_popup_shown" to userPrefs.getBoolean("WalletPopupShown", false),
                     "account_creation_time" to userPrefs.getLong("account_creation_time", 0L),
-                    "account_status" to "active",
-                    "last_local_modification" to currentTimestamp
+                    "account_status" to "active"
                 )
                 val lastActiveStr = userPrefs.getString("lastActiveTime", "") ?: ""
                 if (lastActiveStr.isNotEmpty()) {
                     userConfigData["lastActiveTime"] = lastActiveStr
                 }
-                batch.set(configColl.document("profile"), userConfigData, SetOptions.merge())
+                val profileChanged = checkHash(userConfigData, "HASH_profile")
                 
                 val todayStr = java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.ENGLISH).apply {
                     timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
@@ -98,7 +147,7 @@ object FirestoreSyncManager {
                 if (lastActiveStr.isNotEmpty()) {
                     rootData["lastActiveTime"] = lastActiveStr
                 }
-                batch.set(userDocRef, rootData, SetOptions.merge())
+                val rootChanged = checkHash(rootData, "HASH_root")
 
                 // 2. Wallet Data
                 val initialBalance = walletPrefs.getInt("initial_balance", 0)
@@ -120,7 +169,9 @@ object FirestoreSyncManager {
                     "balance_bar_mode" to walletPrefs.getString("balance_bar_mode", "gradient"),
                     "balance_bar_type" to walletPrefs.getString("balance_bar_type", "gradient1")
                 )
-                batch.set(configColl.document("wallet"), walletData)
+                if (checkHash(walletData, "HASH_wallet")) {
+                    batch.set(configColl.document("wallet"), walletData)
+                }
 
                 // 3. Category Data (Limits & Spent)
                 val categoriesSet = categoryPrefs.getStringSet("categories", emptySet()) ?: emptySet()
@@ -135,10 +186,13 @@ object FirestoreSyncManager {
                         "icon" to icon
                     )
                 }
-                batch.set(configColl.document("categories"), hashMapOf(
+                val categoriesPayload = hashMapOf(
                     "data" to catMap,
                     "allocation_categories" to categoriesSet.toList()
-                ))
+                )
+                if (checkHash(categoriesPayload, "HASH_categories")) {
+                    batch.set(configColl.document("categories"), categoriesPayload)
+                }
 
                 // 4. Transaction History
                 val dao = AppDatabase.getDatabase(appContext).transactionDao()
@@ -179,33 +233,67 @@ object FirestoreSyncManager {
                 val historyPayload = HashMap<String, Any>()
                 historyPayload["raw_list"] = historySet.toList()
                 historyPayload["detailed_transactions"] = detailedTransactions
-                batch.set(configColl.document("history"), historyPayload)
+                if (checkHash(historyPayload, "HASH_history")) {
+                    batch.set(configColl.document("history"), historyPayload)
+                }
 
                 // 5. CategoryWeekData
-                batch.set(configColl.document("analytics"), hashMapOf("CategoryWeekData" to categoryWeekPrefs.all))
+                val analyticsPayload = hashMapOf("CategoryWeekData" to categoryWeekPrefs.all)
+                if (checkHash(analyticsPayload, "HASH_analytics")) {
+                    batch.set(configColl.document("analytics"), analyticsPayload)
+                }
 
                 // 6. ScannerHistory
-                batch.set(configColl.document("history_scanner"), hashMapOf("ScannerHistory" to scannerHistPrefs.all))
+                val scannerHistoryPayload = hashMapOf("ScannerHistory" to scannerHistPrefs.all)
+                if (checkHash(scannerHistoryPayload, "HASH_scannerHistory")) {
+                    batch.set(configColl.document("history_scanner"), scannerHistoryPayload)
+                }
 
                 // 7. LocalScanPrefs
-                batch.set(configColl.document("undo_details"), hashMapOf("LocalScanPrefs" to localScanPrefs.all))
+                val undoDetailsPayload = hashMapOf("LocalScanPrefs" to localScanPrefs.all)
+                if (checkHash(undoDetailsPayload, "HASH_undoDetails")) {
+                    batch.set(configColl.document("undo_details"), undoDetailsPayload)
+                }
 
                 // 8. ScannerMetadataPrefs
                 val scannerMetaPrefs = appContext.getSharedPreferences("ScannerMetadataPrefs", Context.MODE_PRIVATE)
-                batch.set(configColl.document("scanner_metadata"), hashMapOf("ScannerMetadataPrefs" to scannerMetaPrefs.all))
+                val scannerMetaPayload = hashMapOf("ScannerMetadataPrefs" to scannerMetaPrefs.all)
+                if (checkHash(scannerMetaPayload, "HASH_scannerMeta")) {
+                    batch.set(configColl.document("scanner_metadata"), scannerMetaPayload)
+                }
 
                 // 9. FinminderPrefs
-                batch.set(configColl.document("finminder"), hashMapOf("FinminderPrefs" to finminderPrefs.all))
+                val finminderPayload = hashMapOf("FinminderPrefs" to finminderPrefs.all)
+                if (checkHash(finminderPayload, "HASH_finminder")) {
+                    batch.set(configColl.document("finminder"), finminderPayload)
+                }
 
                 // 10. UpiAllocationPrefs (UPI ID → allocation memory, stored as flat string map)
-                // Keys are "ALLOC_<upi_id>", values are category names — very space-efficient
                 val allocMap = upiAllocPrefs.all.filterValues { it is String }
-                batch.set(configColl.document("upi_allocations"), hashMapOf("data" to allocMap))
+                val upiAllocPayload = hashMapOf("data" to allocMap)
+                if (checkHash(upiAllocPayload, "HASH_upiAlloc")) {
+                    batch.set(configColl.document("upi_allocations"), upiAllocPayload)
+                }
 
-                // ⚡ Final Atomic Execution (1 Trip vs 9 Trip)
-                Tasks.await(batch.commit())
+                // If any document changed, update the profile with the latest timestamp
+                if (hasChanges) {
+                    val currentTimestamp = System.currentTimeMillis()
+                    userPrefs.edit().putLong("last_local_modification", currentTimestamp).commit()
+                    userConfigData["last_local_modification"] = currentTimestamp
+                    batch.set(configColl.document("profile"), userConfigData, SetOptions.merge())
+                    
+                    if (rootChanged) {
+                        batch.set(userDocRef, rootData, SetOptions.merge())
+                    }
 
-                Log.d(TAG, "✅ Atomic batch sync to cloud completed successfully")
+                    // ⚡ Final Atomic Execution (Only pushing what changed!)
+                    Tasks.await(batch.commit())
+                    hashEditor.apply()
+                    Log.d(TAG, "✅ Atomic batch sync to cloud completed successfully with optimized writes")
+                } else {
+                    Log.d(TAG, "⚡ No changes detected. Skipped cloud sync to save writes.")
+                }
+
                 syncHandler.post { notifyUI(appContext) }
             } catch (e: Exception) {
                 Log.e(TAG, "❌ FATAL SYNC ERROR: ${e.message}", e)
@@ -224,6 +312,8 @@ object FirestoreSyncManager {
 
         val email = user.email ?: run { onComplete(false, false, false, null); return }
         val uid = user.uid
+
+        isInitialPullStarted = true
 
         // Internal helper to perform the actual pull from a specific document ID
         fun executePull(docId: String, isFallback: Boolean) {
@@ -246,6 +336,7 @@ object FirestoreSyncManager {
                 .addOnCompleteListener { task ->
                     if (!task.isSuccessful) {
                         Log.e(TAG, "Failed to pull cloud data for $docId: ${task.exception?.message}")
+                        isInitialSyncCompleted = true
                         onComplete(false, false, false, null)
                         return@addOnCompleteListener
                     }
@@ -257,6 +348,7 @@ object FirestoreSyncManager {
                             // Log.d(TAG, "Email profile not found for $email, trying legacy UID fallback for $uid")
                             executePull(uid, true)
                         } else {
+                            isInitialSyncCompleted = true
                             onComplete(true, false, false, null)
                         }
                         return@addOnCompleteListener
@@ -278,6 +370,7 @@ object FirestoreSyncManager {
 
                     if (localTimestamp > cloudTimestamp) {
                         Log.w(TAG, "Cloud data is stale compared to local. Aborting pull and initiating push.")
+                        isInitialSyncCompleted = true
                         pushAllDataToCloud(context)
                         onComplete(true, true, false, profileData)
                         return@addOnCompleteListener
@@ -561,10 +654,14 @@ object FirestoreSyncManager {
 
                     // Log.d(TAG, "Pull complete for $docId. Migration flow: $isFallback")
                     
+                    isInitialSyncCompleted = true
+                    
                     if (isFallback) {
                         // 🔄 MIGRATION FINAL STEP: Push to new Email path immediately
                         // Log.d(TAG, "Legacy pull successful, migrating data to $email document...")
                         pushAllDataToCloud(context)
+                    } else {
+                        triggerInstantPush(context)
                     }
 
                     onComplete(true, true, false, profileData)

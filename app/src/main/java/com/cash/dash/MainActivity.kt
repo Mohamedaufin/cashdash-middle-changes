@@ -172,7 +172,11 @@ class MainActivity : ThemedActivity() {
         registerFCMToken()
 
         FirestoreSyncManager.startRealTimeSync(this)
-        updateUserMetadata()
+        
+        if (!FirestoreSyncManager.isInitialPullStarted) {
+            FirestoreSyncManager.pullDataFromCloud(this) { _, _, _, _ -> }
+        }
+        FirestoreSyncManager.updateLastActiveTime(this)
 
         // Start Usage Tracker if enabled
         val smartPrefs = getSharedPreferences("SmartAssistantPrefs", MODE_PRIVATE)
@@ -428,7 +432,7 @@ class MainActivity : ThemedActivity() {
 
     override fun onResume() {
         super.onResume()
-        updateUserMetadata()
+        FirestoreSyncManager.updateLastActiveTime(this)
         
         val result = intent.getStringExtra("payment_status")
         if (result == "failed") {
@@ -446,17 +450,4 @@ class MainActivity : ThemedActivity() {
         }
     }
 
-    private fun updateUserMetadata() {
-        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
-
-        val sdf = java.text.SimpleDateFormat("dd/MM/yyyy, h:mm a", java.util.Locale.ENGLISH)
-        sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
-        val lastActive = sdf.format(java.util.Date())
-
-        val editor = prefs.edit()
-        editor.putString("lastActiveTime", lastActive)
-        editor.apply()
-
-        FirestoreSyncManager.pushAllDataToCloud(this)
-    }
 }
