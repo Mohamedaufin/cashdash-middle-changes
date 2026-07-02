@@ -122,6 +122,7 @@ class HomeFragment : Fragment() {
                 smartPrefs.edit().putBoolean("tracking_enabled", false).apply()
                 requireContext().stopService(Intent(requireContext(), AppUsageTrackerService::class.java))
                 android.widget.Toast.makeText(requireContext(), "TapTrack is off", android.widget.Toast.LENGTH_SHORT).show()
+                TaptrackWidget.refreshAllWidgets(requireContext())
                 refreshUI()
                 true
             } else {
@@ -133,6 +134,7 @@ class HomeFragment : Fragment() {
                     val serviceIntent = Intent(requireContext(), AppUsageTrackerService::class.java)
                     androidx.core.content.ContextCompat.startForegroundService(requireContext(), serviceIntent)
                     android.widget.Toast.makeText(requireContext(), "TapTrack is on", android.widget.Toast.LENGTH_SHORT).show()
+                    TaptrackWidget.refreshAllWidgets(requireContext())
                     refreshUI()
                 }
                 true

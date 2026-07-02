@@ -12,6 +12,10 @@ import android.widget.LinearLayout
 import android.view.View
 import android.widget.TextView
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -24,6 +28,7 @@ class AdminActivity : ThemedActivity() {
     private var selectedDateCalendar = Calendar.getInstance()
     private var usersListenerRegistration: com.google.firebase.firestore.ListenerRegistration? = null
     private val selectedQueries = mutableSetOf<String>()
+    private val rtdbPresenceMap = mutableMapOf<String, Pair<String, String>>()
 
     data class UserStatusItem(
         val email: String,
@@ -47,6 +52,34 @@ class AdminActivity : ThemedActivity() {
             view.setPadding(0, systemBars.top, 0, bottomPadding)
             insets
         }
+
+        FirebaseDatabase.getInstance().getReference("status").addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                rtdbPresenceMap.clear()
+                val sdf = java.text.SimpleDateFormat("dd/MM/yyyy, h:mm a", java.util.Locale.ENGLISH)
+                sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
+                for (child in snapshot.children) {
+                    val safeEmail = child.key ?: continue
+                    val email = safeEmail.replace(",", ".")
+                    val state = child.child("state").getValue(String::class.java) ?: "Offline"
+                    val lastChanged = child.child("last_changed").getValue(Long::class.java)
+                    val lastActiveTime = if (lastChanged != null) sdf.format(java.util.Date(lastChanged)) else "Never"
+                    rtdbPresenceMap[email] = Pair(state, lastActiveTime)
+                }
+                
+                // Live update the list with new RTDB data
+                for (i in userStatusList.indices) {
+                    val rtdbData = rtdbPresenceMap[userStatusList[i].email]
+                    if (rtdbData != null) {
+                        userStatusList[i] = userStatusList[i].copy(status = rtdbData.first, lastActiveTime = rtdbData.second)
+                    } else {
+                        userStatusList[i] = userStatusList[i].copy(status = "Offline", lastActiveTime = "Never")
+                    }
+                }
+                refreshUserStatusList()
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
 
         val edtTitle = findViewById<EditText>(R.id.edtAnnouncementTitle)
         val edtBody = findViewById<EditText>(R.id.edtAnnouncementBody)
@@ -108,8 +141,48 @@ class AdminActivity : ThemedActivity() {
                 }
         }
 
-        btnPublishGlobal.setOnClickListener { publishAnnouncement(false) }
-        btnPublishAdmin.setOnClickListener { publishAnnouncement(true) }
+        fun showSimpleConfirmDialog(dialogTitle: String, dialogMessage: String, confirmBtnText: String, onConfirm: () -> Unit) {
+            val dialogView = layoutInflater.inflate(R.layout.dialog_confirm_action, null)
+            val confirmDialog = androidx.appcompat.app.AlertDialog.Builder(this@AdminActivity)
+                .setView(dialogView)
+                .create()
+            confirmDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+            dialogView.findViewById<android.widget.TextView>(R.id.tvConfirmTitle).text = dialogTitle
+            dialogView.findViewById<android.widget.TextView>(R.id.tvConfirmMessage).text = dialogMessage
+            
+            val btnYes = dialogView.findViewById<android.widget.Button>(R.id.btnConfirmAction)
+            val btnNo = dialogView.findViewById<android.widget.Button>(R.id.btnConfirmCancel)
+
+            btnYes.text = confirmBtnText
+            // Change color to green for sends
+            btnYes.setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textGreenColor))
+            btnYes.setOnClickListener {
+                confirmDialog.dismiss()
+                onConfirm()
+            }
+            btnNo.setOnClickListener { confirmDialog.dismiss() }
+            confirmDialog.show()
+        }
+
+        btnPublishGlobal.setOnClickListener { 
+            if (edtTitle.text.toString().trim().isEmpty() || edtBody.text.toString().trim().isEmpty()) {
+                ToastHelper.showToast(this, "Please fill in both fields")
+                return@setOnClickListener
+            }
+            showSimpleConfirmDialog("Global Announcement", "Publish this announcement globally to ALL users?", "Publish") {
+                publishAnnouncement(false) 
+            }
+        }
+        btnPublishAdmin.setOnClickListener { 
+            if (edtTitle.text.toString().trim().isEmpty() || edtBody.text.toString().trim().isEmpty()) {
+                ToastHelper.showToast(this, "Please fill in both fields")
+                return@setOnClickListener
+            }
+            showSimpleConfirmDialog("Admin Announcement", "Send this announcement to Admins only?", "Send") {
+                publishAnnouncement(true) 
+            }
+        }
 
         val edtPushTitle = findViewById<EditText>(R.id.edtPushTitle)
         val edtPushBody = findViewById<EditText>(R.id.edtPushBody)
@@ -167,8 +240,24 @@ class AdminActivity : ThemedActivity() {
                 }
         }
 
-        btnSendGlobalPush.setOnClickListener { sendPushNotification(false) }
-        btnSendAdminPush.setOnClickListener { sendPushNotification(true) }
+        btnSendGlobalPush.setOnClickListener { 
+            if (edtPushTitle.text.toString().trim().isEmpty() || edtPushBody.text.toString().trim().isEmpty()) {
+                ToastHelper.showToast(this, "Please fill in both fields")
+                return@setOnClickListener
+            }
+            showSimpleConfirmDialog("Global Push", "Send this push notification globally to ALL users?", "Send") {
+                sendPushNotification(false) 
+            }
+        }
+        btnSendAdminPush.setOnClickListener { 
+            if (edtPushTitle.text.toString().trim().isEmpty() || edtPushBody.text.toString().trim().isEmpty()) {
+                ToastHelper.showToast(this, "Please fill in both fields")
+                return@setOnClickListener
+            }
+            showSimpleConfirmDialog("Admin Push", "Send this push notification to Admins only?", "Send") {
+                sendPushNotification(true) 
+            }
+        }
 
         val btnAgeSpecificAnnouncement = findViewById<Button>(R.id.btnAgeSpecificAnnouncement)
         btnAgeSpecificAnnouncement.setOnClickListener {
@@ -187,7 +276,7 @@ class AdminActivity : ThemedActivity() {
         val btnSendUserPush = findViewById<Button>(R.id.btnSendUserPush)
         val btnPublishUserAnnouncement = findViewById<Button>(R.id.btnPublishUserAnnouncement)
 
-        fun sendBatchUserPushes(targetEmails: List<String>, title: String, body: String) {
+        fun sendBatchUserPushes(targetEmails: List<String>, targetsStr: String, title: String, body: String) {
             setPushButtonsEnabled(false, "Sending...")
             btnSendUserPush.isEnabled = false
             btnSendUserPush.text = "Sending..."
@@ -210,7 +299,7 @@ class AdminActivity : ThemedActivity() {
             batch.commit()
                 .addOnSuccessListener {
                     ToastHelper.showToast(this, "Notification Sent")
-                    logAdminAction("User Specific Notification", title, body, targetEmails.joinToString(", "))
+                    logAdminAction("User Specific Notification", title, body, targetsStr)
                     edtPushTitle.text.clear()
                     edtPushBody.text.clear()
                     setPushButtonsEnabled(true, "")
@@ -225,7 +314,7 @@ class AdminActivity : ThemedActivity() {
                 }
         }
 
-        fun sendSelectedUserAnnouncement(targetEmails: List<String>, title: String, body: String) {
+        fun sendSelectedUserAnnouncement(targetEmails: List<String>, targetsStr: String, title: String, body: String) {
             setAnnouncementButtonsEnabled(false, "Publishing...")
             btnPublishUserAnnouncement.isEnabled = false
             btnPublishUserAnnouncement.text = "Sending..."
@@ -248,7 +337,7 @@ class AdminActivity : ThemedActivity() {
             db.collection("announcements").document(timestamp.toString()).set(data)
                 .addOnSuccessListener {
                     ToastHelper.showToast(this, "Announcement Sent")
-                    logAdminAction("User Specific Announcement", title, body, targetEmails.joinToString(", "))
+                    logAdminAction("User Specific Announcement", title, body, targetsStr)
                     edtTitle.text.clear()
                     edtBody.text.clear()
                     setAnnouncementButtonsEnabled(true, "")
@@ -321,7 +410,7 @@ class AdminActivity : ThemedActivity() {
                     progressDialog.dismiss()
                     val userTargets = querySnapshot.documents.map { doc ->
                         val email = doc.id
-                        val profileName = doc.getString("profileName")
+                        val profileName = doc.getString("name")
                         val displayName = if (!profileName.isNullOrEmpty()) profileName else email.substringBefore("@")
                         Pair(email, displayName)
                     }.sortedBy { it.second.lowercase() }
@@ -447,6 +536,7 @@ class AdminActivity : ThemedActivity() {
                     refreshUserList()
 
                     // Action buttons container at bottom
+                    var dialog: androidx.appcompat.app.AlertDialog? = null
                     val actionContainer = android.widget.LinearLayout(this).apply {
                         orientation = android.widget.LinearLayout.HORIZONTAL
                         layoutParams = android.widget.LinearLayout.LayoutParams(
@@ -468,6 +558,9 @@ class AdminActivity : ThemedActivity() {
                         ).apply {
                             marginEnd = (8 * resources.displayMetrics.density).toInt()
                         }
+                        stateListAnimator = null
+                        elevation = 0f
+                        setOnClickListener { dialog?.dismiss() }
                     }
                     actionContainer.addView(btnCancel)
 
@@ -484,12 +577,39 @@ class AdminActivity : ThemedActivity() {
                         ).apply {
                             marginStart = (8 * resources.displayMetrics.density).toInt()
                         }
+                        setBackgroundResource(ThemeHelper.getDrawable(this@AdminActivity, R.drawable.bg_card_dark))
+                        stateListAnimator = null
+                        elevation = 0f
+                        setOnClickListener {
+                            if (selectedEmails.isEmpty()) {
+                                ToastHelper.showToast(this@AdminActivity, "Select at least one user")
+                                return@setOnClickListener
+                            }
+                            dialog?.dismiss()
+                            
+                            val actionName = if (isAnnouncement) "User Specific Announcement" else "User Specific Push"
+                            
+                            val targetsStr = selectedEmails.map { email ->
+                                val name = originalList.find { it.first == email }?.second ?: "Unknown"
+                                "$name - $email"
+                            }.joinToString(", ")
+                            
+                            val desc = "Are you sure you want to send this to ${selectedEmails.size} user(s)?\n\nTargeted Users:\n" + selectedEmails.joinToString("\n") { "• $it" }
+                            showSimpleConfirmDialog(actionName, desc, "Send") {
+                                if (isAnnouncement) {
+                                    sendSelectedUserAnnouncement(selectedEmails.toList(), targetsStr, title, body)
+                                } else {
+                                    sendBatchUserPushes(selectedEmails.toList(), targetsStr, title, body)
+                                }
+                            }
+                        }
                     }
                     actionContainer.addView(btnNext)
                     container.addView(actionContainer)
 
-                    val dialog = dialogBuilder.create()
-                    dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+                    dialog = dialogBuilder.create()
+                    dialog?.window?.setBackgroundDrawableResource(android.R.color.transparent)
+                    dialog?.show()
                     
                     searchInput.addTextChangedListener(object : android.text.TextWatcher {
                         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -508,8 +628,7 @@ class AdminActivity : ThemedActivity() {
                         override fun afterTextChanged(s: android.text.Editable?) {}
                     })
 
-
-                    dialog.show()
+                    dialog?.show()
                 }
                 .addOnFailureListener {
                     progressDialog.dismiss()
@@ -865,8 +984,11 @@ class AdminActivity : ThemedActivity() {
                 val email = doc.id
                 val name = doc.getString("name")
                 val activeDates = doc.get("activeDates") as? List<String> ?: emptyList()
-                val status = doc.getString("status") ?: ""
-                val lastActiveTime = doc.getString("lastActiveTime") ?: ""
+                
+                val rtdbData = rtdbPresenceMap[email]
+                val status = rtdbData?.first ?: "Offline"
+                val lastActiveTime = rtdbData?.second ?: "Never"
+                
                 userStatusList.add(UserStatusItem(email, name ?: "", activeDates, status, lastActiveTime))
                 if (name.isNullOrEmpty()) emailsMissingName.add(email)
             }

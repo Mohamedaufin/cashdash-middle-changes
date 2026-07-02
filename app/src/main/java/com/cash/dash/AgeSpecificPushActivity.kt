@@ -123,7 +123,7 @@ class AgeSpecificPushActivity : ThemedActivity() {
 
                             if (age in minAge..maxAge) {
                                 val email = document.id
-                                val profileName = document.getString("profileName")
+                                val profileName = document.getString("name")
                                 val displayName = if (!profileName.isNullOrEmpty()) profileName else email.substringBefore("@")
                                 userTargets.add(Pair(email, displayName))
                             }
@@ -231,10 +231,14 @@ class AgeSpecificPushActivity : ThemedActivity() {
             .setTitle("Confirm")
             .setMessage("Are you sure you want to send this to ${selectedEmails.size} user(s)?")
             .setPositiveButton("Send") { _, _ ->
+                val minAge = edtMinAge.text.toString().trim()
+                val maxAge = edtMaxAge.text.toString().trim()
+                val ageRange = if (minAge.isNotEmpty() && maxAge.isNotEmpty()) "$minAge - $maxAge" else null
+                
                 if (isAnnouncement) {
-                    sendAnnouncements(title, content)
+                    sendAnnouncements(title, content, ageRange)
                 } else {
-                    sendNotifications(title, content)
+                    sendNotifications(title, content, ageRange)
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -244,7 +248,7 @@ class AgeSpecificPushActivity : ThemedActivity() {
         confirmDialog.show()
     }
 
-    private fun sendAnnouncements(title: String, body: String) {
+    private fun sendAnnouncements(title: String, body: String, ageRange: String?) {
         btnSendPush.text = "Sending..."
         btnSendPush.isEnabled = false
 
@@ -263,8 +267,13 @@ class AgeSpecificPushActivity : ThemedActivity() {
             "targetEmails" to selectedEmails.toList()
         )
 
+        val targetsStr = selectedEmails.map { email ->
+            val name = userTargets.find { it.first == email }?.second ?: "Unknown"
+            "$name - $email"
+        }.joinToString(", ")
+
         db.collection("announcements").document(timestamp.toString()).set(data).addOnSuccessListener {
-            logAdminAction("Age Specific Announcement", title, body, selectedEmails.joinToString(", "))
+            logAdminAction("Age Specific Announcement", title, body, targetsStr, ageRange)
             ToastHelper.showToast(this, "Announcements sent successfully!")
             finish()
         }.addOnFailureListener {
@@ -274,12 +283,16 @@ class AgeSpecificPushActivity : ThemedActivity() {
         }
     }
 
-    private fun sendNotifications(title: String, body: String) {
+    private fun sendNotifications(title: String, body: String, ageRange: String?) {
         btnSendPush.text = "Sending..."
         btnSendPush.isEnabled = false
 
         val db = FirebaseFirestore.getInstance()
-        logAdminAction("Age Specific Notification", title, body, selectedEmails.joinToString(", "))
+        val targetsStr = selectedEmails.map { email ->
+            val name = userTargets.find { it.first == email }?.second ?: "Unknown"
+            "$name - $email"
+        }.joinToString(", ")
+        logAdminAction("Age Specific Notification", title, body, targetsStr, ageRange)
 
         val batch = db.batch()
         val timestamp = System.currentTimeMillis()
@@ -306,17 +319,20 @@ class AgeSpecificPushActivity : ThemedActivity() {
     }
 
 
-    private fun logAdminAction(type: String, title: String, content: String, targets: String? = null) {
+    private fun logAdminAction(type: String, title: String, content: String, targets: String? = null, ageRange: String? = null) {
         val db = FirebaseFirestore.getInstance()
-        val logData = hashMapOf(
+        val logData = hashMapOf<String, Any>(
             "timestamp" to System.currentTimeMillis(),
-            "type" to type,
+            "actionType" to type,
             "title" to title,
-            "content" to content,
-            "performedBy" to getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).getString("user_email", "Unknown")
+            "message" to content,
+            "performedBy" to (getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).getString("user_email", "Unknown") ?: "Unknown")
         )
         if (targets != null) {
-            logData["targetUsers"] = targets
+            logData["details"] = targets
+        }
+        if (ageRange != null) {
+            logData["ageRange"] = ageRange
         }
         db.collection("admin_logs").add(logData)
     }

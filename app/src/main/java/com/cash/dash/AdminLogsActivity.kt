@@ -66,22 +66,24 @@ class AdminLogsActivity : ThemedActivity() {
                 val sdf = SimpleDateFormat("dd MMM yyyy, h:mm a", Locale.getDefault())
 
                 for (doc in querySnapshot.documents) {
-                    val email = doc.getString("adminEmail") ?: "Unknown"
+                    val performedBy = doc.getString("performedBy")
+                    val adminEmail = doc.getString("adminEmail")
+                    val email = adminEmail ?: performedBy ?: "Unknown"
                     val name = when (email.lowercase().trim()) {
                         "mohamedaufin64@gmail.com" -> "Mohamed Aufin"
                         "arunbhalaji200904@gmail.com" -> "Arun Bhalaji"
                         else -> email
                     }
-                    val rawType = doc.getString("actionType") ?: "Action"
+                    val rawType = doc.getString("actionType") ?: doc.getString("type") ?: "Action"
                     var type = if (rawType == "Targeted Announcement") "User Specific Announcement" else rawType
                     type = type.replace(" (Batch)", "")
                     if (type == "User Specific Push") {
                         type = "User Specific Notification"
                     }
                     val title = doc.getString("title") ?: ""
-                    val message = doc.getString("message") ?: ""
+                    val message = doc.getString("message") ?: doc.getString("content") ?: ""
                     val ts = doc.getLong("timestamp") ?: 0L
-                    val details = doc.getString("details")
+                    val details = doc.getString("details") ?: doc.getString("targetUsers")
                     val timeStr = if (ts > 0) sdf.format(Date(ts)) else ""
 
                     val emails = if (!details.isNullOrEmpty()) details.split(",").map { it.trim() }.filter { it.isNotEmpty() } else emptyList()
@@ -89,7 +91,7 @@ class AdminLogsActivity : ThemedActivity() {
                     var finalActionDesc = type
                     var targetedUsersText: String? = null
                     
-                    if (type.contains("User Specific") && emails.isNotEmpty()) {
+                    if (emails.isNotEmpty() && (type.contains("User Specific") || type.contains("Age Specific"))) {
                         if (emails.size == 1) {
                             targetedUsersText = "Targeted user :\n• ${emails[0]}"
                         } else {
@@ -110,12 +112,24 @@ class AdminLogsActivity : ThemedActivity() {
                         }
                     }
 
+                    val ageRange = doc.getString("ageRange")
+                    val triggeredByText = "This action is triggered by: $name"
+                    
+                    if (ageRange != null) {
+                        val ageStr = "Age targeted : ($ageRange)"
+                        targetedUsersText = if (targetedUsersText != null) {
+                            "$ageStr\n\n$targetedUsersText"
+                        } else {
+                            ageStr
+                        }
+                    }
+
                     logsList.add(
                         AdminLogModel(
                             actionType = finalActionDesc,
                             time = timeStr,
                             details = formattedDetails,
-                            triggeredBy = "This action is triggered by: $name",
+                            triggeredBy = triggeredByText,
                             rawActionType = type,
                             targetedUsers = targetedUsersText
                         )
@@ -159,6 +173,8 @@ class AdminLogsActivity : ThemedActivity() {
 
             // Color-code the left accent bar and the badge text based on rawActionType
             val color = when {
+                item.rawActionType.contains("Age Specific Announcement", ignoreCase = true) -> android.graphics.Color.parseColor("#FF007F") // Pink
+                item.rawActionType.contains("Age Specific Notification", ignoreCase = true) -> android.graphics.Color.parseColor("#00C2FF") // Cyan
                 item.rawActionType.contains("Global", ignoreCase = true) -> ThemeHelper.resolveColorAttr(holder.itemView.context, R.attr.textGreenColor) // Green
                 item.rawActionType.contains("Admin", ignoreCase = true) -> ThemeHelper.resolveColorAttr(holder.itemView.context, R.attr.textRedColor) // Red
                 item.rawActionType.contains("User Specific", ignoreCase = true) -> android.graphics.Color.parseColor("#FFA500") // Yellow

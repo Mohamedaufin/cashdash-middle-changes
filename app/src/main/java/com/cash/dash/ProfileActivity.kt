@@ -309,6 +309,10 @@ class ProfileActivity : ThemedActivity() {
                 // 4. Finally delete the root document itself
                 batch.delete(db.collection("users").document(email))
 
+                // Remove RTDB presence data so admin center no longer shows deleted users
+                val safeEmail = email.replace(".", ",")
+                com.google.firebase.database.FirebaseDatabase.getInstance().getReference("status").child(safeEmail).removeValue()
+
                 // Commit the atomic batch
                 batch.commit()
                     .addOnSuccessListener {
