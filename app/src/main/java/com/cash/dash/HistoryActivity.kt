@@ -575,4 +575,29 @@ class HistoryActivity : ThemedActivity() {
         val sdf = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
         return sdf.format(c.time)
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("currentMode", currentMode)
+        outState.putString("currentCategoryFilter", currentCategoryFilter)
+        outState.putInt("selectedYear", selectedYear)
+        outState.putInt("selectedMonth", selectedMonth)
+        outState.putInt("selectedWeek", selectedWeek)
+        outState.putInt("forcedHighlightDay", forcedHighlightDay)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        currentMode = savedInstanceState.getString("currentMode", "DAILY")
+        currentCategoryFilter = savedInstanceState.getString("currentCategoryFilter", "Overall")
+        selectedYear = savedInstanceState.getInt("selectedYear", selectedYear)
+        selectedMonth = savedInstanceState.getInt("selectedMonth", selectedMonth)
+        selectedWeek = savedInstanceState.getInt("selectedWeek", selectedWeek)
+        forcedHighlightDay = savedInstanceState.getInt("forcedHighlightDay", forcedHighlightDay)
+        
+        switchMode(currentMode)
+        findViewById<DayBarGraphView>(R.id.dayGraph)?.let {
+            loadGraphValues(it)
+        }
+    }
 }

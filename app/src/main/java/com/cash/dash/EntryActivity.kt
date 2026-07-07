@@ -8,9 +8,19 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.view.View
+import android.view.MotionEvent
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import androidx.core.text.HtmlCompat
+import android.widget.CheckBox
+import android.widget.LinearLayout
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
+import android.text.TextPaint
+import com.google.android.material.bottomsheet.BottomSheetDialog
 
 import android.app.Dialog
 import android.graphics.drawable.ColorDrawable
@@ -28,15 +38,46 @@ class EntryActivity : ThemedActivity() {
 
     private var isLoginFlow = true
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("isLoginFlow", isLoginFlow)
+        val formVisible = findViewById<View>(R.id.layoutAuthForm).visibility == View.VISIBLE
+        outState.putBoolean("isFormVisible", formVisible)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        val formVisible = savedInstanceState.getBoolean("isFormVisible", false)
+        if (formVisible) {
+            isLoginFlow = savedInstanceState.getBoolean("isLoginFlow", true)
+            val layoutSelection = findViewById<View>(R.id.layoutSelection)
+            val layoutAuthForm = findViewById<View>(R.id.layoutAuthForm)
+            val edtName = findViewById<EditText>(R.id.edtName)
+            val edtPhone = findViewById<EditText>(R.id.edtPhone)
+            val tvDob = findViewById<TextView>(R.id.tvDob)
+            val edtEmail = findViewById<EditText>(R.id.edtEmail)
+            val edtPassword = findViewById<EditText>(R.id.edtPassword)
+            val btnAction = findViewById<Button>(R.id.btnAction)
+            val tvForgot = findViewById<View>(R.id.tvForgotPassword)
+            showAuthForm(isLoginFlow, layoutSelection, layoutAuthForm, edtName, edtPhone, tvDob, edtEmail, edtPassword, btnAction, tvForgot, restore = true)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         CashDashApplication.isDeletingAccount = false
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
-        // 🔥 If already completed once → skip form forever
-        if (!prefs.getBoolean(KEY_FIRST, true)) {
+        // 🔥 If already logged in (isFirstLaunch=false AND Firebase session valid) → skip form forever
+        val alreadyLoggedIn = !prefs.getBoolean(KEY_FIRST, true)
+        val firebaseUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+        if (alreadyLoggedIn && firebaseUser != null) {
             startActivity(Intent(this, MainActivity::class.java))
             finish()
             return
+        }
+        // If isFirstLaunch=false but Firebase session is gone (ghost), clear stale flag and show login
+        if (alreadyLoggedIn && firebaseUser == null) {
+            prefs.edit().putBoolean(KEY_FIRST, true).apply()
         }
         setContentView(R.layout.activity_entry)
 
@@ -53,6 +94,9 @@ class EntryActivity : ThemedActivity() {
         val tvDob = findViewById<TextView>(R.id.tvDob)
         val edtEmail = findViewById<EditText>(R.id.edtEmail)
         val edtPassword = findViewById<EditText>(R.id.edtPassword)
+        val cbTerms = findViewById<CheckBox>(R.id.cbTerms)
+        val tvTerms = findViewById<TextView>(R.id.tvTerms)
+        val layoutTerms = findViewById<LinearLayout>(R.id.layoutTerms)
 
         val btnAction = findViewById<Button>(R.id.btnAction)
         val tvBack = findViewById<TextView>(R.id.tvBackToSelection)
@@ -79,6 +123,8 @@ class EntryActivity : ThemedActivity() {
             showDobPickerDialog(tvDob)
         }
 
+        setupTermsCheckbox(cbTerms, tvTerms, layoutTerms)
+
         btnSelectLogin.setOnClickListener {
             isLoginFlow = true
             showAuthForm(true, layoutSelection, layoutAuthForm, edtName, edtPhone, tvDob, edtEmail, edtPassword, btnAction, tvForgotPassword)
@@ -96,6 +142,7 @@ class EntryActivity : ThemedActivity() {
             layoutSelection.visibility = View.VISIBLE
             layoutAuthForm.visibility = View.GONE
             tvForgotPassword.visibility = View.GONE
+            layoutTerms.visibility = View.GONE
             tvStatus.text = ""
             edtName.text.clear()
             edtPhone.text.clear()
@@ -111,7 +158,7 @@ class EntryActivity : ThemedActivity() {
 
         btnAction.setOnClickListener {
             animateAndStart(btnAction) {
-                handleAuth(isLoginFlow, edtName, edtPhone, edtEmail, edtPassword, btnAction, tvForgotPassword, progressBar, tvStatus, prefs)
+                handleAuth(isLoginFlow, edtName, edtPhone, edtEmail, edtPassword, cbTerms, btnAction, tvForgotPassword, progressBar, tvStatus, prefs)
             }
         }
 
@@ -165,17 +212,19 @@ class EntryActivity : ThemedActivity() {
             .start()
     }
 
-    private fun showAuthForm(isLogin: Boolean, selection: View, form: View, edtName: EditText, edtPhone: EditText, tvDob: TextView, edtEmail: EditText, edtPassword: EditText, btnAction: Button, tvForgot: View) {
+    private fun showAuthForm(isLogin: Boolean, selection: View, form: View, edtName: EditText, edtPhone: EditText, tvDob: TextView, edtEmail: EditText, edtPassword: EditText, btnAction: Button, tvForgot: View, restore: Boolean = false) {
         val autofillManager = getSystemService(AutofillManager::class.java)
 
-        edtName.text.clear()
-        edtPhone.text.clear()
-        edtEmail.text.clear()
-        edtPassword.text.clear()
-        edtName.clearFocus()
-        edtPhone.clearFocus()
-        edtEmail.clearFocus()
-        edtPassword.clearFocus()
+        if (!restore) {
+            edtName.text.clear()
+            edtPhone.text.clear()
+            edtEmail.text.clear()
+            edtPassword.text.clear()
+            edtName.clearFocus()
+            edtPhone.clearFocus()
+            edtEmail.clearFocus()
+            edtPassword.clearFocus()
+        }
 
         val transition = android.transition.AutoTransition()
         transition.duration = 150
@@ -186,6 +235,7 @@ class EntryActivity : ThemedActivity() {
             edtName.visibility = View.GONE
             edtPhone.visibility = View.GONE
             tvDob.visibility = View.GONE
+            findViewById<View>(R.id.layoutTerms).visibility = View.GONE
             btnAction.text = "Login"
             tvForgot.visibility = View.VISIBLE
 
@@ -201,6 +251,7 @@ class EntryActivity : ThemedActivity() {
             edtName.visibility = View.VISIBLE
             edtPhone.visibility = View.VISIBLE
             tvDob.visibility = View.VISIBLE
+            findViewById<View>(R.id.layoutTerms).visibility = View.VISIBLE
             btnAction.text = "Register"
             tvForgot.visibility = View.GONE
 
@@ -237,13 +288,11 @@ class EntryActivity : ThemedActivity() {
     }
 
     private fun applyThemedButtonColors(isLogin: Boolean, btnAction: Button, btnSelectRegister: Button) {
-        val themePrefs = getSharedPreferences("ThemePrefs", MODE_PRIVATE)
-        val currentTheme = themePrefs.getString("current_theme", "Black")
-        val isWhiteTheme = currentTheme == "White"
-
-        if (isWhiteTheme) {
+        if (ThemeHelper.isWhiteTheme(this)) {
             val darkText = Color.parseColor("#1A1A1A")
             btnAction.setTextColor(darkText)
+        } else {
+            btnAction.setTextColor(Color.WHITE)
         }
     }
 
@@ -293,6 +342,7 @@ class EntryActivity : ThemedActivity() {
         edtPhone: EditText,
         edtEmail: EditText,
         edtPassword: EditText,
+        cbTerms: CheckBox,
         btnAction: Button,
         tvForgotPassword: TextView,
         progressBar: ProgressBar,
@@ -304,7 +354,7 @@ class EntryActivity : ThemedActivity() {
         edtPhone.clearFocus()
         edtEmail.clearFocus()
         edtPassword.clearFocus()
-        
+
         val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
         val currentView = currentFocus ?: window.decorView
         imm.hideSoftInputFromWindow(currentView.windowToken, 0)
@@ -326,6 +376,11 @@ class EntryActivity : ThemedActivity() {
 
         if (!isLogin && (name.isEmpty() || phone.isEmpty() || selectedDob.isEmpty())) {
             tvStatus.text = "Please fill in all 5 details"
+            return
+        }
+
+        if (!isLogin && !cbTerms.isChecked) {
+            tvStatus.text = "You must agree to the Terms of Service and Privacy Policy to register"
             return
         }
 
@@ -353,6 +408,7 @@ class EntryActivity : ThemedActivity() {
 
                         if (errorMsg.contains("blocked all requests", ignoreCase = true) || errorMsg.contains("unusual activity", ignoreCase = true)) {
                             errorMsg = "Account temporarily locked by security. Please reset password or wait 15 mins."
+                            resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "Login Failed: $errorMsg", "Login")
                         } else if (failedLoginAttempts >= 5) {
                             isLockedOut = true
                             errorMsg = "Too many failed attempts. Please wait 30 seconds."
@@ -364,11 +420,25 @@ class EntryActivity : ThemedActivity() {
                                     tvStatus.setTextColor(Color.parseColor("#8BF7E6"))
                                 }
                             }, 30000)
+                            resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "Login Failed: $errorMsg", "Login")
+                        } else if (task.exception is com.google.firebase.auth.FirebaseAuthInvalidUserException) {
+                            // The user does not exist in Auth. Check if they were recently deleted.
+                            tvStatus.text = "Checking account status..."
+                            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                .collection("deleted_accounts").document(email).get()
+                                .addOnCompleteListener { dbTask ->
+                                    if (dbTask.isSuccessful && dbTask.result?.exists() == true) {
+                                        // Account was deleted!
+                                        resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "Security Notice: This account was deleted. You must register a new account.", "Login")
+                                    } else {
+                                        errorMsg = "User not found or deleted. Please register."
+                                        resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "Login Failed: $errorMsg", "Login")
+                                    }
+                                }
                         } else {
                             errorMsg = "Incorrect Email or Password. (${5 - failedLoginAttempts} tries left)"
+                            resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "Login Failed: $errorMsg", "Login")
                         }
-
-                        resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "Login Failed: $errorMsg", "Login")
                     }
                 }
         } else {
@@ -378,7 +448,53 @@ class EntryActivity : ThemedActivity() {
                     if (task.isSuccessful) {
                         savePrefsAndContinue(prefs, name, phone, email, pass, isLogin = false, btnAction, tvForgotPassword, progressBar, tvStatus)
                     } else {
-                        resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "Registration Failed: ${task.exception?.message}", "Register")
+                        val exception = task.exception
+                        if (exception is com.google.firebase.auth.FirebaseAuthUserCollisionException) {
+                            // "Email already in use" — could be a zombie account left from a failed ghost wipe
+                            // Try signing in to check if the profile was wiped
+                            tvStatus.text = "Checking account status..."
+                            auth.signInWithEmailAndPassword(email, pass)
+                                .addOnCompleteListener { signInTask ->
+                                    if (signInTask.isSuccessful) {
+                                        // Sign-in worked — check Firestore for a valid profile
+                                        val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                        db.collection("users").document(email)
+                                            .collection("config").document("profile")
+                                            .get()
+                                            .addOnCompleteListener { profileTask ->
+                                                val profileDoc = if (profileTask.isSuccessful) profileTask.result else null
+                                                val status = profileDoc?.getString("account_status") ?: ""
+                                                val isZombie = profileDoc == null || !profileDoc.exists() || status == "admin_deleted"
+
+                                                if (isZombie) {
+                                                    // Zombie account — delete Auth entry and re-register fresh
+                                                    tvStatus.text = "Recovering account..."
+                                                    auth.currentUser?.delete()?.addOnCompleteListener { deleteTask ->
+                                                        auth.signOut()
+                                                        // Retry registration with a clean slate
+                                                        auth.createUserWithEmailAndPassword(email, pass)
+                                                            .addOnCompleteListener { retryTask ->
+                                                                if (retryTask.isSuccessful) {
+                                                                    savePrefsAndContinue(prefs, name, phone, email, pass, isLogin = false, btnAction, tvForgotPassword, progressBar, tvStatus)
+                                                                } else {
+                                                                    resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "Registration Failed: ${retryTask.exception?.message}", "Register")
+                                                                }
+                                                            }
+                                                    }
+                                                } else {
+                                                    // Real collision — someone else owns this email
+                                                    auth.signOut() // Important: sign out of the other user's account!
+                                                    resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "Email already in use. Please use a different email or login.", "Register")
+                                                }
+                                            }
+                                    } else {
+                                        // Wrong password — genuine collision, not a zombie
+                                        resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "Email already in use. Please use a different email or login.", "Register")
+                                    }
+                                }
+                        } else {
+                            resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "Registration Failed: ${exception?.message}", "Register")
+                        }
                     }
                 }
         }
@@ -436,7 +552,7 @@ class EntryActivity : ThemedActivity() {
             editor.putString(KEY_PHONE, phone)
             editor.putString("user_dob", selectedDob)
             editor.putLong("account_creation_time", System.currentTimeMillis())
-            
+
             val themePrefs = getSharedPreferences("ThemePrefs", MODE_PRIVATE)
             themePrefs.edit().putString("current_theme", "System").apply()
         }
@@ -450,11 +566,43 @@ class EntryActivity : ThemedActivity() {
         if (isLogin) {
             FirestoreSyncManager.pullDataFromCloud(this) { success, _, isAdminDeleted, profileData ->
                 if (success && isAdminDeleted) {
-                    CashDashApplication.setOfflineImmediate(this@EntryActivity)
-                    auth.signOut()
-                    prefs.edit().clear().apply()
-                    showAdminDeletionDialog()
-                    resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "", "Login")
+                    val user = auth.currentUser
+                    val email = user?.email
+                    if (user != null && email != null) {
+                        CashDashApplication.setOfflineImmediate(this@EntryActivity)
+                        val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                        val batch = db.batch()
+
+                        val docs = listOf("profile", "wallet", "categories", "history", "analytics", "history_scanner", "undo_details", "scanner_metadata", "finminder", "upi_allocations")
+                        docs.forEach { docName ->
+                            batch.delete(db.collection("users").document(email).collection("config").document(docName))
+                        }
+
+                        db.collection("users").document(email).collection("notifications").get().addOnCompleteListener { task ->
+                            if (task.isSuccessful && task.result != null) {
+                                for (doc in task.result.documents) {
+                                    batch.delete(doc.reference)
+                                }
+                            }
+                            batch.delete(db.collection("users").document(email))
+                            batch.delete(db.collection("deleted_accounts").document(email))
+
+                            val safeEmail = email.replace(".", ",")
+                            com.google.firebase.database.FirebaseDatabase.getInstance().getReference("status").child(safeEmail).removeValue()
+
+                            batch.commit().addOnCompleteListener {
+                                user.delete().addOnCompleteListener {
+                                    auth.signOut()
+                                    prefs.edit().clear().apply()
+                                    resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "Login Failed: Incorrect Email or Password.", "Login")
+                                }
+                            }
+                        }
+                    } else {
+                        auth.signOut()
+                        prefs.edit().clear().apply()
+                        resetUIAfterFailure(btnAction, tvForgotPassword, progressBar, tvStatus, "Login Failed: Incorrect Email or Password.", "Login")
+                    }
                 } else if (success) {
                     // Update local prefs with cloud data (if available) and mark as NOT first launch
                     prefs.edit()
@@ -471,10 +619,35 @@ class EntryActivity : ThemedActivity() {
                 }
             }
         } else {
-            FirestoreSyncManager.pushAllDataToCloud(this)
-            CashDashApplication.setupRealtimePresence(this@EntryActivity)
-            startActivity(Intent(this, SplashActivity::class.java))
-            finish()
+            // REGISTRATION PATH: New user - no cloud data to pull yet.
+            // Directly write the profile to Firestore and proceed.
+            val user = auth.currentUser
+            val regEmail = user?.email ?: email
+            val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+
+            val profileData = mapOf(
+                "name" to name,
+                "phone" to phone,
+                "email" to regEmail,
+                "dob" to selectedDob,
+                "setup_complete" to false, // wallet not set up yet
+                "account_status" to "active",
+                "wallet_popup_shown" to false,
+                "account_creation_time" to finalPrefs.getLong("account_creation_time", System.currentTimeMillis()),
+                "last_local_modification" to System.currentTimeMillis()
+            )
+
+            db.collection("users").document(regEmail).collection("config").document("profile")
+                .set(profileData)
+                .addOnCompleteListener { task ->
+                    // Mark sync as complete so pushAllDataToCloud is not blocked
+                    FirestoreSyncManager.isInitialSyncCompleted = true
+
+                    prefs.edit().putBoolean(KEY_FIRST, false).commit()
+                    CashDashApplication.setupRealtimePresence(this@EntryActivity)
+                    startActivity(Intent(this, SplashActivity::class.java))
+                    finish()
+                }
         }
     }
 
@@ -576,5 +749,97 @@ class EntryActivity : ThemedActivity() {
         }
 
         dialog.show()
+    }
+
+    private fun setupTermsCheckbox(cbTerms: CheckBox, tvTerms: TextView, layoutTerms: LinearLayout) {
+        val isWhiteTheme = ThemeHelper.isWhiteTheme(this)
+
+        val checkboxColor = if (isWhiteTheme) {
+            Color.parseColor("#1A1A1A") // Black background for white theme
+        } else {
+            Color.WHITE // White background for black theme
+        }
+        cbTerms.buttonTintList = android.content.res.ColorStateList.valueOf(checkboxColor)
+
+        val primaryColor = ThemeHelper.resolveColorAttr(this, androidx.appcompat.R.attr.colorPrimary)
+        val linkColor = if (isWhiteTheme) {
+            Color.parseColor("#1A73E8") // Blue link color for white theme
+        } else {
+            primaryColor
+        }
+
+        val text = "I agree to the Terms of Service and Privacy Policy"
+        val spannable = SpannableString(text)
+
+        val termsClickable = object : ClickableSpan() {
+            override fun onClick(widget: View) {
+                val termsText = applicationContext.assets.open("terms_of_service.html").bufferedReader().use { it.readText() }
+                showLegalBottomSheet("Terms of Service", termsText)
+            }
+            override fun updateDrawState(ds: TextPaint) {
+                super.updateDrawState(ds)
+                ds.color = linkColor
+                ds.isUnderlineText = true
+                ds.isFakeBoldText = true
+            }
+        }
+
+        val privacyClickable = object : ClickableSpan() {
+            override fun onClick(widget: View) {
+                val privacyText = applicationContext.assets.open("privacy_policy.html").bufferedReader().use { it.readText() }
+                showLegalBottomSheet("Privacy Policy", privacyText)
+            }
+            override fun updateDrawState(ds: TextPaint) {
+                super.updateDrawState(ds)
+                ds.color = linkColor
+                ds.isUnderlineText = true
+                ds.isFakeBoldText = true
+            }
+        }
+
+        val termsStart = text.indexOf("Terms of Service")
+        spannable.setSpan(termsClickable, termsStart, termsStart + "Terms of Service".length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        val privacyStart = text.indexOf("Privacy Policy")
+        spannable.setSpan(privacyClickable, privacyStart, privacyStart + "Privacy Policy".length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        tvTerms.text = spannable
+        tvTerms.highlightColor = Color.TRANSPARENT
+        tvTerms.movementMethod = android.text.method.LinkMovementMethod.getInstance()
+    }
+
+    private fun showLegalBottomSheet(title: String, content: String) {
+        val bottomSheetDialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_legal, null)
+        bottomSheetDialog.setContentView(view)
+
+        (view.parent as? View)?.setBackgroundColor(Color.TRANSPARENT)
+        
+        val theme = ThemeHelper.getCurrentTheme(this)
+        val bgColor = when (theme) {
+            "White" -> Color.WHITE
+            "Blue" -> Color.parseColor("#010A43") // Matches center color of bg_main_gradient_blue
+            else -> Color.parseColor("#1A1A1A")
+        }
+        val shape = android.graphics.drawable.GradientDrawable().apply {
+            shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+            setColor(bgColor)
+            val r = 26f * resources.displayMetrics.density
+            cornerRadii = floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f)
+        }
+        view.background = shape
+
+        val tvTitle = view.findViewById<TextView>(R.id.tvLegalTitle)
+        val tvContent = view.findViewById<TextView>(R.id.tvLegalContent)
+        val btnClose = view.findViewById<Button>(R.id.btnLegalClose)
+
+        tvTitle.text = title
+        tvContent.text = HtmlCompat.fromHtml(content, HtmlCompat.FROM_HTML_MODE_COMPACT)
+
+        btnClose.setOnClickListener {
+            bottomSheetDialog.dismiss()
+        }
+
+        bottomSheetDialog.show()
     }
 }

@@ -13,12 +13,25 @@
         android:padding="16dp">
 
         <ImageView
+            android:id="@+id/ivLogo"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:src="@drawable/ic_logo_shield"
             android:scaleType="fitCenter"
             android:contentDescription="Open Tracker" />
+
+        <TextView
+            android:id="@+id/tvLoggedOutText"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="Login/Register\nto continue"
+            android:textColor="#FF0000"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:background="#DDF3F4F6"
+            android:visibility="gone" />
 
     </FrameLayout>
 

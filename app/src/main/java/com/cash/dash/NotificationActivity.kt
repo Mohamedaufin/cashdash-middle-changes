@@ -217,6 +217,20 @@ class NotificationActivity : ThemedActivity() {
         notificationListener?.remove()
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("currentFilter", currentFilter)
+        outState.putString("activePickerQueryId", activePickerQueryId)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        currentFilter = savedInstanceState.getString("currentFilter", "all")
+        activePickerQueryId = savedInstanceState.getString("activePickerQueryId", activePickerQueryId)
+        updateChipAppearance()
+        applyFilter()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_notification)
@@ -610,7 +624,7 @@ class NotificationActivity : ThemedActivity() {
                     .replace("User Reply \\(\\d+\\):".toRegex(), userFormat)
                     .replace("User:".toRegex(), userFormat)
                     .replace("$userName:".toRegex(), userFormat)
-                    .replace("Team Cashdash:".toRegex(), "<font color='$colorTeam'><b>Team Cashdash:</b></font>")
+                    .replace("Team CashDash:".toRegex(), "<font color='$colorTeam'><b>Team CashDash:</b></font>")
                     .replace("\n", "<br>")
             }
 
@@ -913,11 +927,11 @@ class NotificationActivity : ThemedActivity() {
                             holder.layoutTimelineContainer.addView(attachmentLayout)
                         }
                     } else {
-                        val teamTag = "Team Cashdash:"
+                        val teamTagPattern = "(?i)^Team Cashdash:".toRegex()
                         val formattedSpanned = when {
-                            cleanText.startsWith(teamTag) -> {
-                                val content = cleanText.removePrefix(teamTag).trim()
-                                val html = "<font color='$colorTeam'><b>Team Cashdash:</b></font> ${content.replace("\n", "<br>")}"
+                            teamTagPattern.containsMatchIn(cleanText) -> {
+                                val content = cleanText.replaceFirst(teamTagPattern, "").trim()
+                                val html = "<font color='$colorTeam'><b>Team CashDash:</b></font> ${content.replace("\n", "<br>")}"
                                 android.text.Html.fromHtml(html, android.text.Html.FROM_HTML_MODE_LEGACY)
                             }
                             cleanText.startsWith("User:") -> {
@@ -935,8 +949,8 @@ class NotificationActivity : ThemedActivity() {
                                 if (firstColon > 0 && firstColon < 30) {
                                     val potentialName = cleanText.substring(0, firstColon)
                                     val content = cleanText.substring(firstColon + 1).trim()
-                                    val html = if (potentialName == "Team Cashdash") {
-                                        "<font color='$colorTeam'><b>Team Cashdash:</b></font> ${content.replace("\n", "<br>")}"
+                                    val html = if (potentialName.equals("Team Cashdash", ignoreCase = true) || potentialName.equals("Team CashDash", ignoreCase = true)) {
+                                        "<font color='$colorTeam'><b>Team CashDash:</b></font> ${content.replace("\n", "<br>")}"
                                     } else {
                                         "<font color='#0047AB'><b>$potentialName:</b></font> ${content.replace("\n", "<br>")}"
                                     }
@@ -977,7 +991,7 @@ class NotificationActivity : ThemedActivity() {
                         tv.setShadowLayer(0f, 0f, 0f, android.graphics.Color.TRANSPARENT)
                     }
 
-                    val replyHtml = "<font color='$colorTeam'><b>Team Cashdash:</b></font> ${cleanReply.replace("\n", "<br>")}"
+                    val replyHtml = "<font color='$colorTeam'><b>Team CashDash:</b></font> ${cleanReply.replace("\n", "<br>")}"
                     tv.text = android.text.Html.fromHtml(replyHtml, android.text.Html.FROM_HTML_MODE_LEGACY)
                     holder.layoutTimelineContainer.addView(tv)
 
@@ -1326,7 +1340,7 @@ class NotificationActivity : ThemedActivity() {
                 val currentHistory = model.originalQuery
 
                 val updatedQuery = if (lastTeamReply.isNotEmpty() && lastTeamReply != "Waiting for reply...") {
-                    "$currentHistory\n\nTeam Cashdash: $lastTeamReply\n\n$userName: $textWithAttachments"
+                    "$currentHistory\n\nTeam CashDash: $lastTeamReply\n\n$userName: $textWithAttachments"
                 } else {
                     "$currentHistory\n\n$userName: $textWithAttachments"
                 }

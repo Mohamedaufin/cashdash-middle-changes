@@ -91,24 +91,6 @@ class MenuActivity : ThemedActivity() {
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
 
-        val user = FirebaseAuth.getInstance().currentUser
-        val email = user?.email
-        val adminEmails = listOf("mohamedaufin64@gmail.com", "arunbhalaji200904@gmail.com")
-        val isAdmin = email != null && adminEmails.contains(email.lowercase())
-
-        if (isAdmin) {
-            layoutProfileHeader.isHapticFeedbackEnabled = true
-            layoutProfileHeader.setOnLongClickListener {
-                startActivity(Intent(this, AdminActivity::class.java))
-                overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
-                true
-            }
-        } else {
-            layoutProfileHeader.isHapticFeedbackEnabled = false
-            layoutProfileHeader.isLongClickable = false
-            layoutProfileHeader.setOnLongClickListener(null)
-        }
-
         btnProfileOptions.setOnClickListener {
             startActivity(Intent(this, ProfileActivity::class.java))
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)

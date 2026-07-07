@@ -254,6 +254,23 @@ class FinminderActivity : ThemedActivity() {
             ToastHelper.showToast(this, "Widget pinning not supported by your launcher")
         }
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("currentTab", currentTab)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        currentTab = savedInstanceState.getString("currentTab", "CASH_OUT") ?: "CASH_OUT"
+        val toggleMode = findViewById<com.google.android.material.button.MaterialButtonToggleGroup>(R.id.toggleMode)
+        if (currentTab == "CASH_OUT") {
+            toggleMode.check(R.id.btnCashOuts)
+        } else {
+            toggleMode.check(R.id.btnCashIns)
+        }
+        loadData()
+    }
 }
 
 class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : RecyclerView.Adapter<FinminderAdapter.ViewHolder>() {

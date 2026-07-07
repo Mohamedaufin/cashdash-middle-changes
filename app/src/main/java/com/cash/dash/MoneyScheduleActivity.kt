@@ -447,4 +447,20 @@ class MoneyScheduleActivity : ThemedActivity() {
         dialog.show()
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putLong("selectedDateMillis", selectedDateMillis)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        selectedDateMillis = savedInstanceState.getLong("selectedDateMillis", -1)
+        if (selectedDateMillis > 0) {
+            val calendarView = findViewById<CalendarView>(R.id.calendarView)
+            calendarView.date = selectedDateMillis
+            val rgFrequency = findViewById<RadioGroup>(R.id.rgFrequency)
+            updateCyclePreview(rgFrequency)
+        }
+    }
+
 }

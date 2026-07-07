@@ -105,4 +105,34 @@ class StatementActivity : ThemedActivity() {
         rvTransactions.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
         rvTransactions.adapter = TransactionAdapter(statementList, showTimestamp = true)
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putLong("startMillis", startMillis)
+        outState.putLong("endMillis", endMillis)
+        outState.putString("categoryFilter", categoryFilter)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        startMillis = savedInstanceState.getLong("startMillis", startMillis)
+        endMillis = savedInstanceState.getLong("endMillis", endMillis)
+        categoryFilter = savedInstanceState.getString("categoryFilter", "Overall")
+        
+        setupUI()
+        lifecycleScope.launch(Dispatchers.IO) {
+            val breakdown = HistoryDataManager.getCategoryBreakdownForRange(
+                this@StatementActivity, startMillis, endMillis, categoryFilter
+            )
+            val statementList = breakdown.transactions.sortedBy { entry ->
+                val p = entry.rawEntry.split("|")
+                if (p.size >= 2) p[1].toLongOrNull() ?: 0L else 0L
+            }
+            val totalSpent = statementList.sumOf { it.amount.toDouble() }.toFloat()
+
+            withContext(Dispatchers.Main) {
+                updateUI(statementList, totalSpent)
+            }
+        }
+    }
 }

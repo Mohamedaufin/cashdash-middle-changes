@@ -93,4 +93,17 @@ class SetLimitActivity : ThemedActivity() {
         next.setOnClickListener { saveLimitAndFinish() }
         back.setOnClickListener { finish() }
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("enteredLimit", input.text.toString())
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        val savedLimit = savedInstanceState.getString("enteredLimit", "")
+        if (!savedLimit.isNullOrEmpty()) {
+            input.setText(savedLimit)
+        }
+    }
 }

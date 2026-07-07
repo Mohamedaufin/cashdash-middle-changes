@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.view.View
 import android.widget.RemoteViews
+import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -69,7 +70,15 @@ class Finminder : AppWidgetProvider() {
                 }
             }
 
-            if (todayItems.isEmpty()) {
+            val firebaseUser = FirebaseAuth.getInstance().currentUser
+
+            if (firebaseUser == null) {
+                views.setViewVisibility(R.id.tvEmptyState, View.VISIBLE)
+                views.setViewVisibility(R.id.layoutContent, View.GONE)
+                views.setViewVisibility(R.id.btnPrev, View.GONE)
+                views.setViewVisibility(R.id.btnNext, View.GONE)
+                views.setTextViewText(R.id.tvEmptyState, "Login/Register\nto continue")
+            } else if (todayItems.isEmpty()) {
                 views.setViewVisibility(R.id.tvEmptyState, View.VISIBLE)
                 views.setViewVisibility(R.id.layoutContent, View.GONE)
                 views.setViewVisibility(R.id.btnPrev, View.GONE)
@@ -137,9 +146,10 @@ class Finminder : AppWidgetProvider() {
             views.setImageViewResource(R.id.btnNext, arrowRes)
             views.setImageViewResource(R.id.btnPrev, arrowRes)
 
-            // Click to open FinminderActivity
-            val rootIntent = Intent(context, FinminderActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            // Click to open FinminderActivity or Toast if logged out
+            val rootIntent = Intent(context, WidgetLaunchActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                putExtra("WIDGET_TYPE", "FinminderList")
             }
             val rootPending = PendingIntent.getActivity(context, widgetId, rootIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
             views.setOnClickPendingIntent(R.id.walletWidgetRoot, rootPending)

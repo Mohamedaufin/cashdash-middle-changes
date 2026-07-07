@@ -80,7 +80,7 @@
         </activity>
 
         <activity android:configChanges="uiMode"
-            android:name=".AgeSpecificPushActivity"
+            android:name=".AdminMessagingActivity"
             
             android:exported="false" />
 

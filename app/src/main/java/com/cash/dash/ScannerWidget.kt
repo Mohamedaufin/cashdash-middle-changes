@@ -18,12 +18,13 @@ class ScannerWidget : AppWidgetProvider() {
     private fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
         val views = RemoteViews(context.packageName, R.layout.layout_scanner_widget)
         
-        // Intent to launch ScannerActivity
-        val intent = Intent(context, ScannerActivity::class.java).apply {
+        // Intent to route through WidgetLaunchActivity for login check
+        val intent = Intent(context, WidgetLaunchActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("WIDGET_TYPE", "Scanner")
         }
         val pendingIntent = PendingIntent.getActivity(
-            context, 0, intent,
+            context, appWidgetId, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         

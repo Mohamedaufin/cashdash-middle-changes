@@ -171,36 +171,39 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
                             "last_changed" to com.google.firebase.database.ServerValue.TIMESTAMP,
                             "last_active_str" to lastActiveStr
                         )
-                        rtdbStatusRef.setValue(onlineData)
+                        // After RTDB write succeeds, read last_changed from RTDB and mirror to Firestore activeDates
+                        rtdbStatusRef.setValue(onlineData).addOnSuccessListener {
+                            rtdbStatusRef.get().addOnSuccessListener { rtdbSnap ->
+                                val lastChangedMs = rtdbSnap.child("last_changed").getValue(Long::class.java)
+                                    ?: System.currentTimeMillis()
+                                val istFormat = java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.ENGLISH).apply {
+                                    timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
+                                }
+                                val activeDateFromRtdb = istFormat.format(java.util.Date(lastChangedMs))
+
+                                // Write the RTDB-derived date to Firestore
+                                val appVersion = try {
+                                    context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
+                                } catch (e: Exception) { "unknown" }
+                                val name = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).getString("user_name", "User") ?: "User"
+
+                                val firestoreUpdates = hashMapOf<String, Any>(
+                                    "appVersion" to appVersion,
+                                    "name" to name,
+                                    "activeDates" to com.google.firebase.firestore.FieldValue.arrayUnion(activeDateFromRtdb),
+                                    "status" to com.google.firebase.firestore.FieldValue.delete(),
+                                    "lastActiveTime" to com.google.firebase.firestore.FieldValue.delete()
+                                )
+                                val mergeOptions = com.google.firebase.firestore.SetOptions.merge()
+                                db.collection("users").document(email).set(firestoreUpdates, mergeOptions).addOnFailureListener { }
+                                db.collection("users").document(email).collection("config").document("profile").set(firestoreUpdates, mergeOptions).addOnFailureListener { }
+                            }
+                        }
                     }
                 }
                 override fun onCancelled(error: com.google.firebase.database.DatabaseError) {}
             }
             connectedRef.addValueEventListener(presenceListener!!)
-
-            // Also immediately sync to Firestore directly as a fallback
-            val appVersion = try {
-                context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
-            } catch (e: Exception) { "unknown" }
-
-            val todayStr = java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.ENGLISH).apply {
-                timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
-            }.format(java.util.Date())
-            val name = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).getString("user_name", "User") ?: "User"
-
-            val sdf = java.text.SimpleDateFormat("dd/MM/yyyy, h:mm a", java.util.Locale.ENGLISH)
-            sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
-            val lastActive = sdf.format(java.util.Date())
-            context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).edit().putString("lastActiveTime", lastActive).apply()
-
-            val updates = hashMapOf<String, Any>(
-                "appVersion" to appVersion,
-                "name" to name,
-                "activeDates" to com.google.firebase.firestore.FieldValue.arrayUnion(todayStr)
-            )
-            val mergeOptions = com.google.firebase.firestore.SetOptions.merge()
-            db.collection("users").document(email).set(updates, mergeOptions).addOnFailureListener { }
-            db.collection("users").document(email).collection("config").document("profile").set(updates, mergeOptions).addOnFailureListener { }
         }
 
         fun setOfflineImmediate(context: Context) {

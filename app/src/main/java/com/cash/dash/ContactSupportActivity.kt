@@ -75,6 +75,17 @@ class ContactSupportActivity : ThemedActivity() {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("isWaitingForUploads", isWaitingForUploads)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        isWaitingForUploads = savedInstanceState.getBoolean("isWaitingForUploads", isWaitingForUploads)
+        updateSubmitButton()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_contact_support)

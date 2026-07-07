@@ -207,4 +207,16 @@ class CategoryAnalysisActivity : ThemedActivity() {
         }
         return labels
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("categoryName", categoryName)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        categoryName = savedInstanceState.getString("categoryName", "Unknown")
+        tvCategoryName.text = categoryName
+        refreshUI()
+    }
 }

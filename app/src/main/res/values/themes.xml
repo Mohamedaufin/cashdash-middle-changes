@@ -122,6 +122,7 @@
         <item name="glass3dRedBackground">@drawable/bg_glass_3d_red</item>
         <item name="rigorCalendarBackground">@drawable/bg_glass_panel_blue</item>
         <item name="calendarTheme">@style/CalendarThemeDark</item>
+        <item name="colorSurface">#000520</item>
         <item name="textPrimaryColor">@color/text_primary</item>
         <item name="textSecondaryColor">#A0AAB2</item>
         <item name="textMutedColor">@color/text_muted</item>

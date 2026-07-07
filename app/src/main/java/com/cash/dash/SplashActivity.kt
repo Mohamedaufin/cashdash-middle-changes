@@ -23,49 +23,40 @@ class SplashActivity : ThemedActivity() {
 
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         val isFirstLaunch = prefs.getBoolean(KEY_FIRST, true)
-        if (isFirstLaunch) {
-            // New user -> Go straight to Entry form
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
+
+        if (isFirstLaunch || firebaseUser == null) {
+            // Not logged in -> Go straight to Entry form
             startActivity(Intent(this, EntryActivity::class.java))
             finish()
+            return
+        }
+
+        // User is logged in. Silent background pull - do NOT block navigation on result.
+        FirestoreSyncManager.pullDataFromCloud(this) { _, _, _, _ -> }
+
+        val walletPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
+        val initialBalance = walletPrefs.getInt("initial_balance", -1)
+
+        if (initialBalance >= 0) {
+            // Established user with wallet set up -> Go directly to MainActivity (Home)
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
         } else {
-            val walletPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
-            val initialBalance = walletPrefs.getInt("initial_balance", -1)
+            // Freshly registered user (wallet not set up yet) -> Show animated splash
+            val userName = prefs.getString(KEY_NAME, "User") ?: "User"
+            val tvUsername = findViewById<TextView>(R.id.tvUsernameSplash)
+            tvUsername.text = userName
 
-            // 🔄 Silent background pull for established users:
-            // Runs every launch so that any newly-added prefs (e.g. UpiAllocationPrefs)
-            // or data from another device/reinstall are always up-to-date locally.
-            val firebaseUser = FirebaseAuth.getInstance().currentUser
-            if (firebaseUser != null) {
-                FirestoreSyncManager.pullDataFromCloud(this) { _, _, _, _ ->
-                    // No-op: we don't block navigation on this result.
-                    // Data lands in local SharedPreferences silently in the background.
-                }
-            }
-
-            if (initialBalance > 0) {
-                // Established user -> Go directly to MainActivity (Home)
-                startActivity(Intent(this, MainActivity::class.java))
-                finish()
-            } else {
-                // New user (after entry screen) -> Show Splash Transition
-                setContentView(R.layout.activity_splash)
-
-                val userName = prefs.getString(KEY_NAME, "User") ?: "User"
-                val tvUsername = findViewById<TextView>(R.id.tvUsernameSplash)
-                tvUsername.text = userName
-
-                Handler(Looper.getMainLooper()).postDelayed({
-                    val intent = Intent(this@SplashActivity, MainActivity::class.java)
-                    intent.putExtra("from_splash", true)
-                    val options = ActivityOptions.makeSceneTransitionAnimation(
-                        this@SplashActivity, tvUsername, "greeting_text_transition"
-                    )
-                    startActivity(intent, options.toBundle())
-
-                    // Finish SplashActivity after a short delay so the transition finishes
-                    Handler(Looper.getMainLooper()).postDelayed({ finish() }, 1000)
-                }, 1000) // Hold splash briefly
-            }
+            Handler(Looper.getMainLooper()).postDelayed({
+                val intent = Intent(this@SplashActivity, MainActivity::class.java)
+                intent.putExtra("from_splash", true)
+                val options = ActivityOptions.makeSceneTransitionAnimation(
+                    this@SplashActivity, tvUsername, "greeting_text_transition"
+                )
+                startActivity(intent, options.toBundle())
+                Handler(Looper.getMainLooper()).postDelayed({ finish() }, 1000)
+            }, 1000)
         }
     }
 }
