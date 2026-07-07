@@ -189,4 +189,20 @@ class StatementSelectionActivity : ThemedActivity() {
             val container: View = v.findViewById(R.id.cardContainer)
         }
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("selectedCategory", selectedCategory)
+        outState.putLong("startCal", startCal.timeInMillis)
+        outState.putLong("endCal", endCal.timeInMillis)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        selectedCategory = savedInstanceState.getString("selectedCategory", "Overall")
+        startCal.timeInMillis = savedInstanceState.getLong("startCal", startCal.timeInMillis)
+        endCal.timeInMillis = savedInstanceState.getLong("endCal", endCal.timeInMillis)
+        updateDateLabels()
+        setupAllocationsGrid()
+    }
 }

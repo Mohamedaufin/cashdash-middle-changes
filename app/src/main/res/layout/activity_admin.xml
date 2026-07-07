@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     android:background="?attr/mainBackground">
 
     <!-- Header -->
@@ -68,179 +69,28 @@
 
 
             <TextView
+                android:id="@+id/btnGoToAnnouncements"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="65dp"
                 android:text="Announcements"
-                android:textSize="@dimen/text_title"
+                android:gravity="center"
                 android:textColor="?attr/textPrimaryColor"
+                android:background="?attr/roundBackground"
                 android:textStyle="bold"
-                android:layout_marginBottom="10dp"/>
+                android:textSize="16sp"
+                android:layout_marginBottom="12dp"/>
 
             <TextView
+                android:id="@+id/btnGoToPushNotifications"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Publishing an announcement here will immediately push it to all users' Notification feeds."
-                android:textSize="@dimen/text_body"
-                android:textColor="?attr/textMutedColor"
-                android:layout_marginBottom="25dp"/>
-
-
-            <EditText
-                android:id="@+id/edtAnnouncementTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="?attr/inputBackground"
-                android:padding="15dp"
-                android:hint="Announcement Title"
-                android:textColorHint="?attr/textMutedColor"
-                android:textColor="?attr/textPrimaryColor"
-                android:textSize="@dimen/text_body"
-                android:layout_marginBottom="15dp"
-                android:inputType="textCapSentences"
-                android:singleLine="true"/>
-
-            <EditText
-                android:id="@+id/edtAnnouncementBody"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="?attr/inputBackground"
-                android:padding="15dp"
-                android:hint="Write your announcement content here..."
-                android:textColorHint="?attr/textMutedColor"
-                android:textColor="?attr/textPrimaryColor"
-                android:textSize="@dimen/text_body"
-                android:layout_marginBottom="25dp"
-                android:gravity="top|start"
-                android:inputType="textCapSentences|textMultiLine"
-                android:minLines="5"/>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="10dp">
-
-                <Button
-                    android:id="@+id/btnPublishGlobalAnnouncement"
-                    android:layout_width="0dp"
-                    android:layout_height="55dp"
-                    android:layout_weight="1"
-                    android:text="Send Globally"
-                    android:textColor="@android:color/white"
-                    android:backgroundTint="#008000"
-                    android:textStyle="bold"
-                    android:textSize="14sp"
-                    android:layout_marginEnd="10dp"/>
-
-                <Button
-                    android:id="@+id/btnPublishAdminAnnouncement"
-                    android:layout_width="0dp"
-                    android:layout_height="55dp"
-                    android:layout_weight="1"
-                    android:text="Send to Admin"
-                    android:textColor="@android:color/white"
-                    android:backgroundTint="#FF4D4D"
-                    android:textStyle="bold"
-                    android:textSize="14sp"/>
-            </LinearLayout>
-
-            <Button
-                android:id="@+id/btnPublishUserAnnouncement"
-                android:layout_width="match_parent"
-                android:layout_height="55dp"
-                android:text="Send User Specific Announcements"
-                android:textColor="@android:color/white"
-                android:backgroundTint="#FFA500"
-                android:textStyle="bold"
-                android:textSize="14sp"
-                android:layout_marginBottom="40dp"/>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="65dp"
                 android:text="Push Notifications"
-                android:textSize="@dimen/text_title"
+                android:gravity="center"
                 android:textColor="?attr/textPrimaryColor"
+                android:background="?attr/roundBackground"
                 android:textStyle="bold"
-                android:layout_marginBottom="10dp"/>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Sending a push notification will instantly ring all users' devices with a custom popup alert."
-                android:textSize="@dimen/text_body"
-                android:textColor="?attr/textMutedColor"
-                android:layout_marginBottom="25dp"/>
-
-            <EditText
-                android:id="@+id/edtPushTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="?attr/inputBackground"
-                android:padding="15dp"
-                android:hint="Notification Title"
-                android:textColorHint="?attr/textMutedColor"
-                android:textColor="?attr/textPrimaryColor"
-                android:textSize="@dimen/text_body"
-                android:layout_marginBottom="15dp"
-                android:inputType="textCapSentences"
-                android:singleLine="true"/>
-
-            <EditText
-                android:id="@+id/edtPushBody"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="?attr/inputBackground"
-                android:padding="15dp"
-                android:hint="Write your notification content here..."
-                android:textColorHint="?attr/textMutedColor"
-                android:textColor="?attr/textPrimaryColor"
-                android:textSize="@dimen/text_body"
-                android:layout_marginBottom="25dp"
-                android:gravity="top|start"
-                android:inputType="textCapSentences|textMultiLine"
-                android:minLines="3"/>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="12dp">
-
-                <Button
-                    android:id="@+id/btnSendGlobalPush"
-                    android:layout_width="0dp"
-                    android:layout_height="55dp"
-                    android:layout_weight="1"
-                    android:text="Send Globally"
-                    android:textColor="@android:color/white"
-                    android:backgroundTint="#008000"
-                    android:textStyle="bold"
-                    android:textSize="14sp"
-                    android:layout_marginEnd="10dp"/>
-
-                <Button
-                    android:id="@+id/btnSendAdminPush"
-                    android:layout_width="0dp"
-                    android:layout_height="55dp"
-                    android:layout_weight="1"
-                    android:text="Send to Admin"
-                    android:textColor="@android:color/white"
-                    android:backgroundTint="#FF4D4D"
-                    android:textStyle="bold"
-                    android:textSize="14sp"/>
-            </LinearLayout>
-
-            <Button
-                android:id="@+id/btnSendUserPush"
-                android:layout_width="match_parent"
-                android:layout_height="55dp"
-                android:text="Send User Specific Notifications"
-                android:textColor="@android:color/white"
-                android:backgroundTint="#FFA500"
-                android:textStyle="bold"
-                android:textSize="14sp"
-                android:layout_marginBottom="25dp"/>
+                android:textSize="16sp"
+                android:layout_marginBottom="30dp"/>
 
             <TextView
                 android:layout_width="match_parent"
@@ -286,27 +136,7 @@
                 android:background="?attr/inputBackground"
                 android:layout_marginBottom="16dp"/>
 
-            <Button
-                android:id="@+id/btnAgeSpecificAnnouncement"
-                android:layout_width="match_parent"
-                android:layout_height="55dp"
-                android:text="Age Specific Announcement"
-                android:textColor="@android:color/white"
-                android:backgroundTint="#FF007F"
-                android:textStyle="bold"
-                android:textSize="14sp"
-                android:layout_marginBottom="12dp"/>
 
-            <Button
-                android:id="@+id/btnAgeSpecificNotification"
-                android:layout_width="match_parent"
-                android:layout_height="55dp"
-                android:text="Age Specific Notification"
-                android:textColor="@android:color/white"
-                android:backgroundTint="#00C2FF"
-                android:textStyle="bold"
-                android:textSize="14sp"
-                android:layout_marginBottom="24dp"/>
 
             <!-- Divider -->
             <View

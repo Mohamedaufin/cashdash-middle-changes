@@ -91,6 +91,20 @@ class HelpActivity : ThemedActivity() {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("isWaitingForUploads", isWaitingForUploads)
+        outState.putBoolean("hasActiveDialog", activeDialog != null)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        isWaitingForUploads = savedInstanceState.getBoolean("isWaitingForUploads", isWaitingForUploads)
+        if (savedInstanceState.getBoolean("hasActiveDialog", false)) {
+            showContactDialog()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_help)

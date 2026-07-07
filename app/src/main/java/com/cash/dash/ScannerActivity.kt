@@ -127,6 +127,26 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("scannedOnce", scannedOnce)
+        outState.putBoolean("processing", processing)
+        outState.putBoolean("proceedingToPay", proceedingToPay)
+        outState.putInt("pendingAmount", pendingAmount)
+        outState.putString("pendingCategory", pendingCategory)
+        outState.putString("pendingTitle", pendingTitle)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        scannedOnce = savedInstanceState.getBoolean("scannedOnce", scannedOnce)
+        processing = savedInstanceState.getBoolean("processing", processing)
+        proceedingToPay = savedInstanceState.getBoolean("proceedingToPay", proceedingToPay)
+        pendingAmount = savedInstanceState.getInt("pendingAmount", pendingAmount)
+        pendingCategory = savedInstanceState.getString("pendingCategory", pendingCategory)
+        pendingTitle = savedInstanceState.getString("pendingTitle", pendingTitle)
+    }
+
     override fun onResume() {
         super.onResume()
         if (isFinishingFromPayment || proceedingToPay) {

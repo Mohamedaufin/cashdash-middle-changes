@@ -322,4 +322,15 @@ class BalanceSetupActivity : ThemedActivity() {
             super.onBackPressed()
         }
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("currentAmount", currentAmount)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        currentAmount = savedInstanceState.getString("currentAmount", "")
+        updateAmountDisplay()
+    }
 }

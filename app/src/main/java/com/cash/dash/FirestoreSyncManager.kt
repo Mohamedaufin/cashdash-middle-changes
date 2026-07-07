@@ -22,43 +22,24 @@ object FirestoreSyncManager {
     private var listeners = mutableListOf<ListenerRegistration>()
     
     // ⚡ INSTANT SYNC STATE
-    private var isSyncingFromCloud = false
+    var isSyncingFromCloud = false
+        private set
     @Volatile var isInitialSyncCompleted = false
     @Volatile var isInitialPullStarted = false
     private val prefListeners = mutableMapOf<String, android.content.SharedPreferences.OnSharedPreferenceChangeListener>()
     
     fun updateLastActiveTime(context: Context) {
         val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser ?: return
-        val email = user.email ?: return
-        
+
         val sdf = java.text.SimpleDateFormat("dd/MM/yyyy, h:mm a", java.util.Locale.ENGLISH)
         sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
         val lastActive = sdf.format(java.util.Date())
-        
-        val todayStr = java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.ENGLISH).apply {
-            timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
-        }.format(java.util.Date())
 
+        // Update local SharedPreferences only — activeDates in Firestore is driven from RTDB
         val userPrefs = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
         isSyncingFromCloud = true
         userPrefs.edit().putString("lastActiveTime", lastActive).apply()
         isSyncingFromCloud = false
-
-        val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
-        val userDocRef = db.collection("users").document(email)
-        val configProfileRef = userDocRef.collection("config").document("profile")
-        
-        val updateData = mapOf(
-            "lastActiveTime" to lastActive,
-            "activeDates" to com.google.firebase.firestore.FieldValue.arrayUnion(todayStr)
-        )
-        
-        val profileUpdateData = mapOf("lastActiveTime" to lastActive)
-
-        db.batch().apply {
-            set(userDocRef, updateData, com.google.firebase.firestore.SetOptions.merge())
-            set(configProfileRef, profileUpdateData, com.google.firebase.firestore.SetOptions.merge())
-        }.commit()
     }
     
     private val syncExecutor = java.util.concurrent.Executors.newSingleThreadExecutor()
@@ -80,13 +61,28 @@ object FirestoreSyncManager {
         val user = FirebaseAuth.getInstance().currentUser ?: return
         val email = user.email ?: return 
 
-        syncExecutor.execute {
-            try {
-                val db = FirebaseFirestore.getInstance()
-                Log.d(TAG, "Starting consolidated ATOMIC batch sync to cloud for $email")
+        // 🛡️ Instant Background Security Verification
+        // Every time the app syncs data (which is every time the user edits anything),
+        // we secretly ping Firebase Auth. If they were deleted from the console while using the app,
+        // this catches it instantly and kicks them out before the data even syncs!
+        user.reload().addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                if (task.exception is com.google.firebase.auth.FirebaseAuthInvalidUserException) {
+                    Log.w(TAG, "Auth token invalid (user deleted). Kicking out immediately.")
+                    SecurityManager.triggerLogout(appContext, "admin_deleted")
+                    return@addOnCompleteListener
+                }
+                // If it failed due to a network error (offline), we ignore it and proceed.
+                // Firebase SDK will gracefully handle caching the writes locally!
+            }
 
-                val walletPrefs = appContext.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
-                val categoryPrefs = appContext.getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
+            syncExecutor.execute {
+                try {
+                    val db = FirebaseFirestore.getInstance()
+                    Log.d(TAG, "Starting consolidated ATOMIC batch sync to cloud for $email")
+
+                    val walletPrefs = appContext.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
+                    val categoryPrefs = appContext.getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
                 val graphPrefs = appContext.getSharedPreferences("GraphData", Context.MODE_PRIVATE)
                 val schedulePrefs = appContext.getSharedPreferences("MoneySchedulePrefs", Context.MODE_PRIVATE)
                 val userPrefs = appContext.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
@@ -125,11 +121,8 @@ object FirestoreSyncManager {
                     "wallet_popup_shown" to userPrefs.getBoolean("WalletPopupShown", false),
                     "account_creation_time" to userPrefs.getLong("account_creation_time", 0L),
                     "account_status" to "active"
+                    // lastActiveTime and status live in RTDB only
                 )
-                val lastActiveStr = userPrefs.getString("lastActiveTime", "") ?: ""
-                if (lastActiveStr.isNotEmpty()) {
-                    userConfigData["lastActiveTime"] = lastActiveStr
-                }
                 val profileChanged = checkHash(userConfigData, "HASH_profile")
                 
                 val todayStr = java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.ENGLISH).apply {
@@ -143,10 +136,8 @@ object FirestoreSyncManager {
                     "name" to name,
                     "dob" to dobString,
                     "activeDates" to com.google.firebase.firestore.FieldValue.arrayUnion(todayStr)
+                    // lastActiveTime and status live in RTDB only
                 )
-                if (lastActiveStr.isNotEmpty()) {
-                    rootData["lastActiveTime"] = lastActiveStr
-                }
                 val rootChanged = checkHash(rootData, "HASH_root")
 
                 // 2. Wallet Data
@@ -280,9 +271,16 @@ object FirestoreSyncManager {
                     val currentTimestamp = System.currentTimeMillis()
                     userPrefs.edit().putLong("last_local_modification", currentTimestamp).commit()
                     userConfigData["last_local_modification"] = currentTimestamp
+
+                    // Explicitly delete legacy fields that have moved to RTDB
+                    userConfigData["status"] = com.google.firebase.firestore.FieldValue.delete()
+                    userConfigData["lastActiveTime"] = com.google.firebase.firestore.FieldValue.delete()
+
                     batch.set(configColl.document("profile"), userConfigData, SetOptions.merge())
                     
                     if (rootChanged) {
+                        rootData["status"] = com.google.firebase.firestore.FieldValue.delete()
+                        rootData["lastActiveTime"] = com.google.firebase.firestore.FieldValue.delete()
                         batch.set(userDocRef, rootData, SetOptions.merge())
                     }
 
@@ -298,6 +296,7 @@ object FirestoreSyncManager {
             } catch (e: Exception) {
                 Log.e(TAG, "❌ FATAL SYNC ERROR: ${e.message}", e)
             }
+        }
         }
     }
 
@@ -341,7 +340,7 @@ object FirestoreSyncManager {
                         return@addOnCompleteListener
                     }
 
-                    val profileDoc = tProfile.result
+                    val profileDoc = if (tProfile.isSuccessful) tProfile.result else null
                     if (profileDoc == null || !profileDoc.exists()) {
                         if (!isFallback) {
                             // 🔄 MIGRATION START: Try pulling from old UID path
@@ -379,12 +378,18 @@ object FirestoreSyncManager {
                     // 1. Profile
                     val editor = userPrefs.edit()
 
-                    // Only clear if we are sure we want a full mirror,
-                    // but keep the current email as it is definitely correct from the successful login.
+                    // Preserve local-only flags that must NEVER be overwritten by cloud data
                     val currentEmail = userPrefs.getString("user_email", "")
+                    val savedIsFirstLaunch = userPrefs.getBoolean("isFirstLaunch", true)
+                    val savedLastActiveTime = userPrefs.getString("lastActiveTime", "") ?: ""
+                    val savedWalletPopupShown = userPrefs.getBoolean("WalletPopupShown", false)
 
                     isSyncingFromCloud = true
                     editor.clear().apply()
+
+                    // Restore local-only flags first
+                    editor.putBoolean("isFirstLaunch", savedIsFirstLaunch)
+                    if (savedLastActiveTime.isNotEmpty()) editor.putString("lastActiveTime", savedLastActiveTime)
 
                     editor.putString("user_email", currentEmail)
 
@@ -393,16 +398,15 @@ object FirestoreSyncManager {
                     profileDoc.getString("dob")?.let { editor.putString("user_dob", it) }
                     profileDoc.getString("email")?.let { editor.putString("user_email", it) }
 
-                    val setupComplete = profileDoc.getBoolean("setup_complete") ?: false
-                    editor.putBoolean("isFirstLaunch", !setupComplete)
-
-                    profileDoc.getBoolean("wallet_popup_shown")?.let { editor.putBoolean("WalletPopupShown", it) }
+                    // WalletPopupShown: use cloud value if set, otherwise keep local
+                    val cloudWalletPopup = profileDoc.getBoolean("wallet_popup_shown")
+                    editor.putBoolean("WalletPopupShown", cloudWalletPopup ?: savedWalletPopupShown)
                     profileDoc.getLong("account_creation_time")?.let { editor.putLong("account_creation_time", it) }
                     editor.apply()
                     isSyncingFromCloud = false
 
                     // 2. Wallet & Schedule
-                    val walletDoc = tWallet.result
+                    val walletDoc = if (tWallet.isSuccessful) tWallet.result else null
                     if (walletDoc != null && walletDoc.exists()) {
                         val walletPrefs = context.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
                         val schedulePrefs = context.getSharedPreferences("MoneySchedulePrefs", Context.MODE_PRIVATE)
@@ -434,7 +438,7 @@ object FirestoreSyncManager {
                     }
 
                     // 3. Categories
-                    val catDoc = tCategories.result
+                    val catDoc = if (tCategories.isSuccessful) tCategories.result else null
                     if (catDoc != null && catDoc.exists()) {
                         val catPrefs = context.getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
                         val graphPrefs = context.getSharedPreferences("GraphData", Context.MODE_PRIVATE)
@@ -462,7 +466,7 @@ object FirestoreSyncManager {
                     }
 
                     // 4. History (Simplified Restore)
-                    val histDoc = tHistory.result
+                    val histDoc = if (tHistory.isSuccessful) tHistory.result else null
                     if (histDoc != null && histDoc.exists()) {
                         val graphPrefs = context.getSharedPreferences("GraphData", Context.MODE_PRIVATE)
                         val rawList = histDoc.get("raw_list") as? List<String>
@@ -553,7 +557,7 @@ object FirestoreSyncManager {
                     }
 
                     // 5. Analytics
-                    val analyticsDoc = tAnalytics.result
+                    val analyticsDoc = if (tAnalytics.isSuccessful) tAnalytics.result else null
                     if (analyticsDoc != null && analyticsDoc.exists()) {
                         val cwdMap = analyticsDoc.get("CategoryWeekData") as? Map<String, Any>
                         if (cwdMap != null) {
@@ -569,7 +573,7 @@ object FirestoreSyncManager {
                     }
 
                     // 6. Scanner History
-                    val scannerDoc = tScanner.result
+                    val scannerDoc = if (tScanner.isSuccessful) tScanner.result else null
                     if (scannerDoc != null && scannerDoc.exists()) {
                         val scanMap = scannerDoc.get("ScannerHistory") as? Map<String, Any>
                         if (scanMap != null) {
@@ -587,7 +591,7 @@ object FirestoreSyncManager {
                     }
 
                     // 7. Undo Details
-                    val undoDoc = tUndo.result
+                    val undoDoc = if (tUndo.isSuccessful) tUndo.result else null
                     if (undoDoc != null && undoDoc.exists()) {
                         val undoMap = undoDoc.get("LocalScanPrefs") as? Map<String, Any>
                         if (undoMap != null) {
@@ -603,7 +607,7 @@ object FirestoreSyncManager {
                     }
 
                     // 8. ScannerMetadataPrefs
-                    val scannerMetaDoc = tScannerMeta.result
+                    val scannerMetaDoc = if (tScannerMeta.isSuccessful) tScannerMeta.result else null
                     if (scannerMetaDoc != null && scannerMetaDoc.exists()) {
                         val smMap = scannerMetaDoc.get("ScannerMetadataPrefs") as? Map<String, Any>
                         if (smMap != null) {
@@ -621,7 +625,7 @@ object FirestoreSyncManager {
                     }
 
                     // 9. Finminder
-                    val finminderDoc = tFinminder.result
+                    val finminderDoc = if (tFinminder.isSuccessful) tFinminder.result else null
                     if (finminderDoc != null && finminderDoc.exists()) {
                         val fmMap = finminderDoc.get("FinminderPrefs") as? Map<String, Any>
                         if (fmMap != null) {
@@ -637,7 +641,7 @@ object FirestoreSyncManager {
                     }
 
                     // 10. UpiAllocationPrefs
-                    val upiAllocDoc = tUpiAlloc.result
+                    val upiAllocDoc = if (tUpiAlloc.isSuccessful) tUpiAlloc.result else null
                     if (upiAllocDoc != null && upiAllocDoc.exists()) {
                         val allocData = upiAllocDoc.get("data") as? Map<String, Any>
                         if (allocData != null) {
@@ -730,7 +734,6 @@ object FirestoreSyncManager {
             snapshot.getString("phone")?.let { editor.putString("user_phone", it) }
             snapshot.getString("dob")?.let { editor.putString("user_dob", it) }
             snapshot.getString("email")?.let { editor.putString("user_email", it) }
-            snapshot.getBoolean("setup_complete")?.let { editor.putBoolean("isFirstLaunch", !it) }
             editor.apply()
             isSyncingFromCloud = false
             notifyUI(appContext)
@@ -978,5 +981,9 @@ object FirestoreSyncManager {
             context.getSharedPreferences(name, Context.MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(listener)
         }
         prefListeners.clear()
+
+        // Reset sync state so next login waits for a fresh pull before showing DOB/setup dialogs
+        isInitialSyncCompleted = false
+        isInitialPullStarted = false
     }
 }

@@ -34,6 +34,12 @@ class TaptrackWidget : AppWidgetProvider() {
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         if (intent.action == ACTION_TOGGLE) {
+            val firebaseUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+            if (firebaseUser == null) {
+                android.widget.Toast.makeText(context, "Login/Register to continue using TapTrack", android.widget.Toast.LENGTH_LONG).show()
+                return
+            }
+
             val prefs = context.getSharedPreferences("SmartAssistantPrefs", Context.MODE_PRIVATE)
             val isOn = prefs.getBoolean("tracking_enabled", false)
             val hasOverlay = Settings.canDrawOverlays(context)

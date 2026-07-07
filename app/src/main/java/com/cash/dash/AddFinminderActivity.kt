@@ -414,4 +414,54 @@ class AddFinminderActivity : ThemedActivity() {
         Toast.makeText(this, "Saved successfully!", Toast.LENGTH_SHORT).show()
         finish()
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("selectedFrequencyIndex", selectedFrequencyIndex)
+        outState.putString("selectedDayStr", selectedDayStr)
+        outState.putString("currentTab", currentTab)
+        outState.putString("selectedDateStr", selectedDateStr)
+        outState.putString("editModeItemId", editModeItemId)
+        outState.putLong("editModeTimestamp", editModeTimestamp)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        selectedFrequencyIndex = savedInstanceState.getInt("selectedFrequencyIndex", -1)
+        selectedDayStr = savedInstanceState.getString("selectedDayStr", "Monday") ?: "Monday"
+        currentTab = savedInstanceState.getString("currentTab", "CASH_OUT") ?: "CASH_OUT"
+        selectedDateStr = savedInstanceState.getString("selectedDateStr", "") ?: ""
+        editModeItemId = savedInstanceState.getString("editModeItemId")
+        editModeTimestamp = savedInstanceState.getLong("editModeTimestamp", 0L)
+        
+        tvAddTitle.text = if (currentTab == "CASH_OUT") "Finminder Cash Out" else "Finminder Cash In"
+        
+        when (selectedFrequencyIndex) {
+            0 -> {
+                layoutOneTime.visibility = View.VISIBLE
+                layoutWeekly.visibility = View.GONE
+                layoutMonthly.visibility = View.GONE
+                tvSelectedFrequency.text = "One time only"
+            }
+            1 -> {
+                layoutOneTime.visibility = View.GONE
+                layoutWeekly.visibility = View.GONE
+                layoutMonthly.visibility = View.GONE
+                tvSelectedFrequency.text = "Remind daily"
+            }
+            2 -> {
+                layoutOneTime.visibility = View.GONE
+                layoutWeekly.visibility = View.VISIBLE
+                layoutMonthly.visibility = View.GONE
+                tvSelectedFrequency.text = "Remind every week"
+                tvSelectedDay.text = selectedDayStr
+            }
+            3 -> {
+                layoutOneTime.visibility = View.GONE
+                layoutWeekly.visibility = View.GONE
+                layoutMonthly.visibility = View.VISIBLE
+                tvSelectedFrequency.text = "Remind every month"
+            }
+        }
+    }
 }

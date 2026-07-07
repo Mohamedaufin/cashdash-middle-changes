@@ -768,40 +768,10 @@ exports.syncPresenceToFirestore = onValueWritten({
     ref: "/status/{safeEmail}",
     region: "us-central1"
 }, async (event) => {
-    const safeEmail = event.params.safeEmail;
-    if (!safeEmail) return;
-    
-    // 🔥 ALWAYS fetch the absolute latest state from RTDB!
-    // Cloud Functions can execute out-of-order if a user rapidly opens/closes the app.
-    // Fetching the latest value directly prevents an older "Offline" event from 
-    // overwriting a newer "Online" event in Firestore.
-    const snapshot = await admin.database().ref(`/status/${safeEmail}`).once('value');
-    const latestData = snapshot.val();
-    if (!latestData) return;
-
-    const state = latestData.state;
-    
-    // Convert back from Firebase safe key format (commas back to dots)
-    const email = safeEmail.replace(/,/g, ".");
-    const updates = { status: state };
-
-    if (state === "Offline") {
-        const date = new Date(latestData.last_changed || Date.now());
-        const options = {
-            timeZone: 'Asia/Kolkata',
-            day: '2-digit', month: '2-digit', year: 'numeric',
-            hour: '2-digit', minute: '2-digit', hour12: true
-        };
-        const dateStr = date.toLocaleString('en-GB', options).toUpperCase().replace(/\u202F/g, ' ');
-        updates.lastActiveTime = dateStr;
-    }
-
-    try {
-        await db.collection("users").doc(email).update(updates);
-        await db.collection("users").doc(email).collection("config").doc("profile").update(updates);
-    } catch (e) {
-        console.log(`Failed to sync presence to Firestore for ${email}:`, e.message);
-    }
+    // 🔥 Deprecated: We no longer sync status or lastActiveTime to Firestore.
+    // Real-time presence is handled exclusively via RTDB on the client side now.
+    // This function body has been cleared to prevent legacy field resurrection.
+    return;
 });
 
 // ─────────────────────────────────────────────

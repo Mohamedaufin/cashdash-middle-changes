@@ -145,6 +145,18 @@ class HomeFragment : Fragment() {
         walletContainer?.setOnClickListener {
             startActivity(Intent(requireContext(), BalanceSetupActivity::class.java))
         }
+        walletContainer?.setOnLongClickListener {
+            val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+            val email = user?.email?.lowercase() ?: ""
+            val adminEmails = listOf("mohamedaufin64@gmail.com", "arunbhalaji200904@gmail.com")
+            if (adminEmails.contains(email)) {
+                startActivity(Intent(requireContext(), AdminActivity::class.java))
+                activity?.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+                true
+            } else {
+                false
+            }
+        }
         var touchDownInside = false
         walletContainer?.setOnTouchListener { v, event ->
             val cx = v.width / 2f
@@ -157,15 +169,14 @@ class HomeFragment : Fragment() {
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     touchDownInside = distance <= radius
-                    true
+                    if (!touchDownInside) return@setOnTouchListener true // Absorb touches outside circle
+                    false // Let system handle long-press
                 }
                 MotionEvent.ACTION_UP -> {
-                    if (touchDownInside && distance <= radius) {
-                        v.performClick()
-                    }
-                    true
+                    if (!touchDownInside || distance > radius) return@setOnTouchListener true
+                    false
                 }
-                else -> true
+                else -> false
             }
         }
 
@@ -213,11 +224,21 @@ class HomeFragment : Fragment() {
         checkPendingTransactions()
         refreshUI()
 
-        // Show setup dialog quickly after transition (800ms)
+        // Only check DOB after the initial cloud pull is done.
+        // isInitialSyncCompleted = false until pullDataFromCloud fully completes.
+        // appPrefsListener will auto-trigger checkDobLock() when user_dob arrives from cloud.
         view?.postDelayed({
-            if (isAdded) {
+            if (isAdded && FirestoreSyncManager.isInitialSyncCompleted) {
                 checkDobLock()
                 checkInitialSetup()
+            } else if (isAdded) {
+                // Pull still in progress - wait up to 4 more seconds then check
+                view?.postDelayed({
+                    if (isAdded) {
+                        checkDobLock()
+                        checkInitialSetup()
+                    }
+                }, 4000)
             }
         }, 800)
     }

@@ -3,24 +3,42 @@ package com.cash.dash
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
+import com.google.firebase.auth.FirebaseAuth
 
 class WidgetLaunchActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Start the Floating Widget Service
-        val serviceIntent = Intent(this, FloatingWidgetService::class.java).apply {
-            action = FloatingWidgetService.ACTION_SHOW_WIDGET
-            putExtra(FloatingWidgetService.EXTRA_APP_NAME, "Manual Tracker")
+        val widgetType = intent.getStringExtra("WIDGET_TYPE") ?: "Finminder"
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
+        
+        if (firebaseUser == null) {
+            val displayType = if (widgetType == "FinminderList") "Finminder" else widgetType
+            Toast.makeText(this, "Login/Register to continue using $displayType", Toast.LENGTH_LONG).show()
+            finish()
+            return
         }
         
-        try {
-            startService(serviceIntent)
-        } catch (e: Exception) {
-            android.util.Log.e("WidgetLaunchActivity", "Failed to start FloatingWidgetService", e)
+        if (widgetType == "Scanner") {
+            startActivity(Intent(this, ScannerActivity::class.java))
+        } else if (widgetType == "TapTrack") {
+            startActivity(Intent(this, TaptrackActivity::class.java))
+        } else if (widgetType == "FinminderList") {
+            startActivity(Intent(this, FinminderActivity::class.java))
+        } else {
+            // Default to Finminder/Tracker
+            val serviceIntent = Intent(this, FloatingWidgetService::class.java).apply {
+                action = FloatingWidgetService.ACTION_SHOW_WIDGET
+                putExtra(FloatingWidgetService.EXTRA_APP_NAME, "Manual Tracker")
+            }
+            try {
+                startService(serviceIntent)
+            } catch (e: Exception) {
+                android.util.Log.e("WidgetLaunchActivity", "Failed to start FloatingWidgetService", e)
+            }
         }
         
-        // Finish instantly so it acts completely invisibly
         finish()
     }
 }

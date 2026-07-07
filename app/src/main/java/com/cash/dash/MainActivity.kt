@@ -69,17 +69,22 @@ class MainActivity : ThemedActivity() {
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
         val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
         val appPrefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
         val isFirstLaunch = appPrefs.getBoolean("isFirstLaunch", true)
 
         if (currentUser == null || isFirstLaunch) {
-            startActivity(Intent(this, SplashActivity::class.java))
+            // Ghost login guard: no valid session or setup incomplete
+            // Clear stale isFirstLaunch flag if Firebase session is gone
+            if (currentUser == null && !isFirstLaunch) {
+                appPrefs.edit().putBoolean("isFirstLaunch", true).apply()
+            }
+            startActivity(Intent(this, EntryActivity::class.java))
             finish()
             return
         }
 
-        super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         // ONE-TIME FIX: Recover missing metadata for past scanner transactions
@@ -448,6 +453,22 @@ class MainActivity : ThemedActivity() {
             ToastHelper.showCustomToast(this, toastMsg, 800L)
             intent.removeExtra("toast_msg")
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("navFrom", navFrom)
+        outState.putInt("navTo", navTo)
+        outState.putBoolean("isNavigating", isNavigating)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        navFrom = savedInstanceState.getInt("navFrom", -1)
+        navTo = savedInstanceState.getInt("navTo", -1)
+        isNavigating = savedInstanceState.getBoolean("isNavigating", false)
+        val current = viewPager.currentItem
+        updateNavbarStateBetween(current, current, 0f)
     }
 
 }

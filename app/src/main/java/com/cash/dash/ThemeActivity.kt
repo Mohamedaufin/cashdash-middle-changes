@@ -342,4 +342,28 @@ class ThemeActivity : ThemedActivity() {
         startActivity(intent)
         finish()
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("initialAppTheme", initialAppTheme)
+        outState.putString("initialBBMode", initialBBMode)
+        outState.putString("initialBBType", initialBBType)
+        outState.putString("selectedAppTheme", selectedAppTheme)
+        outState.putString("selectedBBMode", selectedBBMode)
+        outState.putString("selectedBBType", selectedBBType)
+        outState.putString("activeTabMode", activeTabMode)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        initialAppTheme = savedInstanceState.getString("initialAppTheme", "System") ?: "System"
+        initialBBMode = savedInstanceState.getString("initialBBMode", "gradient") ?: "gradient"
+        initialBBType = savedInstanceState.getString("initialBBType", "gradient1") ?: "gradient1"
+        selectedAppTheme = savedInstanceState.getString("selectedAppTheme", "System") ?: "System"
+        selectedBBMode = savedInstanceState.getString("selectedBBMode", "gradient") ?: "gradient"
+        selectedBBType = savedInstanceState.getString("selectedBBType", "gradient1") ?: "gradient1"
+        activeTabMode = savedInstanceState.getString("activeTabMode", "gradient") ?: "gradient"
+        
+        updatePreviewUI(animate = false)
+    }
 }

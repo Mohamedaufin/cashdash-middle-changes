@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@android:color/transparent"
+    android:padding="24dp">
+
+    <!-- Handle indicator -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:background="?attr/textMutedColor"
+        android:layout_marginBottom="24dp"/>
+
+    <TextView
+        android:id="@+id/tvLegalTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Legal Document"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="?attr/textPrimaryColor"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone"/>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scrollbars="vertical"
+        android:fadeScrollbars="false">
+
+        <TextView
+            android:id="@+id/tvLegalContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Loading..."
+            android:textSize="15sp"
+            android:textColor="?attr/textMutedColor"
+            android:lineSpacingExtra="6dp"
+            android:paddingBottom="24dp"/>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <Button
+        android:id="@+id/btnLegalClose"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:layout_marginTop="16dp"
+        android:text="I Understand"
+        android:textColor="@android:color/white"
+        android:backgroundTint="?attr/textGreenColor"
+        android:textStyle="bold"
+        android:textSize="16sp"/>
+
+</LinearLayout>

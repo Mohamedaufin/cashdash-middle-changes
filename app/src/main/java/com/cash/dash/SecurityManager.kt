@@ -19,11 +19,37 @@ object SecurityManager {
         val db = FirebaseFirestore.getInstance()
         val appContext = context.applicationContext
 
+        // 0. Instantly check if the user was deleted from the Firebase Auth Console
+        user.reload().addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                val exception = task.exception
+                if (exception is com.google.firebase.auth.FirebaseAuthInvalidUserException) {
+                    // User is deleted from Auth Console!
+                    triggerLogout(appContext, "admin_deleted")
+                }
+            }
+        }
+
         // 1. Monitor main profile status field (now under email)
         deletionListener = db.collection("users").document(email)
             .collection("config").document("profile")
             .addSnapshotListener { snapshot, e ->
-                if (e != null || isTriggering) return@addSnapshotListener
+                if (isTriggering) return@addSnapshotListener
+                if (e != null) {
+                    if (e is com.google.firebase.firestore.FirebaseFirestoreException && e.code == com.google.firebase.firestore.FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+                        user.reload().addOnCompleteListener { task ->
+                            if (!task.isSuccessful) {
+                                val exception = task.exception
+                                if (exception is com.google.firebase.auth.FirebaseAuthInvalidUserException) {
+                                    triggerLogout(appContext, "admin_deleted")
+                                } else {
+                                    triggerLogout(appContext, "session_expired")
+                                }
+                            }
+                        }
+                    }
+                    return@addSnapshotListener
+                }
                 if (snapshot != null && snapshot.exists()) {
                     val status = snapshot.getString("account_status") ?: "active"
                     if (status == "admin_deleted") {
@@ -35,14 +61,35 @@ object SecurityManager {
         // 2. Monitor global deleted_accounts collection to catch admin deletions
         userDocListener = db.collection("deleted_accounts").document(email)
             .addSnapshotListener { snapshot, e ->
-                if (e != null || isTriggering) return@addSnapshotListener
+                if (isTriggering) return@addSnapshotListener
+                if (e != null) {
+                    if (e is com.google.firebase.firestore.FirebaseFirestoreException && e.code == com.google.firebase.firestore.FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+                        user.reload().addOnCompleteListener { task ->
+                            if (!task.isSuccessful) {
+                                val exception = task.exception
+                                if (exception is com.google.firebase.auth.FirebaseAuthInvalidUserException) {
+                                    triggerLogout(appContext, "admin_deleted")
+                                } else {
+                                    triggerLogout(appContext, "session_expired")
+                                }
+                            }
+                        }
+                    }
+                    return@addSnapshotListener
+                }
                 if (snapshot != null && snapshot.exists()) {
                     val status = snapshot.getString("status")
-                    if (status == "admin_deleted" || status == "ADMIN_DELETED") {
-                        triggerLogout(appContext, "admin_deleted")
-                    } else if (status != "PERMANENT_WIPE_COMPLETED") {
-                        // Unknown deletion status, default to session expired
-                        triggerLogout(appContext, "session_expired")
+                    val deletedUid = snapshot.getString("uid")
+                    
+                    // Only apply the ban if the deleted UID matches the current user's UID.
+                    // This allows them to register a new account (with a new UID) using the same email!
+                    if (deletedUid == user.uid) {
+                        if (status == "admin_deleted" || status == "ADMIN_DELETED") {
+                            triggerLogout(appContext, "admin_deleted")
+                        } else if (status != "PERMANENT_WIPE_COMPLETED") {
+                            // Unknown deletion status, default to session expired
+                            triggerLogout(appContext, "session_expired")
+                        }
                     }
                 }
             }

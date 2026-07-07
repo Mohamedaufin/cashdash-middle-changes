@@ -585,4 +585,25 @@ class DetailHistoryActivity : ThemedActivity() {
         HistoryDataManager.updateTransactionAmount(this, item.rawEntry, newAmount)
         ToastHelper.showToast(this, "Amount updated")
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("mode", mode)
+        outState.putInt("week", week)
+        outState.putInt("day", day)
+        outState.putInt("month", month)
+        outState.putInt("year", year)
+        outState.putString("categoryFilter", categoryFilter)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        mode = savedInstanceState.getString("mode", "DAILY")
+        week = savedInstanceState.getInt("week", 0)
+        day = savedInstanceState.getInt("day", 0)
+        month = savedInstanceState.getInt("month", 0)
+        year = savedInstanceState.getInt("year", 0)
+        categoryFilter = savedInstanceState.getString("categoryFilter", "Overall")
+        refreshUI()
+    }
 }

@@ -372,4 +372,24 @@ class RigorActivity : ThemedActivity() {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("enteredAmount", enteredAmount)
+        outState.putLong("selectedExpenseDate", selectedExpenseDate)
+        outState.putBoolean("isPage2", isPage2)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        enteredAmount = savedInstanceState.getInt("enteredAmount", 0)
+        selectedExpenseDate = savedInstanceState.getLong("selectedExpenseDate", -1L)
+        isPage2 = savedInstanceState.getBoolean("isPage2", false)
+        if (isPage2) {
+            showPage2()
+            loadCategories()
+        } else {
+            showPage1()
+        }
+    }
+
 }

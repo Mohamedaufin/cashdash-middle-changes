@@ -668,4 +668,35 @@ class ReportActivity : ThemedActivity() {
             PdfReportManager.generateAndSavePremiumReport(this@ReportActivity, start, end, isMonthlyMode, selectedWeekIndex, isCustomMode)
         }
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("currentMonth", currentMonth)
+        outState.putInt("currentYear", currentYear)
+        outState.putInt("selectedWeekIndex", selectedWeekIndex)
+        outState.putBoolean("isMonthlyMode", isMonthlyMode)
+        outState.putBoolean("isCustomMode", isCustomMode)
+        outState.putLong("customStartMillis", customStartMillis)
+        outState.putLong("customEndMillis", customEndMillis)
+        outState.putBoolean("isGenerating", isGenerating)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        currentMonth = savedInstanceState.getInt("currentMonth", currentMonth)
+        currentYear = savedInstanceState.getInt("currentYear", currentYear)
+        selectedWeekIndex = savedInstanceState.getInt("selectedWeekIndex", selectedWeekIndex)
+        isMonthlyMode = savedInstanceState.getBoolean("isMonthlyMode", isMonthlyMode)
+        isCustomMode = savedInstanceState.getBoolean("isCustomMode", isCustomMode)
+        customStartMillis = savedInstanceState.getLong("customStartMillis", customStartMillis)
+        customEndMillis = savedInstanceState.getLong("customEndMillis", customEndMillis)
+        isGenerating = savedInstanceState.getBoolean("isGenerating", false)
+
+        updatePeriodLabel()
+        if (isCustomMode && (customStartMillis <= 0 || customEndMillis <= 0)) {
+            // Wait for dates
+        } else {
+            loadReport()
+        }
+    }
 }
