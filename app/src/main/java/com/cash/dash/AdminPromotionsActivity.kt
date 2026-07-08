@@ -284,7 +284,19 @@ class AdminPromotionsActivity : ThemedActivity() {
             annBodyStr = annBodyStr.replace("&nbsp;<img src=\"ic_external_link\"/>".toRegex(), "")
             annBodyStr = annBodyStr.replace("&nbsp;<font color=\"#2196F3\">\u2197</font>".toRegex(), "")
             val htmlWithBr = annBodyStr.replace("\n", "<br>")
-            edtAnnouncementBody.setText(android.text.Html.fromHtml(htmlWithBr, android.text.Html.FROM_HTML_MODE_LEGACY))
+            
+            val spanned = android.text.Html.fromHtml(htmlWithBr, android.text.Html.FROM_HTML_MODE_LEGACY)
+            val ssb = android.text.SpannableStringBuilder(spanned)
+            val urls = ssb.getSpans(0, ssb.length, android.text.style.URLSpan::class.java)
+            for (url in urls) {
+                ssb.setSpan(
+                    android.text.style.ForegroundColorSpan(android.graphics.Color.parseColor("#2196F3")),
+                    ssb.getSpanStart(url),
+                    ssb.getSpanEnd(url),
+                    android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+            edtAnnouncementBody.setText(ssb)
         } else {
             edtAnnouncementBody.setText("")
         }

@@ -805,6 +805,10 @@ exports.onGlobalPush = onDocumentWritten({
                 triggerUrl: triggerUrl,
                 triggerText: triggerText,
                 isPromotion: "true"
+            },
+            android: {
+                priority: "high",
+                ttl: 2419200000 // 28 days
             }
         });
         console.log(`Successfully sent push notification to ${targetTopic}: ${title}`);
@@ -847,6 +851,10 @@ exports.onUserPush = onDocumentWritten({
                     triggerText: triggerText,
                     userSpecificPush: "true",
                     isPromotion: "true"
+                },
+                android: {
+                    priority: "high",
+                    ttl: 2419200000 // 28 days
                 }
             });
             console.log(`Successfully sent user-specific push to ${email}: ${title}`);
