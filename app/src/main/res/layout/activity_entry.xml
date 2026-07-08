@@ -72,8 +72,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:clipToPadding="false"
-        android:clipChildren="false"
         android:visibility="gone">
 
         <!-- FULL NAME -->
