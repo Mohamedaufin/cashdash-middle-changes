@@ -327,6 +327,11 @@ class AdminPromotionsActivity : ThemedActivity() {
         val tvTargetDesc = findViewById<TextView>(R.id.tvTargetDesc)
         
         fun selectTab(tab: TabType) {
+            if (currentTab != tab) {
+                selectedEmails.clear()
+                val cbSelectAll = findViewById<CheckBox>(R.id.cbSelectAll)
+                if (cbSelectAll != null) cbSelectAll.isChecked = false
+            }
             currentTab = tab
             
             val typedValue = android.util.TypedValue()
@@ -592,6 +597,7 @@ class AdminPromotionsActivity : ThemedActivity() {
         val btnNo = dialogView.findViewById<Button>(R.id.btnConfirmCancel)
 
         btnYes.text = "Send"
+        btnYes.setTextColor(ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor))
         
         btnYes.setOnClickListener {
             confirmDialog.dismiss()
