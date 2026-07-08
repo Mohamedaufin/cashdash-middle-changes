@@ -424,7 +424,8 @@ class NotificationActivity : ThemedActivity() {
                                 imageUrl = doc.getString("imageUrl"),
                                 imageUrls = (doc.get("imageUrls") as? List<*>)?.mapNotNull { it as? String }?.let { org.json.JSONArray(it).toString() },
                                 triggerText = doc.getString("triggerText"),
-                                triggerUrl = doc.getString("triggerUrl")
+                                triggerUrl = doc.getString("triggerUrl"),
+                                linksJson = doc.getString("linksJson")
                             )
                         }
                     }
@@ -585,7 +586,7 @@ class NotificationActivity : ThemedActivity() {
         val isWhite = ThemeHelper.isWhiteTheme(this@NotificationActivity)
         val colorTeam = if (isWhite) "#008000" else "#4ADE80"
         val colorContent = if (isWhite) "#333333" else "#E0EBF5"
-        val colorPending = if (isWhite) "#CD8500" else "#FFD93D"
+        val colorPending = if (isWhite) "#CD8500" else "#FFA500"
         val userFormat = if (isWhite) "<font color='#0047AB'>$userName:</font>" else "$userName:"
 
         return entities.map { entity ->
@@ -638,7 +639,21 @@ class NotificationActivity : ThemedActivity() {
                         .replace("[Admin Only] ", "")
                         .replace("📣 ", "")
                         .trim()
-                    android.text.Html.fromHtml("<b>Title:</b> $cleanSubject<br><br>${displayQuery}", android.text.Html.FROM_HTML_MODE_LEGACY)
+                    android.text.Html.fromHtml(
+                        "<b>Title:</b> $cleanSubject<br><br>${displayQuery}",
+                        android.text.Html.FROM_HTML_MODE_LEGACY,
+                        { source ->
+                            if (source == "ic_external_link") {
+                                val d = androidx.core.content.ContextCompat.getDrawable(this@NotificationActivity, R.drawable.ic_external_link)
+                                val size = (13 * resources.displayMetrics.density).toInt()
+                                d?.setBounds(0, 0, size, size)
+                                val linkColorStr = if (ThemeHelper.isWhiteTheme(this@NotificationActivity)) "#0047AB" else "#2196F3"
+                                d?.setTint(android.graphics.Color.parseColor(linkColorStr))
+                                d
+                            } else null
+                        },
+                        null
+                    )
                 } else {
                     android.text.Html.fromHtml("<b>Subject:</b> $subject<br><b>Question:</b> $displayQuery", android.text.Html.FROM_HTML_MODE_LEGACY)
                 },
@@ -659,7 +674,8 @@ class NotificationActivity : ThemedActivity() {
                     catch (e: Exception) { emptyList() }
                 } ?: emptyList(),
                 triggerText = entity.triggerText,
-                triggerUrl = entity.triggerUrl
+                triggerUrl = entity.triggerUrl,
+                linksJson = entity.linksJson
             )
         }
     }
@@ -849,7 +865,7 @@ class NotificationActivity : ThemedActivity() {
 
             // Collect all attachment URLs
             val allUrls = item.imageUrls.toMutableList()
-            if (item.imageUrl != null && !allUrls.contains(item.imageUrl)) allUrls.add(0, item.imageUrl)
+            if (!item.imageUrl.isNullOrEmpty() && !allUrls.contains(item.imageUrl)) allUrls.add(0, item.imageUrl!!)
 
             val attachmentRegex = "\\[Attachment: (.*?)\\]".toRegex()
 
@@ -862,9 +878,41 @@ class NotificationActivity : ThemedActivity() {
                 // Add announcement body to timeline
                 val tv = TextView(holder.itemView.context).apply {
                     setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                    val linkColorStr = if (ThemeHelper.isWhiteTheme(context)) "#0047AB" else "#2196F3"
+                    setLinkTextColor(android.graphics.Color.parseColor(linkColorStr))
                     textSize = 14f
                     setLineSpacing(0f, 1.4f)
                     setPadding(0, 0, 0, (12 * resources.displayMetrics.density).toInt())
+                    movementMethod = android.text.method.LinkMovementMethod.getInstance()
+                }
+                tv.setOnTouchListener { v, event ->
+                    val widget = v as TextView
+                    val text = widget.text as? android.text.Spannable ?: return@setOnTouchListener false
+                    if (event.action == android.view.MotionEvent.ACTION_UP) {
+                        var x = event.x.toInt()
+                        var y = event.y.toInt()
+                        x -= widget.totalPaddingLeft
+                        y -= widget.totalPaddingTop
+                        x += widget.scrollX
+                        y += widget.scrollY
+                        val layout = widget.layout
+                        val line = layout.getLineForVertical(y)
+                        val off = layout.getOffsetForHorizontal(line, x.toFloat())
+                        val links = text.getSpans(off, off, android.text.style.URLSpan::class.java)
+                        if (links.isNotEmpty()) {
+                            links[0].onClick(widget)
+                            return@setOnTouchListener true
+                        } else {
+                            val startSearch = (off - 4).coerceAtLeast(0)
+                            val endSearch = (off + 4).coerceAtMost(text.length)
+                            val nearbyLinks = text.getSpans(startSearch, endSearch, android.text.style.URLSpan::class.java)
+                            if (nearbyLinks.isNotEmpty()) {
+                                nearbyLinks[0].onClick(widget)
+                                return@setOnTouchListener true
+                            }
+                        }
+                    }
+                    false
                 }
                 tv.text = item.queryFormatted
                 if (ThemeHelper.getCurrentTheme(this@NotificationActivity) == "Blue") {
@@ -873,7 +921,7 @@ class NotificationActivity : ThemedActivity() {
                 holder.layoutTimelineContainer.addView(tv)
 
                 if (allUrls.isNotEmpty()) {
-                    renderAttachments(holder.itemView.context, allUrls, holder.layoutTimelineContainer)
+                    renderAttachments(holder.itemView.context, allUrls, holder.layoutTimelineContainer, item.originalReply == "[ANNOUNCEMENT]")
                 }
             } else {
                 holder.tvTitle.text = item.title
@@ -909,6 +957,7 @@ class NotificationActivity : ThemedActivity() {
                         textSize = 14f
                         setLineSpacing(0f, 1.4f)
                         setPadding(0, 0, 0, (8 * resources.displayMetrics.density).toInt())
+                        movementMethod = android.text.method.LinkMovementMethod.getInstance()
                     }
 
                     if (ThemeHelper.getCurrentTheme(this@NotificationActivity) == "Blue") {
@@ -927,7 +976,7 @@ class NotificationActivity : ThemedActivity() {
                                 orientation = LinearLayout.VERTICAL
                                 setPadding(0, 0, 0, (12 * resources.displayMetrics.density).toInt())
                             }
-                            renderAttachments(holder.itemView.context, firstBlockUrls, attachmentLayout)
+                            renderAttachments(holder.itemView.context, firstBlockUrls, attachmentLayout, false)
                             holder.layoutTimelineContainer.addView(attachmentLayout)
                         }
                     } else {
@@ -973,7 +1022,7 @@ class NotificationActivity : ThemedActivity() {
                                 orientation = LinearLayout.VERTICAL
                                 setPadding(0, 0, 0, (12 * resources.displayMetrics.density).toInt())
                             }
-                            renderAttachments(holder.itemView.context, blockUrls, attachmentLayout)
+                            renderAttachments(holder.itemView.context, blockUrls, attachmentLayout, false)
                             holder.layoutTimelineContainer.addView(attachmentLayout)
                         }
                     }
@@ -990,6 +1039,7 @@ class NotificationActivity : ThemedActivity() {
                         textSize = 14f
                         setLineSpacing(0f, 1.4f)
                         setPadding(0, 0, 0, (8 * resources.displayMetrics.density).toInt())
+                        movementMethod = android.text.method.LinkMovementMethod.getInstance()
                     }
                     if (ThemeHelper.getCurrentTheme(this@NotificationActivity) == "Blue") {
                         tv.setShadowLayer(0f, 0f, 0f, android.graphics.Color.TRANSPARENT)
@@ -1004,29 +1054,51 @@ class NotificationActivity : ThemedActivity() {
                             orientation = LinearLayout.VERTICAL
                             setPadding(0, 0, 0, (12 * resources.displayMetrics.density).toInt())
                         }
-                        renderAttachments(holder.itemView.context, replyUrls, attachmentLayout)
+                        renderAttachments(holder.itemView.context, replyUrls, attachmentLayout, false)
                         holder.layoutTimelineContainer.addView(attachmentLayout)
                     }
                 }
             }
 
-            // Custom Trigger Button for Promotions/Announcements
-            if (!item.triggerText.isNullOrEmpty() && !item.triggerUrl.isNullOrEmpty()) {
-                val btnTrigger = Button(holder.itemView.context).apply {
-                    text = item.triggerText
-                    isAllCaps = false
-                    backgroundTintList = android.content.res.ColorStateList.valueOf(ThemeHelper.resolveColorAttr(context, R.attr.navActiveColor))
-                    setTextColor(android.graphics.Color.WHITE)
-                    val params = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (55 * resources.displayMetrics.density).toInt()).apply {
-                        setMargins(0, (16 * resources.displayMetrics.density).toInt(), 0, (8 * resources.displayMetrics.density).toInt())
+            // Render additional embedded link chips
+            if (!item.linksJson.isNullOrEmpty()) {
+                try {
+                    val arr = org.json.JSONArray(item.linksJson)
+                    for (i in 0 until arr.length()) {
+                        val obj = arr.getJSONObject(i)
+                        val linkText = obj.optString("text", "Link")
+                        val linkUrl = obj.optString("url", "")
+                        if (linkUrl.isEmpty()) continue
+                        val safeUrl = if (!linkUrl.startsWith("http://") && !linkUrl.startsWith("https://")) "https://$linkUrl" else linkUrl
+                        val tvLink = TextView(holder.itemView.context).apply {
+                            val spannable = android.text.SpannableString(linkText)
+                            val clickSpan = object : android.text.style.ClickableSpan() {
+                                override fun onClick(widget: android.view.View) {
+                                    val browserIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(safeUrl))
+                                    context.startActivity(browserIntent)
+                                }
+                                override fun updateDrawState(ds: android.text.TextPaint) {
+                                    super.updateDrawState(ds)
+                                    ds.color = android.graphics.Color.parseColor("#2196F3")
+                                    ds.isUnderlineText = true
+                                }
+                            }
+                            spannable.setSpan(clickSpan, 0, linkText.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                            text = spannable
+                            movementMethod = android.text.method.LinkMovementMethod.getInstance()
+                            highlightColor = android.graphics.Color.TRANSPARENT
+                            textSize = 14f
+                            setPadding(0, (4 * resources.displayMetrics.density).toInt(), 0, (4 * resources.displayMetrics.density).toInt())
+                            layoutParams = android.widget.LinearLayout.LayoutParams(
+                                android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                            )
+                            setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_external_link, 0, 0, 0)
+                            compoundDrawablePadding = (6 * resources.displayMetrics.density).toInt()
+                        }
+                        holder.layoutTimelineContainer.addView(tvLink)
                     }
-                    layoutParams = params
-                    setOnClickListener {
-                        val browserIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(item.triggerUrl))
-                        context.startActivity(browserIntent)
-                    }
-                }
-                holder.layoutTimelineContainer.addView(btnTrigger)
+                } catch (e: Exception) { /* ignore malformed json */ }
             }
 
             // 🔥 Eliminate smudge glow in Blue Theme explicitly for title
@@ -1209,11 +1281,12 @@ class NotificationActivity : ThemedActivity() {
             }
         }
 
-        private fun renderAttachments(context: Context, urls: List<String>, container: LinearLayout) {
+        private fun renderAttachments(context: Context, urls: List<String>, container: LinearLayout, isAnnouncement: Boolean = false) {
             if (urls.isEmpty()) return
             val density = context.resources.displayMetrics.density
-            val cardW = (94 * density).toInt()
-            val cardH = (136 * density).toInt()
+            val isSingle = urls.size == 1
+            val standardW = (94 * density).toInt()
+            val standardH = (136 * density).toInt()
             val gap = (8 * density).toInt()
             val rowGap = (8 * density).toInt()
 
@@ -1223,8 +1296,8 @@ class NotificationActivity : ThemedActivity() {
                     cardElevation = 0f
                     setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
                     tag = "attachment_card"
-                    layoutParams = android.widget.LinearLayout.LayoutParams(cardW, cardH).apply {
-                        setMargins(0, 0, gap, 0)
+                    layoutParams = android.widget.LinearLayout.LayoutParams(standardW, standardH).apply {
+                        if (!isSingle) setMargins(0, 0, gap, 0)
                     }
                 }
                 val imgView = ImageView(context).apply {
@@ -1234,8 +1307,24 @@ class NotificationActivity : ThemedActivity() {
                         android.view.ViewGroup.LayoutParams.MATCH_PARENT
                     )
                 }
-                com.bumptech.glide.Glide.with(context).load(url).into(imgView)
                 card.addView(imgView)
+                
+                com.bumptech.glide.Glide.with(context)
+                    .load(url)
+                    .into(object : com.bumptech.glide.request.target.CustomTarget<android.graphics.drawable.Drawable>() {
+                        override fun onResourceReady(resource: android.graphics.drawable.Drawable, transition: com.bumptech.glide.request.transition.Transition<in android.graphics.drawable.Drawable>?) {
+                            if (isAnnouncement && isSingle && resource.intrinsicWidth > resource.intrinsicHeight) {
+                                card.layoutParams = android.widget.LinearLayout.LayoutParams(
+                                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                                    (120 * density).toInt()
+                                ).apply { setMargins(0, 0, 0, 0) }
+                            }
+                            imgView.setImageDrawable(resource)
+                        }
+                        override fun onLoadCleared(placeholder: android.graphics.drawable.Drawable?) {
+                            imgView.setImageDrawable(placeholder)
+                        }
+                    })
                 card.setOnClickListener {
                     val dialog = android.app.Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
                     val fullImgContainer = android.widget.FrameLayout(context)

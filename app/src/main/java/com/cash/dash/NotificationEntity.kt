@@ -15,5 +15,6 @@ data class NotificationEntity(
     val imageUrl: String? = null,
     val imageUrls: String? = null,  // JSON array string stored in Room
     val triggerText: String? = null,
-    val triggerUrl: String? = null
+    val triggerUrl: String? = null,
+    val linksJson: String? = null
 )

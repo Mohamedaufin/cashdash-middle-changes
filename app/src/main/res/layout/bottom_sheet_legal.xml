@@ -44,15 +44,19 @@
 
     </androidx.core.widget.NestedScrollView>
 
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnLegalClose"
         android:layout_width="match_parent"
-        android:layout_height="55dp"
+        android:layout_height="65dp"
         android:layout_marginTop="16dp"
         android:text="I Understand"
-        android:textColor="@android:color/white"
-        android:backgroundTint="?attr/textGreenColor"
+        android:textColor="?attr/textPrimaryColor"
+        android:background="?attr/cardBackground"
+        android:backgroundTint="@null"
+        android:textAllCaps="false"
+        android:elevation="0dp"
+        android:stateListAnimator="@null"
         android:textStyle="bold"
-        android:textSize="16sp"/>
+        android:textSize="18sp"/>
 
 </LinearLayout>

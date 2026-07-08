@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:importantForAutofill="noExcludeDescendants"
+    android:background="?attr/cardBackground"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Embedded Link"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="?attr/textPrimaryColor"
+        android:layout_marginBottom="16dp"/>
+
+    <EditText
+        android:id="@+id/edtLinkUrl"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="Website URL (e.g. www.flipkart.com)"
+        android:textColor="?attr/textPrimaryColor"
+        android:textColorHint="?attr/textMutedColor"
+        android:background="?attr/inputBackground"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:inputType="textNoSuggestions"
+        android:privateImeOptions="nm"
+        android:importantForAutofill="no"
+        android:autofillHints=""
+        android:layout_marginBottom="8dp"/>
+
+    <EditText
+        android:id="@+id/edtLinkText"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="Display Text (e.g. Visit Flipkart)"
+        android:textColor="?attr/textPrimaryColor"
+        android:textColorHint="?attr/textMutedColor"
+        android:background="?attr/inputBackground"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:inputType="textNoSuggestions"
+        android:privateImeOptions="nm"
+        android:importantForAutofill="no"
+        android:autofillHints=""
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Preview"
+        android:textSize="12sp"
+        android:textColor="?attr/textMutedColor"
+        android:layout_marginBottom="6dp"/>
+
+    <TextView
+        android:id="@+id/tvLinkPreview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Link"
+        android:textSize="15sp"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- All 3 buttons in ONE horizontal row: Cancel | Delete | Save -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <!-- Cancel — neutral glass pill -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnLinkCancel"
+            android:layout_width="0dp"
+            android:layout_height="54dp"
+            android:layout_weight="1"
+            android:text="Cancel"
+            android:textAllCaps="false"
+            android:background="@drawable/bg_glass_3d_round"
+            android:textColor="?attr/textPrimaryColor"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:stateListAnimator="@null"
+            android:layout_marginEnd="6dp"/>
+
+        <!-- Delete — red glass pill (hidden by default) -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnLinkDelete"
+            android:layout_width="0dp"
+            android:layout_height="54dp"
+            android:layout_weight="1"
+            android:text="Delete"
+            android:textAllCaps="false"
+            android:background="@drawable/bg_glass_3d_red_circle"
+            android:textColor="?attr/textPrimaryColor"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:stateListAnimator="@null"
+            android:layout_marginEnd="6dp"
+            android:visibility="gone"/>
+
+        <!-- Save — green glass pill -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnLinkDone"
+            android:layout_width="0dp"
+            android:layout_height="54dp"
+            android:layout_weight="1"
+            android:text="Save"
+            android:textAllCaps="false"
+            android:background="@drawable/bg_glass_3d_green_circle"
+            android:textColor="?attr/textPrimaryColor"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:stateListAnimator="@null"/>
+
+    </LinearLayout>
+
+</LinearLayout>

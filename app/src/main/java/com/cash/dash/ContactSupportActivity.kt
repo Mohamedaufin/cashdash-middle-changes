@@ -301,16 +301,28 @@ class ContactSupportActivity : ThemedActivity() {
         imgView.scaleType = ImageView.ScaleType.FIT_CENTER
         Glide.with(this).load(uri).into(imgView)
 
-        val closeBtn = ImageButton(this)
-        val size = (44 * resources.displayMetrics.density).toInt()
-        val params = FrameLayout.LayoutParams(size, size).apply {
-            gravity = android.view.Gravity.TOP or android.view.Gravity.START
-            topMargin = (40 * resources.displayMetrics.density).toInt()
-            marginStart = (20 * resources.displayMetrics.density).toInt()
-        }
-        closeBtn.layoutParams = params
-        closeBtn.setImageResource(R.drawable.ic_back_arrow1)
-        closeBtn.background = ColorDrawable(Color.TRANSPARENT)
+        val closeBtn = ImageView(this)
+        val density = resources.displayMetrics.density
+        val btnParams = FrameLayout.LayoutParams(
+            (56 * density).toInt(),
+            (56 * density).toInt()
+        )
+        btnParams.gravity = android.view.Gravity.TOP or android.view.Gravity.END
+        btnParams.topMargin = (24 * density).toInt()
+        btnParams.marginEnd = (24 * density).toInt()
+        closeBtn.layoutParams = btnParams
+        
+        val glassBg = android.graphics.drawable.GradientDrawable()
+        glassBg.shape = android.graphics.drawable.GradientDrawable.OVAL
+        glassBg.setColor(android.graphics.Color.parseColor("#66000000"))
+        glassBg.setStroke(3, android.graphics.Color.parseColor("#80FFFFFF"))
+        closeBtn.background = glassBg
+        
+        closeBtn.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+        closeBtn.setColorFilter(android.graphics.Color.RED)
+        closeBtn.scaleType = ImageView.ScaleType.FIT_CENTER
+        val p = (14 * density).toInt()
+        closeBtn.setPadding(p, p, p, p)
         closeBtn.setOnClickListener { dialog.dismiss() }
 
         container.addView(imgView)

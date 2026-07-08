@@ -44,25 +44,37 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="end">
-
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/btnCancelDisclosure"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Cancel"
-                android:textColor="?attr/textMutedColor"
-                android:background="@android:color/transparent"
-                android:layout_marginEnd="16dp"/>
+            android:orientation="vertical"
+            android:layout_marginTop="16dp">
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnAgreeDisclosure"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:layout_height="65dp"
                 android:text="I Understand"
-                android:textColor="@color/white"
-                android:backgroundTint="?attr/colorAccent"/>
+                android:textColor="?attr/textPrimaryColor"
+                android:background="?attr/cardBackground"
+                android:backgroundTint="@null"
+                android:textAllCaps="false"
+                android:elevation="0dp"
+                android:stateListAnimator="@null"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:layout_marginBottom="8dp"/>
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnCancelDisclosure"
+                android:layout_width="match_parent"
+                android:layout_height="65dp"
+                android:text="Cancel"
+                android:textColor="?attr/textMutedColor"
+                android:background="?attr/cardBackground"
+                android:backgroundTint="@null"
+                android:textAllCaps="false"
+                android:elevation="0dp"
+                android:stateListAnimator="@null"
+                android:textStyle="bold"
+                android:textSize="18sp"/>
         </LinearLayout>
 
     </LinearLayout>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Monochrome white external-link icon (box with arrow) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M19,19H5V5h7V3H5a2,2,0,0,0,-2,2v14a2,2,0,0,0,2,2h14a2,2,0,0,0,2,-2v-7h-2ZM14,3v2h3.59l-9.83,9.83,1.41,1.41,9.83,-9.83V10h2V3Z"/>
+</vector>

@@ -10,16 +10,19 @@ import com.google.firebase.firestore.FirebaseFirestore
 class AdminMessagingActivity : ThemedActivity() {
 
     private var isAnnouncement = false
-    private var currentTab = TabType.GLOBAL
+    private var currentTab = TabType.NONE
     private val selectedEmails = mutableSetOf<String>()
     private val allUsers = mutableListOf<Pair<String, String>>() // Email, Display Name
     private val filteredUsers = mutableListOf<Pair<String, String>>()
 
-    enum class TabType { GLOBAL, ADMIN, USER, AGE }
+    enum class TabType { NONE, GLOBAL, ADMIN, USER, AGE }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_admin_messaging)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            window.decorView.importantForAutofill = android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+        }
 
         isAnnouncement = intent.getBooleanExtra("isAnnouncement", false)
 
@@ -50,7 +53,13 @@ class AdminMessagingActivity : ThemedActivity() {
                 return@OnClickListener
             }
 
+            if (currentTab == TabType.NONE) {
+                ToastHelper.showToast(this, "Please select a target audience.")
+                return@OnClickListener
+            }
+
             when (currentTab) {
+                TabType.NONE -> {} // Handled above
                 TabType.GLOBAL -> confirmSend("Global", "Send to all users?", title, body)
                 TabType.ADMIN -> confirmSend("Admin", "Send to Admins only?", title, body)
                 TabType.USER, TabType.AGE -> {
@@ -115,32 +124,39 @@ class AdminMessagingActivity : ThemedActivity() {
                 t.invalidate()
             }
             
-            // Highlight selected
-            val selectedView = when (tab) {
-                TabType.GLOBAL -> tabGlobal
-                TabType.ADMIN -> tabAdmin
-                TabType.USER -> tabUser
-                TabType.AGE -> tabAge
+            if (tab != TabType.NONE) {
+                val selectedView = when (tab) {
+                    TabType.GLOBAL -> tabGlobal
+                    TabType.ADMIN -> tabAdmin
+                    TabType.USER -> tabUser
+                    TabType.AGE -> tabAge
+                    TabType.NONE -> tabGlobal
+                }
+                
+                val isWhite = ThemeHelper.isWhiteTheme(this@AdminMessagingActivity)
+                val colorStr = when (tab) {
+                    TabType.GLOBAL -> if (isWhite) "#008000" else "#4CAF50"
+                    TabType.ADMIN -> if (isWhite) "#D32F2F" else "#FF4D4D"
+                    TabType.USER -> if (isWhite) "#CD8500" else "#FFA500"
+                    TabType.AGE -> if (isWhite) "#0047AB" else "#00C2FF"
+                    TabType.NONE -> "#555555"
+                }
+                val color = android.graphics.Color.parseColor(colorStr)
+                
+                val drawable = android.graphics.drawable.GradientDrawable()
+                drawable.setColor(color)
+                drawable.cornerRadius = 100f * resources.displayMetrics.density
+                
+                selectedView.background = drawable
+                selectedView.backgroundTintList = null
+                selectedView.setTextColor(android.graphics.Color.WHITE)
+                
+                btnSend.backgroundTintList = android.content.res.ColorStateList.valueOf(color)
+                findViewById<Button>(R.id.btnSendInline).backgroundTintList = android.content.res.ColorStateList.valueOf(color)
+            } else {
+                btnSend.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#555555"))
+                findViewById<Button>(R.id.btnSendInline).backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#555555"))
             }
-            
-            val colorStr = when (tab) {
-                TabType.GLOBAL -> "#008000"
-                TabType.ADMIN -> "#FF4D4D"
-                TabType.USER -> "#FFA500"
-                TabType.AGE -> if (isAnnouncement) "#FF007F" else "#00C2FF"
-            }
-            val color = android.graphics.Color.parseColor(colorStr)
-            
-            val drawable = android.graphics.drawable.GradientDrawable()
-            drawable.setColor(color)
-            drawable.cornerRadius = 100f * resources.displayMetrics.density
-            
-            selectedView.background = drawable
-            selectedView.backgroundTintList = null
-            selectedView.setTextColor(android.graphics.Color.WHITE)
-            
-            btnSend.backgroundTintList = android.content.res.ColorStateList.valueOf(color)
-            findViewById<Button>(R.id.btnSendInline).backgroundTintList = android.content.res.ColorStateList.valueOf(color)
 
             // Update UI based on tab
             layoutAgeSpecific.visibility = if (tab == TabType.AGE) View.VISIBLE else View.GONE
@@ -162,6 +178,13 @@ class AdminMessagingActivity : ThemedActivity() {
             
             // Update Descriptions & Button
             when (tab) {
+                TabType.NONE -> {
+                    tvTargetDesc.text = "Please select a target audience."
+                    btnSend.text = "Select Audience"
+                    btnSendInline.text = "Select Audience"
+                    btnSendInline.visibility = View.VISIBLE
+                    layoutBottomBar.visibility = View.GONE
+                }
                 TabType.GLOBAL -> {
                     tvTargetDesc.text = "This will be sent to all users."
                     btnSend.text = "Send Globally"
@@ -197,7 +220,7 @@ class AdminMessagingActivity : ThemedActivity() {
         tabAge.setOnClickListener { selectTab(TabType.AGE) }
         
         // Fix initial state styling properly
-        selectTab(TabType.GLOBAL)
+        selectTab(TabType.NONE)
     }
 
     private fun setupUserSearch() {
@@ -372,7 +395,6 @@ class AdminMessagingActivity : ThemedActivity() {
         val btnNo = dialogView.findViewById<Button>(R.id.btnConfirmCancel)
 
         btnYes.text = "Send"
-        btnYes.setTextColor(android.graphics.Color.WHITE)
         
         btnYes.setOnClickListener {
             confirmDialog.dismiss()
@@ -497,6 +519,7 @@ class AdminMessagingActivity : ThemedActivity() {
             TabType.ADMIN -> "Admin $baseType"
             TabType.USER -> "User Specific $baseType"
             TabType.AGE -> "Age Specific $baseType"
+            TabType.NONE -> "Unknown $baseType"
         }
         
         val db = FirebaseFirestore.getInstance()
