@@ -786,6 +786,9 @@ exports.onGlobalPush = onDocumentWritten({
 
     const title = newData.title || "Announcement";
     const message = newData.message || "";
+    const imageUrl = newData.imageUrl || "";
+    const triggerUrl = newData.triggerUrl || "";
+    const triggerText = newData.triggerText || "";
     
     if (!message) return;
 
@@ -795,17 +798,13 @@ exports.onGlobalPush = onDocumentWritten({
     try {
         await admin.messaging().send({
             topic: targetTopic,
-            notification: {
+            data: {
                 title: title,
                 body: message,
-            },
-            android: {
-                priority: "high",
-                notification: {
-                    channelId: "cashdash_urgent_heads_up_v10",
-                    icon: "ic_bell",
-                    color: "#4ADE80"
-                },
+                imageUrl: imageUrl,
+                triggerUrl: triggerUrl,
+                triggerText: triggerText,
+                isPromotion: "true"
             }
         });
         console.log(`Successfully sent push notification to ${targetTopic}: ${title}`);
@@ -827,6 +826,9 @@ exports.onUserPush = onDocumentWritten({
     const email = newData.email;
     const title = newData.title || "Support Alert";
     const message = newData.message || "";
+    const imageUrl = newData.imageUrl || "";
+    const triggerUrl = newData.triggerUrl || "";
+    const triggerText = newData.triggerText || "";
 
     if (!email || !message) return;
 
@@ -837,21 +839,14 @@ exports.onUserPush = onDocumentWritten({
         if (fcmToken) {
             await admin.messaging().send({
                 token: fcmToken,
-                notification: {
+                data: {
                     title: title,
                     body: message,
-                },
-                android: {
-                    priority: "high",
-                    notification: {
-                        channelId: "cashdash_urgent_heads_up_v10",
-                        icon: "ic_bell",
-                        color: "#4ADE80",
-                        clickAction: "NotificationActivity"
-                    },
-                },
-                data: {
-                    userSpecificPush: "true"
+                    imageUrl: imageUrl,
+                    triggerUrl: triggerUrl,
+                    triggerText: triggerText,
+                    userSpecificPush: "true",
+                    isPromotion: "true"
                 }
             });
             console.log(`Successfully sent user-specific push to ${email}: ${title}`);

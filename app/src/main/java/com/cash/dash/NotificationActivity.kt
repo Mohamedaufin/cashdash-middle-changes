@@ -422,7 +422,9 @@ class NotificationActivity : ThemedActivity() {
                                 status = "resolved",
                                 read = isRead,
                                 imageUrl = doc.getString("imageUrl"),
-                                imageUrls = (doc.get("imageUrls") as? List<*>)?.mapNotNull { it as? String }?.let { org.json.JSONArray(it).toString() }
+                                imageUrls = (doc.get("imageUrls") as? List<*>)?.mapNotNull { it as? String }?.let { org.json.JSONArray(it).toString() },
+                                triggerText = doc.getString("triggerText"),
+                                triggerUrl = doc.getString("triggerUrl")
                             )
                         }
                     }
@@ -655,7 +657,9 @@ class NotificationActivity : ThemedActivity() {
                 imageUrls = entity.imageUrls?.let {
                     try { val arr = org.json.JSONArray(it); (0 until arr.length()).map { i -> arr.getString(i) } }
                     catch (e: Exception) { emptyList() }
-                } ?: emptyList()
+                } ?: emptyList(),
+                triggerText = entity.triggerText,
+                triggerUrl = entity.triggerUrl
             )
         }
     }
@@ -1004,6 +1008,25 @@ class NotificationActivity : ThemedActivity() {
                         holder.layoutTimelineContainer.addView(attachmentLayout)
                     }
                 }
+            }
+
+            // Custom Trigger Button for Promotions/Announcements
+            if (!item.triggerText.isNullOrEmpty() && !item.triggerUrl.isNullOrEmpty()) {
+                val btnTrigger = Button(holder.itemView.context).apply {
+                    text = item.triggerText
+                    isAllCaps = false
+                    backgroundTintList = android.content.res.ColorStateList.valueOf(ThemeHelper.resolveColorAttr(context, R.attr.navActiveColor))
+                    setTextColor(android.graphics.Color.WHITE)
+                    val params = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (55 * resources.displayMetrics.density).toInt()).apply {
+                        setMargins(0, (16 * resources.displayMetrics.density).toInt(), 0, (8 * resources.displayMetrics.density).toInt())
+                    }
+                    layoutParams = params
+                    setOnClickListener {
+                        val browserIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(item.triggerUrl))
+                        context.startActivity(browserIntent)
+                    }
+                }
+                holder.layoutTimelineContainer.addView(btnTrigger)
             }
 
             // 🔥 Eliminate smudge glow in Blue Theme explicitly for title

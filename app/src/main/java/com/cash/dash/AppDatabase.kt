@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [TransactionEntity::class, NotificationEntity::class], version = 5, exportSchema = false)
+@Database(entities = [TransactionEntity::class, NotificationEntity::class], version = 6, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun notificationDao(): NotificationDao

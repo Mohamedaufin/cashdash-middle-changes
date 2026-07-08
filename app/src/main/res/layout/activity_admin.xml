@@ -90,6 +90,18 @@
                 android:background="?attr/roundBackground"
                 android:textStyle="bold"
                 android:textSize="16sp"
+                android:layout_marginBottom="12dp"/>
+
+            <TextView
+                android:id="@+id/btnGoToPromotions"
+                android:layout_width="match_parent"
+                android:layout_height="65dp"
+                android:text="Promotions"
+                android:gravity="center"
+                android:textColor="?attr/textPrimaryColor"
+                android:background="?attr/roundBackground"
+                android:textStyle="bold"
+                android:textSize="16sp"
                 android:layout_marginBottom="30dp"/>
 
             <TextView
