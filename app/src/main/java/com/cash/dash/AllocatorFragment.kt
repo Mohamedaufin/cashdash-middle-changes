@@ -258,20 +258,29 @@ class AllocatorFragment : Fragment() {
         saved.remove(name)
         prefs.edit().putStringSet(KEY, saved).apply()
         prefs.edit().remove("LIMIT_$name").apply()
+        
+        val catPrefs = requireContext().getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
+        catPrefs.edit().remove("ICON_$name").apply()
 
         HistoryDataManager.deleteCategory(requireContext(), name)
     }
 
     private fun renameCategory(oldName: String, newName: String) {
-        val catPrefs = requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val saved = HashSet(catPrefs.getStringSet(KEY, emptySet()) ?: emptySet())
+        val prefs = requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val saved = HashSet(prefs.getStringSet(KEY, emptySet()) ?: emptySet())
 
         if (saved.remove(oldName)) {
             saved.add(newName)
-            catPrefs.edit().putStringSet(KEY, saved).apply()
+            prefs.edit().putStringSet(KEY, saved).apply()
 
-            val oldLimit = catPrefs.getInt("LIMIT_$oldName", 0)
-            catPrefs.edit().putInt("LIMIT_$newName", oldLimit).remove("LIMIT_$oldName").apply()
+            val oldLimit = prefs.getInt("LIMIT_$oldName", 0)
+            prefs.edit().putInt("LIMIT_$newName", oldLimit).remove("LIMIT_$oldName").apply()
+            
+            val catPrefs = requireContext().getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
+            if (catPrefs.contains("ICON_$oldName")) {
+                val oldIcon = catPrefs.getInt("ICON_$oldName", 0)
+                catPrefs.edit().putInt("ICON_$newName", oldIcon).remove("ICON_$oldName").apply()
+            }
 
             HistoryDataManager.renameCategory(requireContext(), oldName, newName)
         }

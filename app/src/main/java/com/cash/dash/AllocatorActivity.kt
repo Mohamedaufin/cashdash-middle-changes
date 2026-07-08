@@ -233,22 +233,25 @@ class AllocatorActivity : ThemedActivity() {
             weekEditor.remove("${name}_W$w")
         }
         weekEditor.apply()
+        
+        val catPrefs = getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
+        catPrefs.edit().remove("ICON_$name").apply()
 
         // Sync deletion to cloud
         FirestoreSyncManager.pushAllDataToCloud(this)
     }
 
     private fun renameCategory(oldName: String, newName: String) {
-        val catPrefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val saved = HashSet(catPrefs.getStringSet(KEY, emptySet()) ?: emptySet())
+        val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val saved = HashSet(prefs.getStringSet(KEY, emptySet()) ?: emptySet())
 
         if (saved.remove(oldName)) {
             saved.add(newName)
-            catPrefs.edit().putStringSet(KEY, saved).apply()
+            prefs.edit().putStringSet(KEY, saved).apply()
 
             // 1. Migrate Limits
-            val oldLimit = catPrefs.getInt("LIMIT_$oldName", 0)
-            catPrefs.edit().putInt("LIMIT_$newName", oldLimit).remove("LIMIT_$oldName").apply()
+            val oldLimit = prefs.getInt("LIMIT_$oldName", 0)
+            prefs.edit().putInt("LIMIT_$newName", oldLimit).remove("LIMIT_$oldName").apply()
 
             // 2. Migrate Spent Totals (GraphData)
             val graphPrefs = getSharedPreferences("GraphData", Context.MODE_PRIVATE)
@@ -265,6 +268,13 @@ class AllocatorActivity : ThemedActivity() {
                 }
             }
             weekEditor.apply()
+            
+            // 4. Migrate Icons (CategoryPrefs)
+            val catPrefs = getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
+            if (catPrefs.contains("ICON_$oldName")) {
+                val oldIcon = catPrefs.getInt("ICON_$oldName", 0)
+                catPrefs.edit().putInt("ICON_$newName", oldIcon).remove("ICON_$oldName").apply()
+            }
 
             HistoryDataManager.renameCategory(this, oldName, newName)
         }
