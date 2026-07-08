@@ -53,15 +53,33 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun sendNotification(title: String, messageBody: String, imageUrl: String?, triggerUrl: String?, triggerText: String?) {
-        val intent = Intent(this, NotificationActivity::class.java).apply {
-            action = "NotificationActivity"
-            // These flags ensure it works whether the app is killed, in background, or foreground
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+        val safeUrl = if (!triggerUrl.isNullOrEmpty()) {
+            if (!triggerUrl.startsWith("http://") && !triggerUrl.startsWith("https://")) "https://$triggerUrl" else triggerUrl
+        } else null
+
+        val notifId = System.currentTimeMillis().toInt()
+        
+        // If triggerUrl exists, clicking the notification opens the website directly and cancels itself
+        val pendingIntent = if (!safeUrl.isNullOrEmpty()) {
+            val intent = Intent(this, NotificationActionReceiver::class.java).apply {
+                action = "com.cash.dash.ACTION_OPEN_URL"
+                putExtra("url", safeUrl)
+                putExtra("notif_id", notifId)
+            }
+            PendingIntent.getActivity(
+                this, notifId, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } else {
+            val intent = Intent(this, NotificationActivity::class.java).apply {
+                action = "NotificationActivity"
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            PendingIntent.getActivity(
+                this, notifId, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
         }
-        val pendingIntent = PendingIntent.getActivity(
-            this, System.currentTimeMillis().toInt(), intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
 
         // 🔥 Ultimate Channel Rotation (v10) - Forces a Fresh Start
         val channelId = "cashdash_urgent_heads_up_v10"
@@ -98,15 +116,18 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         } else {
             notificationBuilder.setStyle(NotificationCompat.BigTextStyle().bigText(messageBody))
         }
-
-        if (!triggerUrl.isNullOrEmpty() && !triggerText.isNullOrEmpty()) {
-            val triggerIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(triggerUrl))
-            triggerIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            val triggerPendingIntent = PendingIntent.getActivity(
-                this, System.currentTimeMillis().toInt() + 1, triggerIntent,
+        if (!safeUrl.isNullOrEmpty()) {
+            val actionIntent = Intent(this, NotificationActionReceiver::class.java).apply {
+                action = "com.cash.dash.ACTION_OPEN_URL"
+                putExtra("url", safeUrl)
+                putExtra("notif_id", notifId)
+            }
+            val actionPendingIntent = PendingIntent.getActivity(
+                this, notifId + 1, actionIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-            notificationBuilder.addAction(0, triggerText, triggerPendingIntent)
+            val btnText = if (!triggerText.isNullOrEmpty()) triggerText else "Open Website"
+            notificationBuilder.addAction(R.drawable.ic_notif_open_url, "\u2197  $btnText", actionPendingIntent)
         }
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -135,6 +156,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
+        notificationManager.notify(notifId, notificationBuilder.build())
     }
 }

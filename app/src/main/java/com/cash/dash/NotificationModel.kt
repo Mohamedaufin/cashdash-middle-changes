@@ -19,5 +19,6 @@ data class NotificationModel(
     val imageUrl: String? = null,
     val imageUrls: List<String> = emptyList(),
     val triggerText: String? = null,
-    val triggerUrl: String? = null
+    val triggerUrl: String? = null,
+    val linksJson: String? = null
 )

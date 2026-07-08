@@ -4,40 +4,43 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:importantForAutofill="noExcludeDescendants"
     android:background="?attr/mainBackground">
 
-    <LinearLayout
+    <RelativeLayout
         android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="16dp"
-        android:paddingBottom="8dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="10dp"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageButton
+        <ImageView
             android:id="@+id/btnBack"
-            android:layout_width="45dp"
-            android:layout_height="45dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:background="?attr/roundBackground"
+            android:padding="12dp"
+            android:scaleType="fitCenter"
             android:src="@drawable/ic_back_arrow1"
             app:tint="?attr/textPrimaryColor"
-            android:padding="10dp"
-            android:scaleType="fitCenter"/>
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_alignParentStart="true"/>
 
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_centerHorizontal="true"
+            android:layout_alignTop="@id/btnBack"
+            android:layout_alignBottom="@id/btnBack"
+            android:gravity="center"
             android:text="Promotions"
-            android:textSize="20sp"
-            android:textStyle="bold"
             android:textColor="?attr/textPrimaryColor"
-            android:fontFamily="sans-serif-medium" />
-    </LinearLayout>
+            android:textSize="20sp"
+            android:textStyle="bold" />
+    </RelativeLayout>
 
     <ScrollView
         android:layout_width="match_parent"
@@ -73,7 +76,8 @@
                 android:id="@+id/edtNotifTitle"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
-                android:hint="Notification Title (e.g. Huge Update!)"
+                android:hint="Notification Title"
+                android:inputType="textCapSentences"
                 android:textColor="?attr/textPrimaryColor"
                 android:textColorHint="?attr/textMutedColor"
                 android:background="?attr/inputBackground"
@@ -87,12 +91,40 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:minHeight="80dp"
-                android:hint="Notification Body (e.g. Check out the new features)"
+                android:hint="Notification Body"
+                android:inputType="textCapSentences|textMultiLine"
                 android:textColor="?attr/textPrimaryColor"
                 android:textColorHint="?attr/textMutedColor"
                 android:background="?attr/inputBackground"
                 android:padding="16dp"
                 android:gravity="top|start"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp"/>
+
+            <EditText
+                android:id="@+id/edtTriggerUrlTitle"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:hint="Trigger URL Title - optional (Default - Open Website)"
+                android:inputType="textCapSentences"
+                android:textColor="?attr/textPrimaryColor"
+                android:textColorHint="?attr/textMutedColor"
+                android:background="?attr/inputBackground"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp"/>
+
+            <EditText
+                android:id="@+id/edtTriggerUrl"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:hint="Trigger URL - optional (e.g. https://play.google.com/...)"
+                android:textColor="?attr/textPrimaryColor"
+                android:textColorHint="?attr/textMutedColor"
+                android:background="?attr/inputBackground"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 android:textSize="14sp"
                 android:layout_marginBottom="16dp"/>
 
@@ -111,6 +143,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:hint="Announcement Title"
+                android:inputType="textCapSentences"
                 android:textColor="?attr/textPrimaryColor"
                 android:textColorHint="?attr/textMutedColor"
                 android:background="?attr/inputBackground"
@@ -124,7 +157,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:minHeight="120dp"
-                android:hint="Full Announcement Details (can be long)"
+                android:hint="Full Announcement Details"
+                android:inputType="textCapSentences|textMultiLine"
                 android:textColor="?attr/textPrimaryColor"
                 android:textColorHint="?attr/textMutedColor"
                 android:background="?attr/inputBackground"
@@ -133,70 +167,126 @@
                 android:textSize="14sp"
                 android:layout_marginBottom="16dp"/>
 
+            <!-- Embedded Links Section -->
+            <TextView
+                android:id="@+id/tvAddLinksLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add links to announcement"
+                android:textSize="14sp"
+                android:textColor="?attr/textMutedColor"
+                android:textStyle="bold"
+                android:visibility="gone"
+                android:layout_marginBottom="20dp"/>
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupLinks"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="36dp"
+                android:visibility="gone"
+                app:chipSpacingVertical="4dp"
+                app:chipSpacingHorizontal="4dp"/>
+
             <!-- Media Attachment -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Media &amp; Triggers"
-                android:textSize="16sp"
+                android:text="Add supporting media"
                 android:textColor="?attr/textPrimaryColor"
+                android:textSize="16sp"
                 android:textStyle="bold"
-                android:layout_marginBottom="8dp"/>
+                android:layout_marginBottom="4dp"/>
 
-            <LinearLayout
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add image for notification and announcement (optional)"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="13sp"
+                android:layout_marginBottom="16dp"
+                android:lineSpacingExtra="2dp"/>
+
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
                 android:layout_marginBottom="12dp">
-                
-                <Button
-                    android:id="@+id/btnAttachImage"
+                <LinearLayout
+                    android:id="@+id/layoutImagePreview"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Attach Image"
-                    android:backgroundTint="?attr/colorAccent"
-                    android:textColor="@android:color/white"/>
+                    android:layout_gravity="center_horizontal"
+                    android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/tvImageStatus"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:text="No image attached"
-                    android:textColor="?attr/textMutedColor"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginStart="12dp"
-                    android:maxLines="1"
-                    android:ellipsize="end"/>
-            </LinearLayout>
+                    <FrameLayout
+                        android:layout_width="128dp"
+                        android:layout_height="128dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginBottom="4dp">
 
-            <EditText
-                android:id="@+id/edtTriggerText"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:hint="Button Text (e.g. Update Now, Open Link)"
-                android:textColor="?attr/textPrimaryColor"
-                android:textColorHint="?attr/textMutedColor"
-                android:background="?attr/inputBackground"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:textSize="14sp"
-                android:layout_marginBottom="8dp"/>
+                        <FrameLayout
+                            android:id="@+id/frameImage"
+                            android:layout_width="120dp"
+                            android:layout_height="120dp"
+                            android:layout_gravity="bottom|start"
+                            android:background="?attr/inputBackground"
+                            android:clipToOutline="true">
 
-            <EditText
-                android:id="@+id/edtTriggerUrl"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:hint="Trigger URL (e.g. https://play.google.com/...)"
-                android:textColor="?attr/textPrimaryColor"
-                android:textColorHint="?attr/textMutedColor"
-                android:background="?attr/inputBackground"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:textSize="14sp"
-                android:layout_marginBottom="24dp"/>
+                            <ImageView
+                                android:id="@+id/imgPreview"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:clipToOutline="true"
+                                android:visibility="gone" />
 
-            <!-- Audience Selection -->
+                            <ImageView
+                                android:id="@+id/imgPlus"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_plus_vector"
+                                android:contentDescription="Add image" />
+                        </FrameLayout>
+
+                        <ImageButton
+                            android:id="@+id/btnDeleteImage"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="top|end"
+                            android:background="@android:color/transparent"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_trash"/>
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:id="@+id/btnViewImage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="4dp">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_eye" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:text="view"
+                            android:textColor="?attr/textMutedColor"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </FrameLayout>
+
+            <!-- Target Audience Tabs -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -204,20 +294,206 @@
                 android:textSize="16sp"
                 android:textColor="?attr/textPrimaryColor"
                 android:textStyle="bold"
-                android:layout_marginBottom="8dp"/>
+                android:layout_marginBottom="20dp"/>
 
-            <Spinner
-                android:id="@+id/spinnerTargetAudience"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:background="?attr/inputBackground"
-                android:layout_marginBottom="24dp"/>
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="10dp">
+                
+                <TextView
+                    android:id="@+id/tabGlobal"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="55dp"
+                    android:text="Global"
+                    android:gravity="center"
+                    android:background="?attr/roundBackground"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginEnd="10dp"/>
+
+                <TextView
+                    android:id="@+id/tabAdmin"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="55dp"
+                    android:text="Admin Only"
+                    android:gravity="center"
+                    android:background="?attr/roundBackground"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="32dp">
+
+                <TextView
+                    android:id="@+id/tabUser"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="55dp"
+                    android:text="User Specific"
+                    android:gravity="center"
+                    android:background="?attr/roundBackground"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginEnd="10dp"/>
+
+                <TextView
+                    android:id="@+id/tabAge"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="55dp"
+                    android:text="Age Specific"
+                    android:gravity="center"
+                    android:background="?attr/roundBackground"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvTargetDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="This will be sent to all users."
+                android:textColor="?attr/textMutedColor"
+                android:textSize="14sp"
+                android:layout_marginBottom="20dp"/>
+
+            <!-- Age Inputs (Visible only on Age Tab) -->
+            <LinearLayout
+                android:id="@+id/layoutAgeSpecific"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:layout_marginBottom="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+
+                    <EditText
+                        android:id="@+id/edtMinAge"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:hint="Min Age"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textColorHint="?attr/textMutedColor"
+                        android:background="?attr/inputBackground"
+                        android:padding="15dp"
+                        android:inputType="number"
+                        android:layout_marginEnd="10dp"/>
+
+                    <EditText
+                        android:id="@+id/edtMaxAge"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:hint="Max Age"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textColorHint="?attr/textMutedColor"
+                        android:background="?attr/inputBackground"
+                        android:padding="15dp"
+                        android:inputType="number"/>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/btnFetchUsers"
+                    android:layout_width="match_parent"
+                    android:layout_height="55dp"
+                    android:text="Fetch Users"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:background="?attr/roundBackground"
+                    android:gravity="center"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+
+            <!-- User List Container (Visible on User & Age Tabs) -->
+            <LinearLayout
+                android:id="@+id/layoutUserList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <EditText
+                    android:id="@+id/edtSearchUsers"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Search user email or name..."
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textColorHint="?attr/textMutedColor"
+                    android:background="?attr/inputBackground"
+                    android:padding="12dp"
+                    android:singleLine="true"
+                    android:layout_marginBottom="12dp"/>
+                    
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="8dp"
+                    android:layout_marginBottom="8dp">
+                    <CheckBox
+                        android:id="@+id/cbSelectAll"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Select All Fetched Users"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textSize="14sp"
+                        android:paddingStart="8dp"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="?attr/inputBackground"
+                    android:padding="10dp"
+                    android:layout_marginBottom="20dp">
+                    
+                    <TextView
+                        android:id="@+id/tvEmptyList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="No users found."
+                        android:textColor="?attr/textMutedColor"
+                        android:gravity="center"
+                        android:padding="20dp"
+                        android:visibility="visible"/>
+
+                    <!-- Users will be injected here dynamically -->
+                    <LinearLayout
+                        android:id="@+id/layoutUsersInner"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"/>
+                </LinearLayout>
+            </LinearLayout>
 
             <Button
                 android:id="@+id/btnSendPromotions"
                 android:layout_width="match_parent"
                 android:layout_height="55dp"
-                android:text="Send Promotion"
+                android:text="Send Promotion Globally"
                 android:backgroundTint="?attr/colorAccent"
                 android:textColor="@android:color/white"
                 android:textSize="16sp"

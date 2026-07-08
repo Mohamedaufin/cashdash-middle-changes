@@ -192,7 +192,10 @@
                 android:layout_height="wrap_content"
                 android:text="I agree to the Terms of Service and Privacy Policy"
                 android:textColor="?attr/textPrimaryColor"
-                android:textSize="13sp" />
+                android:textSize="14sp"
+                android:lineSpacingExtra="6dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp" />
         </LinearLayout>
 
         <androidx.appcompat.widget.AppCompatButton

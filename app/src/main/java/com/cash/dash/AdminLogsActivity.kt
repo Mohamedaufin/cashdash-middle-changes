@@ -24,6 +24,9 @@ class AdminLogsActivity : ThemedActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_admin_logs)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            window.decorView.importantForAutofill = android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+        }
 
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
 
@@ -84,6 +87,7 @@ class AdminLogsActivity : ThemedActivity() {
                     val message = doc.getString("message") ?: doc.getString("content") ?: ""
                     val ts = doc.getLong("timestamp") ?: 0L
                     val details = doc.getString("details") ?: doc.getString("targetUsers")
+                    val payload = doc.get("payload") as? Map<String, Any>
                     val timeStr = if (ts > 0) sdf.format(Date(ts)) else ""
 
                     val emails = if (!details.isNullOrEmpty()) details.split(",").map { it.trim() }.filter { it.isNotEmpty() } else emptyList()
@@ -101,14 +105,66 @@ class AdminLogsActivity : ThemedActivity() {
 
                     // Formatted content text
                     val formattedDetails = buildString {
-                        if (title.isNotEmpty()) {
-                            append("Title: ")
-                            append(title)
-                        }
-                        if (message.isNotEmpty()) {
-                            if (isNotEmpty()) append("\n")
-                            append("Message: ")
-                            append(message)
+                        if (payload != null) {
+                            val notifTitle = payload["notifTitle"] as? String ?: ""
+                            val notifBody = payload["notifBody"] as? String ?: ""
+                            val annTitle = payload["annTitle"] as? String ?: ""
+                            val annBody = payload["annBody"] as? String ?: ""
+                            val triggerUrl = payload["triggerUrl"] as? String ?: ""
+                            val triggerUrlTitle = payload["triggerUrlTitle"] as? String ?: ""
+                            val uploadedImageUrl = payload["uploadedImageUrl"] as? String ?: ""
+                            
+                            val hasNotif = notifTitle.isNotEmpty() || notifBody.isNotEmpty()
+                            val notifLines = mutableListOf<String>()
+                            if (hasNotif) {
+                                notifLines.add("Push Notification:")
+                                if (notifTitle.isNotEmpty()) notifLines.add("Title - ${android.text.TextUtils.htmlEncode(notifTitle)}")
+                                if (notifBody.isNotEmpty()) notifLines.add("Content - ${android.text.TextUtils.htmlEncode(notifBody)}")
+                                val cleanUrl = triggerUrl.replace("https://", "").replace("http://", "")
+                                if (triggerUrlTitle.isNotEmpty()) notifLines.add("Trigger URL Title - ${android.text.TextUtils.htmlEncode(triggerUrlTitle)}")
+                                if (cleanUrl.isNotEmpty()) notifLines.add("Trigger URL - <a href=\"https://$cleanUrl\">$cleanUrl</a>")
+                                append(notifLines.joinToString("\n"))
+                            }
+
+                            val hasAnn = annTitle.isNotEmpty() || annBody.isNotEmpty()
+                            if (hasAnn) {
+                                if (hasNotif) append("\n\n")
+                                val annLines = mutableListOf<String>()
+                                annLines.add("Announcement:")
+                                if (annTitle.isNotEmpty()) annLines.add("Title - ${android.text.TextUtils.htmlEncode(annTitle)}")
+                                
+                                val urls = mutableListOf<String>()
+                                if (annBody.isNotEmpty()) {
+                                    var cleanAnnBody = annBody.replace("&nbsp;<a href=\"[^\"]*\"><img src=\"ic_external_link\"/></a>".toRegex(), "")
+                                        .replace("&nbsp;<img src=\"ic_external_link\"/>".toRegex(), "")
+                                        .replace("&nbsp;<font color=\"#2196F3\">\u2197</font>".toRegex(), "")
+                                        
+                                    cleanAnnBody = cleanAnnBody.replace("<a[^>]*href=\"([^\"]*)\"[^>]*>(.*?)</a>".toRegex()) { match ->
+                                        urls.add(match.groupValues[1])
+                                        "<b>${match.groupValues[2]}</b>"
+                                    }
+                                    annLines.add("Content - $cleanAnnBody")
+                                }
+                                if (urls.isNotEmpty()) {
+                                    annLines.add("Link - " + urls.joinToString(", ") { "<a href=\"$it\">$it</a>" })
+                                }
+                                append(annLines.joinToString("\n"))
+                            }
+                            
+                            if (uploadedImageUrl.isNotEmpty()) {
+                                if (hasNotif || hasAnn) append("\n\n")
+                                append("Supporting media:")
+                            }
+                        } else {
+                            if (title.isNotEmpty()) {
+                                append("Title: ")
+                                append(android.text.TextUtils.htmlEncode(title))
+                            }
+                            if (message.isNotEmpty()) {
+                                if (isNotEmpty()) append("\n")
+                                append("Message: ")
+                                append(android.text.TextUtils.htmlEncode(message))
+                            }
                         }
                     }
 
@@ -131,7 +187,9 @@ class AdminLogsActivity : ThemedActivity() {
                             details = formattedDetails,
                             triggeredBy = triggeredByText,
                             rawActionType = type,
-                            targetedUsers = targetedUsersText
+                            targetedUsers = targetedUsersText,
+                            payload = payload,
+                            imageUrl = (payload?.get("uploadedImageUrl") as? String)?.takeIf { it.isNotEmpty() }
                         )
                     )
                 }
@@ -153,7 +211,9 @@ class AdminLogsActivity : ThemedActivity() {
         val details: String,
         val triggeredBy: String,
         val rawActionType: String,
-        val targetedUsers: String?
+        val targetedUsers: String?,
+        val payload: Map<String, Any>?,
+        val imageUrl: String? = null
     )
 
     inner class LogsAdapter(private val items: List<AdminLogModel>) :
@@ -168,16 +228,18 @@ class AdminLogsActivity : ThemedActivity() {
             val item = items[position]
             holder.tvActionType.text = item.actionType
             holder.tvTime.text = item.time
-            holder.tvDetails.text = item.details
+            holder.tvDetails.movementMethod = android.text.method.LinkMovementMethod.getInstance()
+            holder.tvDetails.setLinkTextColor(android.graphics.Color.parseColor("#2196F3"))
+            holder.tvDetails.text = android.text.Html.fromHtml(item.details.replace("\n", "<br>"), android.text.Html.FROM_HTML_MODE_LEGACY)
             holder.tvTriggeredBy.text = item.triggeredBy
 
             // Color-code the left accent bar and the badge text based on rawActionType
             val color = when {
-                item.rawActionType.contains("Age Specific Announcement", ignoreCase = true) -> android.graphics.Color.parseColor("#FF007F") // Pink
-                item.rawActionType.contains("Age Specific Notification", ignoreCase = true) -> android.graphics.Color.parseColor("#00C2FF") // Cyan
+                item.rawActionType.contains("User Specific", ignoreCase = true) -> android.graphics.Color.parseColor(if (ThemeHelper.isWhiteTheme(holder.itemView.context)) "#CD8500" else "#FFA500") // Yellow
+                item.rawActionType.contains("Age Specific", ignoreCase = true) -> android.graphics.Color.parseColor(if (ThemeHelper.isWhiteTheme(holder.itemView.context)) "#0047AB" else "#00C2FF") // Blue
                 item.rawActionType.contains("Global", ignoreCase = true) -> ThemeHelper.resolveColorAttr(holder.itemView.context, R.attr.textGreenColor) // Green
                 item.rawActionType.contains("Admin", ignoreCase = true) -> ThemeHelper.resolveColorAttr(holder.itemView.context, R.attr.textRedColor) // Red
-                item.rawActionType.contains("User Specific", ignoreCase = true) -> android.graphics.Color.parseColor("#FFA500") // Yellow
+                item.rawActionType.contains("Promotional Activity", ignoreCase = true) -> android.graphics.Color.parseColor("#FF007F") // Pink
                 else -> ThemeHelper.resolveColorAttr(holder.itemView.context, R.attr.textGreenColor)
             }
             
@@ -188,20 +250,121 @@ class AdminLogsActivity : ThemedActivity() {
                 holder.tvTargetedUsers.visibility = View.GONE
             }
 
+            if (item.imageUrl != null) {
+                holder.cardLogMedia.visibility = View.VISIBLE
+                holder.cardLogMedia.setOnClickListener {
+                    showFullscreenImagePreview(item.imageUrl)
+                }
+                val density = holder.itemView.resources.displayMetrics.density
+                com.bumptech.glide.Glide.with(holder.itemView.context)
+                    .asBitmap()
+                    .load(item.imageUrl)
+                    .into(object : com.bumptech.glide.request.target.CustomTarget<android.graphics.Bitmap>() {
+                        override fun onResourceReady(resource: android.graphics.Bitmap, transition: com.bumptech.glide.request.transition.Transition<in android.graphics.Bitmap>?) {
+                            val isPortrait = resource.height > resource.width
+                            holder.imgLogMedia.layoutParams = holder.imgLogMedia.layoutParams.apply {
+                                if (isPortrait) {
+                                    this.width = (94 * density).toInt()
+                                    this.height = (136 * density).toInt()
+                                    holder.imgLogMedia.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+                                } else {
+                                    this.width = android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                                    this.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                                    holder.imgLogMedia.scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+                                }
+                            }
+                            holder.imgLogMedia.setImageBitmap(resource)
+                        }
+                        override fun onLoadCleared(placeholder: android.graphics.drawable.Drawable?) {}
+                    })
+            } else {
+                holder.cardLogMedia.visibility = View.GONE
+            }
+
             holder.viewAccentBar.setBackgroundColor(color)
             holder.tvActionType.setTextColor(color)
             holder.tvTriggeredBy.setTextColor(color)
+
+            if (item.payload != null) {
+                holder.btnReTrigger.visibility = View.VISIBLE
+                holder.btnReTrigger.setOnClickListener {
+                    val intent = android.content.Intent(holder.itemView.context, AdminPromotionsActivity::class.java).apply {
+                        putExtra("is_retrigger", true)
+                        item.payload.forEach { (key, value) ->
+                            when (value) {
+                                is String -> putExtra(key, value)
+                                is Boolean -> putExtra(key, value)
+                                is List<*> -> putStringArrayListExtra(key, ArrayList(value.map { it.toString() }))
+                            }
+                        }
+                    }
+                    holder.itemView.context.startActivity(intent)
+                }
+            } else {
+                holder.btnReTrigger.visibility = View.GONE
+                holder.btnReTrigger.setOnClickListener(null)
+            }
         }
 
         override fun getItemCount(): Int = items.size
 
-        inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val viewAccentBar: View = itemView.findViewById(R.id.viewAccentBar)
             val tvActionType: TextView = itemView.findViewById(R.id.tvLogActionType)
             val tvTime: TextView = itemView.findViewById(R.id.tvLogTime)
             val tvDetails: TextView = itemView.findViewById(R.id.tvLogDetails)
             val tvTriggeredBy: TextView = itemView.findViewById(R.id.tvLogTriggeredBy)
-            val tvTargetedUsers: TextView = itemView.findViewById(R.id.tvLogTargetedUsers)
+            val tvTargetedUsers: TextView = view.findViewById(R.id.tvLogTargetedUsers)
+            val btnReTrigger: TextView = view.findViewById(R.id.btnReTrigger)
+            val cardLogMedia: androidx.cardview.widget.CardView = view.findViewById(R.id.cardLogMedia)
+            val imgLogMedia: android.widget.ImageView = view.findViewById(R.id.imgLogMedia)
         }
+    }
+
+    private fun showFullscreenImagePreview(model: Any) {
+        val dialog = android.app.Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val container = android.widget.FrameLayout(this)
+        container.layoutParams = android.view.ViewGroup.LayoutParams(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT
+        )
+
+        val imgView = com.github.chrisbanes.photoview.PhotoView(this)
+        imgView.layoutParams = android.widget.FrameLayout.LayoutParams(
+            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+            android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+        )
+        imgView.scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+        com.bumptech.glide.Glide.with(this).load(model).into(imgView)
+
+        val closeBtn = android.widget.ImageView(this)
+        val density = resources.displayMetrics.density
+        val btnParams = android.widget.FrameLayout.LayoutParams(
+            (56 * density).toInt(),
+            (56 * density).toInt()
+        )
+        btnParams.gravity = android.view.Gravity.TOP or android.view.Gravity.END
+        btnParams.topMargin = (24 * density).toInt()
+        btnParams.marginEnd = (24 * density).toInt()
+        closeBtn.layoutParams = btnParams
+        
+        val glassBg = android.graphics.drawable.GradientDrawable()
+        glassBg.shape = android.graphics.drawable.GradientDrawable.OVAL
+        glassBg.setColor(android.graphics.Color.parseColor("#66000000"))
+        glassBg.setStroke(3, android.graphics.Color.parseColor("#80FFFFFF"))
+        closeBtn.background = glassBg
+        
+        closeBtn.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+        closeBtn.setColorFilter(android.graphics.Color.RED)
+        closeBtn.scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+        val p = (14 * density).toInt()
+        closeBtn.setPadding(p, p, p, p)
+        closeBtn.setOnClickListener { dialog.dismiss() }
+
+        container.addView(imgView)
+        container.addView(closeBtn)
+
+        dialog.setContentView(container)
+        dialog.show()
     }
 }

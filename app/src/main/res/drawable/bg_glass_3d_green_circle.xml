@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 1. Inner Glow / Glass Tint (Green) -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#4000C853"
+                android:endColor="#1000C853"
+                android:angle="135"
+                android:type="linear"/>
+            <corners android:radius="30dp"/>
+            <stroke
+                android:width="1.2dp"
+                android:color="#8000E676"/>
+        </shape>
+    </item>
+
+    <!-- 2. Top-edge Gloss Highlight -->
+    <item
+        android:bottom="30dp"
+        android:left="2dp"
+        android:right="2dp"
+        android:top="0dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#30AAFFAA"
+                android:endColor="#00FFFFFF"
+                android:angle="270"
+                android:type="linear"/>
+            <corners
+                android:topLeftRadius="30dp"
+                android:topRightRadius="30dp"
+                android:bottomLeftRadius="0dp"
+                android:bottomRightRadius="0dp"/>
+        </shape>
+    </item>
+
+</layer-list>
