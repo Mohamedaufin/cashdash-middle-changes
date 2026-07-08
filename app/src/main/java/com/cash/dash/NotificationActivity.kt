@@ -764,6 +764,8 @@ class NotificationActivity : ThemedActivity() {
         Button(this).apply {
             text = "Cancel"
             isAllCaps = false
+            stateListAnimator = null
+            elevation = 0f
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
@@ -780,6 +782,8 @@ class NotificationActivity : ThemedActivity() {
         Button(this).apply {
             text = "Delete"
             isAllCaps = false
+            stateListAnimator = null
+            elevation = 0f
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             background = androidx.core.content.ContextCompat.getDrawable(context, android.util.TypedValue().apply { context.theme.resolveAttribute(R.attr.cardBackground, this, true) }.resourceId)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
