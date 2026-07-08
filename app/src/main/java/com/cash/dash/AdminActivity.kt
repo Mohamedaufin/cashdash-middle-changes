@@ -93,6 +93,11 @@ class AdminActivity : ThemedActivity() {
             startActivity(intent)
         }
 
+        findViewById<View>(R.id.btnGoToPromotions).setOnClickListener {
+            val intent = Intent(this, AdminPromotionsActivity::class.java)
+            startActivity(intent)
+        }
+
         val btnHistory = findViewById<ImageButton>(R.id.btnHistory)
         btnHistory.setOnClickListener {
             val intent = android.content.Intent(this, AdminLogsActivity::class.java)

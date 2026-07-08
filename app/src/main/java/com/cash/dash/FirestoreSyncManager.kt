@@ -340,7 +340,7 @@ object FirestoreSyncManager {
                         return@addOnCompleteListener
                     }
 
-                    val profileDoc = if (tProfile.isSuccessful) tProfile.result else null
+                    val profileDoc = try { if (tProfile.isSuccessful) tProfile.result else null } catch (e: Exception) { null }
                     if (profileDoc == null || !profileDoc.exists()) {
                         if (!isFallback) {
                             // 🔄 MIGRATION START: Try pulling from old UID path
@@ -406,7 +406,7 @@ object FirestoreSyncManager {
                     isSyncingFromCloud = false
 
                     // 2. Wallet & Schedule
-                    val walletDoc = if (tWallet.isSuccessful) tWallet.result else null
+                    val walletDoc = try { if (tWallet.isSuccessful) tWallet.result else null } catch (e: Exception) { null }
                     if (walletDoc != null && walletDoc.exists()) {
                         val walletPrefs = context.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
                         val schedulePrefs = context.getSharedPreferences("MoneySchedulePrefs", Context.MODE_PRIVATE)
@@ -438,7 +438,7 @@ object FirestoreSyncManager {
                     }
 
                     // 3. Categories
-                    val catDoc = if (tCategories.isSuccessful) tCategories.result else null
+                    val catDoc = try { if (tCategories.isSuccessful) tCategories.result else null } catch (e: Exception) { null }
                     if (catDoc != null && catDoc.exists()) {
                         val catPrefs = context.getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
                         val graphPrefs = context.getSharedPreferences("GraphData", Context.MODE_PRIVATE)
@@ -466,7 +466,7 @@ object FirestoreSyncManager {
                     }
 
                     // 4. History (Simplified Restore)
-                    val histDoc = if (tHistory.isSuccessful) tHistory.result else null
+                    val histDoc = try { if (tHistory.isSuccessful) tHistory.result else null } catch (e: Exception) { null }
                     if (histDoc != null && histDoc.exists()) {
                         val graphPrefs = context.getSharedPreferences("GraphData", Context.MODE_PRIVATE)
                         val rawList = histDoc.get("raw_list") as? List<String>
@@ -557,7 +557,7 @@ object FirestoreSyncManager {
                     }
 
                     // 5. Analytics
-                    val analyticsDoc = if (tAnalytics.isSuccessful) tAnalytics.result else null
+                    val analyticsDoc = try { if (tAnalytics.isSuccessful) tAnalytics.result else null } catch (e: Exception) { null }
                     if (analyticsDoc != null && analyticsDoc.exists()) {
                         val cwdMap = analyticsDoc.get("CategoryWeekData") as? Map<String, Any>
                         if (cwdMap != null) {
@@ -573,7 +573,7 @@ object FirestoreSyncManager {
                     }
 
                     // 6. Scanner History
-                    val scannerDoc = if (tScanner.isSuccessful) tScanner.result else null
+                    val scannerDoc = try { if (tScanner.isSuccessful) tScanner.result else null } catch (e: Exception) { null }
                     if (scannerDoc != null && scannerDoc.exists()) {
                         val scanMap = scannerDoc.get("ScannerHistory") as? Map<String, Any>
                         if (scanMap != null) {
@@ -591,7 +591,7 @@ object FirestoreSyncManager {
                     }
 
                     // 7. Undo Details
-                    val undoDoc = if (tUndo.isSuccessful) tUndo.result else null
+                    val undoDoc = try { if (tUndo.isSuccessful) tUndo.result else null } catch (e: Exception) { null }
                     if (undoDoc != null && undoDoc.exists()) {
                         val undoMap = undoDoc.get("LocalScanPrefs") as? Map<String, Any>
                         if (undoMap != null) {
@@ -607,7 +607,7 @@ object FirestoreSyncManager {
                     }
 
                     // 8. ScannerMetadataPrefs
-                    val scannerMetaDoc = if (tScannerMeta.isSuccessful) tScannerMeta.result else null
+                    val scannerMetaDoc = try { if (tScannerMeta.isSuccessful) tScannerMeta.result else null } catch (e: Exception) { null }
                     if (scannerMetaDoc != null && scannerMetaDoc.exists()) {
                         val smMap = scannerMetaDoc.get("ScannerMetadataPrefs") as? Map<String, Any>
                         if (smMap != null) {
@@ -625,7 +625,7 @@ object FirestoreSyncManager {
                     }
 
                     // 9. Finminder
-                    val finminderDoc = if (tFinminder.isSuccessful) tFinminder.result else null
+                    val finminderDoc = try { if (tFinminder.isSuccessful) tFinminder.result else null } catch (e: Exception) { null }
                     if (finminderDoc != null && finminderDoc.exists()) {
                         val fmMap = finminderDoc.get("FinminderPrefs") as? Map<String, Any>
                         if (fmMap != null) {
@@ -641,7 +641,7 @@ object FirestoreSyncManager {
                     }
 
                     // 10. UpiAllocationPrefs
-                    val upiAllocDoc = if (tUpiAlloc.isSuccessful) tUpiAlloc.result else null
+                    val upiAllocDoc = try { if (tUpiAlloc.isSuccessful) tUpiAlloc.result else null } catch (e: Exception) { null }
                     if (upiAllocDoc != null && upiAllocDoc.exists()) {
                         val allocData = upiAllocDoc.get("data") as? Map<String, Any>
                         if (allocData != null) {

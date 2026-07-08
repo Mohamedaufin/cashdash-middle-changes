@@ -13,5 +13,7 @@ data class NotificationEntity(
     val status: String,
     val read: Boolean,
     val imageUrl: String? = null,
-    val imageUrls: String? = null  // JSON array string stored in Room
+    val imageUrls: String? = null,  // JSON array string stored in Room
+    val triggerText: String? = null,
+    val triggerUrl: String? = null
 )
