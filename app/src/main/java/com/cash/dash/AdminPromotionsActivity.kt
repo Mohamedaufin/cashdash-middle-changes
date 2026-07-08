@@ -46,11 +46,19 @@ class AdminPromotionsActivity : ThemedActivity() {
 
     private var selectedImageUri: Uri? = null
     private var uploadedImageUrl: String = ""
+    
+    private var currentUploadTask: com.google.firebase.storage.UploadTask? = null
+    private var isImageUploading = false
+    private var isImageUploadFailed = false
+    private var imageUploadProgress = 0
+    private var pendingSendAction: (() -> Unit)? = null
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
             selectedImageUri = uri
+            uploadedImageUrl = ""
             updateImageUI()
+            startBackgroundUpload()
         }
     }
 
@@ -192,6 +200,14 @@ class AdminPromotionsActivity : ThemedActivity() {
         findViewById<View>(R.id.btnDeleteImage).setOnClickListener {
             selectedImageUri = null
             uploadedImageUrl = ""
+            currentUploadTask?.cancel()
+            isImageUploading = false
+            isImageUploadFailed = false
+            pendingSendAction = null
+            if (btnSendPromotions.text.toString().startsWith("Uploading image")) {
+                btnSendPromotions.isEnabled = true
+                btnSendPromotions.text = "Send Promotion"
+            }
             updateImageUI()
         }
 
@@ -798,39 +814,77 @@ class AdminPromotionsActivity : ThemedActivity() {
             return
         }
 
-        if (selectedImageUri != null) {
-            btnSendPromotions.text = "Uploading Image..."
-            uploadImage { success ->
-                if (success) {
-                    btnSendPromotions.text = "Sending Data..."
+        if (selectedImageUri != null && uploadedImageUrl.isEmpty()) {
+            if (isImageUploading) {
+                btnSendPromotions.text = "Uploading image... ($imageUploadProgress/100%)"
+                pendingSendAction = {
                     processSend(notifTitle, notifBody, annTitle, annBody, triggerUrl, triggerUrlTitle)
-                } else {
-                    btnSendPromotions.isEnabled = true
-                    btnSendPromotions.text = "Send Promotion"
-                    ToastHelper.showToast(this, "Image upload failed.")
                 }
+            } else if (isImageUploadFailed) {
+                btnSendPromotions.text = "Uploading image... (0/100%)"
+                pendingSendAction = {
+                    processSend(notifTitle, notifBody, annTitle, annBody, triggerUrl, triggerUrlTitle)
+                }
+                startBackgroundUpload()
             }
         } else {
+            btnSendPromotions.text = "Sending Data..."
             processSend(notifTitle, notifBody, annTitle, annBody, triggerUrl, triggerUrlTitle)
         }
     }
 
-    private fun uploadImage(callback: (Boolean) -> Unit) {
+    private fun handleFailedUploadDuringSend() {
+        pendingSendAction = null
+        btnSendPromotions.isEnabled = true
+        btnSendPromotions.text = "Send Promotion"
+        ToastHelper.showToast(this, "Image upload failed. Please try again.")
+    }
+
+    private fun startBackgroundUpload() {
+        if (selectedImageUri == null) return
+        
+        currentUploadTask?.cancel()
+        isImageUploading = true
+        isImageUploadFailed = false
+        imageUploadProgress = 0
+        
         val fileName = "promotions/${System.currentTimeMillis()}.jpg"
         val ref = FirebaseStorage.getInstance().reference.child(fileName)
         
-        ref.putFile(selectedImageUri!!)
-            .addOnSuccessListener {
-                ref.downloadUrl.addOnSuccessListener { uri ->
-                    uploadedImageUrl = uri.toString()
-                    callback(true)
-                }.addOnFailureListener {
-                    callback(false)
+        currentUploadTask = ref.putFile(selectedImageUri!!)
+        
+        currentUploadTask?.addOnProgressListener { snapshot ->
+            val progress = if (snapshot.totalByteCount > 0) {
+                (100.0 * snapshot.bytesTransferred / snapshot.totalByteCount).toInt()
+            } else 0
+            imageUploadProgress = progress
+            if (pendingSendAction != null) {
+                btnSendPromotions.text = "Uploading image... ($progress/100%)"
+            }
+        }?.addOnSuccessListener {
+            ref.downloadUrl.addOnSuccessListener { uri ->
+                uploadedImageUrl = uri.toString()
+                isImageUploading = false
+                isImageUploadFailed = false
+                if (pendingSendAction != null) {
+                    btnSendPromotions.text = "Sending Data..."
+                    pendingSendAction?.invoke()
+                    pendingSendAction = null
+                }
+            }.addOnFailureListener {
+                isImageUploading = false
+                isImageUploadFailed = true
+                if (pendingSendAction != null) {
+                    handleFailedUploadDuringSend()
                 }
             }
-            .addOnFailureListener {
-                callback(false)
+        }?.addOnFailureListener {
+            isImageUploading = false
+            isImageUploadFailed = true
+            if (pendingSendAction != null) {
+                handleFailedUploadDuringSend()
             }
+        }
     }
 
     private fun processSend(notifTitle: String, notifBody: String, annTitle: String, annBody: String, triggerUrl: String, triggerUrlTitle: String) {
