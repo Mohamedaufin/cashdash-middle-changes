@@ -273,7 +273,8 @@
                         <ImageView
                             android:layout_width="16dp"
                             android:layout_height="16dp"
-                            android:src="@drawable/ic_eye" />
+                            android:src="@drawable/ic_eye"
+                            app:tint="?attr/textMutedColor" />
 
                         <TextView
                             android:layout_width="wrap_content"
