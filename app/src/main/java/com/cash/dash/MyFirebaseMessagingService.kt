@@ -103,7 +103,32 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         if (!imageUrl.isNullOrEmpty()) {
             try {
                 val url = java.net.URL(imageUrl)
-                val bitmap = android.graphics.BitmapFactory.decodeStream(url.openConnection().getInputStream())
+                var bitmap = android.graphics.BitmapFactory.decodeStream(url.openConnection().getInputStream())
+                
+                // Crop to 16:9 aspect ratio to ensure it fills the width on Android 12+
+                val targetRatio = 16f / 9f
+                val currentRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
+                
+                if (currentRatio < targetRatio) {
+                    // Image is too tall, crop top and bottom
+                    val targetHeight = (bitmap.width / targetRatio).toInt()
+                    val startY = (bitmap.height - targetHeight) / 2
+                    bitmap = android.graphics.Bitmap.createBitmap(bitmap, 0, startY, bitmap.width, targetHeight)
+                } else if (currentRatio > targetRatio) {
+                    // Image is too wide, crop sides
+                    val targetWidth = (bitmap.height * targetRatio).toInt()
+                    val startX = (bitmap.width - targetWidth) / 2
+                    bitmap = android.graphics.Bitmap.createBitmap(bitmap, startX, 0, targetWidth, bitmap.height)
+                }
+
+                // Scale up if it's too small to ensure it stretches
+                if (bitmap.width < 1080) {
+                    val scale = 1080f / bitmap.width
+                    val matrix = android.graphics.Matrix()
+                    matrix.postScale(scale, scale)
+                    bitmap = android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+                }
+
                 notificationBuilder.setStyle(
                     NotificationCompat.BigPictureStyle()
                         .bigPicture(bitmap)

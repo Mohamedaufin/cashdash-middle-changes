@@ -808,7 +808,7 @@ exports.onGlobalPush = onDocumentWritten({
             },
             android: {
                 priority: "high",
-                ttl: 2419200000 // 28 days
+                ttl: 172800000 // 48 hours
             }
         });
         console.log(`Successfully sent push notification to ${targetTopic}: ${title}`);
@@ -854,7 +854,7 @@ exports.onUserPush = onDocumentWritten({
                 },
                 android: {
                     priority: "high",
-                    ttl: 2419200000 // 28 days
+                    ttl: 172800000 // 48 hours
                 }
             });
             console.log(`Successfully sent user-specific push to ${email}: ${title}`);
