@@ -59,27 +59,15 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         val notifId = System.currentTimeMillis().toInt()
         
-        // If triggerUrl exists, clicking the notification opens the website directly and cancels itself
-        val pendingIntent = if (!safeUrl.isNullOrEmpty()) {
-            val intent = Intent(this, NotificationActionReceiver::class.java).apply {
-                action = "com.cash.dash.ACTION_OPEN_URL"
-                putExtra("url", safeUrl)
-                putExtra("notif_id", notifId)
-            }
-            PendingIntent.getActivity(
-                this, notifId, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-        } else {
-            val intent = Intent(this, NotificationActivity::class.java).apply {
-                action = "NotificationActivity"
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            PendingIntent.getActivity(
-                this, notifId, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+        // Clicking the main notification body should always open the app
+        val intent = Intent(this, NotificationActivity::class.java).apply {
+            action = "NotificationActivity"
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
         }
+        val pendingIntent = PendingIntent.getActivity(
+            this, notifId, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
 
         // 🔥 Ultimate Channel Rotation (v10) - Forces a Fresh Start
         val channelId = "cashdash_urgent_heads_up_v10"
