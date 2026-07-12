@@ -596,11 +596,11 @@ class HomeFragment : Fragment() {
         box.addView(content)
 
         val hintContent = TextView(context).apply {
-            text = "Your spending limits will also reset to ₹0 upon resetting the cycle. Do you wish to continue?"
-            setTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, 12f)
+            text = "Your spending limits will also reset to ₹0. Do you wish to continue?"
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, 11.5f)
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textSecondaryColor))
             setLineSpacing(4f, 1f)
-            setPadding((16 * density).toInt(), 0, (16 * density).toInt(), (16 * density).toInt())
+            setPadding(0, 0, 0, (16 * density).toInt())
             gravity = android.view.Gravity.CENTER
         }
         box.addView(hintContent)
