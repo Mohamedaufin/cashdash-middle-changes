@@ -74,6 +74,15 @@ class HomeFragment : Fragment() {
 
         // Ensure username is visible for the shared element transition
         view.findViewById<TextView>(R.id.tvUsernameHome)?.apply {
+            setOnClickListener {
+                if (System.currentTimeMillis() - requireContext().getSharedPreferences("wallet_prefs", android.content.Context.MODE_PRIVATE).getLong("last_reset_time", 0) > 0) {
+                    // Let them bypass time check for debug if they tap it?
+                    // Actually, just show it.
+                    showResetConfirmationDialog(requireContext())
+                } else {
+                    showResetConfirmationDialog(requireContext())
+                }
+            }
             visibility = View.VISIBLE
             alpha = 1f
         }
@@ -574,7 +583,7 @@ class HomeFragment : Fragment() {
         val initialBal = if (nextCycleBal > 0) nextCycleBal else wPrefs.getInt("initial_balance", 0)
 
         val content = TextView(context).apply {
-            text = "Your cycle ended on $dateStr. Have you refilled your wallet to ₹$initialBal/₹$initialBal?"
+            text = "Your cycle ended on $dateStr. Are you ready to refill your wallet to ₹$initialBal/₹$initialBal?"
             setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_body))
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setLineSpacing(8f, 1f)
