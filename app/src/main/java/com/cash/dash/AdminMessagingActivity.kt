@@ -24,12 +24,25 @@ class AdminMessagingActivity : ThemedActivity() {
     private var isImageUploading = false
     private var pendingSendAction: (() -> Unit)? = null
     
-    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        if (uri != null) {
-            selectedImageUris.add(uri)
-            uploadedImageUrls.add("")
-            updateMediaStrip()
-            startBackgroundUpload(selectedImageUris.size - 1)
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            val maxAllowed = if (isAnnouncement) 5 else 1
+            var addedCount = 0
+            for (uri in uris) {
+                if (selectedImageUris.size < maxAllowed) {
+                    selectedImageUris.add(uri)
+                    uploadedImageUrls.add("")
+                    val index = selectedImageUris.size - 1
+                    startBackgroundUpload(index)
+                    addedCount++
+                } else {
+                    ToastHelper.showToast(this@AdminMessagingActivity, "Maximum $maxAllowed photos allowed")
+                    break
+                }
+            }
+            if (addedCount > 0) {
+                updateMediaStrip()
+            }
         }
     }
 
@@ -206,7 +219,7 @@ class AdminMessagingActivity : ThemedActivity() {
             val uploadedUrl = uploadedImageUrls.getOrNull(i) ?: ""
             
             val outerFrame = FrameLayout(this).apply {
-                layoutParams = LinearLayout.LayoutParams((128 * density).toInt(), (128 * density).toInt()).apply {
+                layoutParams = LinearLayout.LayoutParams((66 * density).toInt(), (66 * density).toInt()).apply {
                     marginEnd = (8 * density).toInt()
                 }
                 clipChildren = false
@@ -214,7 +227,7 @@ class AdminMessagingActivity : ThemedActivity() {
             }
             
             val imageBox = FrameLayout(this).apply {
-                layoutParams = FrameLayout.LayoutParams((120 * density).toInt(), (120 * density).toInt()).apply {
+                layoutParams = FrameLayout.LayoutParams((58 * density).toInt(), (58 * density).toInt()).apply {
                     gravity = android.view.Gravity.BOTTOM or android.view.Gravity.START
                 }
                 val tv = android.util.TypedValue()
@@ -234,7 +247,7 @@ class AdminMessagingActivity : ThemedActivity() {
             imageBox.addView(imgView)
             
             val btnDelete = ImageButton(this).apply {
-                layoutParams = FrameLayout.LayoutParams((24 * density).toInt(), (24 * density).toInt()).apply {
+                layoutParams = FrameLayout.LayoutParams((22 * density).toInt(), (22 * density).toInt()).apply {
                     gravity = android.view.Gravity.TOP or android.view.Gravity.END
                 }
                 setBackgroundResource(android.R.color.transparent)
@@ -260,9 +273,9 @@ class AdminMessagingActivity : ThemedActivity() {
         
         if (selectedImageUris.size < maxAllowed) {
             val addBox = FrameLayout(this).apply {
-                layoutParams = LinearLayout.LayoutParams((120 * density).toInt(), (120 * density).toInt()).apply {
+                layoutParams = LinearLayout.LayoutParams((58 * density).toInt(), (58 * density).toInt()).apply {
                     gravity = android.view.Gravity.BOTTOM
-                    topMargin = (8 * density).toInt() // to align with the 128dp outer frames
+                    topMargin = (8 * density).toInt() // to align with the outer frames
                 }
                 val tv = android.util.TypedValue()
                 context.theme.resolveAttribute(R.attr.inputBackground, tv, true)
@@ -274,7 +287,7 @@ class AdminMessagingActivity : ThemedActivity() {
             }
             
             val plusIcon = ImageView(this).apply {
-                layoutParams = FrameLayout.LayoutParams((24 * density).toInt(), (24 * density).toInt()).apply {
+                layoutParams = FrameLayout.LayoutParams((18 * density).toInt(), (18 * density).toInt()).apply {
                     gravity = android.view.Gravity.CENTER
                 }
                 setImageResource(R.drawable.ic_plus_vector)
