@@ -601,7 +601,7 @@ class HomeFragment : Fragment() {
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         ).apply {
-            bottomMargin = (24 * density).toInt()
+            bottomMargin = (8 * density).toInt()
         }
         demoRow.layoutParams = lp
 
@@ -623,7 +623,7 @@ class HomeFragment : Fragment() {
             setTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, 10f)
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textSecondaryColor))
             setLineSpacing(4f, 1f)
-            setPadding(0, 0, 0, (16 * density).toInt())
+            setPadding(0, 0, 0, (24 * density).toInt())
             gravity = android.view.Gravity.CENTER
         }
         box.addView(hintContent)
