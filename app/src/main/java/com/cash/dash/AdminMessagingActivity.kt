@@ -309,29 +309,38 @@ class AdminMessagingActivity : ThemedActivity() {
         val maxAllowed = if (isAnnouncement) 5 else 1
         val density = resources.displayMetrics.density
         
+        llMediaStrip.layoutParams = android.widget.FrameLayout.LayoutParams(
+            if (!isAnnouncement) android.widget.FrameLayout.LayoutParams.MATCH_PARENT else android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
+        )
+        llMediaStrip.gravity = if (!isAnnouncement) android.view.Gravity.CENTER_HORIZONTAL else android.view.Gravity.START
+        
+        val wrapperSize = if (!isAnnouncement) 128 else 61
+        val boxSize = if (!isAnnouncement) 120 else 55
+        
         for (i in selectedImageUris.indices) {
             val uri = selectedImageUris[i]
             val uploadedUrl = uploadedImageUrls.getOrNull(i) ?: ""
             
             val outerContainer = LinearLayout(this).apply {
                 layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    if (!isAnnouncement) LinearLayout.LayoutParams.MATCH_PARENT else LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
-                    marginEnd = (16 * density).toInt()
+                    if (isAnnouncement) marginEnd = (16 * density).toInt()
                 }
                 orientation = LinearLayout.VERTICAL
                 gravity = android.view.Gravity.CENTER_HORIZONTAL
             }
             
             val frameWrapper = FrameLayout(this).apply {
-                layoutParams = LinearLayout.LayoutParams((61 * density).toInt(), (61 * density).toInt())
+                layoutParams = LinearLayout.LayoutParams((wrapperSize * density).toInt(), (wrapperSize * density).toInt())
                 clipChildren = false
                 clipToPadding = false
             }
             
             val imageBox = FrameLayout(this).apply {
-                layoutParams = FrameLayout.LayoutParams((55 * density).toInt(), (55 * density).toInt()).apply {
+                layoutParams = FrameLayout.LayoutParams((boxSize * density).toInt(), (boxSize * density).toInt()).apply {
                     gravity = android.view.Gravity.BOTTOM or android.view.Gravity.START
                 }
                 val tv = android.util.TypedValue()
@@ -396,6 +405,7 @@ class AdminMessagingActivity : ThemedActivity() {
                 context.theme.resolveAttribute(R.attr.textMutedColor, tv, true)
                 setColorFilter(androidx.core.content.ContextCompat.getColor(context, tv.resourceId))
                 setOnClickListener { showFullscreenImagePreview(uri) }
+                visibility = if (!isAnnouncement) android.view.View.GONE else android.view.View.VISIBLE
             }
             
             val viewText = TextView(this).apply {
@@ -411,11 +421,52 @@ class AdminMessagingActivity : ThemedActivity() {
                 context.theme.resolveAttribute(R.attr.textMutedColor, tv, true)
                 setTextColor(androidx.core.content.ContextCompat.getColor(context, tv.resourceId))
                 setOnClickListener { showFullscreenImagePreview(uri) }
+                visibility = if (!isAnnouncement) android.view.View.GONE else android.view.View.VISIBLE
             }
             
             outerContainer.addView(frameWrapper)
             outerContainer.addView(eyeIcon)
             outerContainer.addView(viewText)
+            
+            if (!isAnnouncement) {
+                val btnViewImage = LinearLayout(this).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        topMargin = (4 * density).toInt()
+                    }
+                    orientation = LinearLayout.VERTICAL
+                    gravity = android.view.Gravity.CENTER_HORIZONTAL
+                    setOnClickListener { showFullscreenImagePreview(uri) }
+                    
+                    val eyeBig = ImageView(this@AdminMessagingActivity).apply {
+                        layoutParams = LinearLayout.LayoutParams((18 * density).toInt(), (18 * density).toInt())
+                        setImageResource(R.drawable.ic_eye)
+                        val tv = android.util.TypedValue()
+                        context.theme.resolveAttribute(R.attr.textMutedColor, tv, true)
+                        setColorFilter(androidx.core.content.ContextCompat.getColor(context, tv.resourceId))
+                    }
+                    
+                    val txtBig = TextView(this@AdminMessagingActivity).apply {
+                        layoutParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                        ).apply {
+                            topMargin = (2 * density).toInt()
+                        }
+                        text = "view"
+                        textSize = 10f
+                        val tv = android.util.TypedValue()
+                        context.theme.resolveAttribute(R.attr.textMutedColor, tv, true)
+                        setTextColor(androidx.core.content.ContextCompat.getColor(context, tv.resourceId))
+                    }
+                    
+                    addView(eyeBig)
+                    addView(txtBig)
+                }
+                outerContainer.addView(btnViewImage)
+            }
             
             llMediaStrip.addView(outerContainer)
         }
@@ -423,14 +474,15 @@ class AdminMessagingActivity : ThemedActivity() {
         if (selectedImageUris.size < maxAllowed) {
             val addBoxContainer = LinearLayout(this).apply {
                 layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    if (!isAnnouncement) LinearLayout.LayoutParams.MATCH_PARENT else LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 )
                 orientation = LinearLayout.VERTICAL
+                gravity = android.view.Gravity.CENTER_HORIZONTAL
             }
             val addBox = FrameLayout(this).apply {
-                layoutParams = LinearLayout.LayoutParams((55 * density).toInt(), (55 * density).toInt()).apply {
-                    topMargin = (6 * density).toInt() // align with imageBox inside frameWrapper
+                layoutParams = LinearLayout.LayoutParams((boxSize * density).toInt(), (boxSize * density).toInt()).apply {
+                    topMargin = if (isAnnouncement) (6 * density).toInt() else (4 * density).toInt() // align with imageBox inside frameWrapper
                 }
                 val tv = android.util.TypedValue()
                 context.theme.resolveAttribute(R.attr.inputBackground, tv, true)
