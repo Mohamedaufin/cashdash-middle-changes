@@ -79,7 +79,7 @@
             android:layout_weight="1"
             android:text="Cancel"
             android:textAllCaps="false"
-            android:background="@drawable/bg_glass_3d_round"
+            android:background="@drawable/bg_glass_3d_red_circle"
             android:textColor="?attr/textPrimaryColor"
             android:textStyle="bold"
             android:textSize="14sp"
