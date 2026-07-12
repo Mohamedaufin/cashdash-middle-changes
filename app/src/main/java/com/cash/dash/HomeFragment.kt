@@ -75,7 +75,7 @@ class HomeFragment : Fragment() {
         // Ensure username is visible for the shared element transition
         view.findViewById<TextView>(R.id.tvUsernameHome)?.apply {
             setOnClickListener {
-                val wPrefs = requireContext().getSharedPreferences("wallet_prefs", android.content.Context.MODE_PRIVATE)
+                val wPrefs = requireContext().getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
                 val nextDate = wPrefs.getLong("next_cycle_date", System.currentTimeMillis())
                 val freq = wPrefs.getInt("cycle_frequency", 0)
                 if (System.currentTimeMillis() - wPrefs.getLong("last_reset_time", 0) > 0) {
@@ -581,7 +581,7 @@ class HomeFragment : Fragment() {
             cal.get(Calendar.YEAR)
         )
 
-        val wPrefs = context.getSharedPreferences("wallet_prefs", android.content.Context.MODE_PRIVATE)
+        val wPrefs = context.getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
         val nextCycleBal = wPrefs.getInt("next_cycle_initial_balance", -1)
         val initialBal = if (nextCycleBal > 0) nextCycleBal else wPrefs.getInt("initial_balance", 0)
 
