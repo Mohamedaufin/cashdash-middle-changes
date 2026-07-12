@@ -450,7 +450,12 @@ class AdminPromotionsActivity : ThemedActivity() {
         tabUser.setOnClickListener { selectTab(TabType.USER) }
         tabAge.setOnClickListener { selectTab(TabType.AGE) }
         
-        selectTab(TabType.NONE)
+        // Only reset to NONE on fresh launch, not on restore
+        if (currentTab == TabType.NONE) {
+            selectTab(TabType.NONE)
+        } else {
+            selectTab(currentTab)
+        }
     }
 
     private fun setupUserSearch() {
@@ -1116,5 +1121,18 @@ class AdminPromotionsActivity : ThemedActivity() {
 
         dialog.setContentView(container)
         dialog.show()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("currentTab", currentTab.name)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        val tabName = savedInstanceState.getString("currentTab", TabType.NONE.name) ?: TabType.NONE.name
+        currentTab = try { TabType.valueOf(tabName) } catch (e: Exception) { TabType.NONE }
+        // Re-trigger tab setup to restore visual highlight
+        setupTabs()
     }
 }

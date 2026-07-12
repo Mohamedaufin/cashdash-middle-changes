@@ -445,8 +445,12 @@ class AdminMessagingActivity : ThemedActivity() {
         tabUser.setOnClickListener { selectTab(TabType.USER) }
         tabAge.setOnClickListener { selectTab(TabType.AGE) }
         
-        // Fix initial state styling properly
-        selectTab(TabType.NONE)
+        // Fix initial state styling properly — only call NONE default if not restoring
+        if (currentTab == TabType.NONE) {
+            selectTab(TabType.NONE)
+        } else {
+            selectTab(currentTab)
+        }
     }
 
     private fun setupUserSearch() {
@@ -817,5 +821,20 @@ class AdminMessagingActivity : ThemedActivity() {
         logData["payload"] = payload
 
         db.collection("admin_logs").document(timestamp.toString()).set(logData)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("currentTab", currentTab.name)
+        outState.putBoolean("isAnnouncement", isAnnouncement)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        val tabName = savedInstanceState.getString("currentTab", TabType.NONE.name) ?: TabType.NONE.name
+        currentTab = try { TabType.valueOf(tabName) } catch (e: Exception) { TabType.NONE }
+        isAnnouncement = savedInstanceState.getBoolean("isAnnouncement", false)
+        // Re-run setupTabs which will now use the restored currentTab
+        setupTabs()
     }
 }

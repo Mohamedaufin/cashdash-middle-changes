@@ -38,7 +38,6 @@
             android:src="@drawable/ic_trash"
             android:padding="10dp"
             app:tint="?attr/textPrimaryColor"
-            android:background="@drawable/bg_glass_3d_round"
             android:clickable="true"
             android:focusable="true"
             app:layout_constraintEnd_toEndOf="parent"
