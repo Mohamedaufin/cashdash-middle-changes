@@ -291,7 +291,7 @@ class NotificationActivity : ThemedActivity() {
         val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
         rv.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
         adapter = NotificationAdapter(mutableListOf(),
-            onDelete = { model -> executeSingleDelete(model) }
+            onDelete = { model -> showDeleteConfirmDialog(model) }
         )
         rv.adapter = adapter
     }
@@ -303,7 +303,7 @@ class NotificationActivity : ThemedActivity() {
         
         findViewById<View>(R.id.btnDeleteCategory)?.setOnClickListener {
             if (filteredNotifications.isNotEmpty()) {
-                executeBulkDelete()
+                showBulkDeleteConfirmation()
             } else {
                 ToastHelper.showToast(this, "No notifications to delete")
             }
@@ -749,84 +749,138 @@ class NotificationActivity : ThemedActivity() {
         }
     }
 
-    private fun executeSingleDelete(model: NotificationModel) {
-        val annPrefs = getSharedPreferences("DeletedAnnouncements", MODE_PRIVATE)
-        val userPrefs = getSharedPreferences("DeletedUserNotifications", MODE_PRIVATE)
-
-        // Optimistic UI Update
-        val mutList = allNotifications.toMutableList()
-        val index = mutList.indexOfFirst { it.id == model.id }
-        if (index != -1) mutList.removeAt(index)
-        allNotifications = mutList
-        applyFilter()
-
-        // Process deletion in SharedPreferences
-        if (model.originalReply == "[ANNOUNCEMENT]") {
-            annPrefs.edit().putBoolean(model.id, true).apply()
-        } else {
-            userPrefs.edit().putBoolean(model.id, true).apply()
+    private fun showDeleteConfirmDialog(model: NotificationModel) {
+        val density = resources.displayMetrics.density
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val p = (28 * density).toInt()
+            setPadding(p, p, p, (24 * density).toInt())
+            setBackgroundResource(ThemeHelper.getDrawable(this@NotificationActivity, R.drawable.bg_transaction))
         }
 
-        val snackbar = com.google.android.material.snackbar.Snackbar.make(
-            findViewById(android.R.id.content),
-            "Notification deleted",
-            5000
-        )
-        snackbar.setBackgroundTint(ThemeHelper.resolveColorAttr(this, R.attr.cardBackground))
-        val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-        textView.setTextColor(ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor))
-        snackbar.setActionTextColor(android.graphics.Color.parseColor("#FF5252"))
-
-        var timer: android.os.CountDownTimer? = null
-
-        snackbar.setAction("Undo (5)") {
-            timer?.cancel()
-            if (model.originalReply == "[ANNOUNCEMENT]") {
-                annPrefs.edit().remove(model.id).apply()
-            } else {
-                userPrefs.edit().remove(model.id).apply()
-            }
-            val revertList = allNotifications.toMutableList()
-            if (index != -1 && index <= revertList.size) {
-                revertList.add(index, model)
-            } else {
-                revertList.add(model)
-            }
-            allNotifications = revertList
-            applyFilter()
+        TextView(this).apply {
+            text = "Delete query?"
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_title))
+            setTextColor(ThemeHelper.resolveColorAttr(this@NotificationActivity, R.attr.textPrimaryColor))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, 0, 0, (20 * density).toInt())
+            box.addView(this)
         }
 
-        timer = object : android.os.CountDownTimer(5000, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                val sec = (millisUntilFinished / 1000) + 1
-                snackbar.setAction("Undo ($sec)") {
-                    timer?.cancel()
-                    if (model.originalReply == "[ANNOUNCEMENT]") {
-                        annPrefs.edit().remove(model.id).apply()
-                    } else {
-                        userPrefs.edit().remove(model.id).apply()
+        TextView(this).apply {
+            text = "Remove this query from your history?"
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_body))
+            setTextColor(ThemeHelper.resolveColorAttr(this@NotificationActivity, R.attr.textMutedColor))
+            gravity = android.view.Gravity.CENTER
+            setLineSpacing(8f, 1f)
+            setPadding(0, 0, 0, (28 * density).toInt())
+            box.addView(this)
+        }
+
+        val btnContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            clipChildren = false
+            clipToPadding = false
+        }
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this).setView(box).setCancelable(false).create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        Button(this).apply {
+            text = "Cancel"
+            isAllCaps = false
+            stateListAnimator = null
+            elevation = 0f
+            setTextColor(ThemeHelper.resolveColorAttr(this@NotificationActivity, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(
+                this@NotificationActivity,
+                android.util.TypedValue().apply {
+                    theme.resolveAttribute(R.attr.cardBackground, this, true)
+                }.resourceId
+            )
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                setMargins(0, 0, (8 * density).toInt(), 0)
+            }
+            minHeight = (54 * density).toInt()
+            setOnClickListener {
+                adapter.notifyDataSetChanged() // Reset swipe state
+                dialog.dismiss()
+            }
+            btnContainer.addView(this)
+        }
+
+        Button(this).apply {
+            text = "Delete"
+            isAllCaps = false
+            stateListAnimator = null
+            elevation = 0f
+            setTextColor(ThemeHelper.resolveColorAttr(this@NotificationActivity, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(
+                this@NotificationActivity,
+                android.util.TypedValue().apply {
+                    theme.resolveAttribute(R.attr.cardBackground, this, true)
+                }.resourceId
+            )
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                setMargins((8 * density).toInt(), 0, 0, 0)
+            }
+            minHeight = (54 * density).toInt()
+            setOnClickListener {
+                val user = FirebaseAuth.getInstance().currentUser ?: return@setOnClickListener
+                val email = user.email ?: return@setOnClickListener
+
+                dialog.dismiss()
+                ToastHelper.showToast(this@NotificationActivity, "Query deleted")
+
+                // Remove from in-memory list
+                val mutList = allNotifications.toMutableList()
+                mutList.removeAll { it.id == model.id }
+                allNotifications = mutList
+
+                if (allNotifications.isEmpty()) {
+                    saveToRoom(emptyList())
+                } else {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        AppDatabase.getDatabase(this@NotificationActivity).notificationDao().deleteById(model.id)
                     }
-                    val revertList = allNotifications.toMutableList()
-                    if (index != -1 && index <= revertList.size) {
-                        revertList.add(index, model)
-                    } else {
-                        revertList.add(model)
-                    }
-                    allNotifications = revertList
-                    applyFilter()
+                }
+
+                applyFilter()
+
+                // Persist deletion
+                if (model.originalReply == "[ANNOUNCEMENT]") {
+                    val prefs = getSharedPreferences("DeletedAnnouncements", MODE_PRIVATE)
+                    prefs.edit().putBoolean(model.id, true).apply()
+                } else {
+                    FirebaseFirestore.getInstance().collection("users").document(email)
+                        .collection("notifications").document(model.id).delete()
                 }
             }
-            override fun onFinish() {}
+            btnContainer.addView(this)
         }
-        timer.start()
 
-        snackbar.addCallback(object : com.google.android.material.snackbar.Snackbar.Callback() {
-            override fun onDismissed(transientBottomBar: com.google.android.material.snackbar.Snackbar?, event: Int) {
-                timer?.cancel()
-            }
-        })
-        
-        snackbar.show()
+        box.addView(btnContainer)
+        dialog.show()
+    }
+
+    private fun showBulkDeleteConfirmation() {
+        val dialog = android.app.Dialog(this)
+        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.dialog_confirm_delete)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.85).toInt(),
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+
+        dialog.findViewById<Button>(R.id.btnConfirmDelete)?.setOnClickListener {
+            dialog.dismiss()
+            executeBulkDelete()
+        }
+        dialog.findViewById<Button>(R.id.btnCancelDelete)?.setOnClickListener {
+            dialog.dismiss()
+        }
+        dialog.show()
     }
 
     private fun executeBulkDelete() {
@@ -1350,8 +1404,8 @@ class NotificationActivity : ThemedActivity() {
                         if (isSwiping) {
                             val dX = event.rawX - startRawX
                             if (dX < 0 && Math.abs(dX) > holder.mainCardContainer.width * 0.3) {
-                                // Trigger delete
-                                isSwiping = false // Reset
+                                // Fly off, then show delete confirmation dialog
+                                isSwiping = false
                                 holder.mainCardContainer.animate()
                                     .translationX(-holder.mainCardContainer.width.toFloat())
                                     .alpha(0f)
@@ -1360,7 +1414,7 @@ class NotificationActivity : ThemedActivity() {
                                     .start()
                             } else {
                                 // Snap back
-                                isSwiping = false // Reset
+                                isSwiping = false
                                 holder.mainCardContainer.animate()
                                     .translationX(0f)
                                     .alpha(1f)
