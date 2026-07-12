@@ -741,7 +741,6 @@ class AdminPromotionsActivity : ThemedActivity() {
                     edtAnnouncementBody.setSelection(spanStart.coerceAtMost(currentText.length))
                 }
                 dialog.dismiss()
-                generateLinkChips()
             }
         } else {
             btnCancel?.setBackgroundResource(R.drawable.bg_glass_3d_red_circle)
