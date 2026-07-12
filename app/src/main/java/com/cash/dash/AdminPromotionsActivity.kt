@@ -84,6 +84,7 @@ class AdminPromotionsActivity : ThemedActivity() {
             btnDeleteImage.visibility = View.GONE
             btnViewImage.visibility = View.GONE
             imgPreview.setImageURI(null)
+            Glide.with(this).clear(imgPreview)
         }
     }
 
@@ -204,7 +205,7 @@ class AdminPromotionsActivity : ThemedActivity() {
             isImageUploading = false
             isImageUploadFailed = false
             pendingSendAction = null
-            if (btnSendPromotions.text.toString().startsWith("Uploading image")) {
+            if (btnSendPromotions.text.toString() == "Uploading image...") {
                 btnSendPromotions.isEnabled = true
                 btnSendPromotions.text = "Send Promotion"
             }
@@ -851,12 +852,12 @@ class AdminPromotionsActivity : ThemedActivity() {
 
         if (selectedImageUri != null && uploadedImageUrl.isEmpty()) {
             if (isImageUploading) {
-                btnSendPromotions.text = "Uploading image... ($imageUploadProgress/100%)"
+                btnSendPromotions.text = "Uploading image..."
                 pendingSendAction = {
                     processSend(notifTitle, notifBody, annTitle, annBody, triggerUrl, triggerUrlTitle)
                 }
             } else if (isImageUploadFailed) {
-                btnSendPromotions.text = "Uploading image... (0/100%)"
+                btnSendPromotions.text = "Uploading image..."
                 pendingSendAction = {
                     processSend(notifTitle, notifBody, annTitle, annBody, triggerUrl, triggerUrlTitle)
                 }
@@ -883,22 +884,37 @@ class AdminPromotionsActivity : ThemedActivity() {
         isImageUploadFailed = false
         imageUploadProgress = 0
         
+        val uploadingUri = selectedImageUri
         val fileName = "promotions/${System.currentTimeMillis()}.jpg"
         val ref = FirebaseStorage.getInstance().reference.child(fileName)
         
         currentUploadTask = ref.putFile(selectedImageUri!!)
         
         currentUploadTask?.addOnProgressListener { snapshot ->
+            if (selectedImageUri != uploadingUri) return@addOnProgressListener
             val progress = if (snapshot.totalByteCount > 0) {
                 (100.0 * snapshot.bytesTransferred / snapshot.totalByteCount).toInt()
             } else 0
             imageUploadProgress = progress
-            btnSendPromotions.text = "Uploading image... ($progress/100%)"
+            
+            val tvProgress = findViewById<TextView>(R.id.tvProgress)
+            if (tvProgress != null) {
+                if (progress < 100) {
+                    tvProgress.visibility = android.view.View.VISIBLE
+                    tvProgress.text = "$progress%"
+                } else {
+                    tvProgress.visibility = android.view.View.GONE
+                }
+            }
         }?.addOnSuccessListener {
+            if (selectedImageUri != uploadingUri) return@addOnSuccessListener
             ref.downloadUrl.addOnSuccessListener { uri ->
+                if (selectedImageUri != uploadingUri) return@addOnSuccessListener
                 uploadedImageUrl = uri.toString()
                 isImageUploading = false
                 isImageUploadFailed = false
+                findViewById<TextView>(R.id.tvProgress)?.visibility = android.view.View.GONE
+                
                 if (pendingSendAction != null) {
                     btnSendPromotions.text = "Sending Data..."
                     pendingSendAction?.invoke()
@@ -907,15 +923,19 @@ class AdminPromotionsActivity : ThemedActivity() {
                     btnSendPromotions.text = "Send Promotion"
                 }
             }.addOnFailureListener {
+                if (selectedImageUri != uploadingUri) return@addOnFailureListener
                 isImageUploading = false
                 isImageUploadFailed = true
+                findViewById<TextView>(R.id.tvProgress)?.visibility = android.view.View.GONE
                 if (pendingSendAction != null) {
                     handleFailedUploadDuringSend()
                 }
             }
         }?.addOnFailureListener {
+            if (selectedImageUri != uploadingUri) return@addOnFailureListener
             isImageUploading = false
             isImageUploadFailed = true
+            findViewById<TextView>(R.id.tvProgress)?.visibility = android.view.View.GONE
             if (pendingSendAction != null) {
                 handleFailedUploadDuringSend()
             }

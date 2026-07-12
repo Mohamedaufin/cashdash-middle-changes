@@ -249,6 +249,17 @@
                                 android:layout_gravity="center"
                                 android:src="@drawable/ic_plus_vector"
                                 android:contentDescription="Add image" />
+
+                            <TextView
+                                android:id="@+id/tvProgress"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="#80000000"
+                                android:textColor="#FFFFFF"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                android:gravity="center"
+                                android:visibility="gone" />
                         </FrameLayout>
 
                         <ImageButton
