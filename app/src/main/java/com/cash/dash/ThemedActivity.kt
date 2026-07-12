@@ -67,8 +67,14 @@ open class ThemedActivity : AppCompatActivity() {
         val themePrefs = getSharedPreferences("ThemePrefs", android.content.Context.MODE_PRIVATE)
         val savedTheme = themePrefs.getString("current_theme", "System") ?: "System"
         if (savedTheme == "System") {
+            val targetNightMode = if (newConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+            } else {
+                android.content.res.Configuration.UI_MODE_NIGHT_NO
+            }
+            newConfig.uiMode = (newConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK.inv()) or targetNightMode
+            resources.configuration.updateFrom(newConfig)
             super.onConfigurationChanged(newConfig)
-            recreate()
         } else {
             val targetNightMode = if (savedTheme == "White") {
                 android.content.res.Configuration.UI_MODE_NIGHT_NO

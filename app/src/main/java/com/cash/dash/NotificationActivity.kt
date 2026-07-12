@@ -762,7 +762,10 @@ class NotificationActivity : ThemedActivity() {
             "Notification deleted",
             5000
         )
-        snackbar.setActionTextColor(Color.WHITE)
+        snackbar.setBackgroundTint(ThemeHelper.resolveColorAttr(this, R.attr.cardBackground))
+        val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+        textView.setTextColor(ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor))
+        snackbar.setActionTextColor(android.graphics.Color.parseColor("#FF5252"))
 
         var timer: android.os.CountDownTimer? = null
 
@@ -846,7 +849,10 @@ class NotificationActivity : ThemedActivity() {
             "Notifications cleared",
             5000
         )
-        snackbar.setActionTextColor(Color.WHITE)
+        snackbar.setBackgroundTint(ThemeHelper.resolveColorAttr(this, R.attr.cardBackground))
+        val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+        textView.setTextColor(ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor))
+        snackbar.setActionTextColor(android.graphics.Color.parseColor("#FF5252"))
 
         var timer: android.os.CountDownTimer? = null
 
