@@ -132,18 +132,64 @@ class ContactSupportActivity : ThemedActivity() {
                 } else 0
                 contactUploadProgress[uri] = percent
                 updateSubmitButton()
+                
+                // Update specific slot progress overlay
+                val index = selectedImageUris.indexOf(uri)
+                if (index != -1) {
+                    val tvProgress = when(index) {
+                        0 -> findViewById<TextView>(R.id.tvProgress1)
+                        1 -> findViewById<TextView>(R.id.tvProgress2)
+                        2 -> findViewById<TextView>(R.id.tvProgress3)
+                        3 -> findViewById<TextView>(R.id.tvProgress4)
+                        else -> null
+                    }
+                    if (tvProgress != null) {
+                        if (percent < 100) {
+                            tvProgress.visibility = android.view.View.VISIBLE
+                            tvProgress.text = "$percent%"
+                        } else {
+                            tvProgress.visibility = android.view.View.GONE
+                        }
+                    }
+                }
             }
             .addOnSuccessListener {
                 imageRef.downloadUrl.addOnSuccessListener { downloadUri ->
                     contactUploadedUrls[uri] = downloadUri.toString()
                     contactUploadProgress.remove(uri)
                     updateSubmitButton()
+                    
+                    val index = selectedImageUris.indexOf(uri)
+                    if (index != -1) {
+                        val tvProgress = when(index) {
+                            0 -> findViewById<TextView>(R.id.tvProgress1)
+                            1 -> findViewById<TextView>(R.id.tvProgress2)
+                            2 -> findViewById<TextView>(R.id.tvProgress3)
+                            3 -> findViewById<TextView>(R.id.tvProgress4)
+                            else -> null
+                        }
+                        tvProgress?.visibility = android.view.View.GONE
+                    }
+                    
                     checkAndSubmitIfWaiting()
                 }
             }
             .addOnFailureListener {
                 contactUploadProgress.remove(uri)
                 updateSubmitButton()
+                
+                val index = selectedImageUris.indexOf(uri)
+                if (index != -1) {
+                    val tvProgress = when(index) {
+                        0 -> findViewById<TextView>(R.id.tvProgress1)
+                        1 -> findViewById<TextView>(R.id.tvProgress2)
+                        2 -> findViewById<TextView>(R.id.tvProgress3)
+                        3 -> findViewById<TextView>(R.id.tvProgress4)
+                        else -> null
+                    }
+                    tvProgress?.visibility = android.view.View.GONE
+                }
+                
                 ToastHelper.showToast(this, "Failed to upload image")
             }
     }
@@ -199,7 +245,8 @@ class ContactSupportActivity : ThemedActivity() {
                 findViewById(R.id.imgPlus1),
                 findViewById(R.id.btnTrash1),
                 findViewById(R.id.imgEye1),
-                findViewById(R.id.tvView1)
+                findViewById(R.id.tvView1),
+                findViewById(R.id.tvProgress1)
             ),
             ImageSlotViews(
                 findViewById(R.id.slotImage2),
@@ -208,7 +255,8 @@ class ContactSupportActivity : ThemedActivity() {
                 findViewById(R.id.imgPlus2),
                 findViewById(R.id.btnTrash2),
                 findViewById(R.id.imgEye2),
-                findViewById(R.id.tvView2)
+                findViewById(R.id.tvView2),
+                findViewById(R.id.tvProgress2)
             ),
             ImageSlotViews(
                 findViewById(R.id.slotImage3),
@@ -217,7 +265,8 @@ class ContactSupportActivity : ThemedActivity() {
                 findViewById(R.id.imgPlus3),
                 findViewById(R.id.btnTrash3),
                 findViewById(R.id.imgEye3),
-                findViewById(R.id.tvView3)
+                findViewById(R.id.tvView3),
+                findViewById(R.id.tvProgress3)
             ),
             ImageSlotViews(
                 findViewById(R.id.slotImage4),
@@ -226,7 +275,8 @@ class ContactSupportActivity : ThemedActivity() {
                 findViewById(R.id.imgPlus4),
                 findViewById(R.id.btnTrash4),
                 findViewById(R.id.imgEye4),
-                findViewById(R.id.tvView4)
+                findViewById(R.id.tvView4),
+                findViewById(R.id.tvProgress4)
             )
         )
 

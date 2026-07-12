@@ -47,7 +47,8 @@ data class ImageSlotViews(
     val plus: ImageView,
     val trash: ImageButton,
     val eye: ImageView,
-    val viewText: TextView
+    val viewText: TextView,
+    val tvProgress: TextView? = null
 )
 
 class HelpActivity : ThemedActivity() {

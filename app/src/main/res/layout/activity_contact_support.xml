@@ -110,7 +110,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Add Supporting Images"
+                android:text="Add Supporting Media (Optional)"
                 android:textColor="?attr/textMutedColor"
                 android:textSize="@dimen/text_body"
                 android:textStyle="bold"
@@ -155,6 +155,17 @@
                                 android:layout_height="match_parent"
                                 android:scaleType="centerCrop"
                                 android:clipToOutline="true" />
+
+                            <TextView
+                                android:id="@+id/tvProgress1"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center"
+                                android:background="#80000000"
+                                android:textColor="@android:color/white"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                android:visibility="gone" />
 
                             <ImageView
                                 android:id="@+id/imgPlus1"
@@ -227,6 +238,17 @@
                                 android:scaleType="centerCrop"
                                 android:clipToOutline="true" />
 
+                            <TextView
+                                android:id="@+id/tvProgress2"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center"
+                                android:background="#80000000"
+                                android:textColor="@android:color/white"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                android:visibility="gone" />
+
                             <ImageView
                                 android:id="@+id/imgPlus2"
                                 android:layout_width="24dp"
@@ -298,6 +320,17 @@
                                 android:scaleType="centerCrop"
                                 android:clipToOutline="true" />
 
+                            <TextView
+                                android:id="@+id/tvProgress3"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center"
+                                android:background="#80000000"
+                                android:textColor="@android:color/white"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                android:visibility="gone" />
+
                             <ImageView
                                 android:id="@+id/imgPlus3"
                                 android:layout_width="24dp"
@@ -367,6 +400,17 @@
                                 android:layout_height="match_parent"
                                 android:scaleType="centerCrop"
                                 android:clipToOutline="true" />
+
+                            <TextView
+                                android:id="@+id/tvProgress4"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center"
+                                android:background="#80000000"
+                                android:textColor="@android:color/white"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                android:visibility="gone" />
 
                             <ImageView
                                 android:id="@+id/imgPlus4"
