@@ -712,7 +712,7 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
                 timestamp: timestamp
             };
 
-            await db.collection("users").doc(targetUser).collection("notifications").doc(String(id)).update(updateData);
+            await db.collection("users").doc(targetUser).collection("notifications").doc(String(id)).set(updateData, { merge: true });
 
             try {
                 const userDoc = await db.collection("users").doc(targetUser).get();
