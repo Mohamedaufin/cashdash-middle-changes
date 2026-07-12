@@ -619,7 +619,7 @@ class HomeFragment : Fragment() {
         box.addView(demoRow)
 
         val hintContent = TextView(context).apply {
-            text = "Your spending limits will also reset to ₹0. Do you wish to continue?"
+            text = "Your spending limits will also reset to ₹0."
             setTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, 10f)
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textSecondaryColor))
             setLineSpacing(4f, 1f)
@@ -773,6 +773,14 @@ class HomeFragment : Fragment() {
         }
 
         dialog?.show()
+        
+        dialog?.window?.apply {
+            setGravity(android.view.Gravity.CENTER)
+            val lp = attributes
+            lp.verticalMargin = 0f
+            lp.y = 0
+            attributes = lp
+        }
     }
 
     private fun showPostponeDropdown(anchorView: View, parentDialog: AlertDialog) {
