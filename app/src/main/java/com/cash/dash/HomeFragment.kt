@@ -553,7 +553,7 @@ class HomeFragment : Fragment() {
         }
 
         val titleView = TextView(context).apply {
-            text = "Cycle Reset Due"
+            text = "Cycle Ended"
             setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_title))
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setTypeface(null, android.graphics.Typeface.BOLD)
@@ -569,8 +569,12 @@ class HomeFragment : Fragment() {
             cal.get(Calendar.YEAR)
         )
 
+        val wPrefs = context.getSharedPreferences("wallet_prefs", android.content.Context.MODE_PRIVATE)
+        val nextCycleBal = wPrefs.getInt("next_cycle_initial_balance", -1)
+        val initialBal = if (nextCycleBal > 0) nextCycleBal else wPrefs.getInt("initial_balance", 0)
+
         val content = TextView(context).apply {
-            text = "Your scheduled cycle reset date was on $dateStr. Have you received your money?"
+            text = "Your cycle ended on $dateStr. Have you refilled your wallet to ₹$initialBal/₹$initialBal?"
             setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_body))
             setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             setLineSpacing(8f, 1f)

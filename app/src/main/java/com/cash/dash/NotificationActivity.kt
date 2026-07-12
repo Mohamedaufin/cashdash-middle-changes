@@ -985,11 +985,27 @@ class NotificationActivity : ThemedActivity() {
             "Notifications cleared",
             5000
         )
-        // Fix for snackbar: use background drawable, not tint which resolves to white
-        snackbar.view.background = androidx.core.content.ContextCompat.getDrawable(
-            this,
-            ThemeHelper.getResIdFromAttr(this, R.attr.cardBackground)
-        )
+        // Fix for snackbar: use solid theme color with rounded corners
+        val bgDrawable = android.graphics.drawable.GradientDrawable()
+        val snackbarColor = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.WHITE else android.graphics.Color.parseColor("#1C1C1E")
+        bgDrawable.setColor(snackbarColor)
+        bgDrawable.cornerRadius = 16f * resources.displayMetrics.density
+        snackbar.view.background = bgDrawable
+        snackbar.view.elevation = 8f * resources.displayMetrics.density
+
+        // Adjust margins to make it float nicely
+        val params = snackbar.view.layoutParams as? android.widget.FrameLayout.LayoutParams
+        if (params != null) {
+            params.gravity = android.view.Gravity.BOTTOM or android.view.Gravity.CENTER_HORIZONTAL
+            params.setMargins(16, 0, 16, 16)
+            snackbar.view.layoutParams = params
+        } else if (snackbar.view.layoutParams is androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams) {
+            val coordParams = snackbar.view.layoutParams as androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
+            coordParams.gravity = android.view.Gravity.BOTTOM or android.view.Gravity.CENTER_HORIZONTAL
+            coordParams.setMargins(16, 0, 16, 16)
+            snackbar.view.layoutParams = coordParams
+        }
+
         val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
         textView.setTextColor(ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor))
         snackbar.setActionTextColor(android.graphics.Color.parseColor("#FF5252"))
