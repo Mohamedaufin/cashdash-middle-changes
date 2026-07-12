@@ -273,9 +273,10 @@ class ContactSupportActivity : ThemedActivity() {
                         type = "image/*"
                         addCategory(Intent.CATEGORY_OPENABLE)
                     }
+                    val defaultGalleryIntent = Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
                     val cameraIntent = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
                     val chooserIntent = Intent.createChooser(galleryIntent, "Select Image Source").apply {
-                        putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(cameraIntent))
+                        putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(defaultGalleryIntent, cameraIntent))
                     }
                     pickerChooserLauncher.launch(chooserIntent)
                 }
