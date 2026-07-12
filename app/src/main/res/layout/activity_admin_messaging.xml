@@ -55,6 +55,15 @@
             android:orientation="vertical"
             android:padding="25dp">
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Title"
+                android:textSize="@dimen/text_subhead"
+                android:textColor="?attr/textPrimaryColor"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
             <EditText
                 android:id="@+id/edtMessageTitle"
                 android:layout_width="match_parent"
@@ -68,6 +77,15 @@
                 android:layout_marginBottom="15dp"
                 android:inputType="textCapSentences"
                 android:singleLine="true"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Content"
+                android:textSize="@dimen/text_subhead"
+                android:textColor="?attr/textPrimaryColor"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
 
             <EditText
                 android:id="@+id/edtMessageBody"
@@ -89,11 +107,20 @@
                 android:id="@+id/tvMediaLabel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Supporting Media"
+                android:text="Add Supporting Media"
                 android:textSize="@dimen/text_subhead"
                 android:textColor="?attr/textPrimaryColor"
                 android:textStyle="bold"
-                android:layout_marginBottom="10dp"/>
+                android:layout_marginBottom="4dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add image for notification and announcement (optional)"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="13sp"
+                android:layout_marginBottom="10dp"
+                android:lineSpacingExtra="2dp"/>
 
             <!-- Horizontally scrollable photo strip -->
             <HorizontalScrollView
