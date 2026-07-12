@@ -60,12 +60,10 @@
         <activity android:configChanges="uiMode"
             android:name=".AdminActivity"
             android:exported="false"
-            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
 
         <activity android:configChanges="uiMode"
             android:name=".AdminLogsActivity"
-            android:screenOrientation="portrait"
             android:exported="false"
              />
 
@@ -82,7 +80,6 @@
 
         <activity android:configChanges="uiMode"
             android:name=".AdminMessagingActivity"
-            android:screenOrientation="portrait"
             android:exported="false" />
 
         <activity android:configChanges="uiMode"
@@ -117,7 +114,7 @@
         <activity android:configChanges="uiMode" android:name=".FinminderActivity"  android:exported="false" />
         <activity android:configChanges="uiMode" android:name=".AddFinminderActivity"  android:exported="false" />
         <activity android:configChanges="uiMode" android:name=".FinminderHistoryActivity"  android:exported="false" />
-        <activity android:configChanges="uiMode" android:name=".AdminPromotionsActivity" android:screenOrientation="portrait" android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".AdminPromotionsActivity" android:exported="false" />
 
         <activity android:configChanges="uiMode" 
             android:name=".NotificationActivity" 
