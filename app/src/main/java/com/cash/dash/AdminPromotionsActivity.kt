@@ -404,10 +404,8 @@ class AdminPromotionsActivity : ThemedActivity() {
                 selectedView.setTextColor(android.graphics.Color.WHITE)
                 
                 btnSendPromotions.backgroundTintList = android.content.res.ColorStateList.valueOf(color)
-            } else {
-                btnSendPromotions.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#555555"))
             }
-
+            
             layoutAgeSpecific.visibility = if (tab == TabType.AGE) View.VISIBLE else View.GONE
             layoutUserList.visibility = if (tab == TabType.USER || tab == TabType.AGE) View.VISIBLE else View.GONE
             
@@ -425,25 +423,22 @@ class AdminPromotionsActivity : ThemedActivity() {
             when (tab) {
                 TabType.NONE -> {
                     tvTargetDesc.text = "Please select a target audience."
-                    btnSendPromotions.text = "Select Audience"
                 }
                 TabType.GLOBAL -> {
                     tvTargetDesc.text = "This will be sent to all users."
-                    btnSendPromotions.text = "Send Promotion Globally"
                 }
                 TabType.ADMIN -> {
                     tvTargetDesc.text = "This will be sent to administrators only."
-                    btnSendPromotions.text = "Send Promotion to Admins"
                 }
                 TabType.USER -> {
                     tvTargetDesc.text = "Select specific users to send."
-                    btnSendPromotions.text = "Send Promotion to Selected Users"
                 }
                 TabType.AGE -> {
                     tvTargetDesc.text = "Filter users by age range."
-                    btnSendPromotions.text = "Send Promotion to Selected Users"
                 }
             }
+            
+            updateSubmitButtonState()
         }
 
         tabGlobal.setOnClickListener { selectTab(TabType.GLOBAL) }
@@ -883,6 +878,7 @@ class AdminPromotionsActivity : ThemedActivity() {
         isImageUploading = true
         isImageUploadFailed = false
         imageUploadProgress = 0
+        updateSubmitButtonState()
         
         val uploadingUri = selectedImageUri
         val fileName = "promotions/${System.currentTimeMillis()}.jpg"
@@ -920,7 +916,7 @@ class AdminPromotionsActivity : ThemedActivity() {
                     pendingSendAction?.invoke()
                     pendingSendAction = null
                 } else {
-                    btnSendPromotions.text = "Send Promotion"
+                    updateSubmitButtonState()
                 }
             }.addOnFailureListener {
                 if (selectedImageUri != uploadingUri) return@addOnFailureListener
@@ -929,6 +925,8 @@ class AdminPromotionsActivity : ThemedActivity() {
                 findViewById<TextView>(R.id.tvProgress)?.visibility = android.view.View.GONE
                 if (pendingSendAction != null) {
                     handleFailedUploadDuringSend()
+                } else {
+                    updateSubmitButtonState()
                 }
             }
         }?.addOnFailureListener {
@@ -938,6 +936,8 @@ class AdminPromotionsActivity : ThemedActivity() {
             findViewById<TextView>(R.id.tvProgress)?.visibility = android.view.View.GONE
             if (pendingSendAction != null) {
                 handleFailedUploadDuringSend()
+            } else {
+                updateSubmitButtonState()
             }
         }
     }
@@ -1141,6 +1141,41 @@ class AdminPromotionsActivity : ThemedActivity() {
 
         dialog.setContentView(container)
         dialog.show()
+    }
+
+    private fun updateSubmitButtonState() {
+        if (isImageUploading) {
+            val defaultColor = android.graphics.Color.parseColor("#555555")
+            btnSendPromotions.backgroundTintList = android.content.res.ColorStateList.valueOf(defaultColor)
+            btnSendPromotions.text = "Uploading Media..."
+            return
+        }
+
+        val isWhite = ThemeHelper.isWhiteTheme(this@AdminPromotionsActivity)
+        val colorStr = when (currentTab) {
+            TabType.GLOBAL -> if (isWhite) "#008000" else "#4CAF50"
+            TabType.ADMIN -> if (isWhite) "#D32F2F" else "#FF4D4D"
+            TabType.USER -> if (isWhite) "#CD8500" else "#FFA500"
+            TabType.AGE -> if (isWhite) "#0047AB" else "#00C2FF"
+            TabType.NONE -> "#555555"
+        }
+        val color = android.graphics.Color.parseColor(colorStr)
+        btnSendPromotions.backgroundTintList = android.content.res.ColorStateList.valueOf(color)
+
+        when (currentTab) {
+            TabType.NONE -> {
+                btnSendPromotions.text = "Select Audience"
+            }
+            TabType.GLOBAL -> {
+                btnSendPromotions.text = "Send Promotion Globally"
+            }
+            TabType.ADMIN -> {
+                btnSendPromotions.text = "Send Promotion to Admins"
+            }
+            TabType.USER, TabType.AGE -> {
+                btnSendPromotions.text = "Send Promotion to Selected Users"
+            }
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
