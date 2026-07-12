@@ -161,10 +161,8 @@ class AdminMessagingActivity : ThemedActivity() {
             val progress = if (snapshot.totalByteCount > 0) {
                 (100.0 * snapshot.bytesTransferred / snapshot.totalByteCount).toInt()
             } else 0
-            val btnSend = findViewById<Button>(R.id.btnSend)
-            val btnSendInline = findViewById<Button>(R.id.btnSendInline)
-            btnSend.text = "Uploading Media..."
-            btnSendInline.text = "Uploading Media..."
+            
+            updateSubmitButtonState()
             
             val llMediaStrip = findViewById<LinearLayout>(R.id.llMediaStrip)
             val tvProgress = llMediaStrip.findViewWithTag<TextView>("progress_$currentIndex")
@@ -214,8 +212,52 @@ class AdminMessagingActivity : ThemedActivity() {
                 pendingSendAction?.invoke()
                 pendingSendAction = null
             } else {
-                btnSend.text = "Send"
-                btnSendInline.text = "Send"
+                updateSubmitButtonState()
+            }
+        }
+    }
+
+    private fun updateSubmitButtonState() {
+        val btnSend = findViewById<Button>(R.id.btnSend)
+        val btnSendInline = findViewById<Button>(R.id.btnSendInline)
+        
+        if (isImageUploading) {
+            val defaultColor = android.graphics.Color.parseColor("#555555")
+            btnSend.backgroundTintList = android.content.res.ColorStateList.valueOf(defaultColor)
+            btnSendInline.backgroundTintList = android.content.res.ColorStateList.valueOf(defaultColor)
+            btnSend.text = "Uploading Media..."
+            btnSendInline.text = "Uploading Media..."
+            return
+        }
+        
+        val isWhite = ThemeHelper.isWhiteTheme(this@AdminMessagingActivity)
+        val colorStr = when (currentTab) {
+            TabType.GLOBAL -> if (isWhite) "#008000" else "#4CAF50"
+            TabType.ADMIN -> if (isWhite) "#D32F2F" else "#FF4D4D"
+            TabType.USER -> if (isWhite) "#CD8500" else "#FFA500"
+            TabType.AGE -> if (isWhite) "#0047AB" else "#00C2FF"
+            TabType.NONE -> "#555555"
+        }
+        val color = android.graphics.Color.parseColor(colorStr)
+        btnSend.backgroundTintList = android.content.res.ColorStateList.valueOf(color)
+        btnSendInline.backgroundTintList = android.content.res.ColorStateList.valueOf(color)
+        
+        when (currentTab) {
+            TabType.NONE -> {
+                btnSend.text = "Select Audience"
+                btnSendInline.text = "Select Audience"
+            }
+            TabType.GLOBAL -> {
+                btnSend.text = "Send Globally"
+                btnSendInline.text = "Send Globally"
+            }
+            TabType.ADMIN -> {
+                btnSend.text = "Send to Admins"
+                btnSendInline.text = "Send to Admins"
+            }
+            TabType.USER, TabType.AGE -> {
+                btnSend.text = "Send to Selected Users"
+                btnSendInline.text = "Send to Selected Users"
             }
         }
     }
@@ -508,12 +550,6 @@ class AdminMessagingActivity : ThemedActivity() {
                 selectedView.background = drawable
                 selectedView.backgroundTintList = null
                 selectedView.setTextColor(android.graphics.Color.WHITE)
-                
-                btnSend.backgroundTintList = android.content.res.ColorStateList.valueOf(color)
-                findViewById<Button>(R.id.btnSendInline).backgroundTintList = android.content.res.ColorStateList.valueOf(color)
-            } else {
-                btnSend.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#555555"))
-                findViewById<Button>(R.id.btnSendInline).backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#555555"))
             }
 
             // Update UI based on tab
@@ -534,42 +570,36 @@ class AdminMessagingActivity : ThemedActivity() {
             val btnSendInline = findViewById<Button>(R.id.btnSendInline)
             val layoutBottomBar = findViewById<View>(R.id.layoutBottomBar)
             
-            // Update Descriptions & Button
+            // Update Descriptions
             when (tab) {
                 TabType.NONE -> {
                     tvTargetDesc.text = "Please select a target audience."
-                    btnSend.text = "Select Audience"
-                    btnSendInline.text = "Select Audience"
                     btnSendInline.visibility = View.VISIBLE
                     layoutBottomBar.visibility = View.GONE
                 }
                 TabType.GLOBAL -> {
                     tvTargetDesc.text = "This will be sent to all users."
-                    btnSend.text = "Send Globally"
-                    btnSendInline.text = "Send Globally"
                     btnSendInline.visibility = View.VISIBLE
                     layoutBottomBar.visibility = View.GONE
                 }
                 TabType.ADMIN -> {
                     tvTargetDesc.text = "This will be sent to administrators only."
-                    btnSend.text = "Send to Admins"
-                    btnSendInline.text = "Send to Admins"
                     btnSendInline.visibility = View.VISIBLE
                     layoutBottomBar.visibility = View.GONE
                 }
                 TabType.USER -> {
                     tvTargetDesc.text = "Select specific users to send."
-                    btnSend.text = "Send to Selected Users"
                     btnSendInline.visibility = View.GONE
                     layoutBottomBar.visibility = View.VISIBLE
                 }
                 TabType.AGE -> {
                     tvTargetDesc.text = "Filter users by age range."
-                    btnSend.text = "Send to Selected Users"
                     btnSendInline.visibility = View.GONE
                     layoutBottomBar.visibility = View.VISIBLE
                 }
             }
+            
+            updateSubmitButtonState()
         }
 
         tabGlobal.setOnClickListener { selectTab(TabType.GLOBAL) }
