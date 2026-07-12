@@ -24,53 +24,38 @@ class AdminMessagingActivity : ThemedActivity() {
     private var isImageUploading = false
     private var pendingSendAction: (() -> Unit)? = null
     
-    private val pickSingleImageLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            val uri = result.data?.data
-            if (uri != null) {
-                if (selectedImageUris.size < 1) {
-                    selectedImageUris.add(uri)
-                    uploadedImageUrls.add("")
-                    val index = selectedImageUris.size - 1
-                    startBackgroundUpload(index)
-                    updateMediaStrip()
-                } else {
-                    ToastHelper.showToast(this@AdminMessagingActivity, "Maximum 1 photo allowed")
-                }
+    private val pickSingleImageLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
+        if (uri != null) {
+            if (selectedImageUris.size < 1) {
+                selectedImageUris.add(uri)
+                uploadedImageUrls.add("")
+                val index = selectedImageUris.size - 1
+                startBackgroundUpload(index)
+                updateMediaStrip()
+            } else {
+                ToastHelper.showToast(this@AdminMessagingActivity, "Maximum 1 photo allowed")
             }
         }
     }
 
-    private val pickMultipleImagesLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            val clipData = result.data?.clipData
-            val uris = mutableListOf<Uri>()
-            if (clipData != null) {
-                for (i in 0 until clipData.itemCount) {
-                    uris.add(clipData.getItemAt(i).uri)
+    private val pickMultipleImagesLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia(5)) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            val maxAllowed = 5
+            var addedCount = 0
+            for (uri in uris) {
+                if (selectedImageUris.size < maxAllowed) {
+                    selectedImageUris.add(uri)
+                    uploadedImageUrls.add("")
+                    val index = selectedImageUris.size - 1
+                    startBackgroundUpload(index)
+                    addedCount++
+                } else {
+                    ToastHelper.showToast(this@AdminMessagingActivity, "Maximum $maxAllowed photos allowed")
+                    break
                 }
-            } else {
-                result.data?.data?.let { uris.add(it) }
             }
-            
-            if (uris.isNotEmpty()) {
-                val maxAllowed = 5
-                var addedCount = 0
-                for (uri in uris) {
-                    if (selectedImageUris.size < maxAllowed) {
-                        selectedImageUris.add(uri)
-                        uploadedImageUrls.add("")
-                        val index = selectedImageUris.size - 1
-                        startBackgroundUpload(index)
-                        addedCount++
-                    } else {
-                        ToastHelper.showToast(this@AdminMessagingActivity, "Maximum $maxAllowed photos allowed")
-                        break
-                    }
-                }
-                if (addedCount > 0) {
-                    updateMediaStrip()
-                }
+            if (addedCount > 0) {
+                updateMediaStrip()
             }
         }
     }
@@ -354,22 +339,11 @@ class AdminMessagingActivity : ThemedActivity() {
                 background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
                 clipToOutline = true
                 setOnClickListener {
-                    val intent = android.content.Intent(android.content.Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+                    val request = androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly)
                     if (isAnnouncement) {
-                        intent.putExtra(android.content.Intent.EXTRA_ALLOW_MULTIPLE, true)
-                        
-                        // Attempt to lock selection limit natively in OEM galleries
-                        // Official Android 13+ extra (if gallery supports checking it)
-                        intent.putExtra(android.provider.MediaStore.EXTRA_PICK_IMAGES_MAX, 5)
-                        // Proprietary extra used by Samsung and some other OEMs
-                        intent.putExtra("max-select-count", 5)
-                        // Another proprietary extra used by some galleries
-                        intent.putExtra("multi-pick", true)
-                        intent.putExtra("max_select_count", 5)
-                        
-                        pickMultipleImagesLauncher.launch(intent)
+                        pickMultipleImagesLauncher.launch(request)
                     } else {
-                        pickSingleImageLauncher.launch(intent)
+                        pickSingleImageLauncher.launch(request)
                     }
                 }
             }
