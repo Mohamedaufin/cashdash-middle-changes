@@ -357,6 +357,16 @@ class AdminMessagingActivity : ThemedActivity() {
                     val intent = android.content.Intent(android.content.Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
                     if (isAnnouncement) {
                         intent.putExtra(android.content.Intent.EXTRA_ALLOW_MULTIPLE, true)
+                        
+                        // Attempt to lock selection limit natively in OEM galleries
+                        // Official Android 13+ extra (if gallery supports checking it)
+                        intent.putExtra(android.provider.MediaStore.EXTRA_PICK_IMAGES_MAX, 5)
+                        // Proprietary extra used by Samsung and some other OEMs
+                        intent.putExtra("max-select-count", 5)
+                        // Another proprietary extra used by some galleries
+                        intent.putExtra("multi-pick", true)
+                        intent.putExtra("max_select_count", 5)
+                        
                         pickMultipleImagesLauncher.launch(intent)
                     } else {
                         pickSingleImageLauncher.launch(intent)
