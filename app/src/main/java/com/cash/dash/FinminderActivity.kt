@@ -144,6 +144,7 @@ class FinminderActivity : ThemedActivity() {
 
     private fun deleteWithUndo(item: FinminderItem) {
         FinminderRepository.deleteItem(this, item.id)
+        Finminder.pushUpdate(this)
         FirestoreSyncManager.pushAllDataToCloud(this)
         loadData() // Refresh list
 
@@ -437,6 +438,12 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
         // Restore XML-defined padding — setBackgroundResource can overwrite it.
         val p = (16 * density).toInt()
         holder.itemView.setPadding(p, p, p, p)
+        
+        holder.itemView.setOnClickListener {
+            val intent = android.content.Intent(holder.itemView.context, FinminderHistoryActivity::class.java)
+            intent.putExtra("FINMINDER_ID", item.id)
+            holder.itemView.context.startActivity(intent)
+        }
         
         holder.itemView.setOnFastLongClickListener {
             showOptionsBottomSheet(holder.itemView.context, item)

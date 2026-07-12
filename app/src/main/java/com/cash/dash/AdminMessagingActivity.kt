@@ -1,11 +1,15 @@
 package com.cash.dash
 
 import android.content.Context
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import com.bumptech.glide.Glide
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 
 class AdminMessagingActivity : ThemedActivity() {
 
@@ -14,6 +18,20 @@ class AdminMessagingActivity : ThemedActivity() {
     private val selectedEmails = mutableSetOf<String>()
     private val allUsers = mutableListOf<Pair<String, String>>() // Email, Display Name
     private val filteredUsers = mutableListOf<Pair<String, String>>()
+    
+    private val selectedImageUris = mutableListOf<Uri>()
+    private val uploadedImageUrls = mutableListOf<String>()
+    private var isImageUploading = false
+    private var pendingSendAction: (() -> Unit)? = null
+    
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null) {
+            selectedImageUris.add(uri)
+            uploadedImageUrls.add("")
+            updateMediaStrip()
+            startBackgroundUpload(selectedImageUris.size - 1)
+        }
+    }
 
     enum class TabType { NONE, GLOBAL, ADMIN, USER, AGE }
 
@@ -95,6 +113,209 @@ class AdminMessagingActivity : ThemedActivity() {
 
         // Pre-fetch all users in background
         fetchAllUsers()
+        handleRetriggerIntent()
+        updateMediaStrip()
+    }
+    
+    private fun startBackgroundUpload(index: Int) {
+        val uri = selectedImageUris[index]
+        isImageUploading = true
+        
+        val fileName = "promotions/${System.currentTimeMillis()}_$index.jpg"
+        val ref = FirebaseStorage.getInstance().reference.child(fileName)
+        
+        ref.putFile(uri).addOnProgressListener { snapshot ->
+            val progress = if (snapshot.totalByteCount > 0) {
+                (100.0 * snapshot.bytesTransferred / snapshot.totalByteCount).toInt()
+            } else 0
+            val btnSend = findViewById<Button>(R.id.btnSend)
+            val btnSendInline = findViewById<Button>(R.id.btnSendInline)
+            btnSend.text = "Uploading image... ($progress/100%)"
+            btnSendInline.text = "Uploading image... ($progress/100%)"
+        }.addOnSuccessListener {
+            ref.downloadUrl.addOnSuccessListener { downloadUrl ->
+                if (index < uploadedImageUrls.size) {
+                    uploadedImageUrls[index] = downloadUrl.toString()
+                }
+                checkAllUploadsDone()
+            }
+        }.addOnFailureListener {
+            ToastHelper.showToast(this, "Failed to upload image")
+            checkAllUploadsDone()
+        }
+    }
+
+    private fun checkAllUploadsDone() {
+        // Only done if size matches and no empty strings remain
+        if (uploadedImageUrls.size == selectedImageUris.size && uploadedImageUrls.all { it.isNotEmpty() }) {
+            isImageUploading = false
+            val btnSend = findViewById<Button>(R.id.btnSend)
+            val btnSendInline = findViewById<Button>(R.id.btnSendInline)
+            
+            if (pendingSendAction != null) {
+                btnSend.text = "Sending Data..."
+                btnSendInline.text = "Sending Data..."
+                pendingSendAction?.invoke()
+                pendingSendAction = null
+            } else {
+                btnSend.text = "Send"
+                btnSendInline.text = "Send"
+            }
+        }
+    }
+
+    private fun showFullscreenImagePreview(model: Any) {
+        val dialog = android.app.Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val imageView = ImageView(this).apply {
+            layoutParams = android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            scaleType = ImageView.ScaleType.FIT_CENTER
+        }
+        val closeBtn = ImageButton(this).apply {
+            val size = (48 * resources.displayMetrics.density).toInt()
+            val margin = (16 * resources.displayMetrics.density).toInt()
+            layoutParams = FrameLayout.LayoutParams(size, size).apply {
+                gravity = android.view.Gravity.TOP or android.view.Gravity.END
+                setMargins(0, margin, margin, 0)
+            }
+            setBackgroundResource(android.R.color.transparent)
+            setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+            setColorFilter(android.graphics.Color.WHITE)
+            setOnClickListener { dialog.dismiss() }
+        }
+        val frame = FrameLayout(this).apply {
+            addView(imageView)
+            addView(closeBtn)
+        }
+        Glide.with(this).load(model).into(imageView)
+        dialog.setContentView(frame)
+        dialog.show()
+    }
+
+    private fun updateMediaStrip() {
+        val llMediaStrip = findViewById<LinearLayout>(R.id.llMediaStrip)
+        llMediaStrip.removeAllViews()
+        
+        val maxAllowed = if (isAnnouncement) 5 else 1
+        val density = resources.displayMetrics.density
+        
+        for (i in selectedImageUris.indices) {
+            val uri = selectedImageUris[i]
+            val uploadedUrl = uploadedImageUrls.getOrNull(i) ?: ""
+            
+            val outerFrame = FrameLayout(this).apply {
+                layoutParams = LinearLayout.LayoutParams((128 * density).toInt(), (128 * density).toInt()).apply {
+                    marginEnd = (8 * density).toInt()
+                }
+                clipChildren = false
+                clipToPadding = false
+            }
+            
+            val imageBox = FrameLayout(this).apply {
+                layoutParams = FrameLayout.LayoutParams((120 * density).toInt(), (120 * density).toInt()).apply {
+                    gravity = android.view.Gravity.BOTTOM or android.view.Gravity.START
+                }
+                val tv = android.util.TypedValue()
+                context.theme.resolveAttribute(R.attr.inputBackground, tv, true)
+                background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+                clipToOutline = true
+                setOnClickListener {
+                    showFullscreenImagePreview(uri)
+                }
+            }
+            
+            val imgView = ImageView(this).apply {
+                layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+                scaleType = ImageView.ScaleType.CENTER_CROP
+            }
+            Glide.with(this).load(uri).into(imgView)
+            imageBox.addView(imgView)
+            
+            val btnDelete = ImageButton(this).apply {
+                layoutParams = FrameLayout.LayoutParams((24 * density).toInt(), (24 * density).toInt()).apply {
+                    gravity = android.view.Gravity.TOP or android.view.Gravity.END
+                }
+                setBackgroundResource(android.R.color.transparent)
+                setImageResource(R.drawable.ic_trash)
+                scaleType = ImageView.ScaleType.FIT_CENTER
+                setOnClickListener {
+                    selectedImageUris.removeAt(i)
+                    if (i < uploadedImageUrls.size) {
+                        uploadedImageUrls.removeAt(i)
+                    }
+                    if (selectedImageUris.isEmpty()) {
+                        isImageUploading = false
+                    }
+                    updateMediaStrip()
+                }
+            }
+            
+            outerFrame.addView(imageBox)
+            outerFrame.addView(btnDelete)
+            
+            llMediaStrip.addView(outerFrame)
+        }
+        
+        if (selectedImageUris.size < maxAllowed) {
+            val addBox = FrameLayout(this).apply {
+                layoutParams = LinearLayout.LayoutParams((120 * density).toInt(), (120 * density).toInt()).apply {
+                    gravity = android.view.Gravity.BOTTOM
+                    topMargin = (8 * density).toInt() // to align with the 128dp outer frames
+                }
+                val tv = android.util.TypedValue()
+                context.theme.resolveAttribute(R.attr.inputBackground, tv, true)
+                background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+                clipToOutline = true
+                setOnClickListener {
+                    pickImageLauncher.launch("image/*")
+                }
+            }
+            
+            val plusIcon = ImageView(this).apply {
+                layoutParams = FrameLayout.LayoutParams((24 * density).toInt(), (24 * density).toInt()).apply {
+                    gravity = android.view.Gravity.CENTER
+                }
+                setImageResource(R.drawable.ic_plus_vector)
+            }
+            addBox.addView(plusIcon)
+            llMediaStrip.addView(addBox)
+        }
+    }
+
+    private fun handleRetriggerIntent() {
+        if (!intent.getBooleanExtra("is_retrigger", false)) return
+
+        val title = intent.getStringExtra("msg_title") ?: ""
+        val body = intent.getStringExtra("msg_body") ?: ""
+        if (title.isNotEmpty()) findViewById<EditText>(R.id.edtMessageTitle).setText(title)
+        if (body.isNotEmpty()) findViewById<EditText>(R.id.edtMessageBody).setText(body)
+
+        val imageUrlsExtra = intent.getStringArrayListExtra("imageUrls")
+        if (imageUrlsExtra != null && imageUrlsExtra.isNotEmpty()) {
+            for (url in imageUrlsExtra) {
+                if (url.isNotEmpty()) {
+                    selectedImageUris.add(Uri.parse(url))
+                    uploadedImageUrls.add(url)
+                }
+            }
+        } else {
+            val singleImageUrl = intent.getStringExtra("imageUrl")
+            if (!singleImageUrl.isNullOrEmpty()) {
+                selectedImageUris.add(Uri.parse(singleImageUrl))
+                uploadedImageUrls.add(singleImageUrl)
+            }
+        }
+
+        val tabTypeStr = intent.getStringExtra("tabType") ?: "NONE"
+        val tabGlobal = findViewById<TextView>(R.id.tabGlobal)
+        when (tabTypeStr) {
+            "GLOBAL" -> tabGlobal.performClick()
+            "ADMIN" -> findViewById<TextView>(R.id.tabAdmin).performClick()
+            "USER" -> findViewById<TextView>(R.id.tabUser).performClick()
+            "AGE" -> findViewById<TextView>(R.id.tabAge).performClick()
+        }
     }
 
     private fun setupTabs() {
@@ -404,10 +625,22 @@ class AdminMessagingActivity : ThemedActivity() {
         
         btnYes.setOnClickListener {
             confirmDialog.dismiss()
-            if (isAnnouncement) {
-                sendAnnouncement(title, body)
+            val proceedWithSend = {
+                if (isAnnouncement) {
+                    sendAnnouncement(title, body)
+                } else {
+                    sendPushNotification(title, body)
+                }
+            }
+            
+            if (isImageUploading || uploadedImageUrls.size < selectedImageUris.size || uploadedImageUrls.any { it.isEmpty() }) {
+                pendingSendAction = proceedWithSend
+                val btnSend = findViewById<Button>(R.id.btnSend)
+                val btnSendInline = findViewById<Button>(R.id.btnSendInline)
+                btnSend.text = "Uploading images..."
+                btnSendInline.text = "Uploading images..."
             } else {
-                sendPushNotification(title, body)
+                proceedWithSend()
             }
         }
         btnNo.setOnClickListener { confirmDialog.dismiss() }
@@ -436,6 +669,9 @@ class AdminMessagingActivity : ThemedActivity() {
             "read" to false,
             "adminOnly" to (currentTab == TabType.ADMIN)
         )
+        if (uploadedImageUrls.isNotEmpty()) {
+            data["imageUrls"] = uploadedImageUrls.toList()
+        }
 
         if (currentTab == TabType.USER || currentTab == TabType.AGE) {
             data["targetEmails"] = selectedEmails.toList()
@@ -469,13 +705,16 @@ class AdminMessagingActivity : ThemedActivity() {
         val timeStr = java.text.SimpleDateFormat("dd MMM yyyy, h:mm a", java.util.Locale.getDefault()).format(java.util.Date(timestamp))
 
         if (currentTab == TabType.GLOBAL || currentTab == TabType.ADMIN) {
-            val data = hashMapOf(
+            val data = hashMapOf<String, Any>(
                 "title" to title,
                 "message" to body,
                 "timestamp" to timestamp,
                 "time" to timeStr,
                 "adminOnly" to (currentTab == TabType.ADMIN)
             )
+            if (uploadedImageUrls.isNotEmpty()) {
+                data["imageUrl"] = uploadedImageUrls[0]
+            }
 
             db.collection("global_pushes").document(timestamp.toString()).set(data)
                 .addOnSuccessListener {
@@ -493,12 +732,15 @@ class AdminMessagingActivity : ThemedActivity() {
         } else {
             val batch = db.batch()
             selectedEmails.forEachIndexed { index, email ->
-                val data = hashMapOf(
+                val data = hashMapOf<String, Any>(
                     "email" to email,
                     "title" to title,
                     "message" to body,
                     "timestamp" to timestamp + index
                 )
+                if (uploadedImageUrls.isNotEmpty()) {
+                    data["imageUrl"] = uploadedImageUrls[0]
+                }
                 val docRef = db.collection("user_pushes").document()
                 batch.set(docRef, data)
             }
@@ -552,6 +794,25 @@ class AdminMessagingActivity : ThemedActivity() {
                 logData["ageRange"] = "$minAge - $maxAge"
             }
         }
+
+        // Save payload so Retrigger button appears in admin logs
+        val payload = hashMapOf<String, Any>(
+            "msg_title" to title,
+            "msg_body" to content,
+            "tabType" to currentTab.name,
+            "isAnnouncement" to isAnnouncement
+        )
+        if (uploadedImageUrls.isNotEmpty()) {
+            if (isAnnouncement) {
+                payload["imageUrls"] = uploadedImageUrls.toList()
+            } else {
+                payload["imageUrl"] = uploadedImageUrls[0]
+            }
+        }
+        if (currentTab == TabType.USER || currentTab == TabType.AGE) {
+            payload["selectedEmails"] = selectedEmails.toList()
+        }
+        logData["payload"] = payload
 
         db.collection("admin_logs").add(logData)
     }

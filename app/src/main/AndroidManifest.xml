@@ -116,6 +116,7 @@
         <activity android:configChanges="uiMode" android:name=".WebViewActivity"  android:exported="false" />
         <activity android:configChanges="uiMode" android:name=".FinminderActivity"  android:exported="false" />
         <activity android:configChanges="uiMode" android:name=".AddFinminderActivity"  android:exported="false" />
+        <activity android:configChanges="uiMode" android:name=".FinminderHistoryActivity"  android:exported="false" />
         <activity android:configChanges="uiMode" android:name=".AdminPromotionsActivity" android:screenOrientation="portrait" android:exported="false" />
 
         <activity android:configChanges="uiMode" 

@@ -32,6 +32,13 @@ object FinminderRepository {
             val array = JSONArray(jsonString)
             for (i in 0 until array.length()) {
                 val obj = array.getJSONObject(i)
+                val completedDatesArray = obj.optJSONArray("completedDates")
+                val completedDatesList = mutableListOf<String>()
+                if (completedDatesArray != null) {
+                    for (j in 0 until completedDatesArray.length()) {
+                        completedDatesList.add(completedDatesArray.getString(j))
+                    }
+                }
                 list.add(
                     FinminderItem(
                         id = obj.getString("id"),
@@ -41,6 +48,7 @@ object FinminderRepository {
                         frequency = obj.getString("frequency"),
                         dateInfo = obj.getString("dateInfo"),
                         isChecked = obj.optBoolean("isChecked", false),
+                        completedDates = completedDatesList,
                         timestamp = obj.optLong("timestamp", 0L)
                     )
                 )
@@ -62,6 +70,9 @@ object FinminderRepository {
                 put("frequency", item.frequency)
                 put("dateInfo", item.dateInfo)
                 put("isChecked", item.isChecked)
+                val completedDatesArray = JSONArray()
+                item.completedDates.forEach { completedDatesArray.put(it) }
+                put("completedDates", completedDatesArray)
                 put("timestamp", item.timestamp)
             }
             array.put(obj)

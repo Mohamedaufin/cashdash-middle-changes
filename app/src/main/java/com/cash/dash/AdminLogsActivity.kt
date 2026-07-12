@@ -180,6 +180,29 @@ class AdminLogsActivity : ThemedActivity() {
                         }
                     }
 
+                    // Build a synthetic payload for old logs that pre-date payload storage,
+                    // so the Re-trigger button always appears for every retrigger-able log.
+                    val effectivePayload: Map<String, Any> = payload ?: run {
+                        val tabType = when {
+                            type.contains("Global", ignoreCase = true) -> "GLOBAL"
+                            type.contains("Admin", ignoreCase = true) -> "ADMIN"
+                            type.contains("User Specific", ignoreCase = true) -> "USER"
+                            type.contains("Age Specific", ignoreCase = true) -> "AGE"
+                            else -> "GLOBAL"
+                        }
+                        val isAnn = type.contains("Announcement", ignoreCase = true)
+                        if (isAnn) {
+                            // Announcement → AdminMessagingActivity fields
+                            mapOf("msg_title" to title, "msg_body" to message, "tabType" to tabType, "isAnnouncement" to true)
+                        } else if (type.contains("Notification", ignoreCase = true) || type.contains("Push", ignoreCase = true)) {
+                            // Push Notification → AdminMessagingActivity fields
+                            mapOf("msg_title" to title, "msg_body" to message, "tabType" to tabType, "isAnnouncement" to false)
+                        } else {
+                            // Promotional Activity → AdminPromotionsActivity fields
+                            mapOf("notifTitle" to title, "notifBody" to message, "tabType" to tabType)
+                        }
+                    }
+
                     logsList.add(
                         AdminLogModel(
                             actionType = finalActionDesc,
@@ -188,7 +211,7 @@ class AdminLogsActivity : ThemedActivity() {
                             triggeredBy = triggeredByText,
                             rawActionType = type,
                             targetedUsers = targetedUsersText,
-                            payload = payload,
+                            payload = effectivePayload,
                             imageUrl = (payload?.get("uploadedImageUrl") as? String)?.takeIf { it.isNotEmpty() }
                         )
                     )
@@ -288,11 +311,18 @@ class AdminLogsActivity : ThemedActivity() {
             if (item.payload != null) {
                 holder.btnReTrigger.visibility = View.VISIBLE
                 holder.btnReTrigger.setOnClickListener {
-                    val intent = android.content.Intent(holder.itemView.context, AdminPromotionsActivity::class.java).apply {
+                    // Determine which activity to launch based on what was originally sent
+                    val isMessagingLog = item.payload.containsKey("msg_title") || item.payload.containsKey("msg_body")
+                    val targetActivity = if (isMessagingLog) AdminMessagingActivity::class.java else AdminPromotionsActivity::class.java
+                    val intent = android.content.Intent(holder.itemView.context, targetActivity).apply {
                         putExtra("is_retrigger", true)
+                        // For AdminMessagingActivity, also pass isAnnouncement flag
+                        if (isMessagingLog) {
+                            putExtra("isAnnouncement", item.payload["isAnnouncement"] as? Boolean ?: item.rawActionType.contains("Announcement", ignoreCase = true))
+                        }
                         item.payload.forEach { (key, value) ->
                             when (value) {
-                                is String -> putExtra(key, value)
+                                is String  -> putExtra(key, value)
                                 is Boolean -> putExtra(key, value)
                                 is List<*> -> putStringArrayListExtra(key, ArrayList(value.map { it.toString() }))
                             }

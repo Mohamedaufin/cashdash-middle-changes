@@ -766,9 +766,23 @@ class AdminPromotionsActivity : ThemedActivity() {
                 for (oldColor in oldColors) {
                     replacement.removeSpan(oldColor)
                 }
-                replacement.replace(sStart, sEnd, spannable)
+
+                // Auto-add a space before the link if the character right before
+                // the cursor is not already a whitespace character
+                val needsLeadingSpace = spanStart == -1 // only for fresh inserts, not edits
+                    && sStart > 0
+                    && !replacement[sStart - 1].isWhitespace()
+
+                val toInsert = if (needsLeadingSpace) {
+                    android.text.SpannableStringBuilder(" ").append(spannable)
+                } else {
+                    android.text.SpannableStringBuilder(spannable)
+                }
+
+                replacement.replace(sStart, sEnd, toInsert)
+                val cursorPos = (sStart + toInsert.length).coerceAtMost(replacement.length)
                 edtAnnouncementBody.setText(replacement)
-                edtAnnouncementBody.setSelection((sStart + text.length).coerceAtMost(replacement.length))
+                edtAnnouncementBody.setSelection(cursorPos)
             }
             dialog.dismiss()
         }
@@ -870,9 +884,7 @@ class AdminPromotionsActivity : ThemedActivity() {
                 (100.0 * snapshot.bytesTransferred / snapshot.totalByteCount).toInt()
             } else 0
             imageUploadProgress = progress
-            if (pendingSendAction != null) {
-                btnSendPromotions.text = "Uploading image... ($progress/100%)"
-            }
+            btnSendPromotions.text = "Uploading image... ($progress/100%)"
         }?.addOnSuccessListener {
             ref.downloadUrl.addOnSuccessListener { uri ->
                 uploadedImageUrl = uri.toString()
@@ -882,6 +894,8 @@ class AdminPromotionsActivity : ThemedActivity() {
                     btnSendPromotions.text = "Sending Data..."
                     pendingSendAction?.invoke()
                     pendingSendAction = null
+                } else {
+                    btnSendPromotions.text = "Send Promotion"
                 }
             }.addOnFailureListener {
                 isImageUploading = false

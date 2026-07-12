@@ -410,6 +410,7 @@ class AddFinminderActivity : ThemedActivity() {
         )
 
         FinminderRepository.saveItem(this, item)
+        Finminder.pushUpdate(this)
         FirestoreSyncManager.pushAllDataToCloud(this)
         Toast.makeText(this, "Saved successfully!", Toast.LENGTH_SHORT).show()
         finish()
