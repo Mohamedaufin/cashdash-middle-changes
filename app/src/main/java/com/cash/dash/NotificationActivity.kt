@@ -990,6 +990,7 @@ class NotificationActivity : ThemedActivity() {
         val snackbarColor = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.WHITE else android.graphics.Color.parseColor("#1C1C1E")
         bgDrawable.setColor(snackbarColor)
         bgDrawable.cornerRadius = 16f * resources.displayMetrics.density
+        snackbar.view.backgroundTintList = null
         snackbar.view.background = bgDrawable
         snackbar.view.elevation = 8f * resources.displayMetrics.density
 
