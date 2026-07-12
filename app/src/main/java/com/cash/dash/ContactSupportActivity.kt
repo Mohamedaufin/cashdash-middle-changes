@@ -202,13 +202,16 @@ class ContactSupportActivity : ThemedActivity() {
             val avgProgress = progressSum / pendingCount
             btnSubmit.text = "Uploading Media..."
             btnSubmit.isEnabled = false
+            btnSubmit.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#555555"))
         } else {
             if (isWaitingForUploads) {
                 btnSubmit.text = "Submitting..."
                 btnSubmit.isEnabled = false
+                btnSubmit.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#555555"))
             } else {
                 btnSubmit.text = "Submit"
                 btnSubmit.isEnabled = true
+                btnSubmit.backgroundTintList = null
             }
         }
     }
