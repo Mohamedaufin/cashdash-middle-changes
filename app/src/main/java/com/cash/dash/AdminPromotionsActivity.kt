@@ -53,6 +53,13 @@ class AdminPromotionsActivity : ThemedActivity() {
     private var imageUploadProgress = 0
     private var pendingSendAction: (() -> Unit)? = null
 
+    private val permissionListener: (AdminManager.AdminPermissions) -> Unit = { perms ->
+        if (!perms.canSendPromotions()) {
+            ToastHelper.showToast(this, "Permission denied")
+            finish()
+        }
+    }
+
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
             selectedImageUri = uri
@@ -92,8 +99,12 @@ class AdminPromotionsActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_admin_promotions)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            window.decorView.importantForAutofill = android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+            window.decorView.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
         }
+        
+        AdminManager.addListener(permissionListener)
+
+        findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.header)) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -343,6 +354,11 @@ class AdminPromotionsActivity : ThemedActivity() {
         // Note: selectedEmails might take a second to visibly check on the UI if fetchAllUsers is still running
         // so we wait slightly before refreshing checkboxes
         findViewById<View>(R.id.layoutUserList).postDelayed({ refreshUserCheckboxes() }, 1000)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        AdminManager.removeListener(permissionListener)
     }
 
     private fun setupTabs() {

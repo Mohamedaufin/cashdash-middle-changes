@@ -12,7 +12,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Delete Notification?"
+        android:text="Delete Queries?"
         android:textColor="?attr/textPrimaryColor"
         android:textSize="@dimen/text_title"
         android:textStyle="bold"
@@ -22,7 +22,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="This notification will be permanently removed."
+        android:text="Do you want to delete all your queries in this category?"
         android:textColor="?attr/textMutedColor"
         android:textSize="@dimen/text_body"
         android:gravity="center"
@@ -56,11 +56,11 @@
             android:layout_height="54dp"
             android:text="Delete"
             android:textAllCaps="false"
-            android:textColor="?attr/textRedColor"
+            android:textColor="@android:color/white"
             android:textSize="@dimen/text_body"
             android:textStyle="bold"
             android:background="?attr/cardBackground"
-            android:backgroundTint="@null"
+            android:backgroundTint="?attr/textRedColor"
             android:stateListAnimator="@null"
             android:elevation="0dp"
             android:layout_marginStart="8dp" />

@@ -22,8 +22,16 @@ class AdminLogsActivity : ThemedActivity() {
     private val logsList = mutableListOf<AdminLogModel>()
     private var logsListener: com.google.firebase.firestore.ListenerRegistration? = null
 
+    private val permissionListener: (AdminManager.AdminPermissions) -> Unit = { perms ->
+        if (!perms.hasAnyAccess) {
+            ToastHelper.showToast(this, "Permission denied")
+            finish()
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        AdminManager.removeListener(permissionListener)
         logsListener?.remove()
     }
 
@@ -33,6 +41,8 @@ class AdminLogsActivity : ThemedActivity() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             window.decorView.importantForAutofill = android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
         }
+
+        AdminManager.addListener(permissionListener)
 
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
 
@@ -420,7 +430,7 @@ class AdminLogsActivity : ThemedActivity() {
             (56 * density).toInt()
         )
         btnParams.gravity = android.view.Gravity.TOP or android.view.Gravity.END
-        btnParams.topMargin = (24 * density).toInt()
+        btnParams.topMargin = (48 * density).toInt()
         btnParams.marginEnd = (24 * density).toInt()
         closeBtn.layoutParams = btnParams
         

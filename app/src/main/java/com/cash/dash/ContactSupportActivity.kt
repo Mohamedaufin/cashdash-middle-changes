@@ -320,6 +320,7 @@ class ContactSupportActivity : ThemedActivity() {
                 views.trash.visibility = android.view.View.GONE
                 views.eye.visibility = android.view.View.GONE
                 views.viewText.visibility = android.view.View.GONE
+                views.tvProgress?.visibility = android.view.View.GONE
 
                 views.frame.setOnClickListener {
                     val galleryIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
@@ -335,6 +336,7 @@ class ContactSupportActivity : ThemedActivity() {
                 }
             } else {
                 views.slot.visibility = android.view.View.GONE
+                views.tvProgress?.visibility = android.view.View.GONE
             }
         }
     }
@@ -362,7 +364,7 @@ class ContactSupportActivity : ThemedActivity() {
             (56 * density).toInt()
         )
         btnParams.gravity = android.view.Gravity.TOP or android.view.Gravity.END
-        btnParams.topMargin = (24 * density).toInt()
+        btnParams.topMargin = (48 * density).toInt()
         btnParams.marginEnd = (24 * density).toInt()
         closeBtn.layoutParams = btnParams
         

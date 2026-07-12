@@ -872,22 +872,86 @@ class NotificationActivity : ThemedActivity() {
     }
 
     private fun showBulkDeleteConfirmation() {
-        val dialog = android.app.Dialog(this)
-        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
-        dialog.setContentView(R.layout.dialog_confirm_delete)
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        dialog.window?.setLayout(
-            (resources.displayMetrics.widthPixels * 0.85).toInt(),
-            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-        )
+        val density = resources.displayMetrics.density
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val p = (28 * density).toInt()
+            setPadding(p, p, p, (24 * density).toInt())
+            setBackgroundResource(ThemeHelper.getDrawable(this@NotificationActivity, R.drawable.bg_transaction))
+        }
 
-        dialog.findViewById<Button>(R.id.btnConfirmDelete)?.setOnClickListener {
-            dialog.dismiss()
-            executeBulkDelete()
+        TextView(this).apply {
+            text = "Delete Queries?"
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_title))
+            setTextColor(ThemeHelper.resolveColorAttr(this@NotificationActivity, R.attr.textPrimaryColor))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, 0, 0, (20 * density).toInt())
+            box.addView(this)
         }
-        dialog.findViewById<Button>(R.id.btnCancelDelete)?.setOnClickListener {
-            dialog.dismiss()
+
+        TextView(this).apply {
+            text = "Do you want to delete all your queries in this category?"
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_body))
+            setTextColor(ThemeHelper.resolveColorAttr(this@NotificationActivity, R.attr.textMutedColor))
+            gravity = android.view.Gravity.CENTER
+            setLineSpacing(8f, 1f)
+            setPadding(0, 0, 0, (28 * density).toInt())
+            box.addView(this)
         }
+
+        val btnContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            clipChildren = false
+            clipToPadding = false
+        }
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this).setView(box).setCancelable(false).create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        Button(this).apply {
+            text = "Cancel"
+            isAllCaps = false
+            stateListAnimator = null
+            elevation = 0f
+            setTextColor(ThemeHelper.resolveColorAttr(this@NotificationActivity, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(
+                this@NotificationActivity,
+                android.util.TypedValue().apply {
+                    theme.resolveAttribute(R.attr.cardBackground, this, true)
+                }.resourceId
+            )
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                setMargins(0, 0, (8 * density).toInt(), 0)
+            }
+            minHeight = (54 * density).toInt()
+            setOnClickListener { dialog.dismiss() }
+            btnContainer.addView(this)
+        }
+
+        Button(this).apply {
+            text = "Delete"
+            isAllCaps = false
+            stateListAnimator = null
+            elevation = 0f
+            setTextColor(ThemeHelper.resolveColorAttr(this@NotificationActivity, R.attr.textPrimaryColor))
+            background = androidx.core.content.ContextCompat.getDrawable(
+                this@NotificationActivity,
+                android.util.TypedValue().apply {
+                    theme.resolveAttribute(R.attr.cardBackground, this, true)
+                }.resourceId
+            )
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                setMargins((8 * density).toInt(), 0, 0, 0)
+            }
+            minHeight = (54 * density).toInt()
+            setOnClickListener {
+                dialog.dismiss()
+                executeBulkDelete()
+            }
+            btnContainer.addView(this)
+        }
+
+        box.addView(btnContainer)
         dialog.show()
     }
 
@@ -921,7 +985,11 @@ class NotificationActivity : ThemedActivity() {
             "Notifications cleared",
             5000
         )
-        snackbar.setBackgroundTint(ThemeHelper.resolveColorAttr(this, R.attr.cardBackground))
+        // Fix for snackbar: use background drawable, not tint which resolves to white
+        snackbar.view.background = androidx.core.content.ContextCompat.getDrawable(
+            this,
+            ThemeHelper.getResIdFromAttr(this, R.attr.cardBackground)
+        )
         val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
         textView.setTextColor(ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor))
         snackbar.setActionTextColor(android.graphics.Color.parseColor("#FF5252"))
@@ -1536,7 +1604,7 @@ class NotificationActivity : ThemedActivity() {
                         (56 * density).toInt()
                     )
                     btnParams.gravity = android.view.Gravity.TOP or android.view.Gravity.END
-                    btnParams.topMargin = (24 * density).toInt()
+                    btnParams.topMargin = (48 * density).toInt()
                     btnParams.marginEnd = (24 * density).toInt()
                     closeBtn.layoutParams = btnParams
                     val glassBg = android.graphics.drawable.GradientDrawable()
@@ -1585,27 +1653,31 @@ class NotificationActivity : ThemedActivity() {
             val boxSize = 55
             
             for ((idx, uri) in uris.withIndex()) {
-                val outerContainer = LinearLayout(holder.itemView.context).apply {
+                val outerContainer = FrameLayout(holder.itemView.context).apply {
                     layoutParams = LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT
                     ).apply {
                         marginEnd = (16 * density).toInt()
                     }
-                    orientation = LinearLayout.VERTICAL
-                    gravity = android.view.Gravity.CENTER_HORIZONTAL
-                }
-                
-                val frameWrapper = FrameLayout(holder.itemView.context).apply {
-                    layoutParams = LinearLayout.LayoutParams((wrapperSize * density).toInt(), (wrapperSize * density).toInt())
                     clipChildren = false
                     clipToPadding = false
                 }
                 
-                val imageBox = FrameLayout(holder.itemView.context).apply {
-                    layoutParams = FrameLayout.LayoutParams((boxSize * density).toInt(), (boxSize * density).toInt()).apply {
-                        gravity = android.view.Gravity.BOTTOM or android.view.Gravity.START
+                val innerCol = LinearLayout(holder.itemView.context).apply {
+                    layoutParams = FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.WRAP_CONTENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        topMargin = (6 * density).toInt()
+                        marginEnd = (6 * density).toInt()
                     }
+                    orientation = LinearLayout.VERTICAL
+                    gravity = android.view.Gravity.CENTER_HORIZONTAL
+                }
+                
+                val imageBox = FrameLayout(holder.itemView.context).apply {
+                    layoutParams = LinearLayout.LayoutParams((boxSize * density).toInt(), (boxSize * density).toInt())
                     val tv = android.util.TypedValue()
                     context.theme.resolveAttribute(R.attr.inputBackground, tv, true)
                     background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
@@ -1632,7 +1704,15 @@ class NotificationActivity : ThemedActivity() {
                     textSize = 12f
                     setTypeface(null, android.graphics.Typeface.BOLD)
                     tag = "progress_${queryId}_$uri"
-                    visibility = View.GONE
+                    
+                    val pm = replyUploadProgress[queryId]
+                    val currentProg = pm?.get(uri)
+                    if (currentProg != null && currentProg < 100) {
+                        visibility = View.VISIBLE
+                        text = "$currentProg%"
+                    } else {
+                        visibility = View.GONE
+                    }
                 }
                 imageBox.addView(tvProgress)
                 
@@ -1654,8 +1734,7 @@ class NotificationActivity : ThemedActivity() {
                     }
                 }
                 
-                frameWrapper.addView(imageBox)
-                frameWrapper.addView(btnDelete)
+                innerCol.addView(imageBox)
                 
                 val eyeIcon = ImageView(holder.itemView.context).apply {
                     layoutParams = LinearLayout.LayoutParams((16 * density).toInt(), (16 * density).toInt()).apply {
@@ -1683,9 +1762,11 @@ class NotificationActivity : ThemedActivity() {
                     setOnClickListener { showFullscreenImagePreview(uri) }
                 }
                 
-                outerContainer.addView(frameWrapper)
-                outerContainer.addView(eyeIcon)
-                outerContainer.addView(viewText)
+                innerCol.addView(eyeIcon)
+                innerCol.addView(viewText)
+                
+                outerContainer.addView(innerCol)
+                outerContainer.addView(btnDelete)
                 
                 holder.layoutReplyPreviews.addView(outerContainer)
             }
@@ -1871,7 +1952,7 @@ class NotificationActivity : ThemedActivity() {
             (56 * density).toInt()
         )
         btnParams.gravity = android.view.Gravity.TOP or android.view.Gravity.END
-        btnParams.topMargin = (24 * density).toInt()
+        btnParams.topMargin = (48 * density).toInt()
         btnParams.marginEnd = (24 * density).toInt()
         closeBtn.layoutParams = btnParams
         
