@@ -175,4 +175,18 @@ class FinminderHistoryActivity : ThemedActivity() {
         if (dateCal.timeInMillis <= todayCal.timeInMillis) return "Not completed"
         return "Upcoming"
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("finminderId", finminderId)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        val restored = savedInstanceState.getString("finminderId", "")
+        if (!restored.isNullOrEmpty()) {
+            finminderId = restored
+            loadData()
+        }
+    }
 }
