@@ -24,9 +24,23 @@ class AdminMessagingActivity : ThemedActivity() {
     private var isImageUploading = false
     private var pendingSendAction: (() -> Unit)? = null
     
-    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris: List<Uri> ->
+    private val pickSingleImageLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
+        if (uri != null) {
+            if (selectedImageUris.size < 1) {
+                selectedImageUris.add(uri)
+                uploadedImageUrls.add("")
+                val index = selectedImageUris.size - 1
+                startBackgroundUpload(index)
+                updateMediaStrip()
+            } else {
+                ToastHelper.showToast(this@AdminMessagingActivity, "Maximum 1 photo allowed")
+            }
+        }
+    }
+
+    private val pickMultipleImagesLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia(5)) { uris: List<Uri> ->
         if (uris.isNotEmpty()) {
-            val maxAllowed = if (isAnnouncement) 5 else 1
+            val maxAllowed = 5
             var addedCount = 0
             for (uri in uris) {
                 if (selectedImageUris.size < maxAllowed) {
@@ -218,16 +232,25 @@ class AdminMessagingActivity : ThemedActivity() {
             val uri = selectedImageUris[i]
             val uploadedUrl = uploadedImageUrls.getOrNull(i) ?: ""
             
-            val outerFrame = FrameLayout(this).apply {
-                layoutParams = LinearLayout.LayoutParams((66 * density).toInt(), (66 * density).toInt()).apply {
-                    marginEnd = (8 * density).toInt()
+            val outerContainer = LinearLayout(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    marginEnd = (16 * density).toInt()
                 }
+                orientation = LinearLayout.VERTICAL
+                gravity = android.view.Gravity.CENTER_HORIZONTAL
+            }
+            
+            val frameWrapper = FrameLayout(this).apply {
+                layoutParams = LinearLayout.LayoutParams((61 * density).toInt(), (61 * density).toInt())
                 clipChildren = false
                 clipToPadding = false
             }
             
             val imageBox = FrameLayout(this).apply {
-                layoutParams = FrameLayout.LayoutParams((58 * density).toInt(), (58 * density).toInt()).apply {
+                layoutParams = FrameLayout.LayoutParams((55 * density).toInt(), (55 * density).toInt()).apply {
                     gravity = android.view.Gravity.BOTTOM or android.view.Gravity.START
                 }
                 val tv = android.util.TypedValue()
@@ -265,35 +288,75 @@ class AdminMessagingActivity : ThemedActivity() {
                 }
             }
             
-            outerFrame.addView(imageBox)
-            outerFrame.addView(btnDelete)
+            frameWrapper.addView(imageBox)
+            frameWrapper.addView(btnDelete)
             
-            llMediaStrip.addView(outerFrame)
+            val eyeIcon = ImageView(this).apply {
+                layoutParams = LinearLayout.LayoutParams((16 * density).toInt(), (16 * density).toInt()).apply {
+                    topMargin = (10 * density).toInt()
+                }
+                setImageResource(R.drawable.ic_eye)
+                val tv = android.util.TypedValue()
+                context.theme.resolveAttribute(R.attr.textMutedColor, tv, true)
+                setColorFilter(androidx.core.content.ContextCompat.getColor(context, tv.resourceId))
+            }
+            
+            val viewText = TextView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topMargin = (2 * density).toInt()
+                }
+                text = "view"
+                textSize = 10f
+                val tv = android.util.TypedValue()
+                context.theme.resolveAttribute(R.attr.textMutedColor, tv, true)
+                setTextColor(androidx.core.content.ContextCompat.getColor(context, tv.resourceId))
+            }
+            
+            outerContainer.addView(frameWrapper)
+            outerContainer.addView(eyeIcon)
+            outerContainer.addView(viewText)
+            
+            llMediaStrip.addView(outerContainer)
         }
         
         if (selectedImageUris.size < maxAllowed) {
+            val addBoxContainer = LinearLayout(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                orientation = LinearLayout.VERTICAL
+            }
             val addBox = FrameLayout(this).apply {
-                layoutParams = LinearLayout.LayoutParams((58 * density).toInt(), (58 * density).toInt()).apply {
-                    gravity = android.view.Gravity.BOTTOM
-                    topMargin = (8 * density).toInt() // to align with the outer frames
+                layoutParams = LinearLayout.LayoutParams((55 * density).toInt(), (55 * density).toInt()).apply {
+                    topMargin = (6 * density).toInt() // align with imageBox inside frameWrapper
                 }
                 val tv = android.util.TypedValue()
                 context.theme.resolveAttribute(R.attr.inputBackground, tv, true)
                 background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
                 clipToOutline = true
                 setOnClickListener {
-                    pickImageLauncher.launch("image/*")
+                    val request = androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    if (isAnnouncement) {
+                        pickMultipleImagesLauncher.launch(request)
+                    } else {
+                        pickSingleImageLauncher.launch(request)
+                    }
                 }
             }
             
             val plusIcon = ImageView(this).apply {
-                layoutParams = FrameLayout.LayoutParams((18 * density).toInt(), (18 * density).toInt()).apply {
+                layoutParams = FrameLayout.LayoutParams((24 * density).toInt(), (24 * density).toInt()).apply {
                     gravity = android.view.Gravity.CENTER
                 }
                 setImageResource(R.drawable.ic_plus_vector)
             }
             addBox.addView(plusIcon)
-            llMediaStrip.addView(addBox)
+            addBoxContainer.addView(addBox)
+            llMediaStrip.addView(addBoxContainer)
         }
     }
 
