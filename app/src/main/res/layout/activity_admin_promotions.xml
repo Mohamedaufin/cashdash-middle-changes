@@ -201,14 +201,7 @@
                 android:textStyle="bold"
                 android:layout_marginBottom="4dp"/>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Add image for notification and announcement (optional)"
-                android:textColor="?attr/textMutedColor"
-                android:textSize="13sp"
-                android:layout_marginBottom="16dp"
-                android:lineSpacingExtra="2dp"/>
+
 
             <FrameLayout
                 android:layout_width="match_parent"
