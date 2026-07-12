@@ -24,7 +24,7 @@ class AdminMessagingActivity : ThemedActivity() {
     private var isImageUploading = false
     private var pendingSendAction: (() -> Unit)? = null
     
-    private val pickSingleImageLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
+    private val pickSingleImageLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
             if (selectedImageUris.size < 1) {
                 selectedImageUris.add(uri)
@@ -38,7 +38,7 @@ class AdminMessagingActivity : ThemedActivity() {
         }
     }
 
-    private val pickMultipleImagesLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia(5)) { uris: List<Uri> ->
+    private val pickMultipleImagesLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetMultipleContents()) { uris: List<Uri> ->
         if (uris.isNotEmpty()) {
             val maxAllowed = 5
             var addedCount = 0
@@ -339,11 +339,10 @@ class AdminMessagingActivity : ThemedActivity() {
                 background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
                 clipToOutline = true
                 setOnClickListener {
-                    val request = androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly)
                     if (isAnnouncement) {
-                        pickMultipleImagesLauncher.launch(request)
+                        pickMultipleImagesLauncher.launch("image/*")
                     } else {
-                        pickSingleImageLauncher.launch(request)
+                        pickSingleImageLauncher.launch("image/*")
                     }
                 }
             }
