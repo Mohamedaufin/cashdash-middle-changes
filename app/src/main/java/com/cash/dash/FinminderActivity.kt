@@ -156,9 +156,10 @@ class FinminderActivity : ThemedActivity() {
         }
 
         val snackbar = Snackbar.make(rvFinminder, messageText, 5000)
-        snackbar.setBackgroundTint(android.graphics.Color.parseColor("#1A1B1F"))
+        snackbar.setBackgroundTint(ThemeHelper.resolveColorAttr(this, R.attr.cardBackground))
         val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-        textView.setTextColor(android.graphics.Color.WHITE)
+        textView.setTextColor(ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor))
+        snackbar.setActionTextColor(android.graphics.Color.parseColor("#FF5252"))
         
         var timer: CountDownTimer? = null
         
