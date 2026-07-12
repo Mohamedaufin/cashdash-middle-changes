@@ -209,7 +209,7 @@ class AdminMessagingActivity : ThemedActivity() {
             }
             setBackgroundResource(android.R.color.transparent)
             setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-            setColorFilter(android.graphics.Color.WHITE)
+            setColorFilter(android.graphics.Color.parseColor("#FF3B30"))
             setOnClickListener { dialog.dismiss() }
         }
         val frame = FrameLayout(this).apply {
@@ -257,6 +257,7 @@ class AdminMessagingActivity : ThemedActivity() {
                 context.theme.resolveAttribute(R.attr.inputBackground, tv, true)
                 background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
                 clipToOutline = true
+                clipChildren = true
                 setOnClickListener {
                     showFullscreenImagePreview(uri)
                 }
@@ -265,6 +266,7 @@ class AdminMessagingActivity : ThemedActivity() {
             val imgView = ImageView(this).apply {
                 layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
                 scaleType = ImageView.ScaleType.CENTER_CROP
+                clipToOutline = true
             }
             Glide.with(this).load(uri).into(imgView)
             imageBox.addView(imgView)
