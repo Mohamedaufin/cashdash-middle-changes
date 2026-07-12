@@ -83,15 +83,23 @@ class NotificationActivity : ThemedActivity() {
     }
 
     private fun updateViewHolderUploadProgress(holder: NotificationAdapter.ViewHolder, queryId: String) {
+        holder.layoutUploadProgress.visibility = android.view.View.GONE
+        holder.progressUpload.progress = 0
+        
         val progressMap = replyUploadProgress[queryId] ?: emptyMap()
-        if (progressMap.isNotEmpty()) {
-            val avgProgress = progressMap.values.average().toInt()
-            holder.layoutUploadProgress.visibility = View.VISIBLE
-            holder.tvUploadStatus.text = "Uploading images… ($avgProgress%)"
-            holder.progressUpload.progress = avgProgress
-        } else {
-            holder.layoutUploadProgress.visibility = View.GONE
-            holder.progressUpload.progress = 0
+        val uris = selectedReplyImages[queryId] ?: emptyList()
+        
+        for (uri in uris) {
+            val tvProgress = holder.layoutReplyPreviews.findViewWithTag<android.widget.TextView>("progress_${queryId}_$uri")
+            val progress = progressMap[uri]
+            if (tvProgress != null) {
+                if (progress != null && progress < 100) {
+                    tvProgress.visibility = android.view.View.VISIBLE
+                    tvProgress.text = "$progress%"
+                } else {
+                    tvProgress.visibility = android.view.View.GONE
+                }
+            }
         }
     }
 
@@ -1284,14 +1292,20 @@ class NotificationActivity : ThemedActivity() {
 
             // Setup Media Gallery Attachments button inside the reply box
             holder.btnAttachMedia.setOnClickListener {
+                val uris = selectedReplyImages[item.id] ?: mutableListOf()
+                if (uris.size >= 4) {
+                    ToastHelper.showToast(this@NotificationActivity, "Only a max. of 4 media is allowed")
+                    return@setOnClickListener
+                }
                 activePickerQueryId = item.id
                 val galleryIntent = android.content.Intent(android.content.Intent.ACTION_GET_CONTENT).apply {
                     type = "image/*"
                     addCategory(android.content.Intent.CATEGORY_OPENABLE)
                 }
+                val defaultGalleryIntent = android.content.Intent(android.content.Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
                 val cameraIntent = android.content.Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
                 val chooserIntent = android.content.Intent.createChooser(galleryIntent, "Select Image Source").apply {
-                    putExtra(android.content.Intent.EXTRA_INITIAL_INTENTS, arrayOf(cameraIntent))
+                    putExtra(android.content.Intent.EXTRA_INITIAL_INTENTS, arrayOf(cameraIntent, defaultGalleryIntent))
                 }
                 replyPickerLauncher.launch(chooserIntent)
             }
@@ -1567,30 +1581,68 @@ class NotificationActivity : ThemedActivity() {
             }
             holder.scrollReplyPreviews.visibility = View.VISIBLE
             val density = holder.itemView.context.resources.displayMetrics.density
-            val size = (60 * density).toInt()
-            val margin = (6 * density).toInt()
+            val wrapperSize = 61
+            val boxSize = 55
+            
             for ((idx, uri) in uris.withIndex()) {
-                val frame = FrameLayout(holder.itemView.context).apply {
-                    layoutParams = LinearLayout.LayoutParams(size, size).apply {
-                        rightMargin = margin
+                val outerContainer = LinearLayout(holder.itemView.context).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        marginEnd = (16 * density).toInt()
                     }
+                    orientation = LinearLayout.VERTICAL
+                    gravity = android.view.Gravity.CENTER_HORIZONTAL
                 }
-                val img = ImageView(holder.itemView.context).apply {
-                    scaleType = ImageView.ScaleType.CENTER_CROP
-                    layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+                
+                val frameWrapper = FrameLayout(holder.itemView.context).apply {
+                    layoutParams = LinearLayout.LayoutParams((wrapperSize * density).toInt(), (wrapperSize * density).toInt())
+                    clipChildren = false
+                    clipToPadding = false
+                }
+                
+                val imageBox = FrameLayout(holder.itemView.context).apply {
+                    layoutParams = FrameLayout.LayoutParams((boxSize * density).toInt(), (boxSize * density).toInt()).apply {
+                        gravity = android.view.Gravity.BOTTOM or android.view.Gravity.START
+                    }
+                    val tv = android.util.TypedValue()
+                    context.theme.resolveAttribute(R.attr.inputBackground, tv, true)
+                    background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
                     clipToOutline = true
-                    background = android.graphics.drawable.GradientDrawable().apply {
-                        cornerRadius = 8f * density
+                    clipChildren = true
+                    setOnClickListener {
+                        showFullscreenImagePreview(uri)
                     }
                 }
-                img.setImageURI(uri)
-                val deleteBtn = ImageButton(holder.itemView.context).apply {
-                    setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-                    setColorFilter(Color.RED)
-                    background = android.graphics.drawable.ColorDrawable(Color.parseColor("#80000000"))
-                    layoutParams = FrameLayout.LayoutParams((20 * density).toInt(), (20 * density).toInt()).apply {
+                
+                val imgView = ImageView(holder.itemView.context).apply {
+                    layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+                    scaleType = ImageView.ScaleType.CENTER_CROP
+                    clipToOutline = true
+                }
+                com.bumptech.glide.Glide.with(holder.itemView.context).load(uri).into(imgView)
+                imageBox.addView(imgView)
+                
+                val tvProgress = TextView(holder.itemView.context).apply {
+                    layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+                    gravity = android.view.Gravity.CENTER
+                    setBackgroundColor(android.graphics.Color.parseColor("#80000000"))
+                    setTextColor(android.graphics.Color.WHITE)
+                    textSize = 12f
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    tag = "progress_${queryId}_$uri"
+                    visibility = View.GONE
+                }
+                imageBox.addView(tvProgress)
+                
+                val btnDelete = ImageButton(holder.itemView.context).apply {
+                    layoutParams = FrameLayout.LayoutParams((22 * density).toInt(), (22 * density).toInt()).apply {
                         gravity = android.view.Gravity.TOP or android.view.Gravity.END
                     }
+                    setBackgroundResource(android.R.color.transparent)
+                    setImageResource(R.drawable.ic_trash)
+                    scaleType = ImageView.ScaleType.FIT_CENTER
                     setPadding(0, 0, 0, 0)
                     setOnClickListener {
                         val uriToRemove = uris[idx]
@@ -1601,9 +1653,41 @@ class NotificationActivity : ThemedActivity() {
                         updateViewHolderUploadProgress(holder, queryId)
                     }
                 }
-                frame.addView(img)
-                frame.addView(deleteBtn)
-                holder.layoutReplyPreviews.addView(frame)
+                
+                frameWrapper.addView(imageBox)
+                frameWrapper.addView(btnDelete)
+                
+                val eyeIcon = ImageView(holder.itemView.context).apply {
+                    layoutParams = LinearLayout.LayoutParams((16 * density).toInt(), (16 * density).toInt()).apply {
+                        topMargin = (10 * density).toInt()
+                    }
+                    setImageResource(R.drawable.ic_eye)
+                    val tv = android.util.TypedValue()
+                    context.theme.resolveAttribute(R.attr.textMutedColor, tv, true)
+                    setColorFilter(androidx.core.content.ContextCompat.getColor(context, tv.resourceId))
+                    setOnClickListener { showFullscreenImagePreview(uri) }
+                }
+                
+                val viewText = TextView(holder.itemView.context).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        topMargin = (2 * density).toInt()
+                    }
+                    text = "view"
+                    textSize = 10f
+                    val tv = android.util.TypedValue()
+                    context.theme.resolveAttribute(R.attr.textMutedColor, tv, true)
+                    setTextColor(androidx.core.content.ContextCompat.getColor(context, tv.resourceId))
+                    setOnClickListener { showFullscreenImagePreview(uri) }
+                }
+                
+                outerContainer.addView(frameWrapper)
+                outerContainer.addView(eyeIcon)
+                outerContainer.addView(viewText)
+                
+                holder.layoutReplyPreviews.addView(outerContainer)
             }
         }
 
@@ -1762,5 +1846,52 @@ class NotificationActivity : ThemedActivity() {
             val tvUploadStatus = v.findViewById<TextView>(R.id.tvUploadStatus)
             val progressUpload = v.findViewById<android.widget.ProgressBar>(R.id.progressUpload)
         }
+    }
+    
+    private fun showFullscreenImagePreview(uri: Uri) {
+        val dialog = android.app.Dialog(this@NotificationActivity, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val container = FrameLayout(this@NotificationActivity)
+        container.layoutParams = android.view.ViewGroup.LayoutParams(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT
+        )
+
+        val imgView = com.github.chrisbanes.photoview.PhotoView(this@NotificationActivity)
+        imgView.layoutParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        )
+        imgView.scaleType = ImageView.ScaleType.FIT_CENTER
+        com.bumptech.glide.Glide.with(this@NotificationActivity).load(uri).into(imgView)
+
+        val closeBtn = ImageView(this@NotificationActivity)
+        val density = resources.displayMetrics.density
+        val btnParams = FrameLayout.LayoutParams(
+            (56 * density).toInt(),
+            (56 * density).toInt()
+        )
+        btnParams.gravity = android.view.Gravity.TOP or android.view.Gravity.END
+        btnParams.topMargin = (24 * density).toInt()
+        btnParams.marginEnd = (24 * density).toInt()
+        closeBtn.layoutParams = btnParams
+        
+        val glassBg = android.graphics.drawable.GradientDrawable()
+        glassBg.shape = android.graphics.drawable.GradientDrawable.OVAL
+        glassBg.setColor(android.graphics.Color.parseColor("#66000000"))
+        glassBg.setStroke(3, android.graphics.Color.parseColor("#80FFFFFF"))
+        closeBtn.background = glassBg
+        
+        closeBtn.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+        closeBtn.setColorFilter(android.graphics.Color.RED)
+        closeBtn.scaleType = ImageView.ScaleType.FIT_CENTER
+        val p = (14 * density).toInt()
+        closeBtn.setPadding(p, p, p, p)
+        closeBtn.setOnClickListener { dialog.dismiss() }
+
+        container.addView(imgView)
+        container.addView(closeBtn)
+
+        dialog.setContentView(container)
+        dialog.show()
     }
 }
