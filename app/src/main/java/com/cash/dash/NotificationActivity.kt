@@ -41,6 +41,9 @@ class NotificationActivity : ThemedActivity() {
     private val replyUploadedUrls = mutableMapOf<String, MutableMap<Uri, String>>()
     private val replyUploadProgress = mutableMapOf<String, MutableMap<Uri, Int>>()
     private var activePickerQueryId: String? = null
+    
+    // Maintain state of typed replies across theme changes / rotation
+    private var replyDrafts = HashMap<String, String>()
 
     private val replyPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
@@ -221,12 +224,19 @@ class NotificationActivity : ThemedActivity() {
         super.onSaveInstanceState(outState)
         outState.putString("currentFilter", currentFilter)
         outState.putString("activePickerQueryId", activePickerQueryId)
+        outState.putSerializable("replyDrafts", replyDrafts)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
         currentFilter = savedInstanceState.getString("currentFilter", "all")
         activePickerQueryId = savedInstanceState.getString("activePickerQueryId", activePickerQueryId)
+        
+        val drafts = savedInstanceState.getSerializable("replyDrafts") as? HashMap<String, String>
+        if (drafts != null) {
+            replyDrafts.putAll(drafts)
+        }
+        
         updateChipAppearance()
         applyFilter()
     }
@@ -1220,7 +1230,7 @@ class NotificationActivity : ThemedActivity() {
 
             // Setup Media Gallery Attachments button inside the reply box
             holder.btnAttachMedia.setOnClickListener {
-                activePickerQueryId = item.id
+                activePickerManager.activePickerQueryId = item.id
                 val galleryIntent = android.content.Intent(android.content.Intent.ACTION_GET_CONTENT).apply {
                     type = "image/*"
                     addCategory(android.content.Intent.CATEGORY_OPENABLE)
@@ -1235,6 +1245,22 @@ class NotificationActivity : ThemedActivity() {
             // Render selected reply attachments previews
             updateReplyPreviews(holder, item.id)
             updateViewHolderUploadProgress(holder, item.id)
+
+            // Setup TextWatcher to save drafts
+            val oldWatcher = holder.edtReply.tag as? android.text.TextWatcher
+            if (oldWatcher != null) {
+                holder.edtReply.removeTextChangedListener(oldWatcher)
+            }
+            holder.edtReply.setText(replyDrafts[item.id] ?: "")
+            val newWatcher = object : android.text.TextWatcher {
+                override fun afterTextChanged(s: android.text.Editable?) {
+                    replyDrafts[item.id] = s?.toString() ?: ""
+                }
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            }
+            holder.edtReply.addTextChangedListener(newWatcher)
+            holder.edtReply.tag = newWatcher
 
             holder.btnSendReply.setOnClickListener {
                 val replyText = holder.edtReply.text.toString().trim()
@@ -1574,6 +1600,7 @@ class NotificationActivity : ThemedActivity() {
                         selectedReplyImages.remove(model.id)
                         replyUploadedUrls.remove(model.id)
                         replyUploadProgress.remove(model.id)
+                        replyDrafts.remove(model.id)
                         holder.edtReply.text.clear()
                         holder.btnSendReply.isEnabled = true
                         loadNotifications()
