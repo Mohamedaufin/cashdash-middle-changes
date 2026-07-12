@@ -544,4 +544,19 @@ class ProfileActivity : ThemedActivity() {
 
         dialog.show()
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("selectedDob", selectedDob)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        val savedDob = savedInstanceState.getString("selectedDob", "")
+        if (!savedDob.isNullOrEmpty()) {
+            selectedDob = savedDob
+            // Update the displayed DOB text if the view is available
+            findViewById<android.widget.TextView>(R.id.tvDob)?.text = selectedDob
+        }
+    }
 }

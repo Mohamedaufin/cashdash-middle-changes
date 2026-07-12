@@ -1210,4 +1210,19 @@ class AdminActivity : ThemedActivity() {
 
     private val Float.dp: Float get() = this * resources.displayMetrics.density
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("selectedYear", selectedDateCalendar.get(Calendar.YEAR))
+        outState.putInt("selectedMonth", selectedDateCalendar.get(Calendar.MONTH))
+        outState.putInt("selectedDay", selectedDateCalendar.get(Calendar.DAY_OF_MONTH))
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        val year = savedInstanceState.getInt("selectedYear", selectedDateCalendar.get(Calendar.YEAR))
+        val month = savedInstanceState.getInt("selectedMonth", selectedDateCalendar.get(Calendar.MONTH))
+        val day = savedInstanceState.getInt("selectedDay", selectedDateCalendar.get(Calendar.DAY_OF_MONTH))
+        selectedDateCalendar.set(year, month, day)
+    }
+
 }
