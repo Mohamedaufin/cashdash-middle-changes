@@ -125,25 +125,26 @@
                 android:layout_marginBottom="40dp">
 
                 <!-- Slot 1 -->
-                <LinearLayout
+                <FrameLayout
                     android:id="@+id/slotImage1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal"
-                    android:layout_marginEnd="16dp">
+                    android:layout_marginEnd="16dp"
+                    android:clipChildren="false"
+                    android:clipToPadding="false">
 
-                    <FrameLayout
-                        android:layout_width="61dp"
-                        android:layout_height="61dp"
-                        android:clipChildren="false"
-                        android:clipToPadding="false">
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginEnd="6dp">
 
                         <FrameLayout
                             android:id="@+id/frameImage1"
                             android:layout_width="55dp"
                             android:layout_height="55dp"
-                            android:layout_gravity="bottom|start"
                             android:background="?attr/inputBackground"
                             android:clipToOutline="true"
                             android:clipChildren="true"
@@ -176,56 +177,57 @@
                                 android:contentDescription="Add image" />
                         </FrameLayout>
 
-                        <ImageButton
-                            android:id="@+id/btnTrash1"
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:layout_gravity="top|end"
-                            android:background="@android:color/transparent"
-                            android:scaleType="fitCenter"
-                            android:src="@drawable/ic_trash"
-                            android:contentDescription="Delete image" />
-                    </FrameLayout>
+                        <ImageView
+                            android:id="@+id/imgEye1"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_marginTop="10dp"
+                            android:src="@drawable/ic_eye"
+                            app:tint="?attr/textMutedColor"
+                            android:contentDescription="View image" />
 
-                    <ImageView
-                        android:id="@+id/imgEye1"
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:layout_marginTop="10dp"
-                        android:src="@drawable/ic_eye"
-                        app:tint="?attr/textMutedColor"
-                        android:contentDescription="View image" />
+                        <TextView
+                            android:id="@+id/tvView1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="view"
+                            android:textColor="?attr/textMutedColor"
+                            android:textSize="10sp"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/tvView1"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="view"
-                        android:textColor="?attr/textMutedColor"
-                        android:textSize="10sp"
-                        android:layout_marginTop="2dp" />
-                </LinearLayout>
+                    <ImageButton
+                        android:id="@+id/btnTrash1"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_gravity="top|end"
+                        android:background="@android:color/transparent"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_trash"
+                        android:contentDescription="Delete image" />
+                </FrameLayout>
 
                 <!-- Slot 2 -->
-                <LinearLayout
+                <FrameLayout
                     android:id="@+id/slotImage2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal"
-                    android:layout_marginEnd="16dp">
+                    android:layout_marginEnd="16dp"
+                    android:clipChildren="false"
+                    android:clipToPadding="false">
 
-                    <FrameLayout
-                        android:layout_width="61dp"
-                        android:layout_height="61dp"
-                        android:clipChildren="false"
-                        android:clipToPadding="false">
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginEnd="6dp">
 
                         <FrameLayout
                             android:id="@+id/frameImage2"
                             android:layout_width="55dp"
                             android:layout_height="55dp"
-                            android:layout_gravity="bottom|start"
                             android:background="?attr/inputBackground"
                             android:clipToOutline="true"
                             android:clipChildren="true"
@@ -258,56 +260,57 @@
                                 android:contentDescription="Add image" />
                         </FrameLayout>
 
-                        <ImageButton
-                            android:id="@+id/btnTrash2"
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:layout_gravity="top|end"
-                            android:background="@android:color/transparent"
-                            android:scaleType="fitCenter"
-                            android:src="@drawable/ic_trash"
-                            android:contentDescription="Delete image" />
-                    </FrameLayout>
+                        <ImageView
+                            android:id="@+id/imgEye2"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_marginTop="10dp"
+                            android:src="@drawable/ic_eye"
+                            app:tint="?attr/textMutedColor"
+                            android:contentDescription="View image" />
 
-                    <ImageView
-                        android:id="@+id/imgEye2"
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:layout_marginTop="10dp"
-                        android:src="@drawable/ic_eye"
-                        app:tint="?attr/textMutedColor"
-                        android:contentDescription="View image" />
+                        <TextView
+                            android:id="@+id/tvView2"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="view"
+                            android:textColor="?attr/textMutedColor"
+                            android:textSize="10sp"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/tvView2"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="view"
-                        android:textColor="?attr/textMutedColor"
-                        android:textSize="10sp"
-                        android:layout_marginTop="2dp" />
-                </LinearLayout>
+                    <ImageButton
+                        android:id="@+id/btnTrash2"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_gravity="top|end"
+                        android:background="@android:color/transparent"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_trash"
+                        android:contentDescription="Delete image" />
+                </FrameLayout>
 
                 <!-- Slot 3 -->
-                <LinearLayout
+                <FrameLayout
                     android:id="@+id/slotImage3"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal"
-                    android:layout_marginEnd="16dp">
+                    android:layout_marginEnd="16dp"
+                    android:clipChildren="false"
+                    android:clipToPadding="false">
 
-                    <FrameLayout
-                        android:layout_width="61dp"
-                        android:layout_height="61dp"
-                        android:clipChildren="false"
-                        android:clipToPadding="false">
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginEnd="6dp">
 
                         <FrameLayout
                             android:id="@+id/frameImage3"
                             android:layout_width="55dp"
                             android:layout_height="55dp"
-                            android:layout_gravity="bottom|start"
                             android:background="?attr/inputBackground"
                             android:clipToOutline="true"
                             android:clipChildren="true"
@@ -340,55 +343,56 @@
                                 android:contentDescription="Add image" />
                         </FrameLayout>
 
-                        <ImageButton
-                            android:id="@+id/btnTrash3"
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:layout_gravity="top|end"
-                            android:background="@android:color/transparent"
-                            android:scaleType="fitCenter"
-                            android:src="@drawable/ic_trash"
-                            android:contentDescription="Delete image" />
-                    </FrameLayout>
+                        <ImageView
+                            android:id="@+id/imgEye3"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_marginTop="10dp"
+                            android:src="@drawable/ic_eye"
+                            app:tint="?attr/textMutedColor"
+                            android:contentDescription="View image" />
 
-                    <ImageView
-                        android:id="@+id/imgEye3"
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:layout_marginTop="10dp"
-                        android:src="@drawable/ic_eye"
-                        app:tint="?attr/textMutedColor"
-                        android:contentDescription="View image" />
+                        <TextView
+                            android:id="@+id/tvView3"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="view"
+                            android:textColor="?attr/textMutedColor"
+                            android:textSize="10sp"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/tvView3"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="view"
-                        android:textColor="?attr/textMutedColor"
-                        android:textSize="10sp"
-                        android:layout_marginTop="2dp" />
-                </LinearLayout>
+                    <ImageButton
+                        android:id="@+id/btnTrash3"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_gravity="top|end"
+                        android:background="@android:color/transparent"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_trash"
+                        android:contentDescription="Delete image" />
+                </FrameLayout>
 
                 <!-- Slot 4 -->
-                <LinearLayout
+                <FrameLayout
                     android:id="@+id/slotImage4"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal">
+                    android:clipChildren="false"
+                    android:clipToPadding="false">
 
-                    <FrameLayout
-                        android:layout_width="61dp"
-                        android:layout_height="61dp"
-                        android:clipChildren="false"
-                        android:clipToPadding="false">
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginEnd="6dp">
 
                         <FrameLayout
                             android:id="@+id/frameImage4"
                             android:layout_width="55dp"
                             android:layout_height="55dp"
-                            android:layout_gravity="bottom|start"
                             android:background="?attr/inputBackground"
                             android:clipToOutline="true"
                             android:clipChildren="true"
@@ -421,35 +425,35 @@
                                 android:contentDescription="Add image" />
                         </FrameLayout>
 
-                        <ImageButton
-                            android:id="@+id/btnTrash4"
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:layout_gravity="top|end"
-                            android:background="@android:color/transparent"
-                            android:scaleType="fitCenter"
-                            android:src="@drawable/ic_trash"
-                            android:contentDescription="Delete image" />
-                    </FrameLayout>
+                        <ImageView
+                            android:id="@+id/imgEye4"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_marginTop="10dp"
+                            android:src="@drawable/ic_eye"
+                            app:tint="?attr/textMutedColor"
+                            android:contentDescription="View image" />
 
-                    <ImageView
-                        android:id="@+id/imgEye4"
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:layout_marginTop="10dp"
-                        android:src="@drawable/ic_eye"
-                        app:tint="?attr/textMutedColor"
-                        android:contentDescription="View image" />
+                        <TextView
+                            android:id="@+id/tvView4"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="view"
+                            android:textColor="?attr/textMutedColor"
+                            android:textSize="10sp"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/tvView4"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="view"
-                        android:textColor="?attr/textMutedColor"
-                        android:textSize="10sp"
-                        android:layout_marginTop="2dp" />
-                </LinearLayout>
+                    <ImageButton
+                        android:id="@+id/btnTrash4"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_gravity="top|end"
+                        android:background="@android:color/transparent"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_trash"
+                        android:contentDescription="Delete image" />
+                </FrameLayout>
 
             </LinearLayout>
 

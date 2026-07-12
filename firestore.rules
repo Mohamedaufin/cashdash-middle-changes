@@ -54,7 +54,12 @@ service cloud.firestore {
       // Any admin can read the list (needed to load admin access section)
       allow read: if isAnyAdmin();
       // Only those with allocateAdmins permission (or super admins) can write
-      allow write: if hasAllocateAdminPermission();
+      allow write: if isAnyAdmin();
+    }
+
+    // 🚀 Match the Admin Requests collection
+    match /admin_requests/{requestEmail} {
+      allow read, write: if isAnyAdmin();
     }
 
     // 🚀 Match the Admin Announcements collection

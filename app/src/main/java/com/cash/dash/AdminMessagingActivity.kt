@@ -22,7 +22,22 @@ class AdminMessagingActivity : ThemedActivity() {
     private val selectedImageUris = mutableListOf<Uri>()
     private val uploadedImageUrls = mutableListOf<String>()
     private var isImageUploading = false
+    private val uploadProgressMap = HashMap<Uri, Int>()
     private var pendingSendAction: (() -> Unit)? = null
+
+    private val permissionListener: (AdminManager.AdminPermissions) -> Unit = { perms ->
+        if (isAnnouncement) {
+            if (!perms.canSendAnnouncements()) {
+                ToastHelper.showToast(this, "Permission denied")
+                finish()
+            }
+        } else {
+            if (!perms.canSendNotifications()) {
+                ToastHelper.showToast(this, "Permission denied")
+                finish()
+            }
+        }
+    }
     
     private val pickSingleImageLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
@@ -70,6 +85,8 @@ class AdminMessagingActivity : ThemedActivity() {
         }
 
         isAnnouncement = intent.getBooleanExtra("isAnnouncement", false)
+
+        AdminManager.addListener(permissionListener)
 
         val tvHeaderTitle = findViewById<TextView>(R.id.tvHeaderTitle)
         val btnSend = findViewById<Button>(R.id.btnSend)
@@ -144,6 +161,11 @@ class AdminMessagingActivity : ThemedActivity() {
         updateMediaStrip()
     }
     
+    override fun onDestroy() {
+        super.onDestroy()
+        AdminManager.removeListener(permissionListener)
+    }
+
     private fun startBackgroundUpload(index: Int) {
         val uri = selectedImageUris[index]
         isImageUploading = true
