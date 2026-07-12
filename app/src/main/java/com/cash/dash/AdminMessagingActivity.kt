@@ -24,38 +24,53 @@ class AdminMessagingActivity : ThemedActivity() {
     private var isImageUploading = false
     private var pendingSendAction: (() -> Unit)? = null
     
-    private val pickSingleImageLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()) { uri: Uri? ->
-        if (uri != null) {
-            if (selectedImageUris.size < 1) {
-                selectedImageUris.add(uri)
-                uploadedImageUrls.add("")
-                val index = selectedImageUris.size - 1
-                startBackgroundUpload(index)
-                updateMediaStrip()
-            } else {
-                ToastHelper.showToast(this@AdminMessagingActivity, "Maximum 1 photo allowed")
-            }
-        }
-    }
-
-    private val pickMultipleImagesLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetMultipleContents()) { uris: List<Uri> ->
-        if (uris.isNotEmpty()) {
-            val maxAllowed = 5
-            var addedCount = 0
-            for (uri in uris) {
-                if (selectedImageUris.size < maxAllowed) {
+    private val pickSingleImageLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val uri = result.data?.data
+            if (uri != null) {
+                if (selectedImageUris.size < 1) {
                     selectedImageUris.add(uri)
                     uploadedImageUrls.add("")
                     val index = selectedImageUris.size - 1
                     startBackgroundUpload(index)
-                    addedCount++
+                    updateMediaStrip()
                 } else {
-                    ToastHelper.showToast(this@AdminMessagingActivity, "Maximum $maxAllowed photos allowed")
-                    break
+                    ToastHelper.showToast(this@AdminMessagingActivity, "Maximum 1 photo allowed")
                 }
             }
-            if (addedCount > 0) {
-                updateMediaStrip()
+        }
+    }
+
+    private val pickMultipleImagesLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val clipData = result.data?.clipData
+            val uris = mutableListOf<Uri>()
+            if (clipData != null) {
+                for (i in 0 until clipData.itemCount) {
+                    uris.add(clipData.getItemAt(i).uri)
+                }
+            } else {
+                result.data?.data?.let { uris.add(it) }
+            }
+            
+            if (uris.isNotEmpty()) {
+                val maxAllowed = 5
+                var addedCount = 0
+                for (uri in uris) {
+                    if (selectedImageUris.size < maxAllowed) {
+                        selectedImageUris.add(uri)
+                        uploadedImageUrls.add("")
+                        val index = selectedImageUris.size - 1
+                        startBackgroundUpload(index)
+                        addedCount++
+                    } else {
+                        ToastHelper.showToast(this@AdminMessagingActivity, "Maximum $maxAllowed photos allowed")
+                        break
+                    }
+                }
+                if (addedCount > 0) {
+                    updateMediaStrip()
+                }
             }
         }
     }
@@ -339,10 +354,12 @@ class AdminMessagingActivity : ThemedActivity() {
                 background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
                 clipToOutline = true
                 setOnClickListener {
+                    val intent = android.content.Intent(android.content.Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
                     if (isAnnouncement) {
-                        pickMultipleImagesLauncher.launch("image/*")
+                        intent.putExtra(android.content.Intent.EXTRA_ALLOW_MULTIPLE, true)
+                        pickMultipleImagesLauncher.launch(intent)
                     } else {
-                        pickSingleImageLauncher.launch("image/*")
+                        pickSingleImageLauncher.launch(intent)
                     }
                 }
             }
