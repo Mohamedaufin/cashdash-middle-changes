@@ -583,6 +583,16 @@ class HomeFragment : Fragment() {
         }
         box.addView(content)
 
+        val hintContent = TextView(context).apply {
+            text = "Your spending limits will also reset to ₹0 upon resetting the cycle. Do you wish to continue?"
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.text_body))
+            setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textSecondaryColor))
+            setLineSpacing(4f, 1f)
+            setPadding((16 * density).toInt(), 0, (16 * density).toInt(), (16 * density).toInt())
+            gravity = android.view.Gravity.CENTER
+        }
+        box.addView(hintContent)
+
         // 📊 Live demo of allocation spent bar resetting to 0% in reverse
         val demoRow = layoutInflater.inflate(R.layout.item_rigor_category, box, false)
         val lp = LinearLayout.LayoutParams(
