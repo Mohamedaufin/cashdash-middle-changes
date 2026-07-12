@@ -214,17 +214,65 @@ class HelpActivity : ThemedActivity() {
                 } else 0
                 contactUploadProgress[uri] = percent
                 updateDialogSubmitButton()
+                
+                val index = selectedImageUris.indexOf(uri)
+                if (index != -1) {
+                    val dialog = activeDialog
+                    val tvProgress = when(index) {
+                        0 -> dialog?.findViewById<TextView>(R.id.tvProgress1)
+                        1 -> dialog?.findViewById<TextView>(R.id.tvProgress2)
+                        2 -> dialog?.findViewById<TextView>(R.id.tvProgress3)
+                        3 -> dialog?.findViewById<TextView>(R.id.tvProgress4)
+                        else -> null
+                    }
+                    if (tvProgress != null) {
+                        if (percent < 100) {
+                            tvProgress.visibility = android.view.View.VISIBLE
+                            tvProgress.text = "$percent%"
+                        } else {
+                            tvProgress.visibility = android.view.View.GONE
+                        }
+                    }
+                }
             }
             .addOnSuccessListener {
                 imageRef.downloadUrl.addOnSuccessListener { downloadUri ->
                     contactUploadedUrls[uri] = downloadUri.toString()
                     contactUploadProgress.remove(uri)
                     updateDialogSubmitButton()
+                    
+                    val index = selectedImageUris.indexOf(uri)
+                    if (index != -1) {
+                        val dialog = activeDialog
+                        val tvProgress = when(index) {
+                            0 -> dialog?.findViewById<TextView>(R.id.tvProgress1)
+                            1 -> dialog?.findViewById<TextView>(R.id.tvProgress2)
+                            2 -> dialog?.findViewById<TextView>(R.id.tvProgress3)
+                            3 -> dialog?.findViewById<TextView>(R.id.tvProgress4)
+                            else -> null
+                        }
+                        tvProgress?.visibility = android.view.View.GONE
+                    }
+                    
                     checkAndSubmitIfWaiting()
                 }.addOnFailureListener { e ->
                     contactUploadProgress.remove(uri)
                     isWaitingForUploads = false
                     updateDialogSubmitButton()
+                    
+                    val index = selectedImageUris.indexOf(uri)
+                    if (index != -1) {
+                        val dialog = activeDialog
+                        val tvProgress = when(index) {
+                            0 -> dialog?.findViewById<TextView>(R.id.tvProgress1)
+                            1 -> dialog?.findViewById<TextView>(R.id.tvProgress2)
+                            2 -> dialog?.findViewById<TextView>(R.id.tvProgress3)
+                            3 -> dialog?.findViewById<TextView>(R.id.tvProgress4)
+                            else -> null
+                        }
+                        tvProgress?.visibility = android.view.View.GONE
+                    }
+                    
                     ToastHelper.showToast(this, "Failed to get URL: ${e.message}")
                 }
             }
@@ -232,6 +280,20 @@ class HelpActivity : ThemedActivity() {
                 contactUploadProgress.remove(uri)
                 isWaitingForUploads = false
                 updateDialogSubmitButton()
+                
+                val index = selectedImageUris.indexOf(uri)
+                if (index != -1) {
+                    val dialog = activeDialog
+                    val tvProgress = when(index) {
+                        0 -> dialog?.findViewById<TextView>(R.id.tvProgress1)
+                        1 -> dialog?.findViewById<TextView>(R.id.tvProgress2)
+                        2 -> dialog?.findViewById<TextView>(R.id.tvProgress3)
+                        3 -> dialog?.findViewById<TextView>(R.id.tvProgress4)
+                        else -> null
+                    }
+                    tvProgress?.visibility = android.view.View.GONE
+                }
+                
                 ToastHelper.showToast(this, "Upload failed: ${e.message}")
             }
     }
@@ -242,8 +304,7 @@ class HelpActivity : ThemedActivity() {
 
         val pendingCount = contactUploadProgress.size
         if (pendingCount > 0) {
-            val avgProgress = contactUploadProgress.values.average().toInt()
-            btnSubmit.text = "Uploading... ($avgProgress%)"
+            btnSubmit.text = "Uploading..."
             btnSubmit.isEnabled = false // Disabled during upload to prevent double-submit
         } else {
             if (isWaitingForUploads) {
@@ -289,7 +350,8 @@ class HelpActivity : ThemedActivity() {
                 dialog.findViewById(R.id.imgPlus1),
                 dialog.findViewById(R.id.btnTrash1),
                 dialog.findViewById(R.id.imgEye1),
-                dialog.findViewById(R.id.tvView1)
+                dialog.findViewById(R.id.tvView1),
+                dialog.findViewById(R.id.tvProgress1)
             ),
             ImageSlotViews(
                 dialog.findViewById(R.id.slotImage2),
@@ -298,7 +360,8 @@ class HelpActivity : ThemedActivity() {
                 dialog.findViewById(R.id.imgPlus2),
                 dialog.findViewById(R.id.btnTrash2),
                 dialog.findViewById(R.id.imgEye2),
-                dialog.findViewById(R.id.tvView2)
+                dialog.findViewById(R.id.tvView2),
+                dialog.findViewById(R.id.tvProgress2)
             ),
             ImageSlotViews(
                 dialog.findViewById(R.id.slotImage3),
@@ -307,7 +370,8 @@ class HelpActivity : ThemedActivity() {
                 dialog.findViewById(R.id.imgPlus3),
                 dialog.findViewById(R.id.btnTrash3),
                 dialog.findViewById(R.id.imgEye3),
-                dialog.findViewById(R.id.tvView3)
+                dialog.findViewById(R.id.tvView3),
+                dialog.findViewById(R.id.tvProgress3)
             ),
             ImageSlotViews(
                 dialog.findViewById(R.id.slotImage4),
@@ -316,7 +380,8 @@ class HelpActivity : ThemedActivity() {
                 dialog.findViewById(R.id.imgPlus4),
                 dialog.findViewById(R.id.btnTrash4),
                 dialog.findViewById(R.id.imgEye4),
-                dialog.findViewById(R.id.tvView4)
+                dialog.findViewById(R.id.tvView4),
+                dialog.findViewById(R.id.tvProgress4)
             )
         )
 

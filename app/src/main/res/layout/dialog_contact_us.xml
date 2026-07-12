@@ -154,6 +154,17 @@
                         android:layout_gravity="center"
                         android:src="@drawable/ic_plus_vector"
                         android:contentDescription="Add image" />
+                        
+                    <TextView
+                        android:id="@+id/tvProgress1"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:background="#80000000"
+                        android:textColor="@android:color/white"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
                 </FrameLayout>
 
                 <ImageButton
@@ -224,6 +235,17 @@
                         android:layout_gravity="center"
                         android:src="@drawable/ic_plus_vector"
                         android:contentDescription="Add image" />
+                        
+                    <TextView
+                        android:id="@+id/tvProgress2"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:background="#80000000"
+                        android:textColor="@android:color/white"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
                 </FrameLayout>
 
                 <ImageButton
@@ -294,6 +316,17 @@
                         android:layout_gravity="center"
                         android:src="@drawable/ic_plus_vector"
                         android:contentDescription="Add image" />
+                        
+                    <TextView
+                        android:id="@+id/tvProgress3"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:background="#80000000"
+                        android:textColor="@android:color/white"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
                 </FrameLayout>
 
                 <ImageButton
@@ -363,6 +396,17 @@
                         android:layout_gravity="center"
                         android:src="@drawable/ic_plus_vector"
                         android:contentDescription="Add image" />
+                        
+                    <TextView
+                        android:id="@+id/tvProgress4"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:background="#80000000"
+                        android:textColor="@android:color/white"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
                 </FrameLayout>
 
                 <ImageButton
