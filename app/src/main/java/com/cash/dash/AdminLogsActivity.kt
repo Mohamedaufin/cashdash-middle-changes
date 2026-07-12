@@ -20,6 +20,12 @@ class AdminLogsActivity : ThemedActivity() {
     private lateinit var tvEmpty: TextView
     private lateinit var adapter: LogsAdapter
     private val logsList = mutableListOf<AdminLogModel>()
+    private var logsListener: com.google.firebase.firestore.ListenerRegistration? = null
+
+    override fun onDestroy() {
+        super.onDestroy()
+        logsListener?.remove()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,15 +61,26 @@ class AdminLogsActivity : ThemedActivity() {
         rvLogs.visibility = View.GONE
 
         val db = FirebaseFirestore.getInstance()
-        db.collection("admin_logs")
+        logsListener = db.collection("admin_logs")
             .orderBy("timestamp", Query.Direction.DESCENDING)
-            .get()
-            .addOnSuccessListener { querySnapshot ->
+            .addSnapshotListener { querySnapshot, e ->
                 progressBar.visibility = View.GONE
-                if (querySnapshot.isEmpty) {
+                if (e != null) {
+                    tvEmpty.text = "Failed to load activity logs."
                     tvEmpty.visibility = View.VISIBLE
-                    return@addOnSuccessListener
+                    ToastHelper.showToast(this, "Error: ${e.message}")
+                    return@addSnapshotListener
                 }
+
+                if (querySnapshot == null || querySnapshot.isEmpty) {
+                    tvEmpty.visibility = View.VISIBLE
+                    logsList.clear()
+                    adapter.notifyDataSetChanged()
+                    rvLogs.visibility = View.GONE
+                    return@addSnapshotListener
+                }
+                
+                tvEmpty.visibility = View.GONE
 
                 logsList.clear()
                 val sdf = SimpleDateFormat("dd MMM yyyy, h:mm a", Locale.getDefault())
@@ -86,6 +103,10 @@ class AdminLogsActivity : ThemedActivity() {
                     val title = doc.getString("title") ?: ""
                     val message = doc.getString("message") ?: doc.getString("content") ?: ""
                     val ts = doc.getLong("timestamp") ?: 0L
+                    val notifClickers = (doc.get("notif_clickers") as? List<*>)?.size ?: 0
+                    val annClickers = (doc.get("ann_clickers") as? List<*>)?.size ?: 0
+                    val totalAudience = doc.getLong("totalAudience")?.toInt() ?: 0
+                    val legacyClicks = doc.getLong("clicks") ?: 0L
                     val details = doc.getString("details") ?: doc.getString("targetUsers")
                     val payload = doc.get("payload") as? Map<String, Any>
                     val timeStr = if (ts > 0) sdf.format(Date(ts)) else ""
@@ -203,6 +224,27 @@ class AdminLogsActivity : ThemedActivity() {
                         }
                     }
 
+                    var clicksText: String? = null
+                    if (type.contains("Promotional Activity", ignoreCase = true)) {
+                        if (totalAudience > 0 || notifClickers > 0 || annClickers > 0) {
+                            val audStr = if (totalAudience > 0) "$totalAudience" else "?"
+                            val parts = mutableListOf<String>()
+                            if (notifClickers > 0 || totalAudience > 0) {
+                                parts.add("Notification link clicks : $notifClickers/$audStr")
+                            }
+                            if (annClickers > 0 || totalAudience > 0) {
+                                parts.add("Announcement link clicks : $annClickers/$audStr")
+                            }
+                            if (parts.isNotEmpty()) {
+                                clicksText = parts.joinToString("\n")
+                            }
+                        } else if (legacyClicks > 0) {
+                            clicksText = "Link Clicks: $legacyClicks"
+                        }
+                    } else if (legacyClicks > 0) {
+                        clicksText = "Link Clicks: $legacyClicks"
+                    }
+
                     logsList.add(
                         AdminLogModel(
                             actionType = finalActionDesc,
@@ -212,19 +254,14 @@ class AdminLogsActivity : ThemedActivity() {
                             rawActionType = type,
                             targetedUsers = targetedUsersText,
                             payload = effectivePayload,
-                            imageUrl = (payload?.get("uploadedImageUrl") as? String)?.takeIf { it.isNotEmpty() }
+                            imageUrl = (payload?.get("uploadedImageUrl") as? String)?.takeIf { it.isNotEmpty() },
+                            clicksText = clicksText
                         )
                     )
                 }
 
                 rvLogs.visibility = View.VISIBLE
                 adapter.notifyDataSetChanged()
-            }
-            .addOnFailureListener { e ->
-                progressBar.visibility = View.GONE
-                tvEmpty.text = "Failed to load activity logs."
-                tvEmpty.visibility = View.VISIBLE
-                ToastHelper.showToast(this, "Error: ${e.message}")
             }
     }
 
@@ -236,7 +273,8 @@ class AdminLogsActivity : ThemedActivity() {
         val rawActionType: String,
         val targetedUsers: String?,
         val payload: Map<String, Any>?,
-        val imageUrl: String? = null
+        val imageUrl: String? = null,
+        val clicksText: String? = null
     )
 
     inner class LogsAdapter(private val items: List<AdminLogModel>) :
@@ -271,6 +309,13 @@ class AdminLogsActivity : ThemedActivity() {
                 holder.tvTargetedUsers.text = item.targetedUsers
             } else {
                 holder.tvTargetedUsers.visibility = View.GONE
+            }
+
+            if (item.clicksText != null) {
+                holder.tvLogClicks.visibility = View.VISIBLE
+                holder.tvLogClicks.text = item.clicksText
+            } else {
+                holder.tvLogClicks.visibility = View.GONE
             }
 
             if (item.imageUrl != null) {
@@ -346,6 +391,7 @@ class AdminLogsActivity : ThemedActivity() {
             val tvTriggeredBy: TextView = itemView.findViewById(R.id.tvLogTriggeredBy)
             val tvTargetedUsers: TextView = view.findViewById(R.id.tvLogTargetedUsers)
             val btnReTrigger: TextView = view.findViewById(R.id.btnReTrigger)
+            val tvLogClicks: TextView = view.findViewById(R.id.tvLogClicks)
             val cardLogMedia: androidx.cardview.widget.CardView = view.findViewById(R.id.cardLogMedia)
             val imgLogMedia: android.widget.ImageView = view.findViewById(R.id.imgLogMedia)
         }

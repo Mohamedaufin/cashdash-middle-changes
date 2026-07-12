@@ -155,8 +155,7 @@ class MenuActivity : ThemedActivity() {
                 updateBadgeVisibility()
             }
 
-        val adminEmails = listOf("mohamedaufin64@gmail.com", "arunbhalaji200904@gmail.com")
-        val isAdmin = adminEmails.contains(email.lowercase())
+        val isAdmin = AdminManager.isCurrentUserAdmin()
 
         announcementsListener?.remove()
         

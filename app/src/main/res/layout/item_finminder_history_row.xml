@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:text="1"
         android:textColor="?attr/textPrimaryColor"
-        android:textSize="14dp"/>
+        android:textSize="14sp"/>
 
     <TextView
         android:id="@+id/tvDate"
@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:text="15.06.2026"
         android:textColor="?attr/textPrimaryColor"
-        android:textSize="14dp"/>
+        android:textSize="14sp"/>
 
     <FrameLayout
         android:layout_width="0dp"
@@ -36,7 +36,7 @@
             android:text="Completed"
             android:gravity="end|center_vertical"
             android:textColor="#4CAF50"
-            android:textSize="14dp"
+            android:textSize="14sp"
             android:textStyle="bold"
             android:visibility="gone"/>
 
@@ -48,7 +48,7 @@
             android:backgroundTint="?attr/colorPrimary"
             android:text="Not completed"
             android:textColor="#FFFFFF"
-            android:textSize="10dp"
+            android:textSize="10sp"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:paddingHorizontal="8dp"

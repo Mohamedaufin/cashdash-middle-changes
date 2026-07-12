@@ -138,11 +138,13 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
             val email = user.email ?: return
             val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
             
-            val adminEmails = listOf("mohamedaufin64@gmail.com", "arunbhalaji200904@gmail.com")
-            if (adminEmails.contains(email.lowercase())) {
-                com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("admins")
-            } else {
-                com.google.firebase.messaging.FirebaseMessaging.getInstance().unsubscribeFromTopic("admins")
+            AdminManager.init(email)
+            AdminManager.addListener { permissions ->
+                if (permissions.hasAnyAccess) {
+                    com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("admins")
+                } else {
+                    com.google.firebase.messaging.FirebaseMessaging.getInstance().unsubscribeFromTopic("admins")
+                }
             }
             
             val safeEmail = email.replace(".", ",")

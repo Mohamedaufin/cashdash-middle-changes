@@ -88,6 +88,20 @@
         android:padding="18dp"
         android:paddingBottom="14dp"/>
 
+    <!-- Link Clicks text -->
+    <TextView
+        android:id="@+id/tvLogClicks"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Link Clicks: 0"
+        android:textColor="#2196F3"
+        android:textSize="@dimen/text_caption"
+        android:textStyle="bold"
+        android:visibility="gone"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        android:paddingBottom="14dp"/>
+
     <!-- Media Image -->
     <androidx.cardview.widget.CardView
         android:id="@+id/cardLogMedia"

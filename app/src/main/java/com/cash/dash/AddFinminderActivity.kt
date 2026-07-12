@@ -321,12 +321,15 @@ class AddFinminderActivity : ThemedActivity() {
                 
                 when (item.frequency) {
                     "One time" -> {
-                        selectFrequency(0, "One time only")
                         try {
                             val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
                             val date = sdf.parse(item.dateInfo)
-                            if (date != null) calendarView.date = date.time
+                            if (date != null) {
+                                calendarView.date = date.time
+                                selectedDateStr = item.dateInfo
+                            }
                         } catch(e: Exception){}
+                        selectFrequency(0, "One time only")
                     }
                     "Daily" -> {
                         selectFrequency(1, "Remind daily")

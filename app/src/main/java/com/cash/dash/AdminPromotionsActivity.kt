@@ -942,7 +942,13 @@ class AdminPromotionsActivity : ThemedActivity() {
                     if (currentTab == TabType.USER || currentTab == TabType.AGE) {
                         payload["selectedEmails"] = selectedEmails.toList()
                     }
-                    logAction("Promotional Activity", notifTitle.ifEmpty { annTitle }, notifBody.ifEmpty { annBody }, payload)
+                    val totalAudience = when (currentTab) {
+                        TabType.GLOBAL -> allUsers.size
+                        TabType.ADMIN -> 2
+                        TabType.USER, TabType.AGE -> selectedEmails.size
+                        TabType.NONE -> 0
+                    }
+                    logAction("Promotional Activity", notifTitle.ifEmpty { annTitle }, notifBody.ifEmpty { annBody }, timestamp, payload, totalAudience)
                     ToastHelper.showToast(this, "Promotion Sent Successfully!")
                     finish()
                 } else {
@@ -966,7 +972,8 @@ class AdminPromotionsActivity : ThemedActivity() {
                 "triggerUrl" to triggerUrl,
                 "triggerText" to triggerUrlTitle,
                 "adminOnly" to adminOnly,
-                "time" to timeStr
+                "time" to timeStr,
+                "promo_id" to timestamp.toString()
             )
             if (currentTab == TabType.USER || currentTab == TabType.AGE) {
                 annData["targetEmails"] = selectedEmails.toList()
@@ -987,7 +994,8 @@ class AdminPromotionsActivity : ThemedActivity() {
                     "triggerText" to triggerUrlTitle,
                     "adminOnly" to adminOnly,
                     "timestamp" to timestamp,
-                    "time" to timeStr
+                    "time" to timeStr,
+                    "promo_id" to timestamp.toString()
                 )
                 db.collection("global_pushes").document(timestamp.toString()).set(pushData)
                     .addOnSuccessListener { completedTasks++; checkCompletion() }
@@ -1002,7 +1010,8 @@ class AdminPromotionsActivity : ThemedActivity() {
                         "imageUrl" to uploadedImageUrl,
                         "triggerUrl" to triggerUrl,
                         "triggerText" to triggerUrlTitle,
-                        "timestamp" to timestamp + index
+                        "timestamp" to timestamp + index,
+                        "promo_id" to timestamp.toString()
                     )
                     batch.set(db.collection("user_pushes").document(), data)
                 }
@@ -1013,7 +1022,7 @@ class AdminPromotionsActivity : ThemedActivity() {
         }
     }
 
-    private fun logAction(actionBaseType: String, title: String, content: String, payload: MutableMap<String, Any>? = null) {
+    private fun logAction(actionBaseType: String, title: String, content: String, timestamp: Long, payload: MutableMap<String, Any>? = null, totalAudience: Int = 0) {
         val type = when (currentTab) {
             TabType.GLOBAL -> "Global $actionBaseType"
             TabType.ADMIN -> "Admin $actionBaseType"
@@ -1024,11 +1033,14 @@ class AdminPromotionsActivity : ThemedActivity() {
         
         val db = FirebaseFirestore.getInstance()
         val logData = hashMapOf<String, Any>(
-            "timestamp" to System.currentTimeMillis(),
+            "timestamp" to timestamp,
             "actionType" to type,
             "title" to title,
             "message" to content,
-            "performedBy" to (getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).getString("user_email", "Unknown") ?: "Unknown")
+            "performedBy" to (getSharedPreferences("AppPrefs", Context.MODE_PRIVATE).getString("user_email", "Unknown") ?: "Unknown"),
+            "totalAudience" to totalAudience,
+            "notif_clickers" to emptyList<String>(),
+            "ann_clickers" to emptyList<String>()
         )
 
         if (currentTab == TabType.USER || currentTab == TabType.AGE) {
@@ -1053,7 +1065,7 @@ class AdminPromotionsActivity : ThemedActivity() {
             logData["payload"] = payload
         }
 
-        db.collection("admin_logs").add(logData)
+        db.collection("admin_logs").document(timestamp.toString()).set(logData)
     }
     private fun showFullscreenImagePreview(model: Any) {
         val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)

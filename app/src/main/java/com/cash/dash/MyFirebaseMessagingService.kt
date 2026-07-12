@@ -48,11 +48,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val imageUrl = remoteMessage.data["imageUrl"]
         val triggerUrl = remoteMessage.data["triggerUrl"]
         val triggerText = remoteMessage.data["triggerText"]
+        val promoId = remoteMessage.data["promo_id"]
 
-        sendNotification(title, body, imageUrl, triggerUrl, triggerText)
+        sendNotification(title, body, imageUrl, triggerUrl, triggerText, promoId)
     }
 
-    private fun sendNotification(title: String, messageBody: String, imageUrl: String?, triggerUrl: String?, triggerText: String?) {
+    private fun sendNotification(title: String, messageBody: String, imageUrl: String?, triggerUrl: String?, triggerText: String?, promoId: String?) {
         val safeUrl = if (!triggerUrl.isNullOrEmpty()) {
             if (!triggerUrl.startsWith("http://") && !triggerUrl.startsWith("https://")) "https://$triggerUrl" else triggerUrl
         } else null
@@ -109,6 +110,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 action = "com.cash.dash.ACTION_OPEN_URL"
                 putExtra("url", safeUrl)
                 putExtra("notif_id", notifId)
+                if (promoId != null) {
+                    putExtra("promo_id", promoId)
+                }
             }
             val actionPendingIntent = PendingIntent.getActivity(
                 this, notifId + 1, actionIntent,
