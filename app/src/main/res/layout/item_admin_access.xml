@@ -52,6 +52,20 @@
             android:padding="8dp"
             android:scaleType="fitCenter"/>
 
+        <!-- Review Required button for Owners -->
+        <Button
+            android:id="@+id/btnReviewAdmin"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Review Required"
+            android:textSize="12sp"
+            android:visibility="gone"
+            android:backgroundTint="?attr/colorPrimary"
+            android:textColor="@android:color/white"
+            android:layout_marginStart="8dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"/>
+
     </LinearLayout>
 
     <!-- Divider line -->

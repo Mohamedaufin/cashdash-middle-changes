@@ -30,6 +30,9 @@ class AdminActivity : ThemedActivity() {
     private val selectedQueries = mutableSetOf<String>()
     private val rtdbPresenceMap = mutableMapOf<String, Pair<String, String>>()
     private val currentAdminEmails = mutableSetOf<String>()
+    
+    private var adminRequestsListenerRegistration: com.google.firebase.firestore.ListenerRegistration? = null
+    private val pendingAdminRequests = mutableSetOf<String>()
 
     data class UserStatusItem(
         val email: String,
@@ -154,7 +157,7 @@ class AdminActivity : ThemedActivity() {
                     layoutAdminSearchResults?.removeAllViews()
                     layoutAdminSearchResults?.visibility = View.VISIBLE
                     val filteredUsers = userStatusList.filter { !currentAdminEmails.contains(it.email.lowercase(java.util.Locale.getDefault())) }
-                    for (user in filteredUsers.take(10)) {
+                    for (user in filteredUsers) {
                         addSearchResultRow(layoutAdminSearchResults, user)
                     }
                 }
@@ -171,7 +174,7 @@ class AdminActivity : ThemedActivity() {
                     
                     if (query.isEmpty()) {
                         container.visibility = View.VISIBLE
-                        for (user in filteredUsers.take(10)) {
+                        for (user in filteredUsers) {
                             addSearchResultRow(container, user)
                         }
                         return
@@ -180,7 +183,7 @@ class AdminActivity : ThemedActivity() {
                     val matches = filteredUsers.filter {
                         it.email.lowercase(java.util.Locale.getDefault()).contains(query) ||
                         it.name.lowercase(java.util.Locale.getDefault()).contains(query)
-                    }.take(10)
+                    }
 
                     if (matches.isNotEmpty()) {
                         container.visibility = View.VISIBLE
@@ -683,6 +686,7 @@ class AdminActivity : ThemedActivity() {
         super.onDestroy()
         usersListenerRegistration?.remove()
         adminAccessListenerRegistration?.remove()
+        adminRequestsListenerRegistration?.remove()
     }
 
     private var adminAccessListenerRegistration: com.google.firebase.firestore.ListenerRegistration? = null
@@ -707,6 +711,21 @@ class AdminActivity : ThemedActivity() {
         // Always inflate super admins immediately in case the listener fails due to Firestore rules.
         inflateSuperAdmins()
         
+        adminRequestsListenerRegistration?.remove()
+        adminRequestsListenerRegistration = db.collection("admin_requests").addSnapshotListener { reqSnap, _ ->
+            pendingAdminRequests.clear()
+            if (reqSnap != null) {
+                for (doc in reqSnap.documents) {
+                    if (doc.getString("status") == "pending") {
+                        pendingAdminRequests.add(doc.id.lowercase())
+                    }
+                }
+            }
+            // Trigger a UI refresh of the admins if needed, but the main snapshot listener might handle the heavy lifting.
+            // For immediate effect, we'll just rely on this firing before or slightly after the main listener.
+            // A more robust way is to re-render, but for now populating the list will work.
+        }
+
         adminAccessListenerRegistration?.remove()
         adminAccessListenerRegistration = db.collection("admins").addSnapshotListener { snapshot, e ->
             if (e != null) {
@@ -749,10 +768,14 @@ class AdminActivity : ThemedActivity() {
                 )
                 
                 val isSuperAdmin = fullAccess || (sendAnnouncements && sendPromotions && sendNotifications && viewLastSeen && allocateAdmins)
-                val roleStr = if (isPromotedOwner) "Owner" else if (isSuperAdmin) "Super Administrator" else "Admin"
+                var roleStr = if (isPromotedOwner) "Owner" else if (isSuperAdmin) "Super Administrator" else "Admin"
+                
+                if (pendingAdminRequests.contains(email)) {
+                    roleStr = "Super Administrator (Request sent)"
+                }
                 
                 // Clean up name if it accidentally got corrupted in Firestore previously
-                val cleanName = name.substringBefore(" - Owner").substringBefore(" - Super Administrator").substringBefore(" - Admin")
+                val cleanName = name.substringBefore(" - Owner").substringBefore(" - Super Administrator").substringBefore(" - Admin").substringBefore(" - Super Administrator (Request sent)")
                 
                 addAdminRow(container, email, cleanName, roleStr, perms)
             }
@@ -773,12 +796,51 @@ class AdminActivity : ThemedActivity() {
             btnEdit.visibility = View.GONE
             view.isClickable = false
         } else {
-            btnEdit.visibility = View.VISIBLE
-            val editAction = View.OnClickListener {
-                showEditAdminPermissionsDialog(email, name, perms, isNewAdmin = false)
+            val isPendingRequest = pendingAdminRequests.contains(email)
+            val currentUserPerms = AdminManager.getPermissions()
+            val btnReview = view.findViewById<android.widget.Button>(R.id.btnReviewAdmin)
+
+            if (isPendingRequest && currentUserPerms.isOwner) {
+                btnEdit.visibility = View.GONE
+                btnReview?.visibility = View.VISIBLE
+                
+                val reviewAction = View.OnClickListener {
+                    FirebaseFirestore.getInstance().collection("admin_requests").document(email).get()
+                        .addOnSuccessListener { reqDoc ->
+                            if (reqDoc.exists() && reqDoc.getString("status") == "pending") {
+                                val requestedPerms = AdminManager.AdminPermissions(
+                                    isFixedOwner = false,
+                                    isPromotedOwner = false,
+                                    fullAccess = reqDoc.getBoolean("fullAccess") ?: false,
+                                    sendAnnouncements = reqDoc.getBoolean("sendAnnouncements") ?: false,
+                                    sendPromotions = reqDoc.getBoolean("sendPromotions") ?: false,
+                                    sendNotifications = reqDoc.getBoolean("sendNotifications") ?: false,
+                                    viewLastSeen = reqDoc.getBoolean("viewLastSeen") ?: false,
+                                    allocateAdmins = reqDoc.getBoolean("allocateAdmins") ?: false
+                                )
+                                showEditAdminPermissionsDialog(email, name, requestedPerms, isNewAdmin = false, isReviewingRequest = true)
+                            }
+                        }
+                }
+                btnReview?.setOnClickListener(reviewAction)
+                view.setOnClickListener(reviewAction)
+            } else {
+                btnEdit.visibility = View.VISIBLE
+                btnReview?.visibility = View.GONE
+                val editAction = View.OnClickListener {
+                    if (role.contains("Owner") && !currentUserPerms.isOwner) {
+                        ToastHelper.showToast(this, "You cannot view Owner permissions")
+                        return@OnClickListener
+                    }
+                    if (role.contains("Super Administrator") && !currentUserPerms.isOwner && !currentUserPerms.fullAccess) {
+                        ToastHelper.showToast(this, "You cannot view Super Administrator permissions")
+                        return@OnClickListener
+                    }
+                    showEditAdminPermissionsDialog(email, name, perms, isNewAdmin = false)
+                }
+                btnEdit.setOnClickListener(editAction)
+                view.setOnClickListener(editAction)
             }
-            btnEdit.setOnClickListener(editAction)
-            view.setOnClickListener(editAction)
             
             val typedValue = android.util.TypedValue()
             view.context.theme.resolveAttribute(android.R.attr.selectableItemBackground, typedValue, true)
@@ -862,7 +924,8 @@ class AdminActivity : ThemedActivity() {
         email: String,
         name: String,
         currentPerms: AdminManager.AdminPermissions,
-        isNewAdmin: Boolean = false
+        isNewAdmin: Boolean = false,
+        isReviewingRequest: Boolean = false
     ) {
         // BottomSheetDialogTheme makes the container transparent so our dark bg shows through.
         // Without this style, Material3 forces a white container background.
@@ -894,12 +957,6 @@ class AdminActivity : ThemedActivity() {
         val tvEmail = view.findViewById<TextView>(R.id.tvAdminEmail) ?: return
         tvEmail.text = "$name - $email"
 
-        val btnRoleToggle = view.findViewById<View>(R.id.btnRoleToggle) ?: return
-        val tvSelectedRole = view.findViewById<TextView>(R.id.tvSelectedRole) ?: return
-        val ivRoleArrow = view.findViewById<android.widget.ImageView>(R.id.ivRoleArrow) ?: return
-        val layoutRoleOptions = view.findViewById<View>(R.id.layoutRoleOptions) ?: return
-        val btnRoleSuperAdmin = view.findViewById<View>(R.id.btnRoleSuperAdmin) ?: return
-        val btnRoleAdmin = view.findViewById<View>(R.id.btnRoleAdmin) ?: return
         val layoutCheckboxes = view.findViewById<View>(R.id.layoutCheckboxes) ?: return
         
         val cbAnnouncements = view.findViewById<android.widget.CheckBox>(R.id.cbAnnouncements) ?: return
@@ -938,6 +995,16 @@ class AdminActivity : ThemedActivity() {
                 android.graphics.Color.parseColor("#44888888")
             )
             btnRevoke.setOnClickListener { bottomSheet.dismiss() }
+        } else if (isReviewingRequest) {
+            btnSave.text = "Approve Request"
+            btnRevoke.text = "Reject"
+            btnRevoke.setTextColor(android.graphics.Color.parseColor("#888888"))
+            btnRevoke.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                android.graphics.Color.parseColor("#22888888")
+            )
+            btnRevoke.strokeColor = android.content.res.ColorStateList.valueOf(
+                android.graphics.Color.parseColor("#44888888")
+            )
         }
 
         val isFixed = currentPerms.isFixedOwner
@@ -949,8 +1016,6 @@ class AdminActivity : ThemedActivity() {
         val currentRole = if (isFixed || currentPerms.isPromotedOwner) "Owner"
         else if (currentPerms.fullAccess) "Super Administrator"
         else "Admin"
-
-        tvSelectedRole.text = currentRole
 
         fun resetCheckboxes() {
             cbAnnouncements.isChecked = false
@@ -965,7 +1030,6 @@ class AdminActivity : ThemedActivity() {
         val isReadOnly = isFixed || isReadOnlySelf
 
         if (isReadOnly) {
-            btnRoleToggle.isEnabled = false
             btnSave.isEnabled = false
             btnRevoke.visibility = View.GONE
 
@@ -989,106 +1053,74 @@ class AdminActivity : ThemedActivity() {
             cbLastSeen.isEnabled = false
             cbAllocateAdmins.isEnabled = false
         } else {
-            if (currentRole == "Super Administrator" || currentRole == "Owner") {
-                cbAnnouncements.isChecked = true
-                cbPromotions.isChecked = true
-                cbNotifications.isChecked = true
-                cbLastSeen.isChecked = true
-                cbAllocateAdmins.isChecked = true
+            cbAnnouncements.isChecked = currentPerms.sendAnnouncements || currentRole == "Super Administrator" || currentRole == "Owner"
+            cbPromotions.isChecked = currentPerms.sendPromotions || currentRole == "Super Administrator" || currentRole == "Owner"
+            cbNotifications.isChecked = currentPerms.sendNotifications || currentRole == "Super Administrator" || currentRole == "Owner"
+            cbLastSeen.isChecked = currentPerms.viewLastSeen || currentRole == "Super Administrator" || currentRole == "Owner"
+            cbAllocateAdmins.isChecked = currentPerms.allocateAdmins || currentRole == "Super Administrator" || currentRole == "Owner"
 
-                cbAnnouncements.isEnabled = false
-                cbPromotions.isEnabled = false
-                cbNotifications.isEnabled = false
-                cbLastSeen.isEnabled = false
-                cbAllocateAdmins.isEnabled = false
-            } else {
-                cbAnnouncements.isChecked = currentPerms.sendAnnouncements
-                cbPromotions.isChecked = currentPerms.sendPromotions
-                cbNotifications.isChecked = currentPerms.sendNotifications
-                cbLastSeen.isChecked = currentPerms.viewLastSeen
-                cbAllocateAdmins.isChecked = currentPerms.allocateAdmins
+            cbAnnouncements.isEnabled = true
+            cbPromotions.isEnabled = true
+            cbNotifications.isEnabled = true
+            cbLastSeen.isEnabled = true
+            cbAllocateAdmins.isEnabled = true
 
-                if (!isCurrentUserOwner) {
-                    cbAllocateAdmins.isEnabled = false
-                }
-            }
-            
-            btnRoleToggle.setOnClickListener {
-                android.transition.TransitionManager.beginDelayedTransition(view.parent as android.view.ViewGroup, android.transition.AutoTransition().apply { duration = 200 })
-                if (layoutRoleOptions.visibility == View.VISIBLE) {
-                    layoutRoleOptions.visibility = View.GONE
-                    ivRoleArrow.animate().rotation(0f).setDuration(200).start()
-                } else {
-                    layoutRoleOptions.visibility = View.VISIBLE
-                    ivRoleArrow.animate().rotation(180f).setDuration(200).start()
-                }
-            }
-
-            fun selectRole(role: String) {
-                tvSelectedRole.text = role
-                android.transition.TransitionManager.beginDelayedTransition(view.parent as android.view.ViewGroup, android.transition.AutoTransition().apply { duration = 200 })
-                layoutRoleOptions.visibility = View.GONE
-                ivRoleArrow.animate().rotation(0f).setDuration(200).start()
-                
-                view.findViewById<android.widget.ImageView>(R.id.tickRoleSuperAdmin)?.visibility = if (role == "Super Administrator") View.VISIBLE else View.GONE
-                view.findViewById<android.widget.ImageView>(R.id.tickRoleAdmin)?.visibility = if (role == "Admin") View.VISIBLE else View.GONE
-                
-                if (role == "Super Administrator") {
-                    cbAnnouncements.isChecked = true
-                    cbPromotions.isChecked = true
-                    cbNotifications.isChecked = true
-                    cbLastSeen.isChecked = true
-                    cbAllocateAdmins.isChecked = true
-
+            val currentUserPerms = AdminManager.getPermissions()
+            if (!currentUserPerms.isOwner) {
+                if (!currentUserPerms.canSendAnnouncements()) {
                     cbAnnouncements.isEnabled = false
+                    cbAnnouncements.isChecked = false
+                }
+                if (!currentUserPerms.canSendPromotions()) {
                     cbPromotions.isEnabled = false
+                    cbPromotions.isChecked = false
+                }
+                if (!currentUserPerms.canSendNotifications()) {
                     cbNotifications.isEnabled = false
+                    cbNotifications.isChecked = false
+                }
+                if (!currentUserPerms.canViewLastSeen()) {
                     cbLastSeen.isEnabled = false
+                    cbLastSeen.isChecked = false
+                }
+                if (!currentUserPerms.canAllocateAdmins()) {
                     cbAllocateAdmins.isEnabled = false
-                } else {
-                    resetCheckboxes()
-                    cbAnnouncements.isEnabled = true
-                    cbPromotions.isEnabled = true
-                    cbNotifications.isEnabled = true
-                    cbLastSeen.isEnabled = true
-                    cbAllocateAdmins.isEnabled = isCurrentUserOwner
+                    cbAllocateAdmins.isChecked = false
                 }
             }
-
-            view.findViewById<View>(R.id.btnRoleSuperAdmin)?.setOnClickListener { selectRole("Super Administrator") }
-            view.findViewById<View>(R.id.btnRoleAdmin)?.setOnClickListener { selectRole("Admin") }
-
-            val checkListener = android.widget.CompoundButton.OnCheckedChangeListener { _, _ ->
-                if (cbAnnouncements.isChecked && cbPromotions.isChecked && cbNotifications.isChecked && cbLastSeen.isChecked && cbAllocateAdmins.isChecked) {
-                    if (tvSelectedRole.text.toString() != "Super Administrator") {
-                        selectRole("Super Administrator")
-                    }
-                }
-            }
-            cbAnnouncements.setOnCheckedChangeListener(checkListener)
-            cbPromotions.setOnCheckedChangeListener(checkListener)
-            cbNotifications.setOnCheckedChangeListener(checkListener)
-            cbLastSeen.setOnCheckedChangeListener(checkListener)
-            cbAllocateAdmins.setOnCheckedChangeListener(checkListener)
         }
 
         btnSave.setOnClickListener {
             if (isFixed) { bottomSheet.dismiss(); return@setOnClickListener }
             val db = FirebaseFirestore.getInstance()
             
-            val selectedRole = tvSelectedRole.text.toString()
-            val isRequestingOwner = selectedRole == "Owner"
-            val isRequestingSuperAdmin = selectedRole == "Super Administrator"
+            val hasZeroPermissions = !cbAnnouncements.isChecked && !cbPromotions.isChecked && !cbNotifications.isChecked && !cbLastSeen.isChecked && !cbAllocateAdmins.isChecked
             
-            val newlyRequestingSuperAdmin = isRequestingSuperAdmin && !currentPerms.fullAccess
-            val newlyRequestingOwner = isRequestingOwner && !currentPerms.isPromotedOwner
+            if (hasZeroPermissions) {
+                if (isNewAdmin) {
+                    ToastHelper.showToast(this@AdminActivity, "Select at least 1 permission.")
+                    return@setOnClickListener
+                } else if (!isReviewingRequest) {
+                    FirebaseFirestore.getInstance().collection("admins").document(email.lowercase()).delete()
+                        .addOnSuccessListener {
+                            ToastHelper.showToast(this@AdminActivity, "Access revoked")
+                            bottomSheet.dismiss()
+                        }
+                    return@setOnClickListener
+                }
+            }
             
-            if ((newlyRequestingSuperAdmin || newlyRequestingOwner) && !isCurrentUserOwner) {
+            val isSuperAdminSave = cbAnnouncements.isChecked && cbPromotions.isChecked && cbNotifications.isChecked && cbLastSeen.isChecked && cbAllocateAdmins.isChecked
+            val isOwnerSave = currentPerms.isPromotedOwner // Can't change owner here anyway since it's removed
+            
+            val newlyRequestingSuperAdmin = isSuperAdminSave && !currentPerms.fullAccess
+            
+            if (newlyRequestingSuperAdmin && !isCurrentUserOwner) {
                 val requestData = hashMapOf<String, Any>(
                     "email" to email.lowercase(),
                     "name" to name,
-                    "isOwner" to isRequestingOwner,
-                    "fullAccess" to (isRequestingSuperAdmin || isRequestingOwner),
+                    "isOwner" to false,
+                    "fullAccess" to true,
                     "sendAnnouncements" to cbAnnouncements.isChecked,
                     "sendPromotions" to cbPromotions.isChecked,
                     "sendNotifications" to cbNotifications.isChecked,
@@ -1100,15 +1132,12 @@ class AdminActivity : ThemedActivity() {
                 )
                 db.collection("admin_requests").document(email.lowercase()).set(requestData)
                     .addOnSuccessListener {
-                        ToastHelper.showToast(this@AdminActivity, "Request sent to owners for approval")
+                        ToastHelper.showToast(this@AdminActivity, "Request sent to owners for Super Administrator promotion")
                         bottomSheet.dismiss()
                     }
                     .addOnFailureListener { e -> ToastHelper.showToast(this@AdminActivity, "Failed: ${e.message}") }
                 return@setOnClickListener
             }
-
-            val isOwnerSave = tvSelectedRole.text.toString() == "Owner"
-            val isSuperAdminSave = tvSelectedRole.text.toString() == "Super Administrator" || isOwnerSave
 
             val data = hashMapOf<String, Any>(
                 "name" to name,
@@ -1120,6 +1149,20 @@ class AdminActivity : ThemedActivity() {
                 "viewLastSeen" to cbLastSeen.isChecked,
                 "allocateAdmins" to cbAllocateAdmins.isChecked
             )
+
+            if (isReviewingRequest) {
+                db.collection("admins").document(email.lowercase()).set(data)
+                    .addOnSuccessListener {
+                        db.collection("admin_requests").document(email.lowercase()).delete()
+                        ToastHelper.showToast(this@AdminActivity, "Request approved")
+                        bottomSheet.dismiss()
+                    }
+                    .addOnFailureListener { e ->
+                        ToastHelper.showToast(this@AdminActivity, "Failed: ${e.message}")
+                    }
+                return@setOnClickListener
+            }
+
             db.collection("admins").document(email.lowercase()).set(data)
                 .addOnSuccessListener {
                     val msg = if (isNewAdmin) "Admin added: $name" else "Permissions updated"
@@ -1131,7 +1174,18 @@ class AdminActivity : ThemedActivity() {
                 }
         }
 
-        if (!isNewAdmin) {
+        if (isReviewingRequest) {
+            btnRevoke.setOnClickListener {
+                FirebaseFirestore.getInstance().collection("admin_requests").document(email.lowercase()).delete()
+                    .addOnSuccessListener {
+                        ToastHelper.showToast(this, "Request rejected")
+                        bottomSheet.dismiss()
+                    }
+                    .addOnFailureListener { e ->
+                        ToastHelper.showToast(this, "Failed to reject: ${e.message}")
+                    }
+            }
+        } else if (!isNewAdmin) {
             btnRevoke.setOnClickListener {
                 androidx.appcompat.app.AlertDialog.Builder(this)
                     .setTitle("Revoke Access")
