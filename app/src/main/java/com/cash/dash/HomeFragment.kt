@@ -75,12 +75,15 @@ class HomeFragment : Fragment() {
         // Ensure username is visible for the shared element transition
         view.findViewById<TextView>(R.id.tvUsernameHome)?.apply {
             setOnClickListener {
-                if (System.currentTimeMillis() - requireContext().getSharedPreferences("wallet_prefs", android.content.Context.MODE_PRIVATE).getLong("last_reset_time", 0) > 0) {
+                val wPrefs = requireContext().getSharedPreferences("wallet_prefs", android.content.Context.MODE_PRIVATE)
+                val nextDate = wPrefs.getLong("next_cycle_date", System.currentTimeMillis())
+                val freq = wPrefs.getInt("cycle_frequency", 0)
+                if (System.currentTimeMillis() - wPrefs.getLong("last_reset_time", 0) > 0) {
                     // Let them bypass time check for debug if they tap it?
                     // Actually, just show it.
-                    showResetConfirmationDialog(requireContext())
+                    showResetConfirmationDialog(nextDate, freq)
                 } else {
-                    showResetConfirmationDialog(requireContext())
+                    showResetConfirmationDialog(nextDate, freq)
                 }
             }
             visibility = View.VISIBLE
