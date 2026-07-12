@@ -201,15 +201,25 @@ class AdminMessagingActivity : ThemedActivity() {
             scaleType = ImageView.ScaleType.FIT_CENTER
         }
         val closeBtn = ImageButton(this).apply {
-            val size = (48 * resources.displayMetrics.density).toInt()
-            val margin = (16 * resources.displayMetrics.density).toInt()
+            val density = resources.displayMetrics.density
+            val size = (56 * density).toInt()
             layoutParams = FrameLayout.LayoutParams(size, size).apply {
                 gravity = android.view.Gravity.TOP or android.view.Gravity.END
-                setMargins(0, margin, margin, 0)
+                setMargins(0, (24 * density).toInt(), (24 * density).toInt(), 0)
             }
-            setBackgroundResource(android.R.color.transparent)
+            
+            val glassBg = android.graphics.drawable.GradientDrawable()
+            glassBg.shape = android.graphics.drawable.GradientDrawable.OVAL
+            glassBg.setColor(android.graphics.Color.parseColor("#66000000"))
+            glassBg.setStroke(3, android.graphics.Color.parseColor("#80FFFFFF"))
+            background = glassBg
+            
             setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-            setColorFilter(android.graphics.Color.WHITE)
+            setColorFilter(android.graphics.Color.RED)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            val p = (14 * density).toInt()
+            setPadding(p, p, p, p)
+            
             setOnClickListener { dialog.dismiss() }
         }
         val frame = FrameLayout(this).apply {
@@ -302,6 +312,7 @@ class AdminMessagingActivity : ThemedActivity() {
                 val tv = android.util.TypedValue()
                 context.theme.resolveAttribute(R.attr.textMutedColor, tv, true)
                 setColorFilter(androidx.core.content.ContextCompat.getColor(context, tv.resourceId))
+                setOnClickListener { showFullscreenImagePreview(uri) }
             }
             
             val viewText = TextView(this).apply {
@@ -316,6 +327,7 @@ class AdminMessagingActivity : ThemedActivity() {
                 val tv = android.util.TypedValue()
                 context.theme.resolveAttribute(R.attr.textMutedColor, tv, true)
                 setTextColor(androidx.core.content.ContextCompat.getColor(context, tv.resourceId))
+                setOnClickListener { showFullscreenImagePreview(uri) }
             }
             
             outerContainer.addView(frameWrapper)
