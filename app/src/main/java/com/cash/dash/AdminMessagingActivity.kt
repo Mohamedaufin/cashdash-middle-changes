@@ -209,7 +209,7 @@ class AdminMessagingActivity : ThemedActivity() {
             }
             setBackgroundResource(android.R.color.transparent)
             setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-            setColorFilter(android.graphics.Color.parseColor("#FF3B30"))
+            setColorFilter(android.graphics.Color.WHITE)
             setOnClickListener { dialog.dismiss() }
         }
         val frame = FrameLayout(this).apply {
@@ -278,6 +278,7 @@ class AdminMessagingActivity : ThemedActivity() {
                 setBackgroundResource(android.R.color.transparent)
                 setImageResource(R.drawable.ic_trash)
                 scaleType = ImageView.ScaleType.FIT_CENTER
+                setPadding(0, 0, 0, 0)
                 setOnClickListener {
                     selectedImageUris.removeAt(i)
                     if (i < uploadedImageUrls.size) {
