@@ -79,10 +79,39 @@
                 android:textColorHint="?attr/textMutedColor"
                 android:textColor="?attr/textPrimaryColor"
                 android:textSize="@dimen/text_body"
-                android:layout_marginBottom="25dp"
+                android:layout_marginBottom="16dp"
                 android:gravity="top|start"
                 android:inputType="textCapSentences|textMultiLine"
                 android:minLines="5"/>
+
+            <!-- Supporting Media Section -->
+            <TextView
+                android:id="@+id/tvMediaLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Supporting Media"
+                android:textSize="@dimen/text_subhead"
+                android:textColor="?attr/textPrimaryColor"
+                android:textStyle="bold"
+                android:layout_marginBottom="10dp"/>
+
+            <!-- Horizontally scrollable photo strip -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:layout_marginBottom="25dp">
+
+                <LinearLayout
+                    android:id="@+id/llMediaStrip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"/>
+
+            </HorizontalScrollView>
+
+
+
 
             <TextView
                 android:layout_width="match_parent"

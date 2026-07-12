@@ -8,5 +8,6 @@ data class FinminderItem(
     val frequency: String, // "One time", "Weekly", "Monthly"
     val dateInfo: String, // E.g., "15/06/2026", "Monday", "15"
     val isChecked: Boolean = false,
+    val completedDates: List<String> = emptyList(),
     val timestamp: Long = System.currentTimeMillis()
 )

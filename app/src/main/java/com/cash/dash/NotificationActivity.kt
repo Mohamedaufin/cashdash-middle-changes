@@ -716,7 +716,9 @@ class NotificationActivity : ThemedActivity() {
                 val firstUnreadIndex = filteredNotifications.indexOfFirst { it.isUnread }
                 if (firstUnreadIndex != -1) {
                     rv.post {
-                        rv.scrollToPosition(firstUnreadIndex)
+                        val offsetPx = (12 * resources.displayMetrics.density).toInt()
+                        (rv.layoutManager as? androidx.recyclerview.widget.LinearLayoutManager)
+                            ?.scrollToPositionWithOffset(firstUnreadIndex, offsetPx)
                     }
                 }
                 markAllAsRead()
