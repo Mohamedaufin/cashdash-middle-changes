@@ -725,12 +725,14 @@ class AdminPromotionsActivity : ThemedActivity() {
             edtText.importantForAutofill = android.view.View.IMPORTANT_FOR_AUTOFILL_NO
         }
 
-        dialogView.findViewById<android.view.View>(R.id.btnLinkCancel)?.setOnClickListener {
+        val btnCancel = dialogView.findViewById<android.view.View>(R.id.btnLinkCancel)
+        btnCancel?.setOnClickListener {
             dialog.dismiss()
         }
 
         if (spanStart != -1 && spanEnd != -1) {
             btnDelete.visibility = View.VISIBLE
+            btnCancel?.setBackgroundResource(R.drawable.bg_glass_3d_round)
             btnDelete.setOnClickListener {
                 val currentText = edtAnnouncementBody.text as? android.text.SpannableStringBuilder
                 if (currentText != null) {
@@ -739,7 +741,10 @@ class AdminPromotionsActivity : ThemedActivity() {
                     edtAnnouncementBody.setSelection(spanStart.coerceAtMost(currentText.length))
                 }
                 dialog.dismiss()
+                generateLinkChips()
             }
+        } else {
+            btnCancel?.setBackgroundResource(R.drawable.bg_glass_3d_red_circle)
         }
 
         dialogView.findViewById<android.widget.Button>(R.id.btnLinkDone)?.setOnClickListener {
