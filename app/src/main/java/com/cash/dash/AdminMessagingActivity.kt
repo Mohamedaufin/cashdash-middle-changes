@@ -304,7 +304,7 @@ class AdminMessagingActivity : ThemedActivity() {
                 setBackgroundColor(android.graphics.Color.parseColor("#80000000")) // Semi-transparent black
                 setTextColor(android.graphics.Color.WHITE)
                 textSize = 12f
-                textStyle = android.graphics.Typeface.BOLD
+                setTypeface(null, android.graphics.Typeface.BOLD)
                 tag = "progress_$i"
                 visibility = android.view.View.GONE
             }
