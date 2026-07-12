@@ -159,15 +159,32 @@ class AdminMessagingActivity : ThemedActivity() {
             val btnSendInline = findViewById<Button>(R.id.btnSendInline)
             btnSend.text = "Uploading image... ($progress/100%)"
             btnSendInline.text = "Uploading image... ($progress/100%)"
+            
+            val llMediaStrip = findViewById<LinearLayout>(R.id.llMediaStrip)
+            val tvProgress = llMediaStrip.findViewWithTag<TextView>("progress_$index")
+            if (tvProgress != null) {
+                if (progress < 100) {
+                    tvProgress.visibility = android.view.View.VISIBLE
+                    tvProgress.text = "$progress%"
+                } else {
+                    tvProgress.visibility = android.view.View.GONE
+                }
+            }
         }.addOnSuccessListener {
             ref.downloadUrl.addOnSuccessListener { downloadUrl ->
                 if (index < uploadedImageUrls.size) {
                     uploadedImageUrls[index] = downloadUrl.toString()
                 }
+                val llMediaStrip = findViewById<LinearLayout>(R.id.llMediaStrip)
+                val tvProgress = llMediaStrip.findViewWithTag<TextView>("progress_$index")
+                tvProgress?.visibility = android.view.View.GONE
                 checkAllUploadsDone()
             }
         }.addOnFailureListener {
             ToastHelper.showToast(this, "Failed to upload image")
+            val llMediaStrip = findViewById<LinearLayout>(R.id.llMediaStrip)
+            val tvProgress = llMediaStrip.findViewWithTag<TextView>("progress_$index")
+            tvProgress?.visibility = android.view.View.GONE
             checkAllUploadsDone()
         }
     }
@@ -280,6 +297,18 @@ class AdminMessagingActivity : ThemedActivity() {
             }
             Glide.with(this).load(uri).into(imgView)
             imageBox.addView(imgView)
+            
+            val tvProgress = TextView(this).apply {
+                layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+                gravity = android.view.Gravity.CENTER
+                setBackgroundColor(android.graphics.Color.parseColor("#80000000")) // Semi-transparent black
+                setTextColor(android.graphics.Color.WHITE)
+                textSize = 12f
+                textStyle = android.graphics.Typeface.BOLD
+                tag = "progress_$i"
+                visibility = android.view.View.GONE
+            }
+            imageBox.addView(tvProgress)
             
             val btnDelete = ImageButton(this).apply {
                 layoutParams = FrameLayout.LayoutParams((22 * density).toInt(), (22 * density).toInt()).apply {
