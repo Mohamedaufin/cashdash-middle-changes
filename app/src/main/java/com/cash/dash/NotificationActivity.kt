@@ -1230,7 +1230,7 @@ class NotificationActivity : ThemedActivity() {
 
             // Setup Media Gallery Attachments button inside the reply box
             holder.btnAttachMedia.setOnClickListener {
-                activePickerManager.activePickerQueryId = item.id
+                activePickerQueryId = item.id
                 val galleryIntent = android.content.Intent(android.content.Intent.ACTION_GET_CONTENT).apply {
                     type = "image/*"
                     addCategory(android.content.Intent.CATEGORY_OPENABLE)
