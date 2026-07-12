@@ -392,8 +392,7 @@ class NotificationActivity : ThemedActivity() {
                 val user = FirebaseAuth.getInstance().currentUser
                 val email = user?.email?.lowercase() ?: ""
                 val registrationTime = user?.metadata?.creationTimestamp ?: 0L
-                val adminEmails = listOf("mohamedaufin64@gmail.com", "arunbhalaji200904@gmail.com")
-                val isAdmin = adminEmails.contains(email)
+                val isAdmin = AdminManager.isCurrentUserAdmin()
 
                 val deletedPrefs = getSharedPreferences("DeletedAnnouncements", MODE_PRIVATE)
                 val readAnnPrefs = getSharedPreferences("ReadAnnouncements", MODE_PRIVATE)
@@ -546,8 +545,7 @@ class NotificationActivity : ThemedActivity() {
             val user = FirebaseAuth.getInstance().currentUser
             val email = user?.email?.lowercase() ?: ""
             val registrationTime = user?.metadata?.creationTimestamp ?: 0L
-            val adminEmails = listOf("mohamedaufin64@gmail.com", "arunbhalaji200904@gmail.com")
-            val isAdmin = adminEmails.contains(email)
+            val isAdmin = AdminManager.isCurrentUserAdmin()
 
             val filteredEntities = entities.filter { !deletedPrefs.contains(it.id) }.mapNotNull { entity ->
                 if (entity.reply == "[ANNOUNCEMENT]") {
@@ -1082,6 +1080,13 @@ class NotificationActivity : ThemedActivity() {
                                 override fun onClick(widget: android.view.View) {
                                     val browserIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(safeUrl))
                                     context.startActivity(browserIntent)
+                                    // Track the link click
+                                    val userEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email
+                                    if (userEmail != null) {
+                                        com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                            .collection("admin_logs").document(item.id)
+                                            .update("ann_clickers", com.google.firebase.firestore.FieldValue.arrayUnion(userEmail))
+                                    }
                                 }
                                 override fun updateDrawState(ds: android.text.TextPaint) {
                                     super.updateDrawState(ds)

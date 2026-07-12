@@ -25,6 +25,8 @@
             android:textColor="?attr/textPrimaryColor"
             android:textSize="@dimen/text_subhead"
             android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
             android:text="Milk" />
 
         <!-- Quantity Data -->
@@ -40,6 +42,8 @@
             android:gravity="center"
             android:textColor="?attr/textPrimaryColor"
             android:textSize="@dimen/text_body"
+            android:maxLines="1"
+            android:ellipsize="end"
             android:text="1000" />
 
         <!-- Date Info -->

@@ -11,11 +11,20 @@ class NotificationActionReceiver : android.app.Activity() {
         super.onCreate(savedInstanceState)
         val notifId = intent.getIntExtra("notif_id", -1)
         val url = intent.getStringExtra("url")
+        val promoId = intent.getStringExtra("promo_id")
 
         // Always cancel the notification first
         if (notifId != -1) {
             val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             nm.cancel(notifId)
+        }
+        if (promoId != null) {
+            val userEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email
+            if (userEmail != null) {
+                com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                    .collection("admin_logs").document(promoId)
+                    .update("notif_clickers", com.google.firebase.firestore.FieldValue.arrayUnion(userEmail))
+            }
         }
 
         // Open the URL in browser if provided

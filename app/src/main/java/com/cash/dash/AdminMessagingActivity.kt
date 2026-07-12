@@ -667,7 +667,8 @@ class AdminMessagingActivity : ThemedActivity() {
             "timestamp" to timestamp,
             "time" to timeStr,
             "read" to false,
-            "adminOnly" to (currentTab == TabType.ADMIN)
+            "adminOnly" to (currentTab == TabType.ADMIN),
+            "promo_id" to timestamp.toString()
         )
         if (uploadedImageUrls.isNotEmpty()) {
             data["imageUrls"] = uploadedImageUrls.toList()
@@ -678,12 +679,11 @@ class AdminMessagingActivity : ThemedActivity() {
         }
 
         db.collection("announcements").document(timestamp.toString()).set(data)
-            .addOnSuccessListener {
-                ToastHelper.showToast(this, "Announcement Sent!")
-                logAction("Announcement", title, body)
-                finish()
-            }
-            .addOnFailureListener {
+                .addOnSuccessListener {
+                    ToastHelper.showToast(this, "Announcement Sent!")
+                    logAction("Announcement", title, body, timestamp)
+                    finish()
+                }          .addOnFailureListener {
                 ToastHelper.showToast(this, "Failed to send: ${it.message}")
                 btnSend.isEnabled = true
                 btnSendInline.isEnabled = true
@@ -709,6 +709,7 @@ class AdminMessagingActivity : ThemedActivity() {
                 "title" to title,
                 "message" to body,
                 "timestamp" to timestamp,
+                "promo_id" to timestamp.toString(),
                 "time" to timeStr,
                 "adminOnly" to (currentTab == TabType.ADMIN)
             )
@@ -719,7 +720,7 @@ class AdminMessagingActivity : ThemedActivity() {
             db.collection("global_pushes").document(timestamp.toString()).set(data)
                 .addOnSuccessListener {
                     ToastHelper.showToast(this, "Push Notification Sent!")
-                    logAction("Push Notification", title, body)
+                    logAction("Push Notification", title, body, timestamp)
                     finish()
                 }
                 .addOnFailureListener {
@@ -736,7 +737,8 @@ class AdminMessagingActivity : ThemedActivity() {
                     "email" to email,
                     "title" to title,
                     "message" to body,
-                    "timestamp" to timestamp + index
+                    "timestamp" to timestamp + index,
+                    "promo_id" to timestamp.toString()
                 )
                 if (uploadedImageUrls.isNotEmpty()) {
                     data["imageUrl"] = uploadedImageUrls[0]
@@ -748,7 +750,7 @@ class AdminMessagingActivity : ThemedActivity() {
             batch.commit()
                 .addOnSuccessListener {
                     ToastHelper.showToast(this, "Notifications sent to ${selectedEmails.size} user(s)!")
-                    logAction("User Push Notification", title, body)
+                    logAction("User Push Notification", title, body, timestamp)
                     finish()
                 }
                 .addOnFailureListener { e ->
@@ -761,7 +763,7 @@ class AdminMessagingActivity : ThemedActivity() {
         }
     }
 
-    private fun logAction(baseType: String, title: String, content: String) {
+    private fun logAction(baseType: String, title: String, content: String, timestamp: Long) {
         val type = when (currentTab) {
             TabType.GLOBAL -> "Global $baseType"
             TabType.ADMIN -> "Admin $baseType"
@@ -772,7 +774,7 @@ class AdminMessagingActivity : ThemedActivity() {
         
         val db = FirebaseFirestore.getInstance()
         val logData = hashMapOf<String, Any>(
-            "timestamp" to System.currentTimeMillis(),
+            "timestamp" to timestamp,
             "actionType" to type,
             "title" to title,
             "message" to content,
@@ -814,6 +816,6 @@ class AdminMessagingActivity : ThemedActivity() {
         }
         logData["payload"] = payload
 
-        db.collection("admin_logs").add(logData)
+        db.collection("admin_logs").document(timestamp.toString()).set(logData)
     }
 }

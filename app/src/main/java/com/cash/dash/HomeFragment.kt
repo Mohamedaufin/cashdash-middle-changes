@@ -148,8 +148,7 @@ class HomeFragment : Fragment() {
         walletContainer?.setOnLongClickListener {
             val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
             val email = user?.email?.lowercase() ?: ""
-            val adminEmails = listOf("mohamedaufin64@gmail.com", "arunbhalaji200904@gmail.com")
-            if (adminEmails.contains(email)) {
+            if (AdminManager.isCurrentUserAdmin()) {
                 startActivity(Intent(requireContext(), AdminActivity::class.java))
                 activity?.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
                 true

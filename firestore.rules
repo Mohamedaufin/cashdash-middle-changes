@@ -4,51 +4,80 @@ service cloud.firestore {
     
     // Helper function to check if the user is signed in and their email matches the document ID
     function isOwner(emailId) {
-      return request.auth != null && request.auth.token.email == emailId;
+      return request.auth != null && request.auth.token.email.lower() == emailId.lower();
     }
 
-    // Helper function to check if the user is a whitelisted admin
-    function isAdmin() {
-      return request.auth != null && (request.auth.token.email == "mohamedaufin64@gmail.com" || request.auth.token.email == "arunbhalaji200904@gmail.com");
+    // Helper function to check if the user is a whitelisted super admin (owner)
+    function isSuperAdmin() {
+      return request.auth != null && (
+        request.auth.token.email.lower() == "mohamedaufin64@gmail.com" ||
+        request.auth.token.email.lower() == "arunbhalaji200904@gmail.com"
+      );
+    }
+
+    // Helper function to check if the user has allocateAdmins permission in the admins collection
+    function hasAllocateAdminPermission() {
+      return request.auth != null && (
+        isSuperAdmin() ||
+        (
+          exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower())) &&
+          get(/databases/$(database)/documents/admins/$(request.auth.token.email.lower())).data.allocateAdmins == true
+        )
+      );
+    }
+
+    // Helper function to check if the user is any kind of admin (for read access)
+    function isAnyAdmin() {
+      return request.auth != null && (
+        isSuperAdmin() ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower()))
+      );
     }
 
     // Match the users collection and the specific user's document
     match /users/{userEmail} {
-      allow read, write: if isOwner(userEmail) || isAdmin();
+      allow read, write: if isOwner(userEmail) || isAnyAdmin();
 
       // Match all subcollections under the user's document
       match /{subcollection=**} {
-        allow read, write: if isOwner(userEmail) || isAdmin();
+        allow read, write: if isOwner(userEmail) || isAnyAdmin();
       }
     }
 
     // Match the deleted_accounts collection
     match /deleted_accounts/{userEmail} {
-      allow read, write: if isOwner(userEmail) || isAdmin();
+      allow read, write: if isOwner(userEmail) || isSuperAdmin();
+    }
+
+    // 🚀 Match the Admins collection
+    match /admins/{adminEmail} {
+      // Any admin can read the list (needed to load admin access section)
+      allow read: if isAnyAdmin();
+      // Only those with allocateAdmins permission (or super admins) can write
+      allow write: if hasAllocateAdminPermission();
     }
 
     // 🚀 Match the Admin Announcements collection
     match /announcements/{document=**} {
-      // Allow any logged-in user to read the announcements
       allow read: if request.auth != null;
-      allow write: if isAdmin();
+      allow write: if isAnyAdmin();
     }
 
     // 🚀 Match the Global Pushes collection
     match /global_pushes/{document=**} {
       allow read: if request.auth != null;
-      allow write: if isAdmin();
+      allow write: if isAnyAdmin();
     }
 
     // 🚀 Match the User Pushes collection
     match /user_pushes/{document=**} {
       allow read: if request.auth != null;
-      allow write: if isAdmin();
+      allow write: if isAnyAdmin();
     }
 
     // 🚀 Match the Admin Logs collection
     match /admin_logs/{document=**} {
-      allow read, write: if isAdmin();
+      allow read, write: if isAnyAdmin();
     }
   }
 }

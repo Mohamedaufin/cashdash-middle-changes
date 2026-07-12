@@ -94,6 +94,7 @@
         <item name="dividerColor">#1AFFFFFF</item>
         <item name="textRedColor">#FF4D4D</item>
         <item name="textGreenColor">#4CAF50</item>
+
     </style>
 
 
@@ -133,6 +134,7 @@
         <item name="dividerColor">#1AFFFFFF</item>
         <item name="textRedColor">#FF4D4D</item>
         <item name="textGreenColor">#4ADE80</item>
+
     </style>
 
 
@@ -176,6 +178,7 @@
         <item name="android:textColor">#1A1A1A</item>
         <item name="android:textColorPrimary">#1A1A1A</item>
         <item name="android:textColorSecondary">#5F6D7E</item>
+
     </style>
 
 

@@ -9,7 +9,6 @@ import kotlin.math.abs
 
 fun View.setOnFastLongClickListener(delayMs: Long = 400L, action: () -> Unit) {
     this.setOnLongClickListener {
-        this.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         action()
         true
     }
