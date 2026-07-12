@@ -200,7 +200,7 @@ class ContactSupportActivity : ThemedActivity() {
         if (pendingCount > 0) {
             val progressSum = contactUploadProgress.values.sum()
             val avgProgress = progressSum / pendingCount
-            btnSubmit.text = "Uploading..."
+            btnSubmit.text = "Uploading Media..."
             btnSubmit.isEnabled = false
         } else {
             if (isWaitingForUploads) {

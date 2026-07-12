@@ -163,8 +163,8 @@ class AdminMessagingActivity : ThemedActivity() {
             } else 0
             val btnSend = findViewById<Button>(R.id.btnSend)
             val btnSendInline = findViewById<Button>(R.id.btnSendInline)
-            btnSend.text = "Uploading image..."
-            btnSendInline.text = "Uploading image..."
+            btnSend.text = "Uploading Media..."
+            btnSendInline.text = "Uploading Media..."
             
             val llMediaStrip = findViewById<LinearLayout>(R.id.llMediaStrip)
             val tvProgress = llMediaStrip.findViewWithTag<TextView>("progress_$currentIndex")
@@ -773,8 +773,8 @@ class AdminMessagingActivity : ThemedActivity() {
                 pendingSendAction = proceedWithSend
                 val btnSend = findViewById<Button>(R.id.btnSend)
                 val btnSendInline = findViewById<Button>(R.id.btnSendInline)
-                btnSend.text = "Uploading images..."
-                btnSendInline.text = "Uploading images..."
+                btnSend.text = "Uploading Media..."
+                btnSendInline.text = "Uploading Media..."
             } else {
                 proceedWithSend()
             }
