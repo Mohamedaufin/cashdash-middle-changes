@@ -304,7 +304,7 @@ class HelpActivity : ThemedActivity() {
 
         val pendingCount = contactUploadProgress.size
         if (pendingCount > 0) {
-            btnSubmit.text = "Uploading..."
+            btnSubmit.text = "Uploading Media..."
             btnSubmit.isEnabled = false // Disabled during upload to prevent double-submit
         } else {
             if (isWaitingForUploads) {

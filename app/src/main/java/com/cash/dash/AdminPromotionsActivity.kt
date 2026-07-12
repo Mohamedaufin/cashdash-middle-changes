@@ -205,7 +205,7 @@ class AdminPromotionsActivity : ThemedActivity() {
             isImageUploading = false
             isImageUploadFailed = false
             pendingSendAction = null
-            if (btnSendPromotions.text.toString() == "Uploading image...") {
+            if (btnSendPromotions.text.toString() == "Uploading Media...") {
                 btnSendPromotions.isEnabled = true
                 btnSendPromotions.text = "Send Promotion"
             }
@@ -852,12 +852,12 @@ class AdminPromotionsActivity : ThemedActivity() {
 
         if (selectedImageUri != null && uploadedImageUrl.isEmpty()) {
             if (isImageUploading) {
-                btnSendPromotions.text = "Uploading image..."
+                btnSendPromotions.text = "Uploading Media..."
                 pendingSendAction = {
                     processSend(notifTitle, notifBody, annTitle, annBody, triggerUrl, triggerUrlTitle)
                 }
             } else if (isImageUploadFailed) {
-                btnSendPromotions.text = "Uploading image..."
+                btnSendPromotions.text = "Uploading Media..."
                 pendingSendAction = {
                     processSend(notifTitle, notifBody, annTitle, annBody, triggerUrl, triggerUrlTitle)
                 }
