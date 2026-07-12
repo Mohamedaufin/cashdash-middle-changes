@@ -151,17 +151,23 @@ class AdminMessagingActivity : ThemedActivity() {
         val fileName = "promotions/${System.currentTimeMillis()}_$index.jpg"
         val ref = FirebaseStorage.getInstance().reference.child(fileName)
         
-        ref.putFile(uri).addOnProgressListener { snapshot ->
+        val uploadTask = ref.putFile(uri)
+        uploadTask.addOnProgressListener { snapshot ->
+            val currentIndex = selectedImageUris.indexOf(uri)
+            if (currentIndex == -1) {
+                uploadTask.cancel()
+                return@addOnProgressListener
+            }
             val progress = if (snapshot.totalByteCount > 0) {
                 (100.0 * snapshot.bytesTransferred / snapshot.totalByteCount).toInt()
             } else 0
             val btnSend = findViewById<Button>(R.id.btnSend)
             val btnSendInline = findViewById<Button>(R.id.btnSendInline)
-            btnSend.text = "Uploading image... ($progress/100%)"
-            btnSendInline.text = "Uploading image... ($progress/100%)"
+            btnSend.text = "Uploading image..."
+            btnSendInline.text = "Uploading image..."
             
             val llMediaStrip = findViewById<LinearLayout>(R.id.llMediaStrip)
-            val tvProgress = llMediaStrip.findViewWithTag<TextView>("progress_$index")
+            val tvProgress = llMediaStrip.findViewWithTag<TextView>("progress_$currentIndex")
             if (tvProgress != null) {
                 if (progress < 100) {
                     tvProgress.visibility = android.view.View.VISIBLE
@@ -171,20 +177,26 @@ class AdminMessagingActivity : ThemedActivity() {
                 }
             }
         }.addOnSuccessListener {
+            val currentIndex = selectedImageUris.indexOf(uri)
+            if (currentIndex == -1) return@addOnSuccessListener
             ref.downloadUrl.addOnSuccessListener { downloadUrl ->
-                if (index < uploadedImageUrls.size) {
-                    uploadedImageUrls[index] = downloadUrl.toString()
+                val finalIndex = selectedImageUris.indexOf(uri)
+                if (finalIndex == -1) return@addOnSuccessListener
+                if (finalIndex < uploadedImageUrls.size) {
+                    uploadedImageUrls[finalIndex] = downloadUrl.toString()
                 }
                 val llMediaStrip = findViewById<LinearLayout>(R.id.llMediaStrip)
-                val tvProgress = llMediaStrip.findViewWithTag<TextView>("progress_$index")
+                val tvProgress = llMediaStrip.findViewWithTag<TextView>("progress_$finalIndex")
                 tvProgress?.visibility = android.view.View.GONE
                 checkAllUploadsDone()
             }
         }.addOnFailureListener {
-            ToastHelper.showToast(this, "Failed to upload image")
+            val currentIndex = selectedImageUris.indexOf(uri)
+            if (currentIndex == -1) return@addOnFailureListener
             val llMediaStrip = findViewById<LinearLayout>(R.id.llMediaStrip)
-            val tvProgress = llMediaStrip.findViewWithTag<TextView>("progress_$index")
+            val tvProgress = llMediaStrip.findViewWithTag<TextView>("progress_$currentIndex")
             tvProgress?.visibility = android.view.View.GONE
+            ToastHelper.showToast(this, "Failed to upload image")
             checkAllUploadsDone()
         }
     }
