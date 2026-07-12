@@ -760,9 +760,14 @@ class NotificationActivity : ThemedActivity() {
         val snackbar = com.google.android.material.snackbar.Snackbar.make(
             findViewById(android.R.id.content),
             "Notification deleted",
-            com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+            5000
         )
-        snackbar.setAction("Undo") {
+        snackbar.setActionTextColor(Color.WHITE)
+
+        var timer: android.os.CountDownTimer? = null
+
+        snackbar.setAction("Undo (5)") {
+            timer?.cancel()
             if (model.originalReply == "[ANNOUNCEMENT]") {
                 annPrefs.edit().remove(model.id).apply()
             } else {
@@ -777,7 +782,37 @@ class NotificationActivity : ThemedActivity() {
             allNotifications = revertList
             applyFilter()
         }
-        snackbar.setActionTextColor(Color.WHITE)
+
+        timer = object : android.os.CountDownTimer(5000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val sec = (millisUntilFinished / 1000) + 1
+                snackbar.setAction("Undo ($sec)") {
+                    timer?.cancel()
+                    if (model.originalReply == "[ANNOUNCEMENT]") {
+                        annPrefs.edit().remove(model.id).apply()
+                    } else {
+                        userPrefs.edit().remove(model.id).apply()
+                    }
+                    val revertList = allNotifications.toMutableList()
+                    if (index != -1 && index <= revertList.size) {
+                        revertList.add(index, model)
+                    } else {
+                        revertList.add(model)
+                    }
+                    allNotifications = revertList
+                    applyFilter()
+                }
+            }
+            override fun onFinish() {}
+        }
+        timer.start()
+
+        snackbar.addCallback(object : com.google.android.material.snackbar.Snackbar.Callback() {
+            override fun onDismissed(transientBottomBar: com.google.android.material.snackbar.Snackbar?, event: Int) {
+                timer?.cancel()
+            }
+        })
+        
         snackbar.show()
     }
 
@@ -809,9 +844,14 @@ class NotificationActivity : ThemedActivity() {
         val snackbar = com.google.android.material.snackbar.Snackbar.make(
             findViewById(android.R.id.content),
             "Notifications cleared",
-            com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+            5000
         )
-        snackbar.setAction("Undo") {
+        snackbar.setActionTextColor(Color.WHITE)
+
+        var timer: android.os.CountDownTimer? = null
+
+        snackbar.setAction("Undo (5)") {
+            timer?.cancel()
             val annUndoEditor = annPrefs.edit()
             val userUndoEditor = userPrefs.edit()
             for (model in itemsToDelete) {
@@ -830,7 +870,41 @@ class NotificationActivity : ThemedActivity() {
             allNotifications = revertList
             applyFilter()
         }
-        snackbar.setActionTextColor(Color.WHITE)
+
+        timer = object : android.os.CountDownTimer(5000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val sec = (millisUntilFinished / 1000) + 1
+                snackbar.setAction("Undo ($sec)") {
+                    timer?.cancel()
+                    val annUndoEditor = annPrefs.edit()
+                    val userUndoEditor = userPrefs.edit()
+                    for (model in itemsToDelete) {
+                        if (model.originalReply == "[ANNOUNCEMENT]") {
+                            annUndoEditor.remove(model.id)
+                        } else {
+                            userUndoEditor.remove(model.id)
+                        }
+                    }
+                    annUndoEditor.apply()
+                    userUndoEditor.apply()
+
+                    val revertList = allNotifications.toMutableList()
+                    revertList.addAll(itemsToDelete)
+                    revertList.sortByDescending { it.timestamp }
+                    allNotifications = revertList
+                    applyFilter()
+                }
+            }
+            override fun onFinish() {}
+        }
+        timer.start()
+
+        snackbar.addCallback(object : com.google.android.material.snackbar.Snackbar.Callback() {
+            override fun onDismissed(transientBottomBar: com.google.android.material.snackbar.Snackbar?, event: Int) {
+                timer?.cancel()
+            }
+        })
+        
         snackbar.show()
     }
 

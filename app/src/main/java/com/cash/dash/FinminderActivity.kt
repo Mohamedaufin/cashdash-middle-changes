@@ -148,34 +148,38 @@ class FinminderActivity : ThemedActivity() {
         FirestoreSyncManager.pushAllDataToCloud(this)
         loadData() // Refresh list
 
-        val snackbar = Snackbar.make(rvFinminder, "Tap here to undo this cashout", Snackbar.LENGTH_INDEFINITE)
+        val modeText = if (item.type == "CASH_OUT") "cash-out" else "cash-in"
+        val messageText = if (item.frequency == "One time") {
+            "Task marked as completed"
+        } else {
+            "Deleted $modeText"
+        }
+
+        val snackbar = Snackbar.make(rvFinminder, messageText, 5000)
         snackbar.setBackgroundTint(android.graphics.Color.parseColor("#1A1B1F"))
         val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
         textView.setTextColor(android.graphics.Color.WHITE)
         
         var timer: CountDownTimer? = null
         
-        snackbar.setAction("UNDO (7)") {
+        snackbar.setAction("UNDO (5)") {
+            timer?.cancel()
             FinminderRepository.saveItem(this, item)
             FirestoreSyncManager.pushAllDataToCloud(this)
             loadData()
-            snackbar.dismiss()
         }
         snackbar.setActionTextColor(android.graphics.Color.parseColor("#FF5252"))
 
-        timer = object : CountDownTimer(7000, 1000) {
+        timer = object : CountDownTimer(5000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 val sec = (millisUntilFinished / 1000) + 1
                 snackbar.setAction("UNDO ($sec)") {
+                    timer?.cancel()
                     FinminderRepository.saveItem(this@FinminderActivity, item)
                     loadData()
-                    snackbar.dismiss()
                 }
-                snackbar.setActionTextColor(android.graphics.Color.parseColor("#FF5252"))
             }
-            override fun onFinish() {
-                snackbar.dismiss()
-            }
+            override fun onFinish() {}
         }
         timer.start()
 
