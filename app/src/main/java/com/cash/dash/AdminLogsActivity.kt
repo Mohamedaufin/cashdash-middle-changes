@@ -304,7 +304,7 @@ class AdminLogsActivity : ThemedActivity() {
     }
 
     private fun showFilterDialog() {
-        val bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(this, R.style.TransparentBottomSheetDialogTheme)
+        val bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
         val view = layoutInflater.inflate(R.layout.dialog_admin_logs_filter, null)
         bottomSheetDialog.setContentView(view)
         
