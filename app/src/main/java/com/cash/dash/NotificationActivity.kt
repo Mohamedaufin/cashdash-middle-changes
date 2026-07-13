@@ -57,7 +57,7 @@ class NotificationActivity : ThemedActivity() {
             if (id == null) return@registerForActivityResult
 
             if (selectedUri != null) {
-                val item = fullNotifications.find { it.id == id }
+                val item = allNotifications.find { it.id == id }
                 val uploadedCount = getRecentUserAttachmentCount(item)
                 val list = selectedReplyImages.getOrPut(id) { mutableListOf() }
                 if (list.size + uploadedCount < 4) {
@@ -75,7 +75,7 @@ class NotificationActivity : ThemedActivity() {
                         out.flush()
                         out.close()
                         val uri = Uri.fromFile(file)
-                        val item = fullNotifications.find { it.id == id }
+                        val item = allNotifications.find { it.id == id }
                         val uploadedCount = getRecentUserAttachmentCount(item)
                         val list = selectedReplyImages.getOrPut(id) { mutableListOf() }
                         if (list.size + uploadedCount < 4) {
