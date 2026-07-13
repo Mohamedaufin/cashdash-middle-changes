@@ -136,6 +136,8 @@
             android:textSize="14sp"
             android:inputType="text"
             android:maxLines="1"
+            android:lines="1"
+            android:singleLine="true"
             android:imeOptions="actionSearch"/>
 
         <LinearLayout
