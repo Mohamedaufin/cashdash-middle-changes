@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="?attr/panelBackground"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Filter By:"
+        android:textColor="?attr/textPrimaryColor"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp" />
+
+    <CheckBox
+        android:id="@+id/cbNotifications"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Notifications"
+        android:textColor="?attr/textPrimaryColor"
+        android:textSize="16sp"
+        android:buttonTint="?attr/textPrimaryColor"
+        android:layout_marginBottom="12dp" />
+
+    <CheckBox
+        android:id="@+id/cbAnnouncements"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Announcements"
+        android:textColor="?attr/textPrimaryColor"
+        android:textSize="16sp"
+        android:buttonTint="?attr/textPrimaryColor"
+        android:layout_marginBottom="12dp" />
+
+    <CheckBox
+        android:id="@+id/cbPromotions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Promotions"
+        android:textColor="?attr/textPrimaryColor"
+        android:textSize="16sp"
+        android:buttonTint="?attr/textPrimaryColor"
+        android:layout_marginBottom="24dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <TextView
+            android:id="@+id/btnClearFilter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Clear Filter"
+            android:textColor="?attr/textSecondaryColor"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:padding="12dp"
+            android:layout_marginEnd="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/selectableItemBackground" />
+
+        <TextView
+            android:id="@+id/btnCancelFilter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            android:textColor="?attr/textSecondaryColor"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:padding="12dp"
+            android:layout_marginEnd="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/selectableItemBackground" />
+
+        <TextView
+            android:id="@+id/btnApplyFilter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Apply"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:padding="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/selectableItemBackground" />
+
+    </LinearLayout>
+</LinearLayout>

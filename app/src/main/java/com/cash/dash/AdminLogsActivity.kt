@@ -20,6 +20,8 @@ class AdminLogsActivity : ThemedActivity() {
     private lateinit var tvEmpty: TextView
     private lateinit var adapter: LogsAdapter
     private val logsList = mutableListOf<AdminLogModel>()
+    private val fullLogsList = mutableListOf<AdminLogModel>()
+    private var selectedFilters = mutableSetOf<String>()
     private var logsListener: com.google.firebase.firestore.ListenerRegistration? = null
 
     private val permissionListener: (AdminManager.AdminPermissions) -> Unit = { perms ->
@@ -45,6 +47,7 @@ class AdminLogsActivity : ThemedActivity() {
         AdminManager.addListener(permissionListener)
 
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
+        findViewById<ImageButton>(R.id.btnFilterLogs).setOnClickListener { showFilterDialog() }
 
         rvLogs = findViewById(R.id.rvAdminLogs)
         progressBar = findViewById(R.id.progressBar)
@@ -84,15 +87,14 @@ class AdminLogsActivity : ThemedActivity() {
 
                 if (querySnapshot == null || querySnapshot.isEmpty) {
                     tvEmpty.visibility = View.VISIBLE
-                    logsList.clear()
-                    adapter.notifyDataSetChanged()
-                    rvLogs.visibility = View.GONE
+                    fullLogsList.clear()
+                    applyFilters()
                     return@addSnapshotListener
                 }
                 
                 tvEmpty.visibility = View.GONE
 
-                logsList.clear()
+                fullLogsList.clear()
                 val sdf = SimpleDateFormat("dd MMM yyyy, h:mm a", Locale.getDefault())
 
                 for (doc in querySnapshot.documents) {
@@ -255,7 +257,7 @@ class AdminLogsActivity : ThemedActivity() {
                         clicksText = "Link Clicks: $legacyClicks"
                     }
 
-                    logsList.add(
+                    fullLogsList.add(
                         AdminLogModel(
                             actionType = finalActionDesc,
                             time = timeStr,
@@ -270,9 +272,71 @@ class AdminLogsActivity : ThemedActivity() {
                     )
                 }
 
-                rvLogs.visibility = View.VISIBLE
-                adapter.notifyDataSetChanged()
+                applyFilters()
             }
+    }
+
+    private fun applyFilters() {
+        logsList.clear()
+        if (selectedFilters.isEmpty()) {
+            logsList.addAll(fullLogsList)
+        } else {
+            logsList.addAll(fullLogsList.filter { log ->
+                val type = log.rawActionType ?: ""
+                val isNotif = type.contains("Notification", ignoreCase = true) || type.contains("Push", ignoreCase = true)
+                val isAnn = type.contains("Announcement", ignoreCase = true)
+                val isPromo = type.contains("Promotional Activity", ignoreCase = true)
+                
+                (selectedFilters.contains("Notifications") && isNotif) ||
+                (selectedFilters.contains("Announcements") && isAnn) ||
+                (selectedFilters.contains("Promotions") && isPromo)
+            })
+        }
+        adapter.notifyDataSetChanged()
+        
+        if (logsList.isEmpty()) {
+            tvEmpty.visibility = View.VISIBLE
+            rvLogs.visibility = View.GONE
+        } else {
+            tvEmpty.visibility = View.GONE
+            rvLogs.visibility = View.VISIBLE
+        }
+    }
+
+    private fun showFilterDialog() {
+        val bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(this, R.style.TransparentBottomSheetDialogTheme)
+        val view = layoutInflater.inflate(R.layout.dialog_admin_logs_filter, null)
+        bottomSheetDialog.setContentView(view)
+        
+        val cbNotif = view.findViewById<android.widget.CheckBox>(R.id.cbNotifications)
+        val cbAnn = view.findViewById<android.widget.CheckBox>(R.id.cbAnnouncements)
+        val cbPromo = view.findViewById<android.widget.CheckBox>(R.id.cbPromotions)
+        
+        cbNotif.isChecked = selectedFilters.contains("Notifications")
+        cbAnn.isChecked = selectedFilters.contains("Announcements")
+        cbPromo.isChecked = selectedFilters.contains("Promotions")
+        
+        view.findViewById<View>(R.id.btnApplyFilter).setOnClickListener {
+            selectedFilters.clear()
+            if (cbNotif.isChecked) selectedFilters.add("Notifications")
+            if (cbAnn.isChecked) selectedFilters.add("Announcements")
+            if (cbPromo.isChecked) selectedFilters.add("Promotions")
+            
+            applyFilters()
+            bottomSheetDialog.dismiss()
+        }
+        
+        view.findViewById<View>(R.id.btnClearFilter).setOnClickListener {
+            selectedFilters.clear()
+            applyFilters()
+            bottomSheetDialog.dismiss()
+        }
+        
+        view.findViewById<View>(R.id.btnCancelFilter).setOnClickListener {
+            bottomSheetDialog.dismiss()
+        }
+        
+        bottomSheetDialog.show()
     }
 
     data class AdminLogModel(
@@ -434,18 +498,19 @@ class AdminLogsActivity : ThemedActivity() {
         btnParams.marginEnd = (24 * density).toInt()
         closeBtn.layoutParams = btnParams
         
-        val glassBg = android.graphics.drawable.GradientDrawable()
-        glassBg.shape = android.graphics.drawable.GradientDrawable.OVAL
-        glassBg.setColor(android.graphics.Color.parseColor("#66000000"))
-        glassBg.setStroke(3, android.graphics.Color.parseColor("#80FFFFFF"))
-        closeBtn.background = glassBg
+        val isWhite = ThemeHelper.isWhiteTheme(this)
+        val tintColor = if (isWhite) android.graphics.Color.BLACK else android.graphics.Color.WHITE
         
-        closeBtn.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-        closeBtn.setColorFilter(android.graphics.Color.RED)
+        closeBtn.background = null
+        closeBtn.setImageResource(R.drawable.ic_close)
+        closeBtn.setColorFilter(tintColor)
         closeBtn.scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
         val p = (14 * density).toInt()
         closeBtn.setPadding(p, p, p, p)
         closeBtn.setOnClickListener { dialog.dismiss() }
+
+        imgView.setOnClickListener { dialog.dismiss() }
+        container.setOnClickListener { dialog.dismiss() }
 
         container.addView(imgView)
         container.addView(closeBtn)

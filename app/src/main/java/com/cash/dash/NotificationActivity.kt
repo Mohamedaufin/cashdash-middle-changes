@@ -45,6 +45,11 @@ class NotificationActivity : ThemedActivity() {
     // Maintain state of typed replies across theme changes / rotation
     private var replyDrafts = HashMap<String, String>()
 
+    data class MatchPosition(val itemId: String, val localIndex: Int)
+    private var searchQuery: String = ""
+    private var searchMatches = mutableListOf<MatchPosition>()
+    private var currentMatchIndex: Int = -1
+
     private val replyPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             val selectedUri = result.data?.data
@@ -52,8 +57,10 @@ class NotificationActivity : ThemedActivity() {
             if (id == null) return@registerForActivityResult
 
             if (selectedUri != null) {
+                val item = fullNotifications.find { it.id == id }
+                val uploadedCount = getRecentUserAttachmentCount(item)
                 val list = selectedReplyImages.getOrPut(id) { mutableListOf() }
-                if (list.size < 4) {
+                if (list.size + uploadedCount < 4) {
                     list.add(selectedUri)
                     uploadReplyImage(id, selectedUri)
                     adapter.notifyDataSetChanged()
@@ -68,8 +75,10 @@ class NotificationActivity : ThemedActivity() {
                         out.flush()
                         out.close()
                         val uri = Uri.fromFile(file)
+                        val item = fullNotifications.find { it.id == id }
+                        val uploadedCount = getRecentUserAttachmentCount(item)
                         val list = selectedReplyImages.getOrPut(id) { mutableListOf() }
-                        if (list.size < 4) {
+                        if (list.size + uploadedCount < 4) {
                             list.add(uri)
                             uploadReplyImage(id, uri)
                             adapter.notifyDataSetChanged()
@@ -80,6 +89,18 @@ class NotificationActivity : ThemedActivity() {
                 }
             }
         }
+    }
+
+    private fun getRecentUserAttachmentCount(item: NotificationModel?): Int {
+        if (item == null) return 0
+        if (item.originalReply.isNotEmpty() && item.originalReply != "Waiting for reply..." && item.originalReply != "[ANNOUNCEMENT]") {
+            return 0
+        }
+        val query = item.originalQuery
+        val parts = query.split("(?i)Team CashDash:".toRegex())
+        val lastPart = parts.last()
+        val regex = "\\[Attachment: .*?\\]".toRegex()
+        return regex.findAll(lastPart).count()
     }
 
     private fun updateViewHolderUploadProgress(holder: NotificationAdapter.ViewHolder, queryId: String) {
@@ -254,6 +275,8 @@ class NotificationActivity : ThemedActivity() {
         setContentView(R.layout.activity_notification)
 
         val rootLayout = findViewById<View>(R.id.rootNotificationLayout)
+        
+        setupSearch()
 
         // Sync Firestore → SharedPreferences BEFORE capturing initiallyReadAnnouncements.
         // This survives uninstall/reinstall and re-login because read state is stored
@@ -302,6 +325,159 @@ class NotificationActivity : ThemedActivity() {
             onDelete = { model -> showDeleteConfirmDialog(model) }
         )
         rv.adapter = adapter
+    }
+
+    private fun setupSearch() {
+        val etSearch = findViewById<EditText>(R.id.etSearch)
+        val searchControls = findViewById<View>(R.id.searchControls)
+        val tvSearchCount = findViewById<TextView>(R.id.tvSearchCount)
+        val btnSearchPrev = findViewById<View>(R.id.btnSearchPrev)
+        val btnSearchNext = findViewById<View>(R.id.btnSearchNext)
+
+        etSearch.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                searchQuery = s?.toString() ?: ""
+                performSearch()
+            }
+        })
+
+        btnSearchPrev.setOnClickListener {
+            if (searchMatches.isNotEmpty()) {
+                currentMatchIndex = if (currentMatchIndex - 1 < 0) searchMatches.size - 1 else currentMatchIndex - 1
+                updateSearchUIAndScroll()
+                adapter.notifyDataSetChanged()
+            }
+        }
+
+        btnSearchNext.setOnClickListener {
+            if (searchMatches.isNotEmpty()) {
+                currentMatchIndex = if (currentMatchIndex + 1 >= searchMatches.size) 0 else currentMatchIndex + 1
+                updateSearchUIAndScroll()
+                adapter.notifyDataSetChanged()
+            }
+        }
+    }
+
+    private fun performSearch() {
+        searchMatches.clear()
+        val searchControls = findViewById<View>(R.id.searchControls)
+        val tvSearchCount = findViewById<TextView>(R.id.tvSearchCount)
+
+        if (searchQuery.isNotEmpty()) {
+            val query = searchQuery.lowercase()
+            for (item in filteredNotifications) {
+                val textParts = mutableListOf<String>()
+                textParts.add(item.title)
+                
+                val attachmentRegex = "\\[Attachment: (.*?)\\]".toRegex()
+                
+                if (item.originalReply == "[ANNOUNCEMENT]") {
+                    val cleanSubject = item.originalSubject.replace("🛡️ [Admin Only] ", "").replace("📣 ", "")
+                    val html = "<b>ANNOUNCEMENT</b>"
+                    textParts.add(android.text.Html.fromHtml(html, android.text.Html.FROM_HTML_MODE_LEGACY).toString())
+                    
+                    val bodyHtml = "<b>$cleanSubject</b><br>${item.originalQuery}"
+                    textParts.add(android.text.Html.fromHtml(bodyHtml, android.text.Html.FROM_HTML_MODE_LEGACY).toString())
+                } else {
+                    val rawBlocks = item.originalQuery.split("\n\n").filter { it.isNotBlank() }
+                    for ((idx, block) in rawBlocks.withIndex()) {
+                        val cleanText = block.replace(attachmentRegex, "").trim()
+                        if (idx == 0) {
+                            val formattedHtml = "<b>Subject:</b> ${item.originalSubject}<br><b>Question:</b> ${cleanText.replace("\n", "<br>")}"
+                            textParts.add(android.text.Html.fromHtml(formattedHtml, android.text.Html.FROM_HTML_MODE_LEGACY).toString())
+                        } else {
+                            val teamTagPattern = "(?i)^Team Cashdash:".toRegex()
+                            val formattedSpanned = when {
+                                teamTagPattern.containsMatchIn(cleanText) -> {
+                                    val content = cleanText.replaceFirst(teamTagPattern, "").trim()
+                                    val html = "<b>Team CashDash:</b> ${content.replace("\n", "<br>")}"
+                                    android.text.Html.fromHtml(html, android.text.Html.FROM_HTML_MODE_LEGACY).toString()
+                                }
+                                cleanText.startsWith("User:") -> {
+                                    val content = cleanText.removePrefix("User:").trim()
+                                    val html = "<b>User:</b> ${content.replace("\n", "<br>")}"
+                                    android.text.Html.fromHtml(html, android.text.Html.FROM_HTML_MODE_LEGACY).toString()
+                                }
+                                else -> {
+                                    val firstColon = cleanText.indexOf(":")
+                                    if (firstColon > 0 && firstColon < 30) {
+                                        val potentialName = cleanText.substring(0, firstColon)
+                                        val content = cleanText.substring(firstColon + 1).trim()
+                                        val html = if (potentialName.equals("Team Cashdash", ignoreCase = true) || potentialName.equals("Team CashDash", ignoreCase = true)) {
+                                            "<b>Team CashDash:</b> ${content.replace("\n", "<br>")}"
+                                        } else {
+                                            "<b>$potentialName:</b> ${content.replace("\n", "<br>")}"
+                                        }
+                                        android.text.Html.fromHtml(html, android.text.Html.FROM_HTML_MODE_LEGACY).toString()
+                                    } else {
+                                        android.text.Html.fromHtml(cleanText.replace("\n", "<br>"), android.text.Html.FROM_HTML_MODE_LEGACY).toString()
+                                    }
+                                }
+                            }
+                            textParts.add(formattedSpanned)
+                        }
+                    }
+                    val originalReply = item.originalReply
+                    if (originalReply.isNotEmpty() && originalReply != "Waiting for reply...") {
+                        val cleanReply = originalReply.replace(attachmentRegex, "").trim()
+                        val replyHtml = "<b>Team CashDash:</b> ${cleanReply.replace("\n", "<br>")}"
+                        textParts.add(android.text.Html.fromHtml(replyHtml, android.text.Html.FROM_HTML_MODE_LEGACY).toString())
+                    }
+                }
+                
+                if (!item.linksJson.isNullOrEmpty()) {
+                    try {
+                        val arr = org.json.JSONArray(item.linksJson)
+                        for (i in 0 until arr.length()) {
+                            textParts.add(arr.getJSONObject(i).optString("text", "Link"))
+                        }
+                    } catch (e: Exception) {}
+                }
+                
+                var count = 0
+                for (part in textParts) {
+                    val textStr = part.lowercase()
+                    var startIndex = textStr.indexOf(query)
+                    while (startIndex >= 0) {
+                        searchMatches.add(MatchPosition(item.id, count))
+                        count++
+                        startIndex = textStr.indexOf(query, startIndex + query.length)
+                    }
+                }
+            }
+        }
+
+        if (searchQuery.isEmpty()) {
+            searchControls.visibility = View.GONE
+            currentMatchIndex = -1
+        } else if (searchMatches.isEmpty()) {
+            searchControls.visibility = View.VISIBLE
+            tvSearchCount.text = "0/0"
+            currentMatchIndex = -1
+            ToastHelper.showToast(this, "No query found")
+        } else {
+            searchControls.visibility = View.VISIBLE
+            if (currentMatchIndex >= searchMatches.size) currentMatchIndex = searchMatches.size - 1
+            if (currentMatchIndex < 0) currentMatchIndex = 0
+            updateSearchUIAndScroll()
+        }
+        
+        adapter.notifyDataSetChanged()
+    }
+
+    private fun updateSearchUIAndScroll() {
+        if (searchMatches.isEmpty() || currentMatchIndex < 0) return
+        val tvSearchCount = findViewById<TextView>(R.id.tvSearchCount)
+        tvSearchCount.text = "${currentMatchIndex + 1}/${searchMatches.size}"
+        
+        val activeMatch = searchMatches[currentMatchIndex]
+        val position = filteredNotifications.indexOfFirst { it.id == activeMatch.itemId }
+        if (position >= 0) {
+            val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
+            (rv.layoutManager as? androidx.recyclerview.widget.LinearLayoutManager)?.scrollToPositionWithOffset(position, 100)
+        }
     }
 
     private fun setupFilters() {
@@ -1077,6 +1253,51 @@ class NotificationActivity : ThemedActivity() {
         private val onDelete: (NotificationModel) -> Unit
     ) : androidx.recyclerview.widget.RecyclerView.Adapter<NotificationAdapter.ViewHolder>() {
 
+        private fun highlightMatches(holder: ViewHolder, item: NotificationModel) {
+            if (searchQuery.isEmpty()) return
+            val query = searchQuery.lowercase()
+            val textViewsToHighlight = mutableListOf<TextView>(holder.tvTitle)
+            
+            fun collectTextViews(parent: android.view.ViewGroup) {
+                for (i in 0 until parent.childCount) {
+                    val child = parent.getChildAt(i)
+                    if (child is TextView) {
+                        textViewsToHighlight.add(child)
+                    } else if (child is android.view.ViewGroup) {
+                        collectTextViews(child)
+                    }
+                }
+            }
+            collectTextViews(holder.layoutTimelineContainer)
+            
+            var localMatchCounter = 0
+            for (tv in textViewsToHighlight) {
+                if (tv.text.isEmpty()) continue
+                val spannable = tv.text as? android.text.Spannable ?: android.text.SpannableString(tv.text)
+                val textStr = spannable.toString().lowercase()
+                
+                // Remove old spans
+                val oldSpans = spannable.getSpans(0, spannable.length, android.text.style.BackgroundColorSpan::class.java)
+                for (span in oldSpans) spannable.removeSpan(span)
+                
+                var startIndex = textStr.indexOf(query)
+                var highlighted = false
+                while (startIndex >= 0) {
+                    val isGlobalActive = searchMatches.isNotEmpty() && currentMatchIndex in searchMatches.indices &&
+                            searchMatches[currentMatchIndex].itemId == item.id &&
+                            searchMatches[currentMatchIndex].localIndex == localMatchCounter
+                            
+                    val color = if (isGlobalActive) android.graphics.Color.parseColor("#80FF9800") else android.graphics.Color.parseColor("#40FFEB3B")
+                    spannable.setSpan(android.text.style.BackgroundColorSpan(color), startIndex, startIndex + query.length, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    
+                    highlighted = true
+                    localMatchCounter++
+                    startIndex = textStr.indexOf(query, startIndex + query.length)
+                }
+                if (highlighted) tv.text = spannable
+            }
+        }
+
         fun updateList(newItems: List<NotificationModel>) {
             items.clear()
             items.addAll(newItems)
@@ -1362,6 +1583,8 @@ class NotificationActivity : ThemedActivity() {
                 holder.tvResolvedStatus.setShadowLayer(0f, 0f, 0f, android.graphics.Color.TRANSPARENT)
             }
 
+            highlightMatches(holder, item)
+
             // Status & Action Visibility Logic
             if (item.originalReply == "[ANNOUNCEMENT]") {
                 holder.layoutReplyBox.visibility = View.GONE
@@ -1378,8 +1601,9 @@ class NotificationActivity : ThemedActivity() {
             // Setup Media Gallery Attachments button inside the reply box
             holder.btnAttachMedia.setOnClickListener {
                 val uris = selectedReplyImages[item.id] ?: mutableListOf()
-                if (uris.size >= 4) {
-                    ToastHelper.showToast(this@NotificationActivity, "Only a max. of 4 media is allowed")
+                val uploadedCount = getRecentUserAttachmentCount(item)
+                if (uris.size + uploadedCount >= 4) {
+                    ToastHelper.showToast(this@NotificationActivity, "you can upload a max. of 4 media before your query gets a response")
                     return@setOnClickListener
                 }
                 activePickerQueryId = item.id
@@ -1624,17 +1848,17 @@ class NotificationActivity : ThemedActivity() {
                     btnParams.topMargin = (48 * density).toInt()
                     btnParams.marginEnd = (24 * density).toInt()
                     closeBtn.layoutParams = btnParams
-                    val glassBg = android.graphics.drawable.GradientDrawable()
-                    glassBg.shape = android.graphics.drawable.GradientDrawable.OVAL
-                    glassBg.setColor(android.graphics.Color.parseColor("#66000000"))
-                    glassBg.setStroke(3, android.graphics.Color.parseColor("#80FFFFFF"))
-                    closeBtn.background = glassBg
-                    closeBtn.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-                    closeBtn.setColorFilter(android.graphics.Color.RED)
+                    val isWhite = ThemeHelper.isWhiteTheme(context)
+                    val tintColor = if (isWhite) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+                    closeBtn.background = null
+                    closeBtn.setImageResource(R.drawable.ic_close)
+                    closeBtn.setColorFilter(tintColor)
                     closeBtn.scaleType = ImageView.ScaleType.FIT_CENTER
                     val p = (14 * density).toInt()
                     closeBtn.setPadding(p, p, p, p)
                     closeBtn.setOnClickListener { dialog.dismiss() }
+                    fullImg.setOnClickListener { dialog.dismiss() }
+                    fullImgContainer.setOnClickListener { dialog.dismiss() }
                     fullImgContainer.addView(fullImg)
                     fullImgContainer.addView(closeBtn)
                     dialog.setContentView(fullImgContainer)
@@ -1973,18 +2197,19 @@ class NotificationActivity : ThemedActivity() {
         btnParams.marginEnd = (24 * density).toInt()
         closeBtn.layoutParams = btnParams
         
-        val glassBg = android.graphics.drawable.GradientDrawable()
-        glassBg.shape = android.graphics.drawable.GradientDrawable.OVAL
-        glassBg.setColor(android.graphics.Color.parseColor("#66000000"))
-        glassBg.setStroke(3, android.graphics.Color.parseColor("#80FFFFFF"))
-        closeBtn.background = glassBg
+        val isWhite = ThemeHelper.isWhiteTheme(this@NotificationActivity)
+        val tintColor = if (isWhite) android.graphics.Color.BLACK else android.graphics.Color.WHITE
         
-        closeBtn.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-        closeBtn.setColorFilter(android.graphics.Color.RED)
+        closeBtn.background = null
+        closeBtn.setImageResource(R.drawable.ic_close)
+        closeBtn.setColorFilter(tintColor)
         closeBtn.scaleType = ImageView.ScaleType.FIT_CENTER
         val p = (14 * density).toInt()
         closeBtn.setPadding(p, p, p, p)
         closeBtn.setOnClickListener { dialog.dismiss() }
+
+        imgView.setOnClickListener { dialog.dismiss() }
+        container.setOnClickListener { dialog.dismiss() }
 
         container.addView(imgView)
         container.addView(closeBtn)
