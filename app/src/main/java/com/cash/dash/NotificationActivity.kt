@@ -351,11 +351,15 @@ class NotificationActivity : ThemedActivity() {
             }
         })
 
-        etSearch.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH ||
-                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE ||
-                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_UNSPECIFIED ||
-                (event != null && event.keyCode == android.view.KeyEvent.KEYCODE_ENTER && event.action == android.view.KeyEvent.ACTION_DOWN)) {
+        etSearch.setOnEditorActionListener { _, _, _ ->
+            performSearch(isFromActionSearch = true)
+            val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+            imm.hideSoftInputFromWindow(etSearch.windowToken, 0)
+            true
+        }
+
+        etSearch.setOnKeyListener { _, keyCode, event ->
+            if (event.action == android.view.KeyEvent.ACTION_DOWN && keyCode == android.view.KeyEvent.KEYCODE_ENTER) {
                 performSearch(isFromActionSearch = true)
                 val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
                 imm.hideSoftInputFromWindow(etSearch.windowToken, 0)
