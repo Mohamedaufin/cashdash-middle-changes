@@ -475,7 +475,7 @@ class NotificationActivity : ThemedActivity() {
             searchControls.visibility = View.GONE
             currentMatchIndex = -1
         } else if (searchMatches.isEmpty()) {
-            searchControls.visibility = if (isFromActionSearch) View.VISIBLE else View.GONE
+            searchControls.visibility = View.GONE
             tvSearchCount.text = "0/0"
             currentMatchIndex = -1
             if (isFromActionSearch) {
