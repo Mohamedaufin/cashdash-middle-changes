@@ -374,7 +374,7 @@ class NotificationActivity : ThemedActivity() {
         val tvSearchCount = findViewById<TextView>(R.id.tvSearchCount)
 
         if (searchQuery.isNotEmpty()) {
-            val query = searchQuery.lowercase()
+            val query = searchQuery.lowercase().trim()
             for (item in filteredNotifications) {
                 val textParts = mutableListOf<String>()
                 textParts.add(item.title)
@@ -1267,7 +1267,8 @@ class NotificationActivity : ThemedActivity() {
 
         private fun highlightMatches(holder: ViewHolder, item: NotificationModel) {
             if (searchQuery.isEmpty()) return
-            val query = searchQuery.lowercase()
+            val query = searchQuery.lowercase().trim()
+            if (query.isEmpty()) return
             val textViewsToHighlight = mutableListOf<TextView>(holder.tvTitle)
             
             fun collectTextViews(parent: android.view.ViewGroup) {
