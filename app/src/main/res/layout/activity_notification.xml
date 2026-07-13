@@ -113,12 +113,11 @@
 
         <ImageButton
             android:id="@+id/btnExitSearch"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_search_back"
-            app:tint="?attr/textPrimaryColor"
-            android:padding="6dp"
+            app:tint="@color/text_secondary"
             android:scaleType="fitCenter"/>
 
         <EditText
@@ -155,22 +154,21 @@
 
             <ImageButton
                 android:id="@+id/btnSearchPrev"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_search_up"
-                app:tint="?attr/textPrimaryColor"
-                android:padding="6dp"
+                app:tint="@color/text_secondary"
                 android:scaleType="fitCenter"/>
 
             <ImageButton
                 android:id="@+id/btnSearchNext"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_search_down"
-                app:tint="?attr/textPrimaryColor"
-                android:padding="6dp"
+                app:tint="@color/text_secondary"
+                android:layout_marginStart="8dp"
                 android:scaleType="fitCenter"/>
         </LinearLayout>
     </LinearLayout>
