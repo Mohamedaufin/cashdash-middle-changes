@@ -460,8 +460,11 @@ class NotificationActivity : ThemedActivity() {
                     val textStr = part.lowercase()
                     var startIndex = textStr.indexOf(query)
                     while (startIndex >= 0) {
-                        searchMatches.add(MatchPosition(item.id, count))
-                        count++
+                        val isWordBoundary = startIndex == 0 || !textStr[startIndex - 1].isLetterOrDigit()
+                        if (isWordBoundary) {
+                            searchMatches.add(MatchPosition(item.id, count))
+                            count++
+                        }
                         startIndex = textStr.indexOf(query, startIndex + query.length)
                     }
                 }
@@ -472,14 +475,14 @@ class NotificationActivity : ThemedActivity() {
             searchControls.visibility = View.GONE
             currentMatchIndex = -1
         } else if (searchMatches.isEmpty()) {
-            searchControls.visibility = View.VISIBLE
+            searchControls.visibility = if (isFromActionSearch) View.VISIBLE else View.GONE
             tvSearchCount.text = "0/0"
             currentMatchIndex = -1
             if (isFromActionSearch) {
                 ToastHelper.showToast(this, "No result found")
             }
         } else {
-            searchControls.visibility = View.VISIBLE
+            searchControls.visibility = if (isFromActionSearch) View.VISIBLE else View.GONE
             if (isFromActionSearch) {
                 if (currentMatchIndex < 0) currentMatchIndex = 0
                 if (currentMatchIndex >= searchMatches.size) currentMatchIndex = searchMatches.size - 1
@@ -1314,15 +1317,22 @@ class NotificationActivity : ThemedActivity() {
                 var startIndex = textStr.indexOf(query)
                 var highlighted = false
                 while (startIndex >= 0) {
-                    val isGlobalActive = searchMatches.isNotEmpty() && currentMatchIndex in searchMatches.indices &&
-                            searchMatches[currentMatchIndex].itemId == item.id &&
-                            searchMatches[currentMatchIndex].localIndex == localMatchCounter
-                            
-                    val color = if (isGlobalActive) android.graphics.Color.parseColor("#80FF9800") else android.graphics.Color.parseColor("#40FFEB3B")
-                    spannable.setSpan(android.text.style.BackgroundColorSpan(color), startIndex, startIndex + query.length, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                    
-                    highlighted = true
-                    localMatchCounter++
+                    val isWordBoundary = startIndex == 0 || !textStr[startIndex - 1].isLetterOrDigit()
+                    if (isWordBoundary) {
+                        val isGlobalActive = searchMatches.isNotEmpty() && currentMatchIndex in searchMatches.indices &&
+                                searchMatches[currentMatchIndex].itemId == item.id &&
+                                searchMatches[currentMatchIndex].localIndex == localMatchCounter
+                                
+                        val color = if (isGlobalActive) android.graphics.Color.parseColor("#80FF9800") else android.graphics.Color.parseColor("#40FFEB3B")
+                        spannable.setSpan(
+                            android.text.style.BackgroundColorSpan(color),
+                            startIndex,
+                            startIndex + query.length,
+                            android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                        )
+                        highlighted = true
+                        localMatchCounter++
+                    }
                     startIndex = textStr.indexOf(query, startIndex + query.length)
                 }
                 if (highlighted) tv.text = spannable
