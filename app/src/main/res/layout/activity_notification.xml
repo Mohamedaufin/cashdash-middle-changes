@@ -110,6 +110,7 @@
         android:background="?attr/inputBackground"
         android:orientation="horizontal"
         android:gravity="center_vertical"
+        android:addStatesFromChildren="true"
         android:paddingStart="8dp"
         android:paddingEnd="8dp">
 
