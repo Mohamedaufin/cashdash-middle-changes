@@ -46,73 +46,6 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Search Bar -->
-    <LinearLayout
-        android:id="@+id/searchBarContainer"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_marginStart="25dp"
-        android:layout_marginEnd="25dp"
-        android:layout_marginBottom="12dp"
-        android:background="?attr/inputBackground"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="16dp"
-        android:paddingEnd="8dp">
-
-        <EditText
-            android:id="@+id/etSearch"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@null"
-            android:hint="Search notifications..."
-            android:textColorHint="?attr/textMutedColor"
-            android:textColor="?attr/textPrimaryColor"
-            android:textSize="14sp"
-            android:inputType="text"
-            android:maxLines="1"
-            android:imeOptions="actionSearch"/>
-
-        <LinearLayout
-            android:id="@+id/searchControls"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/tvSearchCount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0/0"
-                android:textColor="?attr/textSecondaryColor"
-                android:textSize="12sp"
-                android:layout_marginEnd="8dp"/>
-
-            <ImageButton
-                android:id="@+id/btnSearchPrev"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_widget_arrow_left_black"
-                app:tint="?attr/textPrimaryColor"
-                android:padding="6dp"
-                android:scaleType="fitCenter"/>
-
-            <ImageButton
-                android:id="@+id/btnSearchNext"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_right_arrow"
-                app:tint="?attr/textPrimaryColor"
-                android:padding="6dp"
-                android:scaleType="fitCenter"/>
-        </LinearLayout>
-    </LinearLayout>
-
     <!-- Filter Bar - visibility controlled in Kotlin -->
     <LinearLayout
         android:id="@+id/filterBar"
@@ -122,7 +55,7 @@
         android:gravity="center"
         android:paddingStart="25dp"
         android:paddingEnd="25dp"
-        android:layout_marginBottom="4dp"
+        android:layout_marginBottom="12dp"
         android:visibility="gone">
 
         <TextView
@@ -163,6 +96,86 @@
             android:textStyle="bold"
             android:background="?attr/inputBackground"/>
     </LinearLayout>
+
+    <!-- Search Bar -->
+    <LinearLayout
+        android:id="@+id/searchBarContainer"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginStart="25dp"
+        android:layout_marginEnd="25dp"
+        android:layout_marginBottom="12dp"
+        android:background="?attr/inputBackground"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
+
+        <ImageButton
+            android:id="@+id/btnExitSearch"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_search_back"
+            app:tint="?attr/textPrimaryColor"
+            android:padding="6dp"
+            android:scaleType="fitCenter"/>
+
+        <EditText
+            android:id="@+id/etSearch"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:background="@null"
+            android:hint="Search notifications..."
+            android:textColorHint="?attr/textMutedColor"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="14sp"
+            android:inputType="text"
+            android:maxLines="1"
+            android:imeOptions="actionSearch"/>
+
+        <LinearLayout
+            android:id="@+id/searchControls"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvSearchCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0/0"
+                android:textColor="?attr/textSecondaryColor"
+                android:textSize="12sp"
+                android:layout_marginEnd="8dp"/>
+
+            <ImageButton
+                android:id="@+id/btnSearchPrev"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_search_up"
+                app:tint="?attr/textPrimaryColor"
+                android:padding="6dp"
+                android:scaleType="fitCenter"/>
+
+            <ImageButton
+                android:id="@+id/btnSearchNext"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_search_down"
+                app:tint="?attr/textPrimaryColor"
+                android:padding="6dp"
+                android:scaleType="fitCenter"/>
+        </LinearLayout>
+    </LinearLayout>
+
+
 
     <FrameLayout
         android:layout_width="match_parent"
