@@ -347,9 +347,20 @@ class NotificationActivity : ThemedActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: android.text.Editable?) {
                 searchQuery = s?.toString() ?: ""
-                performSearch()
+                performSearch(isFromActionSearch = false)
             }
         })
+
+        etSearch.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                performSearch(isFromActionSearch = true)
+                val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                imm.hideSoftInputFromWindow(etSearch.windowToken, 0)
+                true
+            } else {
+                false
+            }
+        }
 
         btnSearchPrev.setOnClickListener {
             if (searchMatches.isNotEmpty()) {
@@ -368,7 +379,7 @@ class NotificationActivity : ThemedActivity() {
         }
     }
 
-    private fun performSearch() {
+    private fun performSearch(isFromActionSearch: Boolean = false) {
         searchMatches.clear()
         val searchControls = findViewById<View>(R.id.searchControls)
         val tvSearchCount = findViewById<TextView>(R.id.tvSearchCount)
@@ -464,12 +475,19 @@ class NotificationActivity : ThemedActivity() {
             searchControls.visibility = View.VISIBLE
             tvSearchCount.text = "0/0"
             currentMatchIndex = -1
-            ToastHelper.showToast(this, "No query found")
+            if (isFromActionSearch) {
+                ToastHelper.showToast(this, "No result found")
+            }
         } else {
             searchControls.visibility = View.VISIBLE
-            if (currentMatchIndex >= searchMatches.size) currentMatchIndex = searchMatches.size - 1
-            if (currentMatchIndex < 0) currentMatchIndex = 0
-            updateSearchUIAndScroll()
+            if (isFromActionSearch) {
+                if (currentMatchIndex < 0) currentMatchIndex = 0
+                if (currentMatchIndex >= searchMatches.size) currentMatchIndex = searchMatches.size - 1
+                updateSearchUIAndScroll()
+            } else {
+                currentMatchIndex = -1
+                tvSearchCount.text = "0/${searchMatches.size}"
+            }
         }
         
         adapter.notifyDataSetChanged()
