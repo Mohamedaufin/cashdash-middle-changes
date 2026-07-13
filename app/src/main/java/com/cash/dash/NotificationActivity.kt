@@ -333,6 +333,14 @@ class NotificationActivity : ThemedActivity() {
         val tvSearchCount = findViewById<TextView>(R.id.tvSearchCount)
         val btnSearchPrev = findViewById<View>(R.id.btnSearchPrev)
         val btnSearchNext = findViewById<View>(R.id.btnSearchNext)
+        val btnExitSearch = findViewById<View>(R.id.btnExitSearch)
+
+        btnExitSearch.setOnClickListener {
+            etSearch.text.clear()
+            etSearch.clearFocus()
+            val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+            imm.hideSoftInputFromWindow(etSearch.windowToken, 0)
+        }
 
         etSearch.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -375,7 +383,7 @@ class NotificationActivity : ThemedActivity() {
                 
                 if (item.originalReply == "[ANNOUNCEMENT]") {
                     val cleanSubject = item.originalSubject.replace("🛡️ [Admin Only] ", "").replace("📣 ", "")
-                    val html = "<b>ANNOUNCEMENT</b>"
+                    val html = "<b>${obscureText("ANNOUNCEMENT")}</b>"
                     textParts.add(android.text.Html.fromHtml(html, android.text.Html.FROM_HTML_MODE_LEGACY).toString())
                     
                     val bodyHtml = "<b>$cleanSubject</b><br>${item.originalQuery}"
@@ -385,19 +393,19 @@ class NotificationActivity : ThemedActivity() {
                     for ((idx, block) in rawBlocks.withIndex()) {
                         val cleanText = block.replace(attachmentRegex, "").trim()
                         if (idx == 0) {
-                            val formattedHtml = "<b>Subject:</b> ${item.originalSubject}<br><b>Question:</b> ${cleanText.replace("\n", "<br>")}"
+                            val formattedHtml = "<b>${obscureText("Subject:")}</b> ${item.originalSubject}<br><b>${obscureText("Question:")}</b> ${cleanText.replace("\n", "<br>")}"
                             textParts.add(android.text.Html.fromHtml(formattedHtml, android.text.Html.FROM_HTML_MODE_LEGACY).toString())
                         } else {
                             val teamTagPattern = "(?i)^Team Cashdash:".toRegex()
                             val formattedSpanned = when {
                                 teamTagPattern.containsMatchIn(cleanText) -> {
                                     val content = cleanText.replaceFirst(teamTagPattern, "").trim()
-                                    val html = "<b>Team CashDash:</b> ${content.replace("\n", "<br>")}"
+                                    val html = "<b>${obscureText("Team CashDash:")}</b> ${content.replace("\n", "<br>")}"
                                     android.text.Html.fromHtml(html, android.text.Html.FROM_HTML_MODE_LEGACY).toString()
                                 }
                                 cleanText.startsWith("User:") -> {
                                     val content = cleanText.removePrefix("User:").trim()
-                                    val html = "<b>User:</b> ${content.replace("\n", "<br>")}"
+                                    val html = "<b>${obscureText("User:")}</b> ${content.replace("\n", "<br>")}"
                                     android.text.Html.fromHtml(html, android.text.Html.FROM_HTML_MODE_LEGACY).toString()
                                 }
                                 else -> {
@@ -406,9 +414,9 @@ class NotificationActivity : ThemedActivity() {
                                         val potentialName = cleanText.substring(0, firstColon)
                                         val content = cleanText.substring(firstColon + 1).trim()
                                         val html = if (potentialName.equals("Team Cashdash", ignoreCase = true) || potentialName.equals("Team CashDash", ignoreCase = true)) {
-                                            "<b>Team CashDash:</b> ${content.replace("\n", "<br>")}"
+                                            "<b>${obscureText("Team CashDash:")}</b> ${content.replace("\n", "<br>")}"
                                         } else {
-                                            "<b>$potentialName:</b> ${content.replace("\n", "<br>")}"
+                                            "<b>${obscureText(potentialName + ":")}</b> ${content.replace("\n", "<br>")}"
                                         }
                                         android.text.Html.fromHtml(html, android.text.Html.FROM_HTML_MODE_LEGACY).toString()
                                     } else {
@@ -422,7 +430,7 @@ class NotificationActivity : ThemedActivity() {
                     val originalReply = item.originalReply
                     if (originalReply.isNotEmpty() && originalReply != "Waiting for reply...") {
                         val cleanReply = originalReply.replace(attachmentRegex, "").trim()
-                        val replyHtml = "<b>Team CashDash:</b> ${cleanReply.replace("\n", "<br>")}"
+                        val replyHtml = "<b>${obscureText("Team CashDash:")}</b> ${cleanReply.replace("\n", "<br>")}"
                         textParts.add(android.text.Html.fromHtml(replyHtml, android.text.Html.FROM_HTML_MODE_LEGACY).toString())
                     }
                 }
@@ -585,6 +593,10 @@ class NotificationActivity : ThemedActivity() {
     private fun loadNotifications() {
         loadFromRoomAndRender()
         fetchAnnouncementsAndListen()
+    }
+
+    private fun obscureText(text: String): String {
+        return text.toCharArray().joinToString("\u200B")
     }
 
     private fun fetchAnnouncementsAndListen() {
@@ -814,10 +826,10 @@ class NotificationActivity : ThemedActivity() {
             val isPending = (reply == "Waiting for reply...")
             val isAnnouncement = (reply == "[ANNOUNCEMENT]")
             val queryTitle = when {
-                isAnnouncement -> "ANNOUNCEMENT"
-                isResolved -> "Query resolved"
-                isPending -> "Waiting for response"
-                else -> "Query responded"
+                isAnnouncement -> obscureText("ANNOUNCEMENT")
+                isResolved -> obscureText("Query resolved")
+                isPending -> obscureText("Waiting for response")
+                else -> obscureText("Query responded")
             }
 
             val color = Color.parseColor(when {
@@ -834,7 +846,7 @@ class NotificationActivity : ThemedActivity() {
                     .replace("User Reply \\(\\d+\\):".toRegex(), userFormat)
                     .replace("User:".toRegex(), userFormat)
                     .replace("$userName:".toRegex(), userFormat)
-                    .replace("Team CashDash:".toRegex(), "<font color='$colorTeam'><b>Team CashDash:</b></font>")
+                    .replace("Team CashDash:".toRegex(), "<font color='$colorTeam'><b>${obscureText("Team CashDash:")}</b></font>")
                     .replace("\n", "<br>")
             }
 
@@ -1326,7 +1338,7 @@ class NotificationActivity : ThemedActivity() {
             val colorContent = if (isWhite) "#333333" else "#E0EBF5"
             val prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
             val userName = prefs.getString("user_name", "User") ?: "User"
-            val userFormat = if (isWhite) "<font color='#0047AB'><b>$userName:</b></font>" else "<b>$userName:</b>"
+            val userFormat = if (isWhite) "<font color='#0047AB'><b>${obscureText(userName + ":")}</b></font>" else "<b>${obscureText(userName + ":")}</b>"
 
             // Clear dynamic timeline container
             holder.layoutTimelineContainer.removeAllViews()
@@ -1339,7 +1351,7 @@ class NotificationActivity : ThemedActivity() {
 
             if (item.originalReply == "[ANNOUNCEMENT]") {
                 val cleanSubject = item.originalSubject.replace("🛡️ [Admin Only] ", "").replace("📣 ", "")
-                val titleHtml = "<font color='$colorTeam'><b>ANNOUNCEMENT</b></font>"
+                val titleHtml = "<font color='$colorTeam'><b>${obscureText("ANNOUNCEMENT")}</b></font>"
                 holder.tvTitle.text = android.text.Html.fromHtml(titleHtml, android.text.Html.FROM_HTML_MODE_LEGACY)
                 holder.tvTitle.setTextColor(item.statusColor)
 
@@ -1433,7 +1445,7 @@ class NotificationActivity : ThemedActivity() {
                     }
 
                     if (idx == 0) {
-                        val formattedHtml = "<b>Subject:</b> ${item.originalSubject}<br><b>Question:</b> ${cleanText.replace("\n", "<br>")}"
+                        val formattedHtml = "<b>${obscureText("Subject:")}</b> ${item.originalSubject}<br><b>${obscureText("Question:")}</b> ${cleanText.replace("\n", "<br>")}"
                         tv.text = android.text.Html.fromHtml(formattedHtml, android.text.Html.FROM_HTML_MODE_LEGACY)
                         holder.layoutTimelineContainer.addView(tv)
 
@@ -1452,7 +1464,7 @@ class NotificationActivity : ThemedActivity() {
                         val formattedSpanned = when {
                             teamTagPattern.containsMatchIn(cleanText) -> {
                                 val content = cleanText.replaceFirst(teamTagPattern, "").trim()
-                                val html = "<font color='$colorTeam'><b>Team CashDash:</b></font> ${content.replace("\n", "<br>")}"
+                                val html = "<font color='$colorTeam'><b>${obscureText("Team CashDash:")}</b></font> ${content.replace("\n", "<br>")}"
                                 android.text.Html.fromHtml(html, android.text.Html.FROM_HTML_MODE_LEGACY)
                             }
                             cleanText.startsWith("User:") -> {
@@ -1471,9 +1483,9 @@ class NotificationActivity : ThemedActivity() {
                                     val potentialName = cleanText.substring(0, firstColon)
                                     val content = cleanText.substring(firstColon + 1).trim()
                                     val html = if (potentialName.equals("Team Cashdash", ignoreCase = true) || potentialName.equals("Team CashDash", ignoreCase = true)) {
-                                        "<font color='$colorTeam'><b>Team CashDash:</b></font> ${content.replace("\n", "<br>")}"
+                                        "<font color='$colorTeam'><b>${obscureText("Team CashDash:")}</b></font> ${content.replace("\n", "<br>")}"
                                     } else {
-                                        "<font color='#0047AB'><b>$potentialName:</b></font> ${content.replace("\n", "<br>")}"
+                                        "<font color='#0047AB'><b>${obscureText(potentialName + ":")}</b></font> ${content.replace("\n", "<br>")}"
                                     }
                                     android.text.Html.fromHtml(html, android.text.Html.FROM_HTML_MODE_LEGACY)
                                 } else {
