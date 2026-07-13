@@ -368,18 +368,19 @@ class ContactSupportActivity : ThemedActivity() {
         btnParams.marginEnd = (24 * density).toInt()
         closeBtn.layoutParams = btnParams
         
-        val glassBg = android.graphics.drawable.GradientDrawable()
-        glassBg.shape = android.graphics.drawable.GradientDrawable.OVAL
-        glassBg.setColor(android.graphics.Color.parseColor("#66000000"))
-        glassBg.setStroke(3, android.graphics.Color.parseColor("#80FFFFFF"))
-        closeBtn.background = glassBg
+        val isWhite = ThemeHelper.isWhiteTheme(this)
+        val tintColor = if (isWhite) android.graphics.Color.BLACK else android.graphics.Color.WHITE
         
-        closeBtn.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-        closeBtn.setColorFilter(android.graphics.Color.RED)
+        closeBtn.background = null
+        closeBtn.setImageResource(R.drawable.ic_close)
+        closeBtn.setColorFilter(tintColor)
         closeBtn.scaleType = ImageView.ScaleType.FIT_CENTER
         val p = (14 * density).toInt()
         closeBtn.setPadding(p, p, p, p)
         closeBtn.setOnClickListener { dialog.dismiss() }
+
+        imgView.setOnClickListener { dialog.dismiss() }
+        container.setOnClickListener { dialog.dismiss() }
 
         container.addView(imgView)
         container.addView(closeBtn)

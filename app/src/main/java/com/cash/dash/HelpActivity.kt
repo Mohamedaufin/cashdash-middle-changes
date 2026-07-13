@@ -471,19 +471,19 @@ class HelpActivity : ThemedActivity() {
         btnParams.marginEnd = (24 * resources.displayMetrics.density).toInt()
         closeBtn.layoutParams = btnParams
 
-        val glassBg = android.graphics.drawable.GradientDrawable()
-        glassBg.shape = android.graphics.drawable.GradientDrawable.OVAL
-        glassBg.setColor(Color.parseColor("#66000000"))
-        glassBg.setStroke(3, Color.parseColor("#80FFFFFF"))
-        closeBtn.background = glassBg
-
-        closeBtn.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-        closeBtn.setColorFilter(Color.RED)
+        val isWhite = ThemeHelper.isWhiteTheme(this)
+        val tintColor = if (isWhite) Color.BLACK else Color.WHITE
+        
+        closeBtn.background = null
+        closeBtn.setImageResource(R.drawable.ic_close)
+        closeBtn.setColorFilter(tintColor)
         closeBtn.scaleType = ImageView.ScaleType.FIT_CENTER
         val padding = (14 * resources.displayMetrics.density).toInt()
         closeBtn.setPadding(padding, padding, padding, padding)
 
         closeBtn.setOnClickListener { dialog.dismiss() }
+        imgView.setOnClickListener { dialog.dismiss() }
+        container.setOnClickListener { dialog.dismiss() }
 
         container.addView(imgView)
         container.addView(closeBtn)

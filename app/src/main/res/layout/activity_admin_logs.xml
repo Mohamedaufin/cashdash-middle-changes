@@ -37,6 +37,16 @@
             android:textStyle="bold"
             android:layout_gravity="center_vertical"
             android:layout_marginStart="20dp"/>
+
+        <ImageButton
+            android:id="@+id/btnFilterLogs"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:background="?attr/roundBackground"
+            android:src="@drawable/ic_filter"
+            app:tint="?attr/textPrimaryColor"
+            android:padding="12dp"
+            android:scaleType="fitCenter"/>
     </LinearLayout>
 
     <FrameLayout

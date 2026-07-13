@@ -53,9 +53,9 @@ class AdminMessagingActivity : ThemedActivity() {
         }
     }
 
-    private val pickMultipleImagesLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia(5)) { uris: List<Uri> ->
+    private val pickMultipleImagesLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia(4)) { uris: List<Uri> ->
         if (uris.isNotEmpty()) {
-            val maxAllowed = 5
+            val maxAllowed = 4
             var addedCount = 0
             for (uri in uris) {
                 if (selectedImageUris.size < maxAllowed) {
@@ -301,14 +301,11 @@ class AdminMessagingActivity : ThemedActivity() {
                 setMargins(0, (24 * density).toInt(), (24 * density).toInt(), 0)
             }
             
-            val glassBg = android.graphics.drawable.GradientDrawable()
-            glassBg.shape = android.graphics.drawable.GradientDrawable.OVAL
-            glassBg.setColor(android.graphics.Color.parseColor("#66000000"))
-            glassBg.setStroke(3, android.graphics.Color.parseColor("#80FFFFFF"))
-            background = glassBg
-            
-            setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-            setColorFilter(android.graphics.Color.RED)
+            val isWhite = ThemeHelper.isWhiteTheme(this@AdminMessagingActivity)
+            val tintColor = if (isWhite) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+            background = null
+            setImageResource(R.drawable.ic_close)
+            setColorFilter(tintColor)
             scaleType = ImageView.ScaleType.FIT_CENTER
             val p = (14 * density).toInt()
             setPadding(p, p, p, p)
@@ -316,9 +313,11 @@ class AdminMessagingActivity : ThemedActivity() {
             setOnClickListener { dialog.dismiss() }
         }
         val frame = FrameLayout(this).apply {
+            setOnClickListener { dialog.dismiss() }
             addView(imageView)
             addView(closeBtn)
         }
+        imageView.setOnClickListener { dialog.dismiss() }
         Glide.with(this).load(model).into(imageView)
         dialog.setContentView(frame)
         dialog.show()
