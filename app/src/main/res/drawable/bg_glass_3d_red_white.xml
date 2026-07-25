@@ -13,9 +13,9 @@
         </shape>
     </item>
 
-    <!-- Subtle warm rose wash at the top — very low opacity -->
+    <!-- Subtle warm rose wash at the top only -->
     <item
-        android:bottom="60%"
+        android:bottom="36dp"
         android:left="0dp"
         android:right="0dp"
         android:top="0dp">
