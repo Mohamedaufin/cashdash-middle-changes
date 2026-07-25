@@ -430,8 +430,14 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
 
 
         if (isOverdue) {
-            // Use the exact same glass-red drawable as the Skip Allocation button in Scanner.
-            holder.itemView.setBackgroundResource(R.drawable.bg_glass_3d_red)
+            // Use theme-aware red background so white theme gets its soft variant
+            val redTypedValue = android.util.TypedValue()
+            val resolved = holder.itemView.context.theme.resolveAttribute(R.attr.glass3dRedBackground, redTypedValue, true)
+            if (resolved) {
+                holder.itemView.setBackgroundResource(redTypedValue.resourceId)
+            } else {
+                holder.itemView.setBackgroundResource(R.drawable.bg_glass_3d_red)
+            }
             holder.itemView.backgroundTintList = null
         } else {
             val typedValue = android.util.TypedValue()

@@ -1,26 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Base: Silky Rose Red (Layered 2D) -->
+
+    <!-- Base: Pure white fill matching card background -->
     <item>
         <shape android:shape="rectangle">
-            <gradient
-                android:startColor="#F43F5E" 
-                android:endColor="#E11D48"
-                android:angle="270" />
+            <solid android:color="#FFFFFF" />
             <corners android:radius="14dp"/>
+            <!-- Soft muted rose border — noticeable but not harsh -->
             <stroke
-                android:width="1.2dp"
-                android:color="#9F1239"/> 
+                android:width="1.5dp"
+                android:color="#F08080"/>
         </shape>
     </item>
-    <!-- Subdued top-down inner glow -->
-    <item>
+
+    <!-- Subtle warm rose wash at the top — very low opacity -->
+    <item
+        android:bottom="60%"
+        android:left="0dp"
+        android:right="0dp"
+        android:top="0dp">
         <shape android:shape="rectangle">
             <gradient
-                android:startColor="#30FFFFFF" 
+                android:startColor="#12FF4444"
                 android:endColor="#00FFFFFF"
-                android:angle="270" />
-            <corners android:radius="14dp" />
+                android:angle="270"
+                android:type="linear"/>
+            <corners
+                android:topLeftRadius="14dp"
+                android:topRightRadius="14dp"
+                android:bottomLeftRadius="0dp"
+                android:bottomRightRadius="0dp"/>
         </shape>
     </item>
+
 </layer-list>
