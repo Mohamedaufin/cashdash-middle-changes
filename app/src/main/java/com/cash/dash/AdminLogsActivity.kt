@@ -237,21 +237,17 @@ class AdminLogsActivity : ThemedActivity() {
                     }
 
                     var clicksText: String? = null
-                    if (type.contains("Promotional Activity", ignoreCase = true)) {
-                        if (totalAudience > 0 || notifClickers > 0 || annClickers > 0) {
-                            val audStr = if (totalAudience > 0) "$totalAudience" else "?"
-                            val parts = mutableListOf<String>()
-                            if (notifClickers > 0 || totalAudience > 0) {
-                                parts.add("Notification link clicks : $notifClickers/$audStr")
-                            }
-                            if (annClickers > 0 || totalAudience > 0) {
-                                parts.add("Announcement link clicks : $annClickers/$audStr")
-                            }
-                            if (parts.isNotEmpty()) {
-                                clicksText = parts.joinToString("\n")
-                            }
-                        } else if (legacyClicks > 0) {
-                            clicksText = "Link Clicks: $legacyClicks"
+                    if (totalAudience > 0 || notifClickers > 0 || annClickers > 0) {
+                        val audStr = if (totalAudience > 0) "$totalAudience" else "?"
+                        val parts = mutableListOf<String>()
+                        if (notifClickers > 0 || totalAudience > 0) {
+                            parts.add("Clicks through notification : $notifClickers/$audStr")
+                        }
+                        if (annClickers > 0 || totalAudience > 0) {
+                            parts.add("Clicks through announcement : $annClickers/$audStr")
+                        }
+                        if (parts.isNotEmpty()) {
+                            clicksText = parts.joinToString("\n")
                         }
                     } else if (legacyClicks > 0) {
                         clicksText = "Link Clicks: $legacyClicks"
