@@ -385,12 +385,11 @@ class AdminPromotionsActivity : ThemedActivity() {
             }
             currentTab = tab
             
-            val typedValue = android.util.TypedValue()
-            theme.resolveAttribute(R.attr.roundBackground, typedValue, true)
-            val bgResId = typedValue.resourceId
+            val a = obtainStyledAttributes(intArrayOf(R.attr.roundBackground))
+            val defaultBg = a.getDrawable(0)
+            a.recycle()
             
             val tabs = listOf(tabGlobal, tabAdmin, tabUser, tabAge)
-            val defaultBg = androidx.core.content.ContextCompat.getDrawable(this, bgResId)
             for (t in tabs) {
                 t.background = defaultBg?.constantState?.newDrawable()?.mutate()
                 t.backgroundTintList = null
