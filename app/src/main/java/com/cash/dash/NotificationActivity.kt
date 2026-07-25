@@ -315,6 +315,17 @@ class NotificationActivity : ThemedActivity() {
             setupFilters()
             loadNotifications()
         }
+
+        // Track notif_clickers when notification body was tapped (promo_id passed from FCM)
+        val promoIdFromNotif = intent.getStringExtra("promo_id")
+        if (promoIdFromNotif != null) {
+            val userEmailForTracking = FirebaseAuth.getInstance().currentUser?.email
+            if (userEmailForTracking != null) {
+                FirebaseFirestore.getInstance()
+                    .collection("admin_logs").document(promoIdFromNotif)
+                    .update("notif_clickers", com.google.firebase.firestore.FieldValue.arrayUnion(userEmailForTracking))
+            }
+        }
     }
 
 
@@ -1622,6 +1633,49 @@ class NotificationActivity : ThemedActivity() {
                         holder.layoutTimelineContainer.addView(tvLink)
                     }
                 } catch (e: Exception) { /* ignore malformed json */ }
+            }
+
+            // Render trigger URL button for announcements (tracks ann_clickers)
+            if (!item.triggerUrl.isNullOrEmpty()) {
+                val safeTriggerUrl = if (!item.triggerUrl.startsWith("http://") && !item.triggerUrl.startsWith("https://")) {
+                    "https://${item.triggerUrl}"
+                } else item.triggerUrl
+                val btnText = if (!item.triggerText.isNullOrEmpty()) item.triggerText else "Open Website"
+                val tvTrigger = TextView(holder.itemView.context).apply {
+                    val density = resources.displayMetrics.density
+                    text = "↗  $btnText"
+                    textSize = 13f
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    val linkColorStr = if (ThemeHelper.isWhiteTheme(this@NotificationActivity)) "#0047AB" else "#2196F3"
+                    setTextColor(android.graphics.Color.parseColor(linkColorStr))
+                    setPadding(
+                        (12 * density).toInt(),
+                        (8 * density).toInt(),
+                        (12 * density).toInt(),
+                        (8 * density).toInt()
+                    )
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply { topMargin = (6 * density).toInt() }
+                    val a = context.obtainStyledAttributes(intArrayOf(R.attr.roundBackground))
+                    background = a.getDrawable(0)
+                    a.recycle()
+                    setOnClickListener {
+                        try {
+                            val browserIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(safeTriggerUrl))
+                            context.startActivity(browserIntent)
+                        } catch (ex: Exception) { /* ignore */ }
+                        // Track the click in admin_logs ann_clickers
+                        val userEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email
+                        if (userEmail != null) {
+                            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                .collection("admin_logs").document(item.id)
+                                .update("ann_clickers", com.google.firebase.firestore.FieldValue.arrayUnion(userEmail))
+                        }
+                    }
+                }
+                holder.layoutTimelineContainer.addView(tvTrigger)
             }
 
             // 🔥 Eliminate smudge glow in Blue Theme explicitly for title

@@ -64,6 +64,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val intent = Intent(this, NotificationActivity::class.java).apply {
             action = "NotificationActivity"
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+            // Pass promo_id so NotificationActivity can also record a notif_click
+            if (promoId != null) putExtra("promo_id", promoId)
         }
         val pendingIntent = PendingIntent.getActivity(
             this, notifId, intent,
