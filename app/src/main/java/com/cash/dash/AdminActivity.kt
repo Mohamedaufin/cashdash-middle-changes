@@ -34,25 +34,30 @@ class AdminActivity : ThemedActivity() {
     private var adminRequestsListenerRegistration: com.google.firebase.firestore.ListenerRegistration? = null
     private val pendingAdminRequests = mutableMapOf<String, String>()
 
+    private var isFirstPermissionCheck = true
     private val permissionListener: (AdminManager.AdminPermissions) -> Unit = { perms ->
-        if (!perms.hasAnyAccess) {
-            ToastHelper.showToast(this, "Permission denied")
-            finish()
-        } else {
-            val lastSeenContainer = findViewById<LinearLayout>(R.id.layoutUserStatusContainer)
-            if (!perms.canViewLastSeen()) {
-                lastSeenContainer?.removeAllViews()
-                val tv = TextView(this).apply {
-                    text = "Permission denied to view Last Seen status."
-                    setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textMutedColor))
-                    setPadding(16, 16, 16, 16)
+        // Skip the first synchronous invocation before Firestore has responded.
+        if (!isFirstPermissionCheck) {
+            if (!perms.hasAnyAccess) {
+                ToastHelper.showToast(this, "Permission denied")
+                finish()
+            } else {
+                val lastSeenContainer = findViewById<LinearLayout>(R.id.layoutUserStatusContainer)
+                if (!perms.canViewLastSeen()) {
+                    lastSeenContainer?.removeAllViews()
+                    val tv = TextView(this).apply {
+                        text = "Permission denied to view Last Seen status."
+                        setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textMutedColor))
+                        setPadding(16, 16, 16, 16)
+                    }
+                    lastSeenContainer?.addView(tv)
+                } else if (lastSeenContainer?.childCount == 1 && (lastSeenContainer.getChildAt(0) as? TextView)?.text?.contains("Permission denied") == true) {
+                    // Restore if it was previously denied
+                    loadUserStatusList()
                 }
-                lastSeenContainer?.addView(tv)
-            } else if (lastSeenContainer?.childCount == 1 && (lastSeenContainer.getChildAt(0) as? TextView)?.text?.contains("Permission denied") == true) {
-                // Restore if it was previously denied
-                loadUserStatusList()
             }
         }
+        isFirstPermissionCheck = false
     }
 
     data class UserStatusItem(
@@ -112,7 +117,8 @@ class AdminActivity : ThemedActivity() {
         })
 
         findViewById<View>(R.id.btnGoToAnnouncements).setOnClickListener {
-            if (!AdminManager.getPermissions().canSendAnnouncements()) {
+            val p = AdminManager.getPermissions()
+            if (!p.isOwner && !p.canSendAnnouncements()) {
                 ToastHelper.showToast(this, "Permission denied")
                 return@setOnClickListener
             }
@@ -122,7 +128,8 @@ class AdminActivity : ThemedActivity() {
         }
 
         findViewById<View>(R.id.btnGoToPushNotifications).setOnClickListener {
-            if (!AdminManager.getPermissions().canSendNotifications()) {
+            val p = AdminManager.getPermissions()
+            if (!p.isOwner && !p.canSendNotifications()) {
                 ToastHelper.showToast(this, "Permission denied")
                 return@setOnClickListener
             }
@@ -132,7 +139,8 @@ class AdminActivity : ThemedActivity() {
         }
 
         findViewById<View>(R.id.btnGoToPromotions).setOnClickListener {
-            if (!AdminManager.getPermissions().canSendPromotions()) {
+            val p = AdminManager.getPermissions()
+            if (!p.isOwner && !p.canSendPromotions()) {
                 ToastHelper.showToast(this, "Permission denied")
                 return@setOnClickListener
             }

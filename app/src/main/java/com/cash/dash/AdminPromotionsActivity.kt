@@ -53,11 +53,18 @@ class AdminPromotionsActivity : ThemedActivity() {
     private var imageUploadProgress = 0
     private var pendingSendAction: (() -> Unit)? = null
 
+    private var isFirstPermissionCheck = true
     private val permissionListener: (AdminManager.AdminPermissions) -> Unit = { perms ->
-        if (!perms.canSendPromotions()) {
-            ToastHelper.showToast(this, "Permission denied")
-            finish()
+        // Skip the very first synchronous callback — Firestore hasn't responded yet,
+        // so permissions are still the empty default and would cause a false denial.
+        if (!isFirstPermissionCheck) {
+            // Owners always have full access — never kick them out.
+            if (!perms.isOwner && !perms.canSendPromotions()) {
+                ToastHelper.showToast(this, "Permission denied")
+                finish()
+            }
         }
+        isFirstPermissionCheck = false
     }
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->

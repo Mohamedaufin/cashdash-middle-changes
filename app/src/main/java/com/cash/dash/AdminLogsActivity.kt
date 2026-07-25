@@ -24,11 +24,13 @@ class AdminLogsActivity : ThemedActivity() {
     private var selectedFilters = mutableSetOf<String>()
     private var logsListener: com.google.firebase.firestore.ListenerRegistration? = null
 
+    private var isFirstPermissionCheck = true
     private val permissionListener: (AdminManager.AdminPermissions) -> Unit = { perms ->
-        if (!perms.hasAnyAccess) {
+        if (!isFirstPermissionCheck && !perms.hasAnyAccess) {
             ToastHelper.showToast(this, "Permission denied")
             finish()
         }
+        isFirstPermissionCheck = false
     }
 
     override fun onDestroy() {

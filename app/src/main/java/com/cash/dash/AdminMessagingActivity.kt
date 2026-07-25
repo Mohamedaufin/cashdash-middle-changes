@@ -25,18 +25,27 @@ class AdminMessagingActivity : ThemedActivity() {
     private val uploadProgressMap = HashMap<Uri, Int>()
     private var pendingSendAction: (() -> Unit)? = null
 
+    private var isFirstPermissionCheck = true
     private val permissionListener: (AdminManager.AdminPermissions) -> Unit = { perms ->
-        if (isAnnouncement) {
-            if (!perms.canSendAnnouncements()) {
-                ToastHelper.showToast(this, "Permission denied")
-                finish()
-            }
-        } else {
-            if (!perms.canSendNotifications()) {
-                ToastHelper.showToast(this, "Permission denied")
-                finish()
+        // Skip the very first (synchronous) callback — Firestore hasn't loaded yet,
+        // so permissions would still be the empty default, causing false "Permission denied".
+        if (!isFirstPermissionCheck) {
+            // Owners always have full access — never kick them out.
+            if (!perms.isOwner) {
+                if (isAnnouncement) {
+                    if (!perms.canSendAnnouncements()) {
+                        ToastHelper.showToast(this, "Permission denied")
+                        finish()
+                    }
+                } else {
+                    if (!perms.canSendNotifications()) {
+                        ToastHelper.showToast(this, "Permission denied")
+                        finish()
+                    }
+                }
             }
         }
+        isFirstPermissionCheck = false
     }
     
     private val pickSingleImageLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()) { uri: Uri? ->
