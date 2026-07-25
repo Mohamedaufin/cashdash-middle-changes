@@ -65,7 +65,7 @@
             android:paddingEnd="25dp"
             android:paddingTop="10dp"
             android:isScrollContainer="true"
-            android:scrollbars="vertical"/>
+            android:scrollbars="none"/>
 
         <ProgressBar
             android:id="@+id/progressBar"

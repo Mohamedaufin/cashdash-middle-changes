@@ -109,9 +109,7 @@ class AdminLogsActivity : ThemedActivity() {
                     val rawType = doc.getString("actionType") ?: doc.getString("type") ?: "Action"
                     var type = if (rawType == "Targeted Announcement") "User Specific Announcement" else rawType
                     type = type.replace(" (Batch)", "")
-                    if (type == "User Specific Push") {
-                        type = "User Specific Notification"
-                    }
+                    type = type.replace("Push", "Notification", ignoreCase = true)
                     val title = doc.getString("title") ?: ""
                     val message = doc.getString("message") ?: doc.getString("content") ?: ""
                     val ts = doc.getLong("timestamp") ?: 0L
