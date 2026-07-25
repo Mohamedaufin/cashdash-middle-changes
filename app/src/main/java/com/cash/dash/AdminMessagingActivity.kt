@@ -373,9 +373,9 @@ class AdminMessagingActivity : ThemedActivity() {
                 layoutParams = FrameLayout.LayoutParams((boxSize * density).toInt(), (boxSize * density).toInt()).apply {
                     gravity = android.view.Gravity.BOTTOM or android.view.Gravity.START
                 }
-                val tv = android.util.TypedValue()
-                context.theme.resolveAttribute(R.attr.inputBackground, tv, true)
-                background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+                val a = context.obtainStyledAttributes(intArrayOf(R.attr.inputBackground))
+                background = a.getDrawable(0)
+                a.recycle()
                 clipToOutline = true
                 clipChildren = true
                 setOnClickListener {
@@ -431,9 +431,7 @@ class AdminMessagingActivity : ThemedActivity() {
                     topMargin = (10 * density).toInt()
                 }
                 setImageResource(R.drawable.ic_eye)
-                val tv = android.util.TypedValue()
-                context.theme.resolveAttribute(R.attr.textMutedColor, tv, true)
-                setColorFilter(androidx.core.content.ContextCompat.getColor(context, tv.resourceId))
+                setColorFilter(ThemeHelper.resolveColorAttr(this@AdminMessagingActivity, R.attr.textMutedColor))
                 setOnClickListener { showFullscreenImagePreview(uri) }
                 visibility = if (!isAnnouncement) android.view.View.GONE else android.view.View.VISIBLE
             }
@@ -447,9 +445,7 @@ class AdminMessagingActivity : ThemedActivity() {
                 }
                 text = "view"
                 textSize = 10f
-                val tv = android.util.TypedValue()
-                context.theme.resolveAttribute(R.attr.textMutedColor, tv, true)
-                setTextColor(androidx.core.content.ContextCompat.getColor(context, tv.resourceId))
+                setTextColor(ThemeHelper.resolveColorAttr(this@AdminMessagingActivity, R.attr.textMutedColor))
                 setOnClickListener { showFullscreenImagePreview(uri) }
                 visibility = if (!isAnnouncement) android.view.View.GONE else android.view.View.VISIBLE
             }
@@ -473,9 +469,7 @@ class AdminMessagingActivity : ThemedActivity() {
                     val eyeBig = ImageView(this@AdminMessagingActivity).apply {
                         layoutParams = LinearLayout.LayoutParams((18 * density).toInt(), (18 * density).toInt())
                         setImageResource(R.drawable.ic_eye)
-                        val tv = android.util.TypedValue()
-                        context.theme.resolveAttribute(R.attr.textMutedColor, tv, true)
-                        setColorFilter(androidx.core.content.ContextCompat.getColor(context, tv.resourceId))
+                        setColorFilter(ThemeHelper.resolveColorAttr(this@AdminMessagingActivity, R.attr.textMutedColor))
                     }
                     
                     val txtBig = TextView(this@AdminMessagingActivity).apply {
@@ -487,9 +481,7 @@ class AdminMessagingActivity : ThemedActivity() {
                         }
                         text = "view"
                         textSize = 10f
-                        val tv = android.util.TypedValue()
-                        context.theme.resolveAttribute(R.attr.textMutedColor, tv, true)
-                        setTextColor(androidx.core.content.ContextCompat.getColor(context, tv.resourceId))
+                        setTextColor(ThemeHelper.resolveColorAttr(this@AdminMessagingActivity, R.attr.textMutedColor))
                     }
                     
                     addView(eyeBig)
@@ -514,9 +506,9 @@ class AdminMessagingActivity : ThemedActivity() {
                 layoutParams = LinearLayout.LayoutParams((boxSize * density).toInt(), (boxSize * density).toInt()).apply {
                     topMargin = if (isAnnouncement) (6 * density).toInt() else (4 * density).toInt() // align with imageBox inside frameWrapper
                 }
-                val tv = android.util.TypedValue()
-                context.theme.resolveAttribute(R.attr.inputBackground, tv, true)
-                background = androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
+                val a = context.obtainStyledAttributes(intArrayOf(R.attr.roundBackground))
+                background = a.getDrawable(0)
+                a.recycle()
                 clipToOutline = true
                 setOnClickListener {
                     if (isAnnouncement) {
@@ -593,12 +585,11 @@ class AdminMessagingActivity : ThemedActivity() {
             }
             currentTab = tab
             
-            val typedValue = android.util.TypedValue()
-            theme.resolveAttribute(R.attr.roundBackground, typedValue, true)
-            val bgResId = typedValue.resourceId
+            val a = obtainStyledAttributes(intArrayOf(R.attr.roundBackground))
+            val defaultBg = a.getDrawable(0)
+            a.recycle()
             
             val tabs = listOf(tabGlobal, tabAdmin, tabUser, tabAge)
-            val defaultBg = androidx.core.content.ContextCompat.getDrawable(this, bgResId)
             for (t in tabs) {
                 t.background = defaultBg?.constantState?.newDrawable()?.mutate()
                 t.backgroundTintList = null
