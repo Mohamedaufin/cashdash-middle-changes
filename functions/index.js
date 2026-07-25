@@ -790,6 +790,8 @@ exports.onGlobalPush = onDocumentWritten({
     const triggerUrl = newData.triggerUrl || "";
     const triggerText = newData.triggerText || "";
     
+    const promoId = newData.promo_id || "";
+    
     if (!message) return;
 
     const adminOnly = newData.adminOnly === true;
@@ -804,7 +806,8 @@ exports.onGlobalPush = onDocumentWritten({
                 imageUrl: imageUrl,
                 triggerUrl: triggerUrl,
                 triggerText: triggerText,
-                isPromotion: "true"
+                isPromotion: "true",
+                promo_id: promoId
             },
             android: {
                 priority: "high",
@@ -850,7 +853,8 @@ exports.onUserPush = onDocumentWritten({
                     triggerUrl: triggerUrl,
                     triggerText: triggerText,
                     userSpecificPush: "true",
-                    isPromotion: "true"
+                    isPromotion: "true",
+                    promo_id: newData.promo_id || ""
                 },
                 android: {
                     priority: "high",
