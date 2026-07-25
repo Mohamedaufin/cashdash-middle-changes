@@ -360,7 +360,9 @@ class AdminActivity : ThemedActivity() {
                                 )
                                 background = androidx.core.content.ContextCompat.getDrawable(
                                     this@AdminActivity,
-                                    ThemeHelper.getDrawable(this@AdminActivity, R.drawable.bg_transaction)
+                                    android.util.TypedValue().also { tv ->
+                                        theme.resolveAttribute(R.attr.inputBackground, tv, true)
+                                    }.resourceId
                                 )
                                 layoutParams = LinearLayout.LayoutParams(
                                     LinearLayout.LayoutParams.MATCH_PARENT,
