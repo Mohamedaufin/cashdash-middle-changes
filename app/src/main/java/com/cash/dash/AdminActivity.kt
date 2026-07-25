@@ -27,7 +27,6 @@ class AdminActivity : ThemedActivity() {
     private val userStatusList = mutableListOf<UserStatusItem>()
     private var selectedDateCalendar = Calendar.getInstance()
     private var usersListenerRegistration: com.google.firebase.firestore.ListenerRegistration? = null
-    private val selectedQueries = mutableSetOf<String>()
     private val rtdbPresenceMap = mutableMapOf<String, Pair<String, String>>()
     private val currentAdminEmails = mutableSetOf<String>()
     
@@ -314,36 +313,19 @@ class AdminActivity : ThemedActivity() {
                     btnNo.setOnClickListener { confirmDialog.dismiss() }
                     confirmDialog.show()
                 }
-
                 fun onAllFetched() {
                     pendingFetches--
                     if (pendingFetches > 0) return
 
                     runOnUiThread {
-                        val btnResolveSelected = findViewById<android.widget.Button>(R.id.btnResolveAll)
                         inboxContainer.removeAllViews()
-                        selectedQueries.clear()
 
                         if (allItems.isEmpty()) {
                             tvEmpty.text = "✅ All queries replied — inbox is empty!"
                             tvEmpty.visibility = View.VISIBLE
-                            btnResolveSelected?.visibility = View.GONE
                             return@runOnUiThread
                         }
                         tvEmpty.visibility = View.GONE
-
-                        // Setup Resolve Selected button
-                        if (btnResolveSelected != null) {
-                            btnResolveSelected.visibility = View.GONE
-                            btnResolveSelected.setOnClickListener {
-                                val targets = allItems.filter { selectedQueries.contains(it.docId) }
-                                if (targets.isEmpty()) {
-                                    ToastHelper.showToast(this@AdminActivity, "Select at least one query")
-                                    return@setOnClickListener
-                                }
-                                showCustomResolveDialog(targets) { loadSupportInbox() }
-                            }
-                        }
 
                         allItems.sortByDescending { it.timestamp }
 
@@ -360,9 +342,7 @@ class AdminActivity : ThemedActivity() {
                                 )
                                 background = androidx.core.content.ContextCompat.getDrawable(
                                     this@AdminActivity,
-                                    android.util.TypedValue().also { tv ->
-                                        theme.resolveAttribute(R.attr.inputBackground, tv, true)
-                                    }.resourceId
+                                    ThemeHelper.getDrawable(this@AdminActivity, R.drawable.bg_transaction)
                                 )
                                 layoutParams = LinearLayout.LayoutParams(
                                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -370,33 +350,10 @@ class AdminActivity : ThemedActivity() {
                                 ).apply { bottomMargin = (10 * density).toInt() }
                             }
 
-                            // Left checkbox
-                            val checkBox = android.widget.CheckBox(this@AdminActivity).apply {
-                                buttonTintList = android.content.res.ColorStateList.valueOf(
-                                    ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textPrimaryColor)
-                                )
-                                layoutParams = LinearLayout.LayoutParams(
-                                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                                    LinearLayout.LayoutParams.WRAP_CONTENT
-                                ).apply {
-                                    rightMargin = (8 * density).toInt()
-                                    topMargin = (2 * density).toInt()
-                                }
-                                isChecked = selectedQueries.contains(item.docId)
-                            }
-                            checkBox.setOnCheckedChangeListener { _, isChecked ->
-                                if (isChecked) selectedQueries.add(item.docId)
-                                else selectedQueries.remove(item.docId)
-                                // Show/hide Resolve Selected button
-                                btnResolveSelected?.visibility =
-                                    if (selectedQueries.isEmpty()) View.GONE else View.VISIBLE
-                            }
-                            card.addView(checkBox)
-
                             // Right content column
                             val contentCol = LinearLayout(this@AdminActivity).apply {
                                 orientation = LinearLayout.VERTICAL
-                                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
                             }
 
                             // Subject row with red dot
