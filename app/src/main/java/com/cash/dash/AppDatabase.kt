@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [TransactionEntity::class, NotificationEntity::class], version = 7, exportSchema = false)
+@Database(entities = [TransactionEntity::class, NotificationEntity::class], version = 8, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun notificationDao(): NotificationDao
@@ -33,6 +33,12 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_7_8 = object : androidx.room.migration.Migration(7, 8) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE notifications ADD COLUMN userEmail TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -43,7 +49,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "cashdash_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_6_7)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_6_7, MIGRATION_7_8)
                 .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance
