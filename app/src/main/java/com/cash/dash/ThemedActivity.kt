@@ -141,7 +141,7 @@ open class ThemedActivity : AppCompatActivity() {
         if (view is android.widget.EditText) {
             if (view.getTag(R.id.focus_clearer_tag) == null) {
                 view.setTag(R.id.focus_clearer_tag, true)
-                if (view.id != R.id.edtSearch) {
+                if (view.id != R.id.etSearch) {
                     view.setOnEditorActionListener { _, actionId, event ->
                         val isActionDone = actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE ||
                                 actionId == android.view.inputmethod.EditorInfo.IME_ACTION_NEXT ||

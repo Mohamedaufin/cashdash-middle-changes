@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="?attr/panelBackground"
+    android:background="?attr/colorSurface"
     android:padding="24dp">
 
     <TextView
@@ -22,7 +22,6 @@
         android:text="Notifications"
         android:textColor="?attr/textPrimaryColor"
         android:textSize="16sp"
-        android:buttonTint="?attr/textPrimaryColor"
         android:layout_marginBottom="12dp" />
 
     <CheckBox
@@ -32,7 +31,6 @@
         android:text="Announcements"
         android:textColor="?attr/textPrimaryColor"
         android:textSize="16sp"
-        android:buttonTint="?attr/textPrimaryColor"
         android:layout_marginBottom="12dp" />
 
     <CheckBox
@@ -42,7 +40,6 @@
         android:text="Promotions"
         android:textColor="?attr/textPrimaryColor"
         android:textSize="16sp"
-        android:buttonTint="?attr/textPrimaryColor"
         android:layout_marginBottom="24dp" />
 
     <LinearLayout

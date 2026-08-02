@@ -786,9 +786,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             }
 
             btnGPay.setOnClickListener {
-                proceedingToPay = true
                 toast("Coming Soon! 🚀")
-                dialog.dismiss()
             }
 
             dialog.setOnDismissListener {

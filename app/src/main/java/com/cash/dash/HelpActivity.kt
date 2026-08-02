@@ -207,8 +207,12 @@ class HelpActivity : ThemedActivity() {
         val storageRef = FirebaseStorage.getInstance().reference
         val imageRef = storageRef.child("support_attachments/${System.currentTimeMillis()}_contact.jpg")
 
-        imageRef.putFile(uri)
-            .addOnProgressListener { taskSnapshot ->
+        val uploadTask = imageRef.putFile(uri)
+        uploadTask.addOnProgressListener { taskSnapshot ->
+                if (!selectedImageUris.contains(uri)) {
+                    uploadTask.cancel()
+                    return@addOnProgressListener
+                }
                 val percent = if (taskSnapshot.totalByteCount > 0) {
                     (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
                 } else 0
@@ -236,6 +240,7 @@ class HelpActivity : ThemedActivity() {
                 }
             }
             .addOnSuccessListener {
+                if (!selectedImageUris.contains(uri)) return@addOnSuccessListener
                 imageRef.downloadUrl.addOnSuccessListener { downloadUri ->
                     contactUploadedUrls[uri] = downloadUri.toString()
                     contactUploadProgress.remove(uri)
@@ -277,6 +282,7 @@ class HelpActivity : ThemedActivity() {
                 }
             }
             .addOnFailureListener { e ->
+                if (!selectedImageUris.contains(uri)) return@addOnFailureListener
                 contactUploadProgress.remove(uri)
                 isWaitingForUploads = false
                 updateDialogSubmitButton()

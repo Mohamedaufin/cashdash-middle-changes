@@ -241,11 +241,12 @@
     </style>
 
     <!-- CalendarThemeDark: used for Black/Blue Theme CalendarView (white text on dark bg) -->
-    <style name="CalendarThemeDark" parent="ThemeOverlay.AppCompat.Light">
+    <style name="CalendarThemeDark" parent="ThemeOverlay.AppCompat.Dark">
         <item name="android:textColorPrimary">#FFFFFF</item>
         <item name="android:textColorSecondary">#FFFFFF</item>
         <item name="android:colorControlNormal">#FFFFFF</item>
-
+        <item name="android:colorBackground">#1A1A2E</item>
+        <item name="android:windowBackground">#1A1A2E</item>
         <item name="android:colorPrimary">@android:color/transparent</item>
         <item name="android:colorAccent">@android:color/transparent</item>
         <item name="colorAccent">@android:color/transparent</item>

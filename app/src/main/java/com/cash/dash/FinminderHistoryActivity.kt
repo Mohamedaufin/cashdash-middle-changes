@@ -1,10 +1,12 @@
 package com.cash.dash
 
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -13,6 +15,7 @@ class FinminderHistoryActivity : ThemedActivity() {
 
     private lateinit var adapter: FinminderHistoryAdapter
     private var finminderId: String = ""
+    private lateinit var rvHistoryRef: RecyclerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,6 +36,7 @@ class FinminderHistoryActivity : ThemedActivity() {
         val rvHistory = findViewById<RecyclerView>(R.id.rvHistory)
         rvHistory.layoutManager = LinearLayoutManager(this)
         rvHistory.adapter = adapter
+        rvHistoryRef = rvHistory
 
         loadData()
     }
@@ -40,18 +44,74 @@ class FinminderHistoryActivity : ThemedActivity() {
     private fun markAsCompleted(dateStr: String) {
         val allItems = FinminderRepository.getItems(this).toMutableList()
         val index = allItems.indexOfFirst { it.id == finminderId }
-        if (index != -1) {
-            val item = allItems[index]
-            val newCompleted = item.completedDates.toMutableList()
-            if (!newCompleted.contains(dateStr)) {
-                newCompleted.add(dateStr)
+        if (index == -1) return
+
+        val item = allItems[index]
+        if (item.completedDates.contains(dateStr)) return
+
+        // Apply immediately
+        val newCompleted = item.completedDates.toMutableList()
+        newCompleted.add(dateStr)
+        val updatedItem = item.copy(completedDates = newCompleted)
+        allItems[index] = updatedItem
+        FinminderRepository.saveItem(this, updatedItem)
+        FirestoreSyncManager.pushAllDataToCloud(this)
+        loadData()
+
+        // Snackbar with undo
+        val snackbar = Snackbar.make(rvHistoryRef, "Marked as completed. Tap to undo.", 5000)
+        snackbar.setBackgroundTint(ThemeHelper.resolveColorAttr(this, R.attr.cardBackground))
+        val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+        textView.setTextColor(ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor))
+        snackbar.setActionTextColor(android.graphics.Color.parseColor("#FF5252"))
+
+        var timer: CountDownTimer? = null
+
+        snackbar.setAction("UNDO (5)") {
+            timer?.cancel()
+            // Revert: remove date from completedDates
+            val revertItems = FinminderRepository.getItems(this).toMutableList()
+            val revertIndex = revertItems.indexOfFirst { it.id == finminderId }
+            if (revertIndex != -1) {
+                val revertItem = revertItems[revertIndex]
+                val revertCompleted = revertItem.completedDates.toMutableList()
+                revertCompleted.remove(dateStr)
+                val revertedItem = revertItem.copy(completedDates = revertCompleted)
+                FinminderRepository.saveItem(this, revertedItem)
+                FirestoreSyncManager.pushAllDataToCloud(this)
+                loadData()
             }
-            val updatedItem = item.copy(completedDates = newCompleted)
-            allItems[index] = updatedItem
-            FinminderRepository.saveItem(this, updatedItem)
-            FirestoreSyncManager.pushAllDataToCloud(this)
-            loadData()
         }
+
+        timer = object : CountDownTimer(5000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val sec = (millisUntilFinished / 1000) + 1
+                snackbar.setAction("UNDO ($sec)") {
+                    timer?.cancel()
+                    val revertItems = FinminderRepository.getItems(this@FinminderHistoryActivity).toMutableList()
+                    val revertIndex = revertItems.indexOfFirst { it.id == finminderId }
+                    if (revertIndex != -1) {
+                        val revertItem = revertItems[revertIndex]
+                        val revertCompleted = revertItem.completedDates.toMutableList()
+                        revertCompleted.remove(dateStr)
+                        val revertedItem = revertItem.copy(completedDates = revertCompleted)
+                        FinminderRepository.saveItem(this@FinminderHistoryActivity, revertedItem)
+                        FirestoreSyncManager.pushAllDataToCloud(this@FinminderHistoryActivity)
+                        loadData()
+                    }
+                }
+            }
+            override fun onFinish() {}
+        }
+        timer.start()
+
+        snackbar.addCallback(object : Snackbar.Callback() {
+            override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                timer?.cancel()
+            }
+        })
+
+        snackbar.show()
     }
 
     private fun loadData() {

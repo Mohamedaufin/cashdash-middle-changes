@@ -328,6 +328,21 @@ class NotificationActivity : ThemedActivity() {
         }
     }
 
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val promoIdFromNotif = intent.getStringExtra("promo_id")
+        if (promoIdFromNotif != null) {
+            val userEmailForTracking = FirebaseAuth.getInstance().currentUser?.email
+            if (userEmailForTracking != null) {
+                FirebaseFirestore.getInstance()
+                    .collection("admin_logs").document(promoIdFromNotif)
+                    .update("notif_clickers", com.google.firebase.firestore.FieldValue.arrayUnion(userEmailForTracking))
+                    .addOnFailureListener { Log.w("NotificationActivity", "Failed to record notif_click", it) }
+            }
+        }
+    }
+
 
     private fun setupRecyclerView() {
         val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
@@ -1304,6 +1319,36 @@ class NotificationActivity : ThemedActivity() {
         private val onDelete: (NotificationModel) -> Unit
     ) : androidx.recyclerview.widget.RecyclerView.Adapter<NotificationAdapter.ViewHolder>() {
 
+        private fun trackSpannableLinks(spannable: android.text.Spanned, item: NotificationModel): android.text.Spanned {
+            val ssb = android.text.SpannableStringBuilder(spannable)
+            val urls = ssb.getSpans(0, spannable.length, android.text.style.URLSpan::class.java)
+            for (span in urls) {
+                val start = ssb.getSpanStart(span)
+                val end = ssb.getSpanEnd(span)
+                val flags = ssb.getSpanFlags(span)
+                val url = span.url
+                
+                ssb.removeSpan(span)
+                val clickSpan = object : android.text.style.ClickableSpan() {
+                    override fun onClick(widget: android.view.View) {
+                        try {
+                            val browserIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                            widget.context.startActivity(browserIntent)
+                        } catch (e: Exception) {}
+                        
+                        val userEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email
+                        if (userEmail != null) {
+                            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                .collection("admin_logs").document(item.id)
+                                .update("ann_clickers", com.google.firebase.firestore.FieldValue.arrayUnion(userEmail))
+                        }
+                    }
+                }
+                ssb.setSpan(clickSpan, start, end, flags)
+            }
+            return ssb
+        }
+
         private fun highlightMatches(holder: ViewHolder, item: NotificationModel) {
             if (searchQuery.isEmpty()) return
             val query = searchQuery.lowercase().trim()
@@ -1412,36 +1457,7 @@ class NotificationActivity : ThemedActivity() {
                     setPadding(0, 0, 0, (12 * resources.displayMetrics.density).toInt())
                     movementMethod = android.text.method.LinkMovementMethod.getInstance()
                 }
-                tv.setOnTouchListener { v, event ->
-                    val widget = v as TextView
-                    val text = widget.text as? android.text.Spannable ?: return@setOnTouchListener false
-                    if (event.action == android.view.MotionEvent.ACTION_UP) {
-                        var x = event.x.toInt()
-                        var y = event.y.toInt()
-                        x -= widget.totalPaddingLeft
-                        y -= widget.totalPaddingTop
-                        x += widget.scrollX
-                        y += widget.scrollY
-                        val layout = widget.layout
-                        val line = layout.getLineForVertical(y)
-                        val off = layout.getOffsetForHorizontal(line, x.toFloat())
-                        val links = text.getSpans(off, off, android.text.style.URLSpan::class.java)
-                        if (links.isNotEmpty()) {
-                            links[0].onClick(widget)
-                            return@setOnTouchListener true
-                        } else {
-                            val startSearch = (off - 4).coerceAtLeast(0)
-                            val endSearch = (off + 4).coerceAtMost(text.length)
-                            val nearbyLinks = text.getSpans(startSearch, endSearch, android.text.style.URLSpan::class.java)
-                            if (nearbyLinks.isNotEmpty()) {
-                                nearbyLinks[0].onClick(widget)
-                                return@setOnTouchListener true
-                            }
-                        }
-                    }
-                    false
-                }
-                tv.text = item.queryFormatted
+                tv.text = trackSpannableLinks(item.queryFormatted, item)
                 if (ThemeHelper.getCurrentTheme(this@NotificationActivity) == "Blue") {
                     tv.setShadowLayer(0f, 0f, 0f, android.graphics.Color.TRANSPARENT)
                 }
@@ -1540,7 +1556,7 @@ class NotificationActivity : ThemedActivity() {
                                 }
                             }
                         }
-                        tv.text = formattedSpanned
+                        tv.text = trackSpannableLinks(formattedSpanned, item)
                         holder.layoutTimelineContainer.addView(tv)
 
                         // Each block shows ONLY its own attachments — no cross-block leakage
@@ -1573,7 +1589,8 @@ class NotificationActivity : ThemedActivity() {
                     }
 
                     val replyHtml = "<font color='$colorTeam'><b>Team CashDash:</b></font> ${cleanReply.replace("\n", "<br>")}"
-                    tv.text = android.text.Html.fromHtml(replyHtml, android.text.Html.FROM_HTML_MODE_LEGACY)
+                    val spanned = android.text.Html.fromHtml(replyHtml, android.text.Html.FROM_HTML_MODE_LEGACY)
+                    tv.text = trackSpannableLinks(spanned, item)
                     holder.layoutTimelineContainer.addView(tv)
 
                     if (replyUrls.isNotEmpty()) {
@@ -1609,6 +1626,7 @@ class NotificationActivity : ThemedActivity() {
                                         com.google.firebase.firestore.FirebaseFirestore.getInstance()
                                             .collection("admin_logs").document(item.id)
                                             .update("ann_clickers", com.google.firebase.firestore.FieldValue.arrayUnion(userEmail))
+                                            .addOnFailureListener { Log.w("NotificationActivity", "Failed to record ann_click", it) }
                                     }
                                 }
                                 override fun updateDrawState(ds: android.text.TextPaint) {
@@ -1633,49 +1651,6 @@ class NotificationActivity : ThemedActivity() {
                         holder.layoutTimelineContainer.addView(tvLink)
                     }
                 } catch (e: Exception) { /* ignore malformed json */ }
-            }
-
-            // Render trigger URL button for announcements (tracks ann_clickers)
-            if (!item.triggerUrl.isNullOrEmpty()) {
-                val safeTriggerUrl = if (!item.triggerUrl.startsWith("http://") && !item.triggerUrl.startsWith("https://")) {
-                    "https://${item.triggerUrl}"
-                } else item.triggerUrl
-                val btnText = if (!item.triggerText.isNullOrEmpty()) item.triggerText else "Open Website"
-                val tvTrigger = TextView(holder.itemView.context).apply {
-                    val density = resources.displayMetrics.density
-                    text = "↗  $btnText"
-                    textSize = 13f
-                    setTypeface(null, android.graphics.Typeface.BOLD)
-                    val linkColorStr = if (ThemeHelper.isWhiteTheme(this@NotificationActivity)) "#0047AB" else "#2196F3"
-                    setTextColor(android.graphics.Color.parseColor(linkColorStr))
-                    setPadding(
-                        (12 * density).toInt(),
-                        (8 * density).toInt(),
-                        (12 * density).toInt(),
-                        (8 * density).toInt()
-                    )
-                    layoutParams = android.widget.LinearLayout.LayoutParams(
-                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
-                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-                    ).apply { topMargin = (6 * density).toInt() }
-                    val a = context.obtainStyledAttributes(intArrayOf(R.attr.roundBackground))
-                    background = a.getDrawable(0)
-                    a.recycle()
-                    setOnClickListener {
-                        try {
-                            val browserIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(safeTriggerUrl))
-                            context.startActivity(browserIntent)
-                        } catch (ex: Exception) { /* ignore */ }
-                        // Track the click in admin_logs ann_clickers
-                        val userEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email
-                        if (userEmail != null) {
-                            com.google.firebase.firestore.FirebaseFirestore.getInstance()
-                                .collection("admin_logs").document(item.id)
-                                .update("ann_clickers", com.google.firebase.firestore.FieldValue.arrayUnion(userEmail))
-                        }
-                    }
-                }
-                holder.layoutTimelineContainer.addView(tvTrigger)
             }
 
             // 🔥 Eliminate smudge glow in Blue Theme explicitly for title

@@ -81,9 +81,8 @@ class AdminLogsActivity : ThemedActivity() {
             .addSnapshotListener { querySnapshot, e ->
                 progressBar.visibility = View.GONE
                 if (e != null) {
-                    tvEmpty.text = "Failed to load activity logs."
+                    tvEmpty.text = "No activity logs available offline."
                     tvEmpty.visibility = View.VISIBLE
-                    ToastHelper.showToast(this, "Error: ${e.message}")
                     return@addSnapshotListener
                 }
 
@@ -324,8 +323,10 @@ class AdminLogsActivity : ThemedActivity() {
         
         view.findViewById<View>(R.id.btnClearFilter).setOnClickListener {
             selectedFilters.clear()
+            cbNotif.isChecked = false
+            cbAnn.isChecked = false
+            cbPromo.isChecked = false
             applyFilters()
-            bottomSheetDialog.dismiss()
         }
         
         view.findViewById<View>(R.id.btnCancelFilter).setOnClickListener {
@@ -360,7 +361,8 @@ class AdminLogsActivity : ThemedActivity() {
             holder.tvActionType.text = item.actionType
             holder.tvTime.text = item.time
             holder.tvDetails.movementMethod = android.text.method.LinkMovementMethod.getInstance()
-            holder.tvDetails.setLinkTextColor(android.graphics.Color.parseColor("#2196F3"))
+            val linkColorStr = if (ThemeHelper.isWhiteTheme(holder.itemView.context)) "#0047AB" else "#2196F3"
+            holder.tvDetails.setLinkTextColor(android.graphics.Color.parseColor(linkColorStr))
             holder.tvDetails.text = android.text.Html.fromHtml(item.details.replace("\n", "<br>"), android.text.Html.FROM_HTML_MODE_LEGACY)
             holder.tvTriggeredBy.text = item.triggeredBy
 

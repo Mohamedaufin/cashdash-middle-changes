@@ -318,14 +318,13 @@ class AdminMessagingActivity : ThemedActivity() {
             scaleType = ImageView.ScaleType.FIT_CENTER
             val p = (14 * density).toInt()
             setPadding(p, p, p, p)
-            
-            setOnClickListener { dialog.dismiss() }
         }
         val frame = FrameLayout(this).apply {
-            setOnClickListener { dialog.dismiss() }
             addView(imageView)
             addView(closeBtn)
         }
+        closeBtn.setOnClickListener { dialog.dismiss() }
+        frame.setOnClickListener { dialog.dismiss() }
         imageView.setOnClickListener { dialog.dismiss() }
         Glide.with(this).load(model).into(imageView)
         dialog.setContentView(frame)
@@ -420,6 +419,8 @@ class AdminMessagingActivity : ThemedActivity() {
                         isImageUploading = false
                     }
                     updateMediaStrip()
+                    checkAllUploadsDone()
+                    updateSubmitButtonState()
                 }
             }
             
@@ -506,7 +507,7 @@ class AdminMessagingActivity : ThemedActivity() {
                 layoutParams = LinearLayout.LayoutParams((boxSize * density).toInt(), (boxSize * density).toInt()).apply {
                     topMargin = if (isAnnouncement) (6 * density).toInt() else (4 * density).toInt() // align with imageBox inside frameWrapper
                 }
-                val a = context.obtainStyledAttributes(intArrayOf(R.attr.roundBackground))
+                val a = context.obtainStyledAttributes(intArrayOf(R.attr.inputBackground))
                 background = a.getDrawable(0)
                 a.recycle()
                 clipToOutline = true

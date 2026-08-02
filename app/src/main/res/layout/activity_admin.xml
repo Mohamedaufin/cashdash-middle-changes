@@ -294,17 +294,6 @@
                 android:orientation="vertical"
                 android:layout_marginBottom="16dp"/>
 
-            <Button
-                android:id="@+id/btnResolveAll"
-                android:layout_width="match_parent"
-                android:layout_height="55dp"
-                android:text="Auto Resolve All"
-                android:textColor="@android:color/white"
-                android:backgroundTint="#FF4D4D"
-                android:textStyle="bold"
-                android:textSize="14sp"
-                android:layout_marginBottom="40dp"
-                android:visibility="gone"/>
 
         </LinearLayout>
     </ScrollView>
