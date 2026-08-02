@@ -138,7 +138,7 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
             val email = user.email ?: return
             val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
             
-            AdminManager.init(email)
+            AdminManager.init(email, context)
             AdminManager.addListener { permissions ->
                 if (permissions.hasAnyAccess) {
                     com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("admins")

@@ -451,13 +451,12 @@ class FinminderAdapter(private val onDelete: (FinminderItem) -> Unit) : Recycler
         holder.itemView.setPadding(p, p, p, p)
         
         holder.itemView.setOnClickListener {
-            if (item.frequency.equals("One time", ignoreCase = true)) {
-                ToastHelper.showToast(holder.itemView.context, "History is not available for one-time Finminders")
-            } else {
+            if (!item.frequency.equals("One time", ignoreCase = true)) {
                 val intent = android.content.Intent(holder.itemView.context, FinminderHistoryActivity::class.java)
                 intent.putExtra("FINMINDER_ID", item.id)
                 holder.itemView.context.startActivity(intent)
             }
+            // One-time Finminders have no history — do nothing
         }
         
         holder.itemView.setOnFastLongClickListener {

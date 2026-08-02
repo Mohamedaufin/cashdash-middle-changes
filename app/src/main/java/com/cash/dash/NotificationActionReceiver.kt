@@ -24,6 +24,7 @@ class NotificationActionReceiver : android.app.Activity() {
                 com.google.firebase.firestore.FirebaseFirestore.getInstance()
                     .collection("admin_logs").document(promoId)
                     .update("notif_clickers", com.google.firebase.firestore.FieldValue.arrayUnion(userEmail))
+                    .addOnFailureListener { android.util.Log.w("NotificationActionReceiver", "Failed to record notif_click", it) }
             }
         }
 

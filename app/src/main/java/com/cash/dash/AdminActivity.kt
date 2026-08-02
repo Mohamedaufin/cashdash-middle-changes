@@ -237,8 +237,6 @@ class AdminActivity : ThemedActivity() {
         inboxContainer.removeAllViews()
         tvEmpty.text = "Loading..."
         tvEmpty.visibility = View.VISIBLE
-        // Immediately hide Resolve Selected button on every fresh load
-        findViewById<android.widget.Button>(R.id.btnResolveAll)?.visibility = View.GONE
 
         val db = FirebaseFirestore.getInstance()
         val density = resources.displayMetrics.density
@@ -262,57 +260,7 @@ class AdminActivity : ThemedActivity() {
 
                 var pendingFetches = userEmails.size
 
-                fun showCustomResolveDialog(targetItems: List<QueryItem>, onResolved: () -> Unit) {
-                    val dialogView = layoutInflater.inflate(R.layout.dialog_confirm_action, null)
-                    val confirmDialog = androidx.appcompat.app.AlertDialog.Builder(this@AdminActivity)
-                        .setView(dialogView)
-                        .create()
-                    confirmDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
-                    dialogView.findViewById<android.widget.TextView>(R.id.tvConfirmTitle).text = "Resolve Queries"
-                    val countStr = if (targetItems.size == 1) "1 query" else "${targetItems.size} queries"
-                    dialogView.findViewById<android.widget.TextView>(R.id.tvConfirmMessage).text =
-                        "Mark $countStr as resolved without reply?"
-
-                    val tvUsers = dialogView.findViewById<android.widget.TextView>(R.id.tvTargetUsers)
-                    if (tvUsers != null) {
-                        tvUsers.text = targetItems.joinToString("\n") { "• ${it.subject.ifEmpty { it.userEmail }}" }
-                        tvUsers.visibility = android.view.View.VISIBLE
-                    }
-
-                    val btnYes = dialogView.findViewById<android.widget.Button>(R.id.btnConfirmAction)
-                    val btnNo = dialogView.findViewById<android.widget.Button>(R.id.btnConfirmCancel)
-
-                    btnYes.text = "Resolve"
-                    btnYes.setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textPrimaryColor))
-                    btnYes.setOnClickListener {
-                        confirmDialog.dismiss()
-                        val batch = db.batch()
-                        val now = System.currentTimeMillis()
-                        for (item in targetItems) {
-                            val docRef = db.collection("users").document(item.userEmail)
-                                .collection("notifications").document(item.docId)
-                            batch.update(docRef, mapOf(
-                                "status" to "resolved",
-                                "reply" to "This query has been marked as resolved by the admin.",
-                                "read" to false,
-                                "replyTimestamp" to now,
-                                "timestamp" to now
-                            ))
-                        }
-                        batch.commit()
-                            .addOnSuccessListener {
-                                ToastHelper.showToast(this@AdminActivity, "$countStr resolved!")
-                                selectedQueries.clear()
-                                onResolved()
-                            }
-                            .addOnFailureListener { e ->
-                                ToastHelper.showToast(this@AdminActivity, "Failed: ${e.message}")
-                            }
-                    }
-                    btnNo.setOnClickListener { confirmDialog.dismiss() }
-                    confirmDialog.show()
-                }
                 fun onAllFetched() {
                     pendingFetches--
                     if (pendingFetches > 0) return

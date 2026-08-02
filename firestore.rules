@@ -83,6 +83,12 @@ service cloud.firestore {
     // 🚀 Match the Admin Logs collection
     match /admin_logs/{document=**} {
       allow read, write: if isAnyAdmin();
+
+      // Any signed-in user (the actual recipients of a push/announcement) may record
+      // their own click by appending to notif_clickers / ann_clickers — nothing else
+      // in the log document is exposed or writable to them.
+      allow update: if request.auth != null &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['notif_clickers', 'ann_clickers']);
     }
   }
 }

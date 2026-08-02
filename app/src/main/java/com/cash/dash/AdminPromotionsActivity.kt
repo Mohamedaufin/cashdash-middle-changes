@@ -300,7 +300,7 @@ class AdminPromotionsActivity : ThemedActivity() {
         if (annBodyStr.isNotEmpty()) {
             annBodyStr = annBodyStr.replace("&nbsp;<a href=\"[^\"]*\"><img src=\"ic_external_link\"/></a>".toRegex(), "")
             annBodyStr = annBodyStr.replace("&nbsp;<img src=\"ic_external_link\"/>".toRegex(), "")
-            annBodyStr = annBodyStr.replace("&nbsp;<font color=\"#2196F3\">\u2197</font>".toRegex(), "")
+            annBodyStr = annBodyStr.replace("&nbsp;<font color=\"(?:#2196F3|#0047AB)\">\u2197</font>".toRegex(), "")
             val htmlWithBr = annBodyStr.replace("\n", "<br>")
             
             val spanned = android.text.Html.fromHtml(htmlWithBr, android.text.Html.FROM_HTML_MODE_LEGACY)
@@ -308,7 +308,7 @@ class AdminPromotionsActivity : ThemedActivity() {
             val urls = ssb.getSpans(0, ssb.length, android.text.style.URLSpan::class.java)
             for (url in urls) {
                 ssb.setSpan(
-                    android.text.style.ForegroundColorSpan(android.graphics.Color.parseColor("#2196F3")),
+                    android.text.style.ForegroundColorSpan(android.graphics.Color.parseColor(if (ThemeHelper.isWhiteTheme(this)) "#0047AB" else "#2196F3")),
                     ssb.getSpanStart(url),
                     ssb.getSpanEnd(url),
                     android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
@@ -687,10 +687,11 @@ class AdminPromotionsActivity : ThemedActivity() {
             text = "+ Add Link"
             textSize = 14f
             setPadding((12 * resources.displayMetrics.density).toInt(), (6 * resources.displayMetrics.density).toInt(), (12 * resources.displayMetrics.density).toInt(), (6 * resources.displayMetrics.density).toInt())
-            setTextColor(android.graphics.Color.parseColor("#2196F3"))
+            val linkColorStr = if (ThemeHelper.isWhiteTheme(this@AdminPromotionsActivity)) "#0047AB" else "#2196F3"
+            setTextColor(android.graphics.Color.parseColor(linkColorStr))
             background = android.graphics.drawable.GradientDrawable().apply {
                 cornerRadius = 50f * resources.displayMetrics.density
-                setStroke((1f * resources.displayMetrics.density).toInt(), android.graphics.Color.parseColor("#2196F3"))
+                setStroke((1f * resources.displayMetrics.density).toInt(), android.graphics.Color.parseColor(linkColorStr))
             }
             isClickable = true
             isFocusable = true
@@ -718,7 +719,7 @@ class AdminPromotionsActivity : ThemedActivity() {
                 android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
             )
             spannable.setSpan(
-                android.text.style.ForegroundColorSpan(android.graphics.Color.parseColor("#2196F3")),
+                android.text.style.ForegroundColorSpan(android.graphics.Color.parseColor(if (ThemeHelper.isWhiteTheme(this@AdminPromotionsActivity)) "#0047AB" else "#2196F3")),
                 0, label.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
             )
             tvPreview.text = spannable
@@ -778,7 +779,7 @@ class AdminPromotionsActivity : ThemedActivity() {
             if (text.isNotEmpty() && url.isNotEmpty()) {
                 val spannable = android.text.SpannableString(text)
                 spannable.setSpan(android.text.style.URLSpan(url), 0, text.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                spannable.setSpan(android.text.style.ForegroundColorSpan(android.graphics.Color.parseColor("#2196F3")), 0, text.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                spannable.setSpan(android.text.style.ForegroundColorSpan(android.graphics.Color.parseColor(if (ThemeHelper.isWhiteTheme(this@AdminPromotionsActivity)) "#0047AB" else "#2196F3")), 0, text.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 
                 val currentText = edtAnnouncementBody.text ?: ""
                 val sStart = if (spanStart != -1) spanStart else edtAnnouncementBody.selectionStart.coerceAtLeast(0)
