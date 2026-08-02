@@ -138,6 +138,21 @@ object ThemeHelper {
         }
     }
 
+    fun getSnackbarBackgroundColor(context: Context): Int {
+        return when (getCurrentTheme(context)) {
+            "White" -> android.graphics.Color.parseColor("#EFEFEF")
+            "Blue"  -> android.graphics.Color.parseColor("#101C4A")
+            else    -> android.graphics.Color.parseColor("#1C1C1E") // Black theme
+        }
+    }
+
+    fun getSnackbarTextColor(context: Context): Int {
+        return when (getCurrentTheme(context)) {
+            "White" -> android.graphics.Color.parseColor("#1A1A1A")
+            else    -> android.graphics.Color.parseColor("#FFFFFF")
+        }
+    }
+
     fun getBottomSheetTheme(context: Context): Int {
         return when (getCurrentTheme(context)) {
             "White" -> R.style.BottomSheetDialogThemeWhite

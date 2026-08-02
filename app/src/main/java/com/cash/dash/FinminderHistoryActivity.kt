@@ -60,9 +60,9 @@ class FinminderHistoryActivity : ThemedActivity() {
 
         // Snackbar with undo
         val snackbar = Snackbar.make(rvHistoryRef, "Marked as completed. Tap to undo.", 5000)
-        snackbar.setBackgroundTint(ThemeHelper.resolveColorAttr(this, R.attr.cardBackground))
+        snackbar.setBackgroundTint(ThemeHelper.getSnackbarBackgroundColor(this))
         val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-        textView.setTextColor(ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor))
+        textView.setTextColor(ThemeHelper.getSnackbarTextColor(this))
         snackbar.setActionTextColor(android.graphics.Color.parseColor("#FF5252"))
 
         var timer: CountDownTimer? = null

@@ -81,14 +81,28 @@ open class ThemedActivity : AppCompatActivity() {
         }
     }
     override fun attachBaseContext(newBase: android.content.Context) {
+        val themePrefs = newBase.getSharedPreferences("ThemePrefs", android.content.Context.MODE_PRIVATE)
+        val savedTheme = themePrefs.getString("current_theme", "System") ?: "System"
+
         val configuration = android.content.res.Configuration(newBase.resources.configuration)
+
+        // Enforce font scale cap
         if (configuration.fontScale > 1.0f) {
             configuration.fontScale = 1.0f
-            val context = newBase.createConfigurationContext(configuration)
-            super.attachBaseContext(context)
-        } else {
-            super.attachBaseContext(newBase)
         }
+
+        // Override night mode based on saved app theme — ignores system setting
+        if (savedTheme != "System") {
+            val targetNightMode = if (savedTheme == "White") {
+                android.content.res.Configuration.UI_MODE_NIGHT_NO
+            } else {
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+            }
+            configuration.uiMode = (configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK.inv()) or targetNightMode
+        }
+
+        val context = newBase.createConfigurationContext(configuration)
+        super.attachBaseContext(context)
     }
 
     override fun onStart() {
