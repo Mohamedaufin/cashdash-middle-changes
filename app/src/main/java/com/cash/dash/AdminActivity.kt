@@ -1371,7 +1371,7 @@ class AdminActivity : ThemedActivity() {
                         db.collection("admin_requests").document(email.lowercase()).delete()
                         val approverEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "An administrator"
                         val approverName = approverEmail.substringBefore("@").replaceFirstChar { it.uppercase() }
-                        val validityStr = if (selectedValidUntil == 0L) "Lifetime — No Expiry" else java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(selectedValidUntil)
+                        val validityStr = if (selectedValidUntil == 0L) "Lifetime\n(Note: Your continued access is a reflection of the trust placed in you. It remains subject to review based on your ongoing performance and commitment to the CashDash platform.)" else java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(selectedValidUntil)
                         val roleStr = if (isSuperAdminSave) "Super Administrator" else "Administrator"
 
                         if (isExtensionRequest) {
@@ -1414,7 +1414,7 @@ class AdminActivity : ThemedActivity() {
 
                     val actorEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "An administrator"
                     val actorName = actorEmail.substringBefore("@").replaceFirstChar { it.uppercase() }
-                    val validityStr = if (selectedValidUntil == 0L) "Lifetime — No Expiry" else java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(selectedValidUntil)
+                    val validityStr = if (selectedValidUntil == 0L) "Lifetime\n(Note: Your continued access is a reflection of the trust placed in you. It remains subject to review based on your ongoing performance and commitment to the CashDash platform.)" else java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(selectedValidUntil)
                     val roleStr = if (isSuperAdminSave) "Super Administrator" else "Administrator"
 
                     if (isNewAdmin) {
