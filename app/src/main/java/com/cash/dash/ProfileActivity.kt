@@ -82,18 +82,16 @@ class ProfileActivity : ThemedActivity() {
                 val currentDob = selectedDob
 
                 if (currentName != originalName || currentPhone != originalPhone || currentEmail != originalEmail || currentDob != originalDob) {
-                    android.app.AlertDialog.Builder(this@ProfileActivity)
+                    AlertDialogHelper.createFlatDialogBuilder(this@ProfileActivity)
                         .setTitle("Unsaved Changes")
                         .setMessage("Do you want to save changes to your profile?")
-                        .setPositiveButton("Save") { _, _ ->
+                        .setPositiveButton("Save") {
                             btnSave.performClick()
                         }
-                        .setNeutralButton("Discard") { _, _ ->
+                        .setNeutralButton("Discard") {
                             finish()
                         }
-                        .setNegativeButton("Cancel") { dialog, _ ->
-                            dialog.dismiss()
-                        }
+                        .setNegativeButton("Cancel")
                         .show()
                 } else {
                     finish()
