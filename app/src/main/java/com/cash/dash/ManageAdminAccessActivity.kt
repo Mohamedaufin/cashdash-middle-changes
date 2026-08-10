@@ -60,7 +60,7 @@ class ManageAdminAccessActivity : ThemedActivity() {
             window.decorView.importantForAutofill = android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
         }
 
-        findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
+        findViewById<android.widget.ImageView>(R.id.btnBack).setOnClickListener { finish() }
 
         val root = (findViewById<android.view.View>(android.R.id.content) as android.view.ViewGroup).getChildAt(0)
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
