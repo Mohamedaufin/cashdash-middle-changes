@@ -1340,6 +1340,7 @@ class AdminActivity : ThemedActivity() {
                 db.collection("admins").document(email.lowercase()).set(data)
                     .addOnSuccessListener {
                         db.collection("admin_requests").document(email.lowercase()).delete()
+                        logAdminAction("APPROVED_REQUEST", email, "Approved request and granted/updated permissions.")
                         ToastHelper.showToast(this@AdminActivity, "Request approved")
                         bottomSheet.dismiss()
                     }
@@ -1351,7 +1352,10 @@ class AdminActivity : ThemedActivity() {
 
             db.collection("admins").document(email.lowercase()).set(data)
                 .addOnSuccessListener {
+                    val action = if (isNewAdmin) "GRANTED_ACCESS" else "UPDATED_PERMISSIONS"
                     val msg = if (isNewAdmin) "Admin added: $name" else "Permissions updated"
+                    logAdminAction(action, email, msg)
+                    
                     ToastHelper.showToast(this@AdminActivity, msg)
                     this@AdminActivity.findViewById<EditText>(R.id.etSearchNewAdmin)?.setText("")
                     this@AdminActivity.findViewById<LinearLayout>(R.id.layoutAdminSearchResults)?.visibility = View.GONE
@@ -1366,6 +1370,7 @@ class AdminActivity : ThemedActivity() {
             btnRevoke.setOnClickListener {
                 FirebaseFirestore.getInstance().collection("admin_requests").document(email.lowercase()).delete()
                     .addOnSuccessListener {
+                        logAdminAction("REJECTED_REQUEST", email, "Rejected admin extension/access request.")
                         ToastHelper.showToast(this, "Request rejected")
                         bottomSheet.dismiss()
                     }
@@ -1386,6 +1391,7 @@ class AdminActivity : ThemedActivity() {
                         FirebaseFirestore.getInstance().collection("admins").document(email.lowercase()).delete()
                             .addOnSuccessListener {
                                 FirebaseFirestore.getInstance().collection("admin_requests").document(email.lowercase()).delete()
+                                logAdminAction("RESIGNED", email, "User voluntarily resigned from admin privileges.")
                                 ToastHelper.showToast(this, "You have resigned as admin.")
                                 bottomSheet.dismiss()
                                 finish() // Exit Admin Activity since they resigned
@@ -1415,6 +1421,7 @@ class AdminActivity : ThemedActivity() {
                     .setPositiveButton("Revoke") { _, _ ->
                         FirebaseFirestore.getInstance().collection("admins").document(email.lowercase()).delete()
                             .addOnSuccessListener {
+                                logAdminAction("REVOKED_ACCESS", email, "Revoked all admin privileges.")
                                 ToastHelper.showToast(this, "Access revoked")
                                 bottomSheet.dismiss()
                             }
@@ -1434,6 +1441,18 @@ class AdminActivity : ThemedActivity() {
         }
 
         bottomSheet.show()
+    }
+
+    private fun logAdminAction(action: String, targetEmail: String, details: String) {
+        val currentUserEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "unknown"
+        val logData = hashMapOf(
+            "action" to action,
+            "target_email" to targetEmail.lowercase(),
+            "actor_email" to currentUserEmail.lowercase(),
+            "timestamp" to com.google.firebase.firestore.FieldValue.serverTimestamp(),
+            "details" to details
+        )
+        FirebaseFirestore.getInstance().collection("audit_logs").add(logData)
     }
 
     private val Float.dp: Float get() = this * resources.displayMetrics.density
