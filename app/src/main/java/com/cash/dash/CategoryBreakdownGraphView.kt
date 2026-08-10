@@ -152,8 +152,8 @@ class CategoryBreakdownGraphView(context: Context, attrs: AttributeSet?) : View(
                 if (line2.isEmpty()) {
                     canvas.drawText(line1, center, labelY, textPaint)
                 } else {
-                    canvas.drawText(line1, center, labelY - (labelSize / 2), textPaint)
-                    canvas.drawText(line2, center, labelY + (labelSize / 2) + 4f, textPaint)
+                    canvas.drawText(line1, center, labelY, textPaint)
+                    canvas.drawText(line2, center, labelY + labelSize + 4f, textPaint)
                 }
                 continue
             }
@@ -198,8 +198,8 @@ class CategoryBreakdownGraphView(context: Context, attrs: AttributeSet?) : View(
             if (line2.isEmpty()) {
                 canvas.drawText(line1, center, labelY, textPaint)
             } else {
-                canvas.drawText(line1, center, labelY - (labelSize / 2), textPaint)
-                canvas.drawText(line2, center, labelY + (labelSize / 2) + 4f, textPaint)
+                canvas.drawText(line1, center, labelY, textPaint)
+                canvas.drawText(line2, center, labelY + labelSize + 4f, textPaint)
             }
         }
     }
