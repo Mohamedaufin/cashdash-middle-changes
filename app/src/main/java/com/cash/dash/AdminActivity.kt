@@ -705,12 +705,21 @@ class AdminActivity : ThemedActivity() {
             }
         }
         
+        val curPerms = AdminManager.getPermissions()
+        val curIsOwner = curPerms.isOwner
+        val curIsLifetimeSA = !curIsOwner && curPerms.fullAccess && curPerms.validUntil == 0L
+        
         adminRequestsListenerRegistration?.remove()
         adminRequestsListenerRegistration = db.collection("admin_requests").addSnapshotListener { reqSnap, _ ->
             pendingAdminRequests.clear()
             if (reqSnap != null) {
                 for (doc in reqSnap.documents) {
-                    if (doc.getString("status") == "pending") {
+                    val isRequester = doc.id.lowercase() == com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email?.lowercase()
+                    val reqFullAccess = doc.getBoolean("fullAccess") ?: false
+                    
+                    val canSeeRequest = isRequester || curIsOwner || (curIsLifetimeSA && !reqFullAccess)
+                    
+                    if (canSeeRequest && (doc.getString("status") == "pending" || doc.getBoolean("isExtensionRequest") == true)) {
                         val requestedBy = doc.getString("requestedBy") ?: "Unknown"
                         pendingAdminRequests[doc.id.lowercase()] = requestedBy
                     }
@@ -1163,7 +1172,14 @@ class AdminActivity : ThemedActivity() {
             cbReplyQueries.isEnabled = false
             cbAddNewAdmin.isEnabled = false
             btnSave.isEnabled = true
-            btnRevoke.visibility = View.GONE
+            
+            if (isSelf && !currentPerms.isFixedOwner) {
+                btnRevoke.visibility = View.VISIBLE
+                btnRevoke.text = "Resign as Admin"
+            } else {
+                btnRevoke.visibility = View.GONE
+            }
+            
             btnChangeValidity?.visibility = View.GONE
             btnRequestExtension?.visibility = View.GONE
             layoutAdminValidity?.visibility = View.GONE
@@ -1177,7 +1193,9 @@ class AdminActivity : ThemedActivity() {
             cbReplyQueries.isEnabled = false
             cbAddNewAdmin.isEnabled = false
             btnSave.isEnabled = true
-            btnRevoke.visibility = View.GONE
+            
+            btnRevoke.visibility = View.VISIBLE
+            btnRevoke.text = "Resign as Admin"
             btnChangeValidity?.visibility = View.GONE
             
             if (currentUserPerms.validUntil > 0L) {
@@ -1199,7 +1217,15 @@ class AdminActivity : ThemedActivity() {
             btnRequestExtension?.visibility = View.GONE
             layoutAdminValidity?.visibility = View.VISIBLE
             if (isSelf) {
-                btnRevoke.visibility = View.GONE
+                if (!currentPerms.isFixedOwner) {
+                    btnRevoke.visibility = View.VISIBLE
+                    btnRevoke.text = "Resign as Admin"
+                } else {
+                    btnRevoke.visibility = View.GONE
+                }
+            } else {
+                btnRevoke.visibility = View.VISIBLE
+                btnRevoke.text = "Revoke Access"
             }
         }
 
@@ -1343,6 +1369,36 @@ class AdminActivity : ThemedActivity() {
                     .addOnFailureListener { e ->
                         ToastHelper.showToast(this, "Failed to reject: ${e.message}")
                     }
+            }
+        } else if (isSelf && !currentPerms.isFixedOwner) {
+            btnRevoke.setOnClickListener {
+                val color = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+                val titleSpan = android.text.SpannableString("Resign as Admin")
+                titleSpan.setSpan(android.text.style.ForegroundColorSpan(color), 0, titleSpan.length, 0)
+
+                val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle(titleSpan)
+                    .setMessage("Are you sure you want to resign? You will lose all administrative privileges immediately.")
+                    .setPositiveButton("Resign") { _, _ ->
+                        FirebaseFirestore.getInstance().collection("admins").document(email.lowercase()).delete()
+                            .addOnSuccessListener {
+                                FirebaseFirestore.getInstance().collection("admin_requests").document(email.lowercase()).delete()
+                                ToastHelper.showToast(this, "You have resigned as admin.")
+                                bottomSheet.dismiss()
+                                finish() // Exit Admin Activity since they resigned
+                            }
+                            .addOnFailureListener { e ->
+                                ToastHelper.showToast(this, "Failed to resign: ${e.message}")
+                            }
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .create()
+                
+                dialog.setOnShowListener {
+                    dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)?.setTextColor(color)
+                    dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE)?.setTextColor(color)
+                }
+                dialog.show()
             }
         } else if (!isNewAdmin) {
             btnRevoke.setOnClickListener {
