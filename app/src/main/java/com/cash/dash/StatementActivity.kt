@@ -32,7 +32,6 @@ class StatementActivity : ThemedActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_statement)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
         val topBarView = findViewById<View>(R.id.topBar)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.stmtViewRoot)) { _, insets ->
