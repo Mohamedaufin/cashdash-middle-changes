@@ -416,7 +416,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:layout_marginStart="4dp"
-                            android:text="Regards,\nTeam CashDash"
+                            android:text="Regards,\nTeam CashDash."
                             android:textColor="?attr/textMutedColor"
                             android:textSize="14sp"/>
                         

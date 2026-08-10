@@ -913,6 +913,14 @@ class ManageAdminAccessActivity : ThemedActivity() {
         cbIncludeNotification?.setOnCheckedChangeListener { _, isChecked ->
             layoutNotificationTemplate?.visibility = if (isChecked) View.VISIBLE else View.GONE
         }
+        // Match checkbox tick colour to the rest of the page (theme-aware)
+        val notifCbNormalColor = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.parseColor("#1A1A1A") else android.graphics.Color.WHITE
+        val notifCbDisabledColor = android.graphics.Color.parseColor("#44888888")
+        val notifCbTintList = android.content.res.ColorStateList(
+            arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf(android.R.attr.state_enabled)),
+            intArrayOf(notifCbDisabledColor, notifCbNormalColor)
+        )
+        cbIncludeNotification?.buttonTintList = notifCbTintList
         
         val tvUndoRephraseTitle = findViewById<android.widget.TextView>(R.id.tvUndoRephraseTitle)
         val tvRedoRephraseTitle = findViewById<android.widget.TextView>(R.id.tvRedoRephraseTitle)
