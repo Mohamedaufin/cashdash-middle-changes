@@ -119,6 +119,7 @@ class AdminLogsActivity : ThemedActivity() {
                     val totalAudience = doc.getLong("totalAudience")?.toInt() ?: 0
                     val legacyClicks = doc.getLong("clicks") ?: 0L
                     val details = doc.getString("details") ?: doc.getString("targetUsers")
+                    @Suppress("UNCHECKED_CAST")
                     val payload = doc.get("payload") as? Map<String, Any>
                     val timeStr = if (ts > 0) sdf.format(Date(ts)) else ""
 

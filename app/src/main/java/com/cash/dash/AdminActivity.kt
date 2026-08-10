@@ -433,6 +433,7 @@ class AdminActivity : ThemedActivity() {
             for (doc in querySnapshot.documents) {
                 val email = doc.id
                 val name = doc.getString("name")
+                @Suppress("UNCHECKED_CAST")
                 val activeDates = doc.get("activeDates") as? List<String> ?: emptyList()
                 
                 val rtdbData = rtdbPresenceMap[email]
