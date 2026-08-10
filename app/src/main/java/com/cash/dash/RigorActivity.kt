@@ -14,18 +14,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import com.kizitonwose.calendar.core.CalendarDay
-import com.kizitonwose.calendar.core.DayPosition
-import com.kizitonwose.calendar.core.daysOfWeek
-import com.kizitonwose.calendar.view.MonthDayBinder
-import com.kizitonwose.calendar.view.ViewContainer
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.ZoneId
-import java.time.format.TextStyle
-import java.util.Calendar
-import java.util.Locale
+import java.util.*
 
 class RigorActivity : ThemedActivity() {
 
@@ -37,28 +26,6 @@ class RigorActivity : ThemedActivity() {
     private var selectedExpenseDate: Long = -1L
     private lateinit var inputTitle: EditText
     private var isPage2 = false
-
-    private lateinit var calendarView: com.kizitonwose.calendar.view.CalendarView
-    private val todayDate: LocalDate = LocalDate.now()
-    private var selectedDate: LocalDate? = null
-    private val todayColor = Color.parseColor("#4CAF50")
-
-    inner class DayViewContainer(view: View) : ViewContainer(view) {
-        val tvDay: TextView = view.findViewById(R.id.tvDay)
-        lateinit var day: CalendarDay
-
-        init {
-            view.setOnClickListener {
-                if (day.position != DayPosition.MonthDate) return@setOnClickListener
-                val previous = selectedDate
-                selectedDate = day.date
-                selectedExpenseDate = day.date
-                    .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                previous?.let { calendarView.notifyDateChanged(it) }
-                calendarView.notifyDateChanged(day.date)
-            }
-        }
-    }
 
     private val syncReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -85,69 +52,13 @@ class RigorActivity : ThemedActivity() {
 
         showPage1()
 
-        calendarView = findViewById(R.id.calendarExpense)
-        val tvMonthTitle = findViewById<TextView>(R.id.tvMonthTitle)
-        val weekdayRow = findViewById<LinearLayout>(R.id.weekdayRow)
+        // The CalendarView is styled via calendarTheme in themes.xml
+        val calendarExpense = findViewById<android.widget.CalendarView>(R.id.calendarExpense)
 
-        val firstDay = DayOfWeek.SUNDAY
-        daysOfWeek(firstDay).forEach { dow ->
-            weekdayRow.addView(TextView(this).apply {
-                text = dow.getDisplayName(TextStyle.NARROW, Locale.getDefault())
-                gravity = android.view.Gravity.CENTER
-                setTextColor(ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textMutedColor))
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            })
-        }
-
-        calendarView.dayBinder = object : MonthDayBinder<DayViewContainer> {
-            override fun create(view: View) = DayViewContainer(view)
-            override fun bind(container: DayViewContainer, data: CalendarDay) {
-                container.day = data
-                val tv = container.tvDay
-                tv.text = data.date.dayOfMonth.toString()
-
-                if (data.position != DayPosition.MonthDate) {
-                    tv.visibility = View.INVISIBLE
-                    return
-                }
-                tv.visibility = View.VISIBLE
-
-                when {
-                    data.date == selectedDate -> {
-                        tv.setBackgroundResource(R.drawable.bg_calendar_day_selected)
-                        tv.setTextColor(Color.BLACK)
-                    }
-                    data.date == todayDate -> {
-                        tv.background = null
-                        tv.setTextColor(todayColor)
-                    }
-                    else -> {
-                        tv.background = null
-                        tv.setTextColor(
-                            ThemeHelper.resolveColorAttr(this@RigorActivity, R.attr.textPrimaryColor)
-                        )
-                    }
-                }
-            }
-        }
-
-        val currentMonth = YearMonth.now()
-        calendarView.setup(currentMonth.minusMonths(60), currentMonth.plusMonths(60), firstDay)
-        calendarView.scrollToMonth(currentMonth)
-
-        calendarView.monthScrollListener = { month ->
-            tvMonthTitle.text = "${month.yearMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${month.yearMonth.year}"
-        }
-
-        findViewById<ImageView>(R.id.btnPrevMonth).setOnClickListener {
-            calendarView.findFirstVisibleMonth()?.let {
-                calendarView.smoothScrollToMonth(it.yearMonth.minusMonths(1))
-            }
-        }
-        findViewById<ImageView>(R.id.btnNextMonth).setOnClickListener {
-            calendarView.findFirstVisibleMonth()?.let {
-                calendarView.smoothScrollToMonth(it.yearMonth.plusMonths(1))
-            }
+        calendarExpense.setOnDateChangeListener { _, year, month, day ->
+            val cal = Calendar.getInstance()
+            cal.set(year, month, day)
+            selectedExpenseDate = cal.timeInMillis
         }
 
         btnNext.setOnClickListener {

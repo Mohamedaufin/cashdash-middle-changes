@@ -12,52 +12,15 @@ import androidx.core.view.WindowCompat
 import android.util.TypedValue
 import java.text.SimpleDateFormat
 
-import com.kizitonwose.calendar.core.CalendarDay
-import com.kizitonwose.calendar.core.DayPosition
-import com.kizitonwose.calendar.core.daysOfWeek
-import com.kizitonwose.calendar.view.MonthDayBinder
-import com.kizitonwose.calendar.view.ViewContainer
-import java.time.DayOfWeek
-import java.time.Instant
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.ZoneId
-import java.time.format.TextStyle
-
 class MoneyScheduleActivity : ThemedActivity() {
 
     private val PREFS = "MoneySchedulePrefs"
-    private val KEY_FREQUENCY = "frequency_days"
-    private val KEY_NEXT_DATE = "next_reset_date"
+    private val KEY_FREQUENCY = "frequency"
+    private val KEY_NEXT_DATE = "next_date"
 
     private var selectedDateMillis: Long = -1
     private lateinit var tvCyclePreview: TextView
     private lateinit var etCustomDays: EditText
-
-    private lateinit var calendarView: com.kizitonwose.calendar.view.CalendarView
-    private val todayDate: LocalDate = LocalDate.now()
-    private var selectedDate: LocalDate? = null
-    private val todayColor = Color.parseColor("#4CAF50")
-
-    inner class DayViewContainer(view: View) : ViewContainer(view) {
-        val tvDay: TextView = view.findViewById(R.id.tvDay)
-        lateinit var day: CalendarDay
-
-        init {
-            view.setOnClickListener {
-                if (day.position != DayPosition.MonthDate) return@setOnClickListener
-                if (day.date < todayDate) return@setOnClickListener // disable past dates
-                val previous = selectedDate
-                selectedDate = day.date
-                selectedDateMillis = day.date
-                    .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                previous?.let { calendarView.notifyDateChanged(it) }
-                calendarView.notifyDateChanged(day.date)
-                val rgFrequency = findViewById<RadioGroup>(R.id.rgFrequency)
-                updateCyclePreview(rgFrequency)
-            }
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,7 +30,7 @@ class MoneyScheduleActivity : ThemedActivity() {
 
 
             val rgFrequency = findViewById<RadioGroup>(R.id.rgFrequency)
-            calendarView = findViewById(R.id.calendarView)
+            val calendarView = findViewById<CalendarView>(R.id.calendarView)
             val btnSave = findViewById<Button>(R.id.btnSaveSchedule)
             tvCyclePreview = findViewById(R.id.tvCyclePreview)
             etCustomDays = findViewById(R.id.etCustomDays)
@@ -99,81 +62,22 @@ class MoneyScheduleActivity : ThemedActivity() {
                 }
             }
 
+            // 🔧 FIX: Handle 0 (Epoch) explicitly which leaked randomly as Jan 1970
             if (savedDate > 0) {
+                calendarView.date = savedDate
                 selectedDateMillis = savedDate
-                selectedDate = Instant.ofEpochMilli(savedDate).atZone(ZoneId.systemDefault()).toLocalDate()
             } else {
                 selectedDateMillis = Calendar.getInstance().timeInMillis
-                selectedDate = todayDate
             }
-
-            val tvMonthTitle = findViewById<TextView>(R.id.tvMonthTitle)
-            val weekdayRow = findViewById<LinearLayout>(R.id.weekdayRow)
-
-            val firstDay = DayOfWeek.SUNDAY
-            daysOfWeek(firstDay).forEach { dow ->
-                weekdayRow.addView(TextView(this).apply {
-                    text = dow.getDisplayName(TextStyle.NARROW, Locale.getDefault())
-                    gravity = android.view.Gravity.CENTER
-                    setTextColor(ThemeHelper.resolveColorAttr(this@MoneyScheduleActivity, R.attr.textMutedColor))
-                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                })
+            
+            // Disable past dates
+            val todayMidnight = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
             }
-
-            calendarView.dayBinder = object : MonthDayBinder<DayViewContainer> {
-                override fun create(view: View) = DayViewContainer(view)
-                override fun bind(container: DayViewContainer, data: CalendarDay) {
-                    container.day = data
-                    val tv = container.tvDay
-                    tv.text = data.date.dayOfMonth.toString()
-
-                    if (data.position != DayPosition.MonthDate) {
-                        tv.visibility = View.INVISIBLE
-                        return
-                    }
-                    tv.visibility = View.VISIBLE
-
-                    when {
-                        data.date == selectedDate -> {
-                            tv.setBackgroundResource(R.drawable.bg_calendar_day_selected)
-                            tv.setTextColor(Color.BLACK)
-                        }
-                        data.date == todayDate -> {
-                            tv.background = null
-                            tv.setTextColor(todayColor)
-                        }
-                        data.date < todayDate -> {
-                            tv.background = null
-                            tv.setTextColor(ThemeHelper.resolveColorAttr(this@MoneyScheduleActivity, R.attr.textMutedColor))
-                        }
-                        else -> {
-                            tv.background = null
-                            tv.setTextColor(
-                                ThemeHelper.resolveColorAttr(this@MoneyScheduleActivity, R.attr.textPrimaryColor)
-                            )
-                        }
-                    }
-                }
-            }
-
-            val currentMonth = YearMonth.now()
-            calendarView.setup(currentMonth.minusMonths(60), currentMonth.plusMonths(60), firstDay)
-            selectedDate?.let { calendarView.scrollToMonth(YearMonth.from(it)) } ?: calendarView.scrollToMonth(currentMonth)
-
-            calendarView.monthScrollListener = { month ->
-                tvMonthTitle.text = "${month.yearMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${month.yearMonth.year}"
-            }
-
-            findViewById<ImageView>(R.id.btnPrevMonth).setOnClickListener {
-                calendarView.findFirstVisibleMonth()?.let {
-                    calendarView.smoothScrollToMonth(it.yearMonth.minusMonths(1))
-                }
-            }
-            findViewById<ImageView>(R.id.btnNextMonth).setOnClickListener {
-                calendarView.findFirstVisibleMonth()?.let {
-                    calendarView.smoothScrollToMonth(it.yearMonth.plusMonths(1))
-                }
-            }
+            calendarView.minDate = todayMidnight.timeInMillis
 
             // Handle custom radio
             rgFrequency.setOnCheckedChangeListener { _, checkedId ->
@@ -195,6 +99,12 @@ class MoneyScheduleActivity : ThemedActivity() {
             // -------------------------------------------
             // 2️⃣ Capture new date when user selects a new one
             // -------------------------------------------
+            calendarView.setOnDateChangeListener { _, year, month, day ->
+                val cal = Calendar.getInstance()
+                cal.set(year, month, day)
+                selectedDateMillis = cal.timeInMillis
+                updateCyclePreview(rgFrequency)
+            }
 
             // Initial preview
             updateCyclePreview(rgFrequency)
@@ -550,10 +460,8 @@ class MoneyScheduleActivity : ThemedActivity() {
         super.onRestoreInstanceState(savedInstanceState)
         selectedDateMillis = savedInstanceState.getLong("selectedDateMillis", -1)
         if (selectedDateMillis > 0) {
-            val date = Instant.ofEpochMilli(selectedDateMillis).atZone(ZoneId.systemDefault()).toLocalDate()
-            selectedDate = date
-            calendarView.notifyDateChanged(date)
-            calendarView.scrollToMonth(YearMonth.from(date))
+            val calendarView = findViewById<CalendarView>(R.id.calendarView)
+            calendarView.date = selectedDateMillis
             val rgFrequency = findViewById<RadioGroup>(R.id.rgFrequency)
             updateCyclePreview(rgFrequency)
         }
