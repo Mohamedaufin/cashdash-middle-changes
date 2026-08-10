@@ -793,14 +793,17 @@ class AdminActivity : ThemedActivity() {
                         .addOnSuccessListener { reqDoc ->
                             if (reqDoc.exists() && reqDoc.getString("status") == "pending") {
                                 val requestedPerms = AdminManager.AdminPermissions(
-                                    isFixedOwner = false,
-                                    isPromotedOwner = false,
+                                    isFixedOwner = reqDoc.getBoolean("isFixedOwner") ?: false,
+                                    isPromotedOwner = reqDoc.getBoolean("isPromotedOwner") ?: false,
                                     fullAccess = reqDoc.getBoolean("fullAccess") ?: false,
                                     sendAnnouncements = reqDoc.getBoolean("sendAnnouncements") ?: false,
                                     sendPromotions = reqDoc.getBoolean("sendPromotions") ?: false,
                                     sendNotifications = reqDoc.getBoolean("sendNotifications") ?: false,
                                     viewLastSeen = reqDoc.getBoolean("viewLastSeen") ?: false,
-                                    allocateAdmins = reqDoc.getBoolean("allocateAdmins") ?: false
+                                    viewAdminLogs = reqDoc.getBoolean("viewAdminLogs") ?: false,
+                                    replyToQueries = reqDoc.getBoolean("replyToQueries") ?: false,
+                                    allocateAdmins = reqDoc.getBoolean("allocateAdmins") ?: false,
+                                    validUntil = reqDoc.getLong("validUntil") ?: 0L
                                 )
                                 showEditAdminPermissionsDialog(email, name, requestedPerms, isNewAdmin = false, isReviewingRequest = true)
                             }
@@ -953,8 +956,16 @@ class AdminActivity : ThemedActivity() {
         val btnRevoke = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnRevokeAccess) ?: return
 
         var selectedValidUntil = currentPerms.validUntil
+        
+        val currentUserPerms = AdminManager.getPermissions()
+        val isCurrentUserOwner = currentUserPerms.isOwner
+        val isCurrentUserSA = !isCurrentUserOwner && currentUserPerms.fullAccess
+        val isCurrentUserAdmin = !isCurrentUserOwner && !isCurrentUserSA
+        val isCurrentUserLifetime = currentUserPerms.validUntil == 0L
+        val canGiveForever = isCurrentUserOwner || (isCurrentUserSA && isCurrentUserLifetime)
         val tvValidityStatus = view.findViewById<TextView>(R.id.tvValidityStatus)
         val btnChangeValidity = view.findViewById<TextView>(R.id.btnChangeValidity)
+        val btnRequestExtension = view.findViewById<TextView>(R.id.btnRequestExtension)
         
         val updateValidityUI = {
             if (selectedValidUntil == 0L) {
@@ -969,21 +980,23 @@ class AdminActivity : ThemedActivity() {
         val layoutAdminValidity = view.findViewById<View>(R.id.layoutAdminValidity)
 
         btnChangeValidity?.setOnClickListener {
-            val wrapper = android.view.ContextThemeWrapper(this, R.style.PopupMenuTheme)
-            val popup = android.widget.PopupMenu(wrapper, btnChangeValidity)
-            popup.menu.add(0, 1, 0, "Forever")
-            popup.menu.add(0, 2, 0, "Choose Date")
-            popup.setOnMenuItemClickListener { item ->
-                when (item.itemId) {
-                    1 -> {
+            val options = if (canGiveForever) {
+                arrayOf("Forever (No expiry)", "Choose Date")
+            } else {
+                arrayOf("Choose Date")
+            }
+
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Admin Validity")
+                .setItems(options) { dialog, which ->
+                    val selectedText = options[which]
+                    if (selectedText == "Forever (No expiry)") {
                         selectedValidUntil = 0L
                         updateValidityUI()
-                        true
-                    }
-                    2 -> {
+                    } else if (selectedText == "Choose Date") {
                         val cal = java.util.Calendar.getInstance()
                         if (selectedValidUntil > 0) cal.timeInMillis = selectedValidUntil
-                        
+
                         val dpd = android.app.DatePickerDialog(this, ThemeHelper.getDatePickerTheme(this), { _, y, m, d ->
                             val newCal = java.util.Calendar.getInstance()
                             newCal.set(y, m, d, 23, 59, 59)
@@ -992,12 +1005,48 @@ class AdminActivity : ThemedActivity() {
                         }, cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH), cal.get(java.util.Calendar.DAY_OF_MONTH))
                         dpd.datePicker.minDate = System.currentTimeMillis() - 1000
                         dpd.show()
-                        true
                     }
-                    else -> false
                 }
-            }
-            popup.show()
+                .show()
+        }
+
+        btnRequestExtension?.setOnClickListener {
+            val cal = java.util.Calendar.getInstance()
+            if (currentUserPerms.validUntil > 0) cal.timeInMillis = currentUserPerms.validUntil
+
+            val dpd = android.app.DatePickerDialog(this, ThemeHelper.getDatePickerTheme(this), { _, y, m, d ->
+                val newCal = java.util.Calendar.getInstance()
+                newCal.set(y, m, d, 23, 59, 59)
+                val requestedTime = newCal.timeInMillis
+                
+                // Submit extension request
+                val requestData = hashMapOf(
+                    "isFixedOwner" to currentUserPerms.isFixedOwner,
+                    "isPromotedOwner" to currentUserPerms.isPromotedOwner,
+                    "fullAccess" to currentUserPerms.fullAccess,
+                    "sendAnnouncements" to currentUserPerms.sendAnnouncements,
+                    "sendPromotions" to currentUserPerms.sendPromotions,
+                    "sendNotifications" to currentUserPerms.sendNotifications,
+                    "viewLastSeen" to currentUserPerms.viewLastSeen,
+                    "viewAdminLogs" to currentUserPerms.viewAdminLogs,
+                    "replyToQueries" to currentUserPerms.replyToQueries,
+                    "allocateAdmins" to currentUserPerms.allocateAdmins,
+                    "validUntil" to requestedTime,
+                    "isExtensionRequest" to true,
+                    "timestamp" to com.google.firebase.firestore.FieldValue.serverTimestamp()
+                )
+                
+                com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("admin_requests").document(email.lowercase()).set(requestData)
+                    .addOnSuccessListener {
+                        ToastHelper.showToast(this, "Extension request submitted")
+                        bottomSheet.dismiss()
+                    }
+                    .addOnFailureListener {
+                        ToastHelper.showToast(this, "Failed to submit request")
+                    }
+            }, cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH), cal.get(java.util.Calendar.DAY_OF_MONTH))
+            dpd.datePicker.minDate = System.currentTimeMillis() - 1000
+            dpd.show()
         }
 
         val normalColor = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.parseColor("#1A1A1A") else android.graphics.Color.WHITE
@@ -1051,10 +1100,7 @@ class AdminActivity : ThemedActivity() {
         val isTargetSA = !isTargetOwner && (currentPerms.fullAccess || (currentPerms.sendAnnouncements && currentPerms.sendPromotions && currentPerms.sendNotifications && currentPerms.viewLastSeen && currentPerms.viewAdminLogs && currentPerms.replyToQueries && currentPerms.allocateAdmins))
         val isTargetAdmin = !isTargetOwner && !isTargetSA
 
-        val currentUserPerms = AdminManager.getPermissions()
-        val isCurrentUserOwner = currentUserPerms.isOwner
-        val isCurrentUserSA = !isCurrentUserOwner && currentUserPerms.fullAccess
-        val isCurrentUserAdmin = !isCurrentUserOwner && !isCurrentUserSA
+        // (currentUserPerms, isCurrentUserOwner, isCurrentUserSA, isCurrentUserAdmin defined above)
 
         val currentRole = if (isTargetOwner) "Owner"
         else if (isTargetSA) "Super Administrator"
@@ -1119,6 +1165,7 @@ class AdminActivity : ThemedActivity() {
             btnSave.isEnabled = true
             btnRevoke.visibility = View.GONE
             btnChangeValidity?.visibility = View.GONE
+            btnRequestExtension?.visibility = View.GONE
             layoutAdminValidity?.visibility = View.GONE
         } else if (isSelf && !isCurrentUserOwner) {
             // Cannot enable or disable anything in their own permissions option
@@ -1132,6 +1179,12 @@ class AdminActivity : ThemedActivity() {
             btnSave.isEnabled = true
             btnRevoke.visibility = View.GONE
             btnChangeValidity?.visibility = View.GONE
+            
+            if (currentUserPerms.validUntil > 0L) {
+                btnRequestExtension?.visibility = View.VISIBLE
+            } else {
+                btnRequestExtension?.visibility = View.GONE
+            }
             layoutAdminValidity?.visibility = View.VISIBLE
         } else {
             // Can toggle the ones they can see.
@@ -1143,6 +1196,7 @@ class AdminActivity : ThemedActivity() {
             cbReplyQueries.isEnabled = true
             cbAddNewAdmin.isEnabled = true
             btnChangeValidity?.visibility = View.VISIBLE
+            btnRequestExtension?.visibility = View.GONE
             layoutAdminValidity?.visibility = View.VISIBLE
             if (isSelf) {
                 btnRevoke.visibility = View.GONE
