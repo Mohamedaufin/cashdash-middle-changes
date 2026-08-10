@@ -1292,7 +1292,7 @@ class AdminActivity : ThemedActivity() {
             }
         } else if (!isNewAdmin) {
             btnRevoke.setOnClickListener {
-                androidx.appcompat.app.AlertDialog.Builder(this)
+                val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
                     .setTitle("Revoke Access")
                     .setMessage("Are you sure you want to revoke admin access for $email?")
                     .setPositiveButton("Revoke") { _, _ ->
@@ -1306,7 +1306,14 @@ class AdminActivity : ThemedActivity() {
                             }
                     }
                     .setNegativeButton("Cancel", null)
-                    .show()
+                    .create()
+                
+                dialog.setOnShowListener {
+                    val color = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+                    dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)?.setTextColor(color)
+                    dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE)?.setTextColor(color)
+                }
+                dialog.show()
             }
         }
 
