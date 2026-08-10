@@ -315,6 +315,21 @@ class AdminLogsActivity : ThemedActivity() {
         cbNotif.visibility = if (perms.canSendNotifications()) View.VISIBLE else View.GONE
         cbAnn.visibility = if (perms.canSendAnnouncements()) View.VISIBLE else View.GONE
         cbPromo.visibility = if (perms.canSendPromotions()) View.VISIBLE else View.GONE
+
+        val normalColor = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.parseColor("#1A1A1A") else android.graphics.Color.WHITE
+        val disabledColor = android.graphics.Color.parseColor("#44888888")
+        val states = arrayOf(
+            intArrayOf(-android.R.attr.state_enabled),
+            intArrayOf(android.R.attr.state_enabled)
+        )
+        val colors = intArrayOf(
+            disabledColor,
+            normalColor
+        )
+        val checkboxTintList = android.content.res.ColorStateList(states, colors)
+        cbNotif.buttonTintList = checkboxTintList
+        cbAnn.buttonTintList = checkboxTintList
+        cbPromo.buttonTintList = checkboxTintList
         
         cbNotif.isChecked = selectedFilters.contains("Notifications") && perms.canSendNotifications()
         cbAnn.isChecked = selectedFilters.contains("Announcements") && perms.canSendAnnouncements()
