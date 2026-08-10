@@ -89,6 +89,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.0")
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
 
+    implementation("com.kizitonwose.calendar:view:2.6.0")
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
     implementation("com.google.firebase:firebase-analytics")

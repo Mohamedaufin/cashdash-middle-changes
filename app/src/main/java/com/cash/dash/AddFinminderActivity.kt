@@ -7,18 +7,27 @@ import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
-import android.widget.CalendarView
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import android.widget.ScrollView
+import android.widget.ImageView
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import java.util.UUID
+import com.kizitonwose.calendar.core.CalendarDay
+import com.kizitonwose.calendar.core.DayPosition
+import com.kizitonwose.calendar.core.daysOfWeek
+import com.kizitonwose.calendar.view.MonthDayBinder
+import com.kizitonwose.calendar.view.ViewContainer
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
 
 class AddFinminderActivity : ThemedActivity() {
 
@@ -36,7 +45,31 @@ class AddFinminderActivity : ThemedActivity() {
     private var selectedFrequencyIndex = -1
     private lateinit var scrollView: ScrollView
     private lateinit var layoutOneTime: LinearLayout
-    private lateinit var calendarView: CalendarView
+    private lateinit var calendarView: com.kizitonwose.calendar.view.CalendarView
+    private val todayDate: LocalDate = LocalDate.now()
+    private var selectedDate: LocalDate? = null
+    private val todayColor = android.graphics.Color.parseColor("#4CAF50")
+
+    inner class DayViewContainer(view: View) : ViewContainer(view) {
+        val tvDay: TextView = view.findViewById(R.id.tvDay)
+        lateinit var day: CalendarDay
+
+        init {
+            view.setOnClickListener {
+                if (day.position != DayPosition.MonthDate) return@setOnClickListener
+                if (day.date < todayDate) return@setOnClickListener
+                val previous = selectedDate
+                selectedDate = day.date
+                val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault())
+                selectedDateStr = day.date.format(formatter)
+                previous?.let { calendarView.notifyDateChanged(it) }
+                calendarView.notifyDateChanged(day.date)
+                updateHintText(true)
+                validateForm()
+            }
+        }
+    }
+
     private lateinit var tvAddTitle: TextView
     private lateinit var tvNotificationHint: TextView
     private lateinit var tvNotificationHintWeekly: TextView
@@ -88,8 +121,76 @@ class AddFinminderActivity : ThemedActivity() {
         scrollView = findViewById(R.id.scrollView)
         layoutOneTime = findViewById(R.id.layoutOneTime)
         calendarView = findViewById(R.id.calendarView)
-        val today = Calendar.getInstance()
-        calendarView.minDate = today.timeInMillis
+        selectedDate = todayDate
+        selectedDateStr = todayDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault()))
+
+        val tvMonthTitle = findViewById<TextView>(R.id.tvMonthTitle)
+        val weekdayRow = findViewById<LinearLayout>(R.id.weekdayRow)
+
+        val firstDay = DayOfWeek.SUNDAY
+        daysOfWeek(firstDay).forEach { dow ->
+            weekdayRow.addView(TextView(this).apply {
+                text = dow.getDisplayName(TextStyle.NARROW, Locale.getDefault())
+                gravity = android.view.Gravity.CENTER
+                setTextColor(ThemeHelper.resolveColorAttr(this@AddFinminderActivity, R.attr.textMutedColor))
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+        }
+
+        calendarView.dayBinder = object : MonthDayBinder<DayViewContainer> {
+            override fun create(view: View) = DayViewContainer(view)
+            override fun bind(container: DayViewContainer, data: CalendarDay) {
+                container.day = data
+                val tv = container.tvDay
+                tv.text = data.date.dayOfMonth.toString()
+
+                if (data.position != DayPosition.MonthDate) {
+                    tv.visibility = View.INVISIBLE
+                    return
+                }
+                tv.visibility = View.VISIBLE
+
+                when {
+                    data.date == selectedDate -> {
+                        tv.setBackgroundResource(R.drawable.bg_calendar_day_selected)
+                        tv.setTextColor(android.graphics.Color.BLACK)
+                    }
+                    data.date == todayDate -> {
+                        tv.background = null
+                        tv.setTextColor(todayColor)
+                    }
+                    data.date < todayDate -> {
+                        tv.background = null
+                        tv.setTextColor(ThemeHelper.resolveColorAttr(this@AddFinminderActivity, R.attr.textMutedColor))
+                    }
+                    else -> {
+                        tv.background = null
+                        tv.setTextColor(
+                            ThemeHelper.resolveColorAttr(this@AddFinminderActivity, R.attr.textPrimaryColor)
+                        )
+                    }
+                }
+            }
+        }
+
+        val currentMonth = YearMonth.now()
+        calendarView.setup(currentMonth.minusMonths(60), currentMonth.plusMonths(60), firstDay)
+        calendarView.scrollToMonth(currentMonth)
+
+        calendarView.monthScrollListener = { month ->
+            tvMonthTitle.text = "${month.yearMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${month.yearMonth.year}"
+        }
+
+        findViewById<ImageView>(R.id.btnPrevMonth).setOnClickListener {
+            calendarView.findFirstVisibleMonth()?.let {
+                calendarView.smoothScrollToMonth(it.yearMonth.minusMonths(1))
+            }
+        }
+        findViewById<ImageView>(R.id.btnNextMonth).setOnClickListener {
+            calendarView.findFirstVisibleMonth()?.let {
+                calendarView.smoothScrollToMonth(it.yearMonth.plusMonths(1))
+            }
+        }
         
         tvNotificationHint = findViewById(R.id.tvNotificationHint)
         tvNotificationHintWeekly = findViewById(R.id.tvNotificationHintWeekly)
@@ -113,77 +214,6 @@ class AddFinminderActivity : ThemedActivity() {
                 if (input in 1..31) null else ""
             } catch (nfe: NumberFormatException) { "" }
         })
-
-        fun updateHintText(shouldScroll: Boolean = false) {
-            val title = etTitle.text.toString().trim().ifEmpty { "your expense" }
-            if (selectedFrequencyIndex == 0) {
-                val dateStrFull = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault()).format(
-                    SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).parse(selectedDateStr) ?: Date()
-                )
-                tvNotificationHint.text = "You will be notified about $title on $dateStrFull."
-                tvNotificationHint.visibility = View.VISIBLE
-                tvNotificationHintWeekly.visibility = View.GONE
-                tvNotificationHintMonthly.visibility = View.GONE
-                if (shouldScroll) {
-                    scrollView.post { scrollView.smoothScrollTo(0, scrollView.bottom) }
-                }
-            } else if (selectedFrequencyIndex == 1) { // Remind daily
-                tvNotificationHint.text = "You will be notified about $title daily."
-                tvNotificationHint.visibility = View.VISIBLE
-                tvNotificationHintWeekly.visibility = View.GONE
-                tvNotificationHintMonthly.visibility = View.GONE
-                if (shouldScroll) {
-                    scrollView.post { scrollView.smoothScrollTo(0, scrollView.bottom) }
-                }
-            } else if (selectedFrequencyIndex == 2) { // Remind weekly
-                tvNotificationHint.visibility = View.GONE
-                tvNotificationHintMonthly.visibility = View.GONE
-                if (selectedDayStr.isNotEmpty()) {
-                    val daysOfWeek = listOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
-                    val targetDayIndex = daysOfWeek.indexOf(selectedDayStr) + 1
-                    val dates = mutableListOf<String>()
-                    val cal = Calendar.getInstance()
-                    for (i in 0 until 3) {
-                        while (cal.get(Calendar.DAY_OF_WEEK) != targetDayIndex) {
-                            cal.add(Calendar.DATE, 1)
-                        }
-                        dates.add(SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(cal.time))
-                        cal.add(Calendar.DATE, 1)
-                    }
-                    tvNotificationHintWeekly.text = "You will be notified about $title on every $selectedDayStr.\n\nExamples: ${dates.joinToString(", ")}, etc."
-                    tvNotificationHintWeekly.visibility = View.VISIBLE
-                    if (shouldScroll) {
-                        scrollView.post { scrollView.smoothScrollTo(0, scrollView.bottom) }
-                    }
-                }
-            } else if (selectedFrequencyIndex == 3) { // Remind monthly
-                tvNotificationHint.visibility = View.GONE
-                tvNotificationHintWeekly.visibility = View.GONE
-                val dayOfMonthStr = etDateOfMonth.text.toString().trim()
-                if (dayOfMonthStr.isNotEmpty()) {
-                    val dayOfMonth = dayOfMonthStr.toIntOrNull() ?: 1
-                    val dates = mutableListOf<String>()
-                    val cal = Calendar.getInstance()
-                    if (cal.get(Calendar.DAY_OF_MONTH) >= dayOfMonth) {
-                        cal.add(Calendar.MONTH, 1)
-                    }
-                    for (i in 0 until 3) {
-                        val monthCal = cal.clone() as Calendar
-                        val maxDay = monthCal.getActualMaximum(Calendar.DAY_OF_MONTH)
-                        monthCal.set(Calendar.DAY_OF_MONTH, kotlin.math.min(dayOfMonth, maxDay))
-                        dates.add(SimpleDateFormat("MMMM dd", Locale.getDefault()).format(monthCal.time))
-                        cal.add(Calendar.MONTH, 1)
-                    }
-                    tvNotificationHintMonthly.text = "You will be notified about $title on every month's $dayOfMonth.\n\nExamples: ${dates.joinToString(", ")}, etc."
-                    tvNotificationHintMonthly.visibility = View.VISIBLE
-                    if (shouldScroll) {
-                        scrollView.post { scrollView.smoothScrollTo(0, scrollView.bottom) }
-                    }
-                } else {
-                    tvNotificationHintMonthly.visibility = View.GONE
-                }
-            }
-        }
 
         val watcher = object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -301,16 +331,6 @@ class AddFinminderActivity : ThemedActivity() {
         btnFreqWeekly.setOnClickListener { selectFrequency(2, "Remind every week") }
         btnFreqMonthly.setOnClickListener { selectFrequency(3, "Remind every month") }
 
-        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-        selectedDateStr = sdf.format(calendarView.date)
-        calendarView.setOnDateChangeListener { _, year, month, dayOfMonth ->
-            val cal = Calendar.getInstance()
-            cal.set(year, month, dayOfMonth)
-            selectedDateStr = sdf.format(cal.time)
-            updateHintText(true)
-            validateForm()
-        }
-
         editModeItemId = intent.getStringExtra("ITEM_ID")
         editModeItemId?.let { id ->
             val item = FinminderRepository.getItems(this).find { it.id == id }
@@ -322,12 +342,12 @@ class AddFinminderActivity : ThemedActivity() {
                 when (item.frequency) {
                     "One time" -> {
                         try {
-                            val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
-                            val date = sdf.parse(item.dateInfo)
-                            if (date != null) {
-                                calendarView.date = date.time
-                                selectedDateStr = item.dateInfo
-                            }
+                            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault())
+                            val date = LocalDate.parse(item.dateInfo, formatter)
+                            selectedDate = date
+                            selectedDateStr = item.dateInfo
+                            calendarView.notifyDateChanged(date)
+                            calendarView.scrollToMonth(YearMonth.from(date))
                         } catch(e: Exception){}
                         selectFrequency(0, "One time only")
                     }
@@ -465,6 +485,77 @@ class AddFinminderActivity : ThemedActivity() {
                 layoutWeekly.visibility = View.GONE
                 layoutMonthly.visibility = View.VISIBLE
                 tvSelectedFrequency.text = "Remind every month"
+            }
+        }
+    }
+
+    private fun updateHintText(shouldScroll: Boolean = false) {
+        val title = etTitle.text.toString().trim().ifEmpty { "your expense" }
+        if (selectedFrequencyIndex == 0) {
+            val dateStrFull = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault()).format(
+                SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).parse(selectedDateStr) ?: Date()
+            )
+            tvNotificationHint.text = "You will be notified about $title on $dateStrFull."
+            tvNotificationHint.visibility = View.VISIBLE
+            tvNotificationHintWeekly.visibility = View.GONE
+            tvNotificationHintMonthly.visibility = View.GONE
+            if (shouldScroll) {
+                scrollView.post { scrollView.smoothScrollTo(0, scrollView.bottom) }
+            }
+        } else if (selectedFrequencyIndex == 1) { // Remind daily
+            tvNotificationHint.text = "You will be notified about $title daily."
+            tvNotificationHint.visibility = View.VISIBLE
+            tvNotificationHintWeekly.visibility = View.GONE
+            tvNotificationHintMonthly.visibility = View.GONE
+            if (shouldScroll) {
+                scrollView.post { scrollView.smoothScrollTo(0, scrollView.bottom) }
+            }
+        } else if (selectedFrequencyIndex == 2) { // Remind weekly
+            tvNotificationHint.visibility = View.GONE
+            tvNotificationHintMonthly.visibility = View.GONE
+            if (selectedDayStr.isNotEmpty()) {
+                val daysOfWeek = listOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+                val targetDayIndex = daysOfWeek.indexOf(selectedDayStr) + 1
+                val dates = mutableListOf<String>()
+                val cal = Calendar.getInstance()
+                for (i in 0 until 3) {
+                    while (cal.get(Calendar.DAY_OF_WEEK) != targetDayIndex) {
+                        cal.add(Calendar.DATE, 1)
+                    }
+                    dates.add(SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(cal.time))
+                    cal.add(Calendar.DATE, 1)
+                }
+                tvNotificationHintWeekly.text = "You will be notified about $title on every $selectedDayStr.\n\nExamples: ${dates.joinToString(", ")}, etc."
+                tvNotificationHintWeekly.visibility = View.VISIBLE
+                if (shouldScroll) {
+                    scrollView.post { scrollView.smoothScrollTo(0, scrollView.bottom) }
+                }
+            }
+        } else if (selectedFrequencyIndex == 3) { // Remind monthly
+            tvNotificationHint.visibility = View.GONE
+            tvNotificationHintWeekly.visibility = View.GONE
+            val dayOfMonthStr = etDateOfMonth.text.toString().trim()
+            if (dayOfMonthStr.isNotEmpty()) {
+                val dayOfMonth = dayOfMonthStr.toIntOrNull() ?: 1
+                val dates = mutableListOf<String>()
+                val cal = Calendar.getInstance()
+                if (cal.get(Calendar.DAY_OF_MONTH) >= dayOfMonth) {
+                    cal.add(Calendar.MONTH, 1)
+                }
+                for (i in 0 until 3) {
+                    val monthCal = cal.clone() as Calendar
+                    val maxDay = monthCal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                    monthCal.set(Calendar.DAY_OF_MONTH, kotlin.math.min(dayOfMonth, maxDay))
+                    dates.add(SimpleDateFormat("MMMM dd", Locale.getDefault()).format(monthCal.time))
+                    cal.add(Calendar.MONTH, 1)
+                }
+                tvNotificationHintMonthly.text = "You will be notified about $title on every month's $dayOfMonth.\n\nExamples: ${dates.joinToString(", ")}, etc."
+                tvNotificationHintMonthly.visibility = View.VISIBLE
+                if (shouldScroll) {
+                    scrollView.post { scrollView.smoothScrollTo(0, scrollView.bottom) }
+                }
+            } else {
+                tvNotificationHintMonthly.visibility = View.GONE
             }
         }
     }
