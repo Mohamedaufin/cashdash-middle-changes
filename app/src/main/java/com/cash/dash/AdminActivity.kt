@@ -952,9 +952,7 @@ class AdminActivity : ThemedActivity() {
                 arrayOf("Choose Date")
             }
 
-            androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Admin Validity")
-                .setItems(options) { dialog, which ->
+            AlertDialogHelper.showListDialog(this, "Admin Validity", options) { which ->
                     val selectedText = options[which]
                     if (selectedText == "Forever (No expiry)") {
                         selectedValidUntil = 0L
@@ -975,8 +973,7 @@ class AdminActivity : ThemedActivity() {
                         }
                         dpd.show()
                     }
-                }
-                .show()
+            }
         }
 
         btnRequestExtension?.setOnClickListener {
@@ -1405,45 +1402,31 @@ class AdminActivity : ThemedActivity() {
             }
         } else if (isSelf && !currentPerms.isFixedOwner) {
             btnRevoke.setOnClickListener {
-                val color = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.BLACK else android.graphics.Color.WHITE
-                val titleSpan = android.text.SpannableString("Resign as Admin")
-                titleSpan.setSpan(android.text.style.ForegroundColorSpan(color), 0, titleSpan.length, 0)
-
-                val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
-                    .setTitle(titleSpan)
+                AlertDialogHelper.createFlatDialogBuilder(this)
+                    .setTitle("Resign as Admin")
                     .setMessage("Are you sure you want to resign? You will lose all administrative privileges immediately.")
-                    .setPositiveButton("Resign") { _, _ ->
+                    .setPositiveButton("Resign") {
                         FirebaseFirestore.getInstance().collection("admins").document(email.lowercase()).delete()
                             .addOnSuccessListener {
                                 FirebaseFirestore.getInstance().collection("admin_requests").document(email.lowercase()).delete()
                                 logAdminAction("RESIGNED", email, "User voluntarily resigned from admin privileges.")
                                 ToastHelper.showToast(this, "You have resigned as admin.")
                                 bottomSheet.dismiss()
-                                finish() // Exit Admin Activity since they resigned
+                                finish()
                             }
                             .addOnFailureListener { e ->
                                 ToastHelper.showToast(this, "Failed to resign: ${e.message}")
                             }
                     }
-                    .setNegativeButton("Cancel", null)
-                    .create()
-                
-                dialog.setOnShowListener {
-                    dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)?.setTextColor(color)
-                    dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE)?.setTextColor(color)
-                }
-                dialog.show()
+                    .setNegativeButton("Cancel")
+                    .show()
             }
         } else if (!isNewAdmin) {
             btnRevoke.setOnClickListener {
-                val color = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.BLACK else android.graphics.Color.WHITE
-                val titleSpan = android.text.SpannableString("Revoke Access")
-                titleSpan.setSpan(android.text.style.ForegroundColorSpan(color), 0, titleSpan.length, 0)
-
-                val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
-                    .setTitle(titleSpan)
+                AlertDialogHelper.createFlatDialogBuilder(this)
+                    .setTitle("Revoke Access")
                     .setMessage("Are you sure you want to revoke admin access for $email?")
-                    .setPositiveButton("Revoke") { _, _ ->
+                    .setPositiveButton("Revoke") {
                         FirebaseFirestore.getInstance().collection("admins").document(email.lowercase()).delete()
                             .addOnSuccessListener {
                                 val actorEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "An administrator"
@@ -1464,14 +1447,8 @@ class AdminActivity : ThemedActivity() {
                                 ToastHelper.showToast(this, "Failed to revoke: ${e.message}")
                             }
                     }
-                    .setNegativeButton("Cancel", null)
-                    .create()
-                
-                dialog.setOnShowListener {
-                    dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)?.setTextColor(color)
-                    dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE)?.setTextColor(color)
-                }
-                dialog.show()
+                    .setNegativeButton("Cancel")
+                    .show()
             }
         }
 
