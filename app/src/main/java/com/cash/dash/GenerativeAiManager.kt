@@ -57,10 +57,7 @@ object GenerativeAiManager {
             return@withContext response.text?.trim()?.removeSurrounding("\"") ?: text
         } catch (e: Exception) {
             val msg = e.message ?: ""
-            if (msg.contains("API_KEY_INVALID") || msg.contains("API key not valid") || msg.contains("Unexpected Response:")) {
-                throw Exception("Invalid API Key. Please use a valid Gemini API Key.")
-            }
-            throw Exception("AI Error: $msg")
+            throw Exception("API Error: $msg")
         }
     }
 }
