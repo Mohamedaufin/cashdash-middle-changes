@@ -966,6 +966,8 @@ class AdminActivity : ThemedActivity() {
         }
         updateValidityUI()
 
+        val layoutAdminValidity = view.findViewById<View>(R.id.layoutAdminValidity)
+
         btnChangeValidity?.setOnClickListener {
             val popup = android.widget.PopupMenu(this, btnChangeValidity)
             popup.menu.add(0, 1, 0, "Forever")
@@ -1113,6 +1115,7 @@ class AdminActivity : ThemedActivity() {
             btnSave.isEnabled = true
             btnRevoke.visibility = View.GONE
             btnChangeValidity?.visibility = View.GONE
+            layoutAdminValidity?.visibility = View.GONE
         } else if (isSelf && !isCurrentUserOwner) {
             // Cannot enable or disable anything in their own permissions option
             cbAnnouncements.isEnabled = false
@@ -1125,6 +1128,7 @@ class AdminActivity : ThemedActivity() {
             btnSave.isEnabled = true
             btnRevoke.visibility = View.GONE
             btnChangeValidity?.visibility = View.GONE
+            layoutAdminValidity?.visibility = View.VISIBLE
         } else {
             // Can toggle the ones they can see.
             cbAnnouncements.isEnabled = true
@@ -1135,6 +1139,7 @@ class AdminActivity : ThemedActivity() {
             cbReplyQueries.isEnabled = true
             cbAddNewAdmin.isEnabled = true
             btnChangeValidity?.visibility = View.VISIBLE
+            layoutAdminValidity?.visibility = View.VISIBLE
             if (isSelf) {
                 btnRevoke.visibility = View.GONE
             }
