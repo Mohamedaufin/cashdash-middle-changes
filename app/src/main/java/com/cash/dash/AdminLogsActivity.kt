@@ -307,6 +307,22 @@ class AdminLogsActivity : ThemedActivity() {
         val bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
         val view = layoutInflater.inflate(R.layout.dialog_admin_logs_filter, null)
         bottomSheetDialog.setContentView(view)
+
+        (view.parent as? View)?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        
+        val theme = ThemeHelper.getCurrentTheme(this)
+        val bgColor = when (theme) {
+            "White" -> android.graphics.Color.WHITE
+            "Blue" -> android.graphics.Color.parseColor("#010A43") // Matches center color of bg_main_gradient_blue
+            else -> android.graphics.Color.parseColor("#0C0C0F") // Perfectly matches app_bg
+        }
+        val shape = android.graphics.drawable.GradientDrawable().apply {
+            shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+            setColor(bgColor)
+            val r = 26f * resources.displayMetrics.density
+            cornerRadii = floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f)
+        }
+        view.background = shape
         
         val cbNotif = view.findViewById<android.widget.CheckBox>(R.id.cbNotifications)
         val cbAnn = view.findViewById<android.widget.CheckBox>(R.id.cbAnnouncements)
