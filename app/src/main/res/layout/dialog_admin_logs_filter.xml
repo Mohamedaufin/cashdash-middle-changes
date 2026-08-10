@@ -81,7 +81,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Apply"
-            android:textColor="?attr/colorPrimary"
+            android:textColor="?attr/textPrimaryColor"
             android:textSize="16sp"
             android:textStyle="bold"
             android:padding="12dp"
