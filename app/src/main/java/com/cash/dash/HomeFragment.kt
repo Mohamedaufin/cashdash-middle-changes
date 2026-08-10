@@ -940,6 +940,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun animateAndStart(view: View, action: () -> Unit) {
+        view.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
         view.animate()
             .scaleX(0.85f).scaleY(0.85f)
             .setDuration(7)
