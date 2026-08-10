@@ -969,7 +969,8 @@ class AdminActivity : ThemedActivity() {
         val layoutAdminValidity = view.findViewById<View>(R.id.layoutAdminValidity)
 
         btnChangeValidity?.setOnClickListener {
-            val popup = android.widget.PopupMenu(this, btnChangeValidity)
+            val wrapper = android.view.ContextThemeWrapper(this, R.style.PopupMenuTheme)
+            val popup = android.widget.PopupMenu(wrapper, btnChangeValidity)
             popup.menu.add(0, 1, 0, "Forever")
             popup.menu.add(0, 2, 0, "Choose Date")
             popup.setOnMenuItemClickListener { item ->
@@ -1021,24 +1022,22 @@ class AdminActivity : ThemedActivity() {
 
         if (isNewAdmin) {
             btnRevoke.text = "Cancel"
-            btnRevoke.setTextColor(android.graphics.Color.parseColor("#888888"))
+            val isWhite = ThemeHelper.isWhiteTheme(this)
+            btnRevoke.setTextColor(if (isWhite) android.graphics.Color.parseColor("#475569") else android.graphics.Color.parseColor("#E2E8F0"))
             btnRevoke.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                android.graphics.Color.parseColor("#22888888")
+                if (isWhite) android.graphics.Color.parseColor("#F1F5F9") else android.graphics.Color.parseColor("#334155")
             )
-            btnRevoke.strokeColor = android.content.res.ColorStateList.valueOf(
-                android.graphics.Color.parseColor("#44888888")
-            )
+            btnRevoke.strokeWidth = 0
             btnRevoke.setOnClickListener { bottomSheet.dismiss() }
         } else if (isReviewingRequest) {
             btnSave.text = "Approve Request"
             btnRevoke.text = "Reject"
-            btnRevoke.setTextColor(android.graphics.Color.parseColor("#888888"))
+            val isWhite = ThemeHelper.isWhiteTheme(this)
+            btnRevoke.setTextColor(if (isWhite) android.graphics.Color.parseColor("#475569") else android.graphics.Color.parseColor("#E2E8F0"))
             btnRevoke.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                android.graphics.Color.parseColor("#22888888")
+                if (isWhite) android.graphics.Color.parseColor("#F1F5F9") else android.graphics.Color.parseColor("#334155")
             )
-            btnRevoke.strokeColor = android.content.res.ColorStateList.valueOf(
-                android.graphics.Color.parseColor("#44888888")
-            )
+            btnRevoke.strokeWidth = 0
         }
 
         val isFixed = currentPerms.isFixedOwner
