@@ -445,6 +445,32 @@ class AdminActivity : ThemedActivity() {
             }
     }
 
+    /**
+     * Sends a formal in-app notification to a specific user's notifications subcollection.
+     * This appears in their Notification Activity just like an announcement.
+     */
+    private fun sendAdminInAppNotification(targetEmail: String, subject: String, body: String) {
+        val db = FirebaseFirestore.getInstance()
+        val timestamp = System.currentTimeMillis()
+        val timeStr = java.text.SimpleDateFormat("dd MMM yyyy, h:mm a", java.util.Locale.getDefault()).format(timestamp)
+        val notifData = hashMapOf<String, Any>(
+            "subject"   to subject,
+            "query"     to body,
+            "reply"     to "[ANNOUNCEMENT]",
+            "status"    to "resolved",
+            "timestamp" to timestamp,
+            "time"      to timeStr,
+            "read"      to false,
+            "promo_id"  to timestamp.toString()
+        )
+        db.collection("users").document(targetEmail.lowercase())
+            .collection("notifications").document(timestamp.toString())
+            .set(notifData)
+            .addOnFailureListener { e ->
+                android.util.Log.e("AdminActivity", "Failed to send admin notification: ${e.message}")
+            }
+    }
+
     private fun loadUserStatusList() {
         val db = FirebaseFirestore.getInstance()
         usersListenerRegistration?.remove()
@@ -800,7 +826,9 @@ class AdminActivity : ThemedActivity() {
                 val reviewAction = View.OnClickListener {
                     FirebaseFirestore.getInstance().collection("admin_requests").document(email).get()
                         .addOnSuccessListener { reqDoc ->
-                            if (reqDoc.exists() && reqDoc.getString("status") == "pending") {
+                            val isPending = reqDoc.exists() && reqDoc.getString("status") == "pending"
+                            val isExtension = reqDoc.exists() && reqDoc.getBoolean("isExtensionRequest") == true
+                            if (isPending || isExtension) {
                                 val requestedPerms = AdminManager.AdminPermissions(
                                     isFixedOwner = reqDoc.getBoolean("isFixedOwner") ?: false,
                                     isPromotedOwner = reqDoc.getBoolean("isPromotedOwner") ?: false,
@@ -814,7 +842,7 @@ class AdminActivity : ThemedActivity() {
                                     allocateAdmins = reqDoc.getBoolean("allocateAdmins") ?: false,
                                     validUntil = reqDoc.getLong("validUntil") ?: 0L
                                 )
-                                showEditAdminPermissionsDialog(email, name, requestedPerms, isNewAdmin = false, isReviewingRequest = true)
+                                showEditAdminPermissionsDialog(email, name, requestedPerms, isNewAdmin = false, isReviewingRequest = true, isExtensionRequest = isExtension)
                             }
                         }
                 }
@@ -920,7 +948,8 @@ class AdminActivity : ThemedActivity() {
         name: String,
         currentPerms: AdminManager.AdminPermissions,
         isNewAdmin: Boolean = false,
-        isReviewingRequest: Boolean = false
+        isReviewingRequest: Boolean = false,
+        isExtensionRequest: Boolean = false
     ) {
         // BottomSheetDialogTheme makes the container transparent so our dark bg shows through.
         // Without this style, Material3 forces a white container background.
@@ -1340,6 +1369,33 @@ class AdminActivity : ThemedActivity() {
                 db.collection("admins").document(email.lowercase()).set(data)
                     .addOnSuccessListener {
                         db.collection("admin_requests").document(email.lowercase()).delete()
+                        val approverEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "An administrator"
+                        val approverName = approverEmail.substringBefore("@").replaceFirstChar { it.uppercase() }
+                        val validityStr = if (selectedValidUntil == 0L) "Lifetime — No Expiry" else java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(selectedValidUntil)
+                        val roleStr = if (isSuperAdminSave) "Super Administrator" else "Administrator"
+
+                        if (isExtensionRequest) {
+                            // Extension approved notification
+                            val notifSubject = "Your Admin Validity Has Been Extended ✅"
+                            val notifBody = "Congratulations, $name!\n\n" +
+                                "Your unwavering dedication and service to CashDash have been truly recognized. $approverName has approved your extension request, honoring the invaluable contribution you continue to bring to our platform.\n\n" +
+                                "New Validity: $validityStr\n\n" +
+                                "Your commitment inspires the entire team, and we look forward to achieving greater milestones together. Thank you for being an integral part of the CashDash journey.\n\n" +
+                                "Regards,\nTeam CashDash"
+                            sendAdminInAppNotification(email, notifSubject, notifBody)
+                            logAdminAction("Admin Extension Approved", notifSubject, "$approverEmail approved extension request for $email. New validity: $validityStr", email)
+                        } else {
+                            // New admin grant / permission update notification
+                            val notifSubject = "Welcome to the CashDash Admin Team! 🎉"
+                            val notifBody = "Congratulations, $name!\n\n" +
+                                "We are thrilled to welcome you as a $roleStr of CashDash. Your passion and dedication have been recognized, and we are excited to have you as part of our trusted operations team.\n\n" +
+                                "Validity: $validityStr\n\n" +
+                                "We look forward to accomplishing great things together. Your role is vital in shaping a better CashDash experience for every user we serve.\n\n" +
+                                "Regards,\nTeam CashDash"
+                            sendAdminInAppNotification(email, notifSubject, notifBody)
+                            logAdminAction("Admin Request Approved", notifSubject, "$approverEmail approved admin request for $email as $roleStr. Validity: $validityStr", email)
+                        }
+
                         logAdminAction("APPROVED_REQUEST", email, "Approved request and granted/updated permissions.")
                         ToastHelper.showToast(this@AdminActivity, "Request approved")
                         bottomSheet.dismiss()
@@ -1355,7 +1411,33 @@ class AdminActivity : ThemedActivity() {
                     val action = if (isNewAdmin) "GRANTED_ACCESS" else "UPDATED_PERMISSIONS"
                     val msg = if (isNewAdmin) "Admin added: $name" else "Permissions updated"
                     logAdminAction(action, email, msg)
-                    
+
+                    val actorEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "An administrator"
+                    val actorName = actorEmail.substringBefore("@").replaceFirstChar { it.uppercase() }
+                    val validityStr = if (selectedValidUntil == 0L) "Lifetime — No Expiry" else java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(selectedValidUntil)
+                    val roleStr = if (isSuperAdminSave) "Super Administrator" else "Administrator"
+
+                    if (isNewAdmin) {
+                        val notifSubject = "Welcome to the CashDash Admin Team! 🎉"
+                        val notifBody = "Congratulations, $name!\n\n" +
+                            "We are thrilled to welcome you as a $roleStr of CashDash. Your passion and dedication have been recognized, and we are excited to have you as part of our trusted operations team.\n\n" +
+                            "Validity: $validityStr\n\n" +
+                            "We look forward to accomplishing great things together. Your role is vital in shaping a better CashDash experience for every user we serve.\n\n" +
+                            "Regards,\nTeam CashDash"
+                        sendAdminInAppNotification(email, notifSubject, notifBody)
+                        logAdminAction("Admin Promotion", notifSubject, "$actorEmail granted $roleStr access to $email. Validity: $validityStr", email)
+                    } else if (selectedValidUntil != currentPerms.validUntil) {
+                        // Validity was manually changed by a higher-up without a formal request
+                        val notifSubject = "Your Admin Validity Has Been Updated"
+                        val notifBody = "Hi $name,\n\n" +
+                            "$actorName has reviewed your admin profile and updated your validity, acknowledging your continued dedication to the CashDash platform.\n\n" +
+                            "New Validity: $validityStr\n\n" +
+                            "Thank you for the consistent service you bring to CashDash. We deeply value every contribution you make to our community.\n\n" +
+                            "Regards,\nTeam CashDash"
+                        sendAdminInAppNotification(email, notifSubject, notifBody)
+                        logAdminAction("Admin Validity Update", notifSubject, "$actorEmail updated validity for $email to $validityStr", email)
+                    }
+
                     ToastHelper.showToast(this@AdminActivity, msg)
                     this@AdminActivity.findViewById<EditText>(R.id.etSearchNewAdmin)?.setText("")
                     this@AdminActivity.findViewById<LinearLayout>(R.id.layoutAdminSearchResults)?.visibility = View.GONE
@@ -1421,7 +1503,17 @@ class AdminActivity : ThemedActivity() {
                     .setPositiveButton("Revoke") { _, _ ->
                         FirebaseFirestore.getInstance().collection("admins").document(email.lowercase()).delete()
                             .addOnSuccessListener {
+                                val actorEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "An administrator"
+                                val actorName = actorEmail.substringBefore("@").replaceFirstChar { it.uppercase() }
+                                val notifSubject = "Admin Access Update"
+                                val notifBody = "Hi $name,\n\n" +
+                                    "Your administrative access to CashDash has been revoked by $actorName.\n\n" +
+                                    "If you believe this was done in error, please reach out to the CashDash team.\n\n" +
+                                    "Thank you for your service and contributions to CashDash. We wish you all the best.\n\n" +
+                                    "Regards,\nTeam CashDash"
+                                sendAdminInAppNotification(email, notifSubject, notifBody)
                                 logAdminAction("REVOKED_ACCESS", email, "Revoked all admin privileges.")
+                                logAdminAction("Admin Revocation", notifSubject, "$actorEmail revoked admin access for $email", email)
                                 ToastHelper.showToast(this, "Access revoked")
                                 bottomSheet.dismiss()
                             }
