@@ -933,11 +933,8 @@ class ManageAdminAccessActivity : ThemedActivity() {
         }
         
         val tvUndoRephraseTitle = findViewById<android.widget.TextView>(R.id.tvUndoRephraseTitle)
-        var originalTitleBeforeAI: String? = null
-        tvUndoRephraseTitle?.setOnClickListener {
-            originalTitleBeforeAI?.let { actvTitle?.setText(it) }
-            tvUndoRephraseTitle.visibility = android.view.View.GONE
-        }
+        val tvRedoRephraseTitle = findViewById<android.widget.TextView>(R.id.tvRedoRephraseTitle)
+        val titleRephraseState = GenerativeAiManager.RephraseState(actvTitle!!, tvUndoRephraseTitle, tvRedoRephraseTitle)
 
         btnAIRephraseTitle?.setOnClickListener {
             val originalText = actvTitle?.text?.toString() ?: ""
@@ -949,9 +946,9 @@ class ManageAdminAccessActivity : ThemedActivity() {
             kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
                     val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
-                    originalTitleBeforeAI = originalText
+                    titleRephraseState.saveState(originalText)
                     actvTitle?.setText(result)
-                    tvUndoRephraseTitle?.visibility = android.view.View.VISIBLE
+                    titleRephraseState.saveState(result)
                 } catch (e: Exception) {
                     ToastHelper.showErrorDialog(this@ManageAdminAccessActivity, "AI Error", e.message ?: "Unknown Error")
                 }
@@ -959,11 +956,8 @@ class ManageAdminAccessActivity : ThemedActivity() {
         }
 
         val tvUndoRephraseBody = findViewById<android.widget.TextView>(R.id.tvUndoRephraseBody)
-        var originalBodyBeforeAI: String? = null
-        tvUndoRephraseBody?.setOnClickListener {
-            originalBodyBeforeAI?.let { actvContent?.setText(it) }
-            tvUndoRephraseBody.visibility = android.view.View.GONE
-        }
+        val tvRedoRephraseBody = findViewById<android.widget.TextView>(R.id.tvRedoRephraseBody)
+        val bodyRephraseState = GenerativeAiManager.RephraseState(actvContent!!, tvUndoRephraseBody, tvRedoRephraseBody)
 
         btnAIRephraseBody?.setOnClickListener {
             val originalText = actvContent?.text?.toString() ?: ""
@@ -975,9 +969,9 @@ class ManageAdminAccessActivity : ThemedActivity() {
             kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
                     val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
-                    originalBodyBeforeAI = originalText
+                    bodyRephraseState.saveState(originalText)
                     actvContent?.setText(result)
-                    tvUndoRephraseBody?.visibility = android.view.View.VISIBLE
+                    bodyRephraseState.saveState(result)
                 } catch (e: Exception) {
                     ToastHelper.showErrorDialog(this@ManageAdminAccessActivity, "AI Error", e.message ?: "Unknown Error")
                 }

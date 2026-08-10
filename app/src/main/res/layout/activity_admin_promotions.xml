@@ -185,6 +185,17 @@
                     android:padding="8dp"
                     android:visibility="gone"
                     android:layout_marginStart="8dp"/>
+
+                <TextView
+                    android:id="@+id/tvRedoRephraseTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Redo"
+                    android:textColor="#4CAF50"
+                    android:textStyle="bold"
+                    android:padding="8dp"
+                    android:visibility="gone"
+                    android:layout_marginStart="4dp"/>
             </LinearLayout>
 
             <EditText
@@ -232,6 +243,17 @@
                     android:padding="8dp"
                     android:visibility="gone"
                     android:layout_marginStart="8dp"/>
+
+                <TextView
+                    android:id="@+id/tvRedoRephraseBody"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Redo"
+                    android:textColor="#4CAF50"
+                    android:textStyle="bold"
+                    android:padding="8dp"
+                    android:visibility="gone"
+                    android:layout_marginStart="4dp"/>
             </LinearLayout>
 
             <!-- Embedded Links Section -->
