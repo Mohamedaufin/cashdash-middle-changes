@@ -285,6 +285,41 @@ class AdminPromotionsActivity : ThemedActivity() {
         }
         
         fetchAllUsers()
+
+        findViewById<View>(R.id.btnAIRephraseTitle)?.setOnClickListener {
+            val originalText = edtAnnouncementTitle.text.toString()
+            if (originalText.isBlank()) {
+                ToastHelper.showToast(this, "Please type a title first.")
+                return@setOnClickListener
+            }
+            ToastHelper.showToast(this, "Rephrasing Title...")
+            kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                try {
+                    val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6J98QwRRRH9eNVILdkNQgAMhYmv4jnnDb9EddH9i_XPZw")
+                    edtAnnouncementTitle.setText(result)
+                } catch (e: Exception) {
+                    ToastHelper.showToast(this@AdminPromotionsActivity, e.message ?: "AI Error")
+                }
+            }
+        }
+        
+        findViewById<View>(R.id.btnAIRephraseBody)?.setOnClickListener {
+            val originalText = edtAnnouncementBody.text.toString()
+            if (originalText.isBlank()) {
+                ToastHelper.showToast(this, "Please type some content first.")
+                return@setOnClickListener
+            }
+            ToastHelper.showToast(this, "Rephrasing Content...")
+            kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                try {
+                    val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6J98QwRRRH9eNVILdkNQgAMhYmv4jnnDb9EddH9i_XPZw")
+                    edtAnnouncementBody.setText(result)
+                } catch (e: Exception) {
+                    ToastHelper.showToast(this@AdminPromotionsActivity, e.message ?: "AI Error")
+                }
+            }
+        }
+
         handleRetriggerIntent()
     }
     

@@ -102,6 +102,18 @@
                 android:background="?attr/roundBackground"
                 android:textStyle="bold"
                 android:textSize="16sp"
+                android:layout_marginBottom="12dp"/>
+
+            <TextView
+                android:id="@+id/btnGoToManageAdminAccess"
+                android:layout_width="match_parent"
+                android:layout_height="65dp"
+                android:text="Manage Admin Access"
+                android:gravity="center"
+                android:textColor="?attr/textPrimaryColor"
+                android:background="?attr/roundBackground"
+                android:textStyle="bold"
+                android:textSize="16sp"
                 android:layout_marginBottom="30dp"/>
 
             <TextView
@@ -156,99 +168,6 @@
                 android:layout_height="1dp"
                 android:background="@color/border"
                 android:layout_marginBottom="24dp"/>
-
-            <!-- Admin Access Section -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:text="🛡️ Admin Access"
-                    android:textSize="@dimen/text_title"
-                    android:textColor="?attr/textPrimaryColor"
-                    android:textStyle="bold"/>
-
-            </LinearLayout>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Manage admin roles and permissions."
-                android:textSize="@dimen/text_body"
-                android:textColor="?attr/textMutedColor"
-                android:layout_marginBottom="16dp"/>
-
-
-
-            <!-- Admins Container -->
-            <LinearLayout
-                android:id="@+id/layoutAdminAccess"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"/>
-
-            <LinearLayout
-                android:id="@+id/btnAddAdminSection"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingTop="21dp"
-                android:paddingBottom="21dp"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true">
-                
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_plus_vector"
-                    app:tint="?attr/textPrimaryColor" />
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Add Admin"
-                    android:textSize="15sp"
-                    android:textColor="?attr/textPrimaryColor"
-                    android:layout_marginStart="8dp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/layoutSearchWrapper"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="24dp"
-                android:visibility="gone">
-
-                <EditText
-                    android:id="@+id/etSearchNewAdmin"
-                    android:layout_width="match_parent"
-                    android:layout_height="50dp"
-                    android:hint="Search user by name or email"
-                    android:textColor="?attr/textPrimaryColor"
-                    android:textColorHint="?attr/textMutedColor"
-                    android:background="?attr/inputBackground"
-                    android:paddingHorizontal="16dp"
-                    android:inputType="textEmailAddress"
-                    android:layout_marginBottom="12dp" />
-
-                <LinearLayout
-                    android:id="@+id/layoutAdminSearchResults"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone"/>
-            </LinearLayout>
 
             <!-- Divider -->
             <View
