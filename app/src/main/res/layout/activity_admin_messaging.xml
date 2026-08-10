@@ -82,16 +82,37 @@
                 android:inputType="textCapSentences"
                 android:singleLine="true"/>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnAIRephraseTitle"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
-                android:text="✨ AI Rephrase"
-                android:textColor="#4E5DFF"
-                android:textAllCaps="false"
-                android:layout_marginBottom="15dp"/>
+                android:layout_marginBottom="15dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAIRephraseTitle"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="✨ AI Rephrase"
+                    android:textColor="#4E5DFF"
+                    android:textAllCaps="false"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:minHeight="0dp" />
+
+                <TextView
+                    android:id="@+id/tvUndoRephraseTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Undo"
+                    android:textColor="#FF4D4D"
+                    android:textStyle="bold"
+                    android:padding="8dp"
+                    android:visibility="gone"
+                    android:layout_marginStart="8dp"/>
+            </LinearLayout>
 
             <TextView
                 android:layout_width="match_parent"
@@ -117,16 +138,37 @@
                 android:inputType="textCapSentences|textMultiLine"
                 android:minLines="5"/>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnAIRephraseBody"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
-                android:text="✨ AI Rephrase"
-                android:textColor="#4E5DFF"
-                android:textAllCaps="false"
-                android:layout_marginBottom="16dp"/>
+                android:layout_marginBottom="16dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAIRephraseBody"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="✨ AI Rephrase"
+                    android:textColor="#4E5DFF"
+                    android:textAllCaps="false"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:minHeight="0dp" />
+
+                <TextView
+                    android:id="@+id/tvUndoRephraseBody"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Undo"
+                    android:textColor="#FF4D4D"
+                    android:textStyle="bold"
+                    android:padding="8dp"
+                    android:visibility="gone"
+                    android:layout_marginStart="8dp"/>
+            </LinearLayout>
 
             <!-- Supporting Media Section -->
             <TextView

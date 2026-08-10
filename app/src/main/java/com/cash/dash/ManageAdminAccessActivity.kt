@@ -932,6 +932,13 @@ class ManageAdminAccessActivity : ThemedActivity() {
             layoutNotificationTemplate?.visibility = if (isChecked) View.VISIBLE else View.GONE
         }
         
+        val tvUndoRephraseTitle = findViewById<android.widget.TextView>(R.id.tvUndoRephraseTitle)
+        var originalTitleBeforeAI: String? = null
+        tvUndoRephraseTitle?.setOnClickListener {
+            originalTitleBeforeAI?.let { actvTitle?.setText(it) }
+            tvUndoRephraseTitle.visibility = android.view.View.GONE
+        }
+
         btnAIRephraseTitle?.setOnClickListener {
             val originalText = actvTitle?.text?.toString() ?: ""
             if (originalText.isBlank()) {
@@ -942,11 +949,20 @@ class ManageAdminAccessActivity : ThemedActivity() {
             kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
                     val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
+                    originalTitleBeforeAI = originalText
                     actvTitle?.setText(result)
+                    tvUndoRephraseTitle?.visibility = android.view.View.VISIBLE
                 } catch (e: Exception) {
                     ToastHelper.showErrorDialog(this@ManageAdminAccessActivity, "AI Error", e.message ?: "Unknown Error")
                 }
             }
+        }
+
+        val tvUndoRephraseBody = findViewById<android.widget.TextView>(R.id.tvUndoRephraseBody)
+        var originalBodyBeforeAI: String? = null
+        tvUndoRephraseBody?.setOnClickListener {
+            originalBodyBeforeAI?.let { actvContent?.setText(it) }
+            tvUndoRephraseBody.visibility = android.view.View.GONE
         }
 
         btnAIRephraseBody?.setOnClickListener {
@@ -959,7 +975,9 @@ class ManageAdminAccessActivity : ThemedActivity() {
             kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
                     val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
+                    originalBodyBeforeAI = originalText
                     actvContent?.setText(result)
+                    tvUndoRephraseBody?.visibility = android.view.View.VISIBLE
                 } catch (e: Exception) {
                     ToastHelper.showErrorDialog(this@ManageAdminAccessActivity, "AI Error", e.message ?: "Unknown Error")
                 }
