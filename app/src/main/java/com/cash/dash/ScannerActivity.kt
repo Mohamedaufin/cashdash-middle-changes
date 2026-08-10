@@ -680,7 +680,14 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 if (ThemeHelper.isWhiteTheme(this))
                     android.graphics.Color.parseColor("#33000000") // subtle dark for white theme
                 else
-                    android.graphics.Color.parseColor("#40FFFFFF")  // subtle white for dark/blue theme
+                    android.graphics.Color.parseColor("#FFFFFF")  // white for dark/blue theme
+            )
+            
+            view.findViewById<View>(R.id.viewDragHandle)?.setBackgroundColor(
+                if (ThemeHelper.isWhiteTheme(this))
+                    android.graphics.Color.parseColor("#33000000") // dark handle for white theme
+                else
+                    android.graphics.Color.parseColor("#40FFFFFF")  // white handle for dark/blue theme
             )
 
             pendingAmount = 0
