@@ -168,7 +168,14 @@ class AdminMessagingActivity : ThemedActivity() {
         // Pre-fetch all users in background
         fetchAllUsers()
 
-        findViewById<View>(R.id.btnAIRephraseTitle)?.setOnClickListener {
+        val tvUndoRephraseTitle = findViewById<android.widget.TextView>(R.id.tvUndoRephraseTitle)
+        var originalTitleBeforeAI: String? = null
+        tvUndoRephraseTitle?.setOnClickListener {
+            originalTitleBeforeAI?.let { edtMessageTitle.setText(it) }
+            tvUndoRephraseTitle.visibility = android.view.View.GONE
+        }
+
+        findViewById<android.view.View>(R.id.btnAIRephraseTitle)?.setOnClickListener {
             val originalText = edtMessageTitle.text.toString()
             if (originalText.isBlank()) {
                 ToastHelper.showToast(this, "Please type a title first.")
@@ -178,14 +185,23 @@ class AdminMessagingActivity : ThemedActivity() {
             kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
                     val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6INnxwddAo8VfHAPKNTEnqGWN3cOpTsnP_usdRrkq8CKg")
+                    originalTitleBeforeAI = originalText
                     edtMessageTitle.setText(result)
+                    tvUndoRephraseTitle?.visibility = android.view.View.VISIBLE
                 } catch (e: Exception) {
                     ToastHelper.showErrorDialog(this@AdminMessagingActivity, "AI Error", e.message ?: "Unknown Error")
                 }
             }
         }
         
-        findViewById<View>(R.id.btnAIRephraseBody)?.setOnClickListener {
+        val tvUndoRephraseBody = findViewById<android.widget.TextView>(R.id.tvUndoRephraseBody)
+        var originalBodyBeforeAI: String? = null
+        tvUndoRephraseBody?.setOnClickListener {
+            originalBodyBeforeAI?.let { edtMessageBody.setText(it) }
+            tvUndoRephraseBody.visibility = android.view.View.GONE
+        }
+
+        findViewById<android.view.View>(R.id.btnAIRephraseBody)?.setOnClickListener {
             val originalText = edtMessageBody.text.toString()
             if (originalText.isBlank()) {
                 ToastHelper.showToast(this, "Please type some content first.")
@@ -195,7 +211,9 @@ class AdminMessagingActivity : ThemedActivity() {
             kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
                     val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6INnxwddAo8VfHAPKNTEnqGWN3cOpTsnP_usdRrkq8CKg")
+                    originalBodyBeforeAI = originalText
                     edtMessageBody.setText(result)
+                    tvUndoRephraseBody?.visibility = android.view.View.VISIBLE
                 } catch (e: Exception) {
                     ToastHelper.showErrorDialog(this@AdminMessagingActivity, "AI Error", e.message ?: "Unknown Error")
                 }
