@@ -153,10 +153,10 @@
                     android:id="@+id/tvAdminEmail"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="user@gmail.com"
+                    android:text="Name - email@example.com"
                     android:textColor="?attr/textMutedColor"
                     android:textSize="14sp"
-                    android:layout_marginBottom="4dp"/>
+                    android:layout_marginBottom="24dp"/>
 
                 <RelativeLayout
                     android:layout_width="match_parent"

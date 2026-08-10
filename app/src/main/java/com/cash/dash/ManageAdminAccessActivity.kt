@@ -339,14 +339,14 @@ class ManageAdminAccessActivity : ThemedActivity() {
             }
     }
 
-    private fun logAdminAction(actionType: String, title: String, message: String, details: String? = null) {
+    private fun logAdminAction(actionType: String, title: String, message: String, details: String? = null, payload: Map<String, Any>? = null) {
 
         val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
         val adminEmail = user?.email ?: "Unknown Admin"
         val db = FirebaseFirestore.getInstance()
         val timestamp = System.currentTimeMillis()
 
-        val logData = hashMapOf(
+        val logData = hashMapOf<String, Any>(
             "adminEmail" to adminEmail,
             "actionType" to actionType,
             "title" to title,
@@ -355,6 +355,9 @@ class ManageAdminAccessActivity : ThemedActivity() {
         )
         if (details != null) {
             logData["details"] = details
+        }
+        if (payload != null) {
+            logData["payload"] = payload
         }
 
         db.collection("admin_logs").document(timestamp.toString()).set(logData)
@@ -876,7 +879,8 @@ class ManageAdminAccessActivity : ThemedActivity() {
         findViewById<View>(R.id.layoutEditPermissionsContainer)?.visibility = View.VISIBLE
 
         val tvEmail = findViewById<TextView>(R.id.tvAdminEmail) ?: return
-        tvEmail.text = "$name - $email"
+        val displayName = if (name.isNotBlank()) name else "Unknown"
+        tvEmail.text = "$displayName - $email"
 
         val cbAnnouncements = findViewById<android.widget.CheckBox>(R.id.cbAnnouncements) ?: return
         val cbPromotions = findViewById<android.widget.CheckBox>(R.id.cbPromotions) ?: return
@@ -903,6 +907,14 @@ class ManageAdminAccessActivity : ThemedActivity() {
         cbIncludeNotification?.setOnCheckedChangeListener { _, isChecked ->
             layoutNotificationTemplate?.visibility = if (isChecked) View.VISIBLE else View.GONE
         }
+        
+        if (currentPerms.isFixedOwner || currentPerms.isPromotedOwner) {
+            cbIncludeNotification?.visibility = View.GONE
+            layoutNotificationTemplate?.visibility = View.GONE
+        } else {
+            cbIncludeNotification?.visibility = View.VISIBLE
+        }
+        
         // Match checkbox tick colour to the rest of the page (theme-aware)
         val notifCbNormalColor = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.parseColor("#1A1A1A") else android.graphics.Color.WHITE
         val notifCbDisabledColor = android.graphics.Color.parseColor("#44888888")
@@ -1365,39 +1377,72 @@ class ManageAdminAccessActivity : ThemedActivity() {
 
             db.collection("admins").document(email.lowercase()).set(data)
                 .addOnSuccessListener {
-                    val action = if (isNewAdmin) "GRANTED_ACCESS" else "UPDATED_PERMISSIONS"
-                    val msg = if (isNewAdmin) "Admin added: $name" else "Permissions updated"
-                    logAdminAction(action, email, msg)
-
                     val actorEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "An administrator"
-                    val validityStr = if (selectedValidUntil == 0L) "Lifetime\n(Note: Your continued access is a reflection of the trust placed in you. It remains subject to review based on your ongoing performance and commitment to the CashDash platform.)" else java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(selectedValidUntil)
                     val roleStr = if (isSuperAdminSave) "Super Administrator" else "Administrator"
-
+                    val valDesc = if (selectedValidUntil == 0L) "no validity" else "validity"
+                    val validityStr = if (selectedValidUntil == 0L) "No Expiry (Lifetime)" else java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault()).format(selectedValidUntil)
+                    
+                    var addedPerms = mutableListOf<String>()
+                    var removedPerms = mutableListOf<String>()
+                    
+                    fun checkPerm(name: String, old: Boolean, new: Boolean) {
+                        if (!old && new) addedPerms.add(name)
+                        else if (old && !new) removedPerms.add(name)
+                    }
+                    
+                    checkPerm("Send Announcements", currentPerms.canSendAnnouncements(), cbAnnouncements.isChecked)
+                    checkPerm("Send Promotions", currentPerms.canSendPromotions(), cbPromotions.isChecked)
+                    checkPerm("Send Notifications", currentPerms.canSendNotifications(), cbNotifications.isChecked)
+                    checkPerm("View Last Seen", currentPerms.canViewLastSeen(), cbLastSeen.isChecked)
+                    checkPerm("View Admin Logs", currentPerms.canViewAdminLogs(), cbAdminLogs.isChecked)
+                    checkPerm("Reply to Queries", currentPerms.canReplyToQueries(), cbReplyQueries.isChecked)
+                    checkPerm("Allocate Admins", currentPerms.canAllocateAdmins(), cbAddNewAdmin.isChecked)
+                    
+                    val changesMade = addedPerms.isNotEmpty() || removedPerms.isNotEmpty() || currentPerms.validUntil != selectedValidUntil || isNewAdmin
+                    
+                    if (!changesMade) {
+                        ToastHelper.showToast(this@ManageAdminAccessActivity, "No changes to save.")
+                        closeEditPermissionsView()
+                        return@addOnSuccessListener
+                    }
+                    
+                    var notifSubject = ""
+                    var notifBody = ""
+                    var payload: Map<String, Any>? = null
+                    
+                    if (cbIncludeNotification?.isChecked == true) {
+                        notifSubject = actvTitle?.text?.toString()?.trim() ?: ""
+                        notifBody = actvContent?.text?.toString()?.trim() ?: ""
+                        notifBody = notifBody.replace("{Validity}", validityStr)
+                        notifBody += "\n\nRegards,\nTeam CashDash"
+                        if (notifSubject.isNotEmpty() && notifBody.isNotEmpty()) {
+                            sendAdminInAppNotification(email, notifSubject, notifBody)
+                            payload = mapOf(
+                                "annTitle" to notifSubject,
+                                "annBody" to notifBody
+                            )
+                        }
+                    }
+                    
                     if (isNewAdmin) {
-                        if (cbIncludeNotification?.isChecked == true) {
-                            val notifSubject = actvTitle?.text?.toString()?.trim() ?: ""
-                            var notifBody = actvContent?.text?.toString()?.trim() ?: ""
-                            notifBody = notifBody.replace("{Validity}", validityStr)
-                            notifBody += "\n\nRegards,\nTeam CashDash"
-                            if (notifSubject.isNotEmpty() && notifBody.isNotEmpty()) {
-                                sendAdminInAppNotification(email, notifSubject, notifBody)
-                            }
-                        }
-                        logAdminAction("Admin Promotion", actvTitle?.text?.toString() ?: "Admin Added", "$actorEmail granted $roleStr access to $email. Validity: $validityStr", email)
-                    } else if (true) {
-                        if (cbIncludeNotification?.isChecked == true) {
-                            val notifSubject = actvTitle?.text?.toString()?.trim() ?: ""
-                            var notifBody = actvContent?.text?.toString()?.trim() ?: ""
-                            notifBody = notifBody.replace("{Validity}", validityStr)
-                            notifBody += "\n\nRegards,\nTeam CashDash"
-                            if (notifSubject.isNotEmpty() && notifBody.isNotEmpty()) {
-                                sendAdminInAppNotification(email, notifSubject, notifBody)
-                            }
-                        }
-                        logAdminAction("Admin Validity Update", actvTitle?.text?.toString() ?: "Access Updated", "$actorEmail updated validity for $email to $validityStr", email)
+                        val msg = "The following person has been added as $roleStr (with $valDesc) with the following permissions:\n" +
+                                "• ${if(addedPerms.isEmpty()) "None" else addedPerms.joinToString(", ")}\n\n" +
+                                "Validity: $validityStr"
+                        
+                        logAdminAction("Admin Promotion", "Admin Added: $name - $email", msg, null, payload)
+                        ToastHelper.showToast(this@ManageAdminAccessActivity, "Admin added: $name")
+                    } else {
+                        val sb = StringBuilder()
+                        sb.append("The following $roleStr's permissions have been updated:\n")
+                        sb.append("$name - $email\n\n")
+                        if (removedPerms.isNotEmpty()) sb.append("Permissions removed:\n• ").append(removedPerms.joinToString(", ")).append("\n\n")
+                        if (addedPerms.isNotEmpty()) sb.append("Permissions added:\n• ").append(addedPerms.joinToString(", ")).append("\n\n")
+                        sb.append("Validity: $validityStr")
+                        
+                        logAdminAction("Admin Validity Update", "Access Updated: $name - $email", sb.toString().trim(), null, payload)
+                        ToastHelper.showToast(this@ManageAdminAccessActivity, "Permissions updated")
                     }
 
-                    ToastHelper.showToast(this@ManageAdminAccessActivity, msg)
                     this@ManageAdminAccessActivity.findViewById<EditText>(R.id.etSearchNewAdmin)?.setText("")
                     this@ManageAdminAccessActivity.findViewById<LinearLayout>(R.id.layoutAdminSearchResults)?.visibility = View.GONE
                     closeEditPermissionsView()
@@ -1444,28 +1489,13 @@ class ManageAdminAccessActivity : ThemedActivity() {
             btnRevoke.setOnClickListener {
                 AlertDialogHelper.createFlatDialogBuilder(this)
                     .setTitle("Revoke Access")
-                    .setMessage("Are you sure you want to revoke admin access for $email?")
-                    .setPositiveButton("Revoke") {
-                        FirebaseFirestore.getInstance().collection("admins").document(email.lowercase()).delete()
-                            .addOnSuccessListener {
-                                val actorEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "An administrator"
-                                if (cbIncludeNotification?.isChecked == true) {
-                                    val notifSubject = actvTitle?.text?.toString()?.trim() ?: ""
-                                    var notifBody = actvContent?.text?.toString()?.trim() ?: ""
-                                    notifBody += "\n\nRegards,\nTeam CashDash"
-                                    
-                                    if (notifSubject.isNotEmpty() && notifBody.isNotEmpty()) {
-                                        sendAdminInAppNotification(email, notifSubject, notifBody)
-                                    }
-                                }
-                                logAdminAction("REVOKED_ACCESS", email, "Revoked all admin privileges.")
-                                logAdminAction("Admin Revocation", "Access Revoked", "$actorEmail revoked admin access for $email", email)
-                                ToastHelper.showToast(this, "Access revoked")
-                                closeEditPermissionsView()
-                            }
-                            .addOnFailureListener { e ->
-                                ToastHelper.showToast(this, "Failed to revoke: ${e.message}")
-                            }
+                    .setMessage("Do you want to mention any reason?")
+                    .setEditText("Enter reason") { reason ->
+                        showFinalRevokeConfirmation(email, name, reason.takeIf { it.isNotBlank() }, currentPerms)
+                    }
+                    .setPositiveButton("Submit")
+                    .setNeutralButton("Skip") {
+                        showFinalRevokeConfirmation(email, name, null, currentPerms)
                     }
                     .setNegativeButton("Cancel")
                     .show()
@@ -1473,15 +1503,70 @@ class ManageAdminAccessActivity : ThemedActivity() {
         }
     }
 
-    private fun logAdminAction(action: String, targetEmail: String, details: String) {
+    private fun showFinalRevokeConfirmation(email: String, name: String, reason: String?, currentPerms: AdminManager.AdminPermissions) {
+        AlertDialogHelper.createFlatDialogBuilder(this)
+            .setTitle("Confirm Revocation")
+            .setMessage("Are you sure you want to revoke admin access for $email?")
+            .setPositiveButton("Revoke") {
+                FirebaseFirestore.getInstance().collection("admins").document(email.lowercase()).delete()
+                    .addOnSuccessListener {
+                        val actorEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "An administrator"
+                        
+                        var notifSubject = ""
+                        var notifBody = ""
+                        var payload: Map<String, Any>? = null
+
+                        if (findViewById<android.widget.CheckBox>(R.id.cbIncludeNotification)?.isChecked == true) {
+                            notifSubject = findViewById<android.widget.AutoCompleteTextView>(R.id.actvNotificationTitle)?.text?.toString()?.trim() ?: ""
+                            notifBody = findViewById<android.widget.AutoCompleteTextView>(R.id.actvNotificationContent)?.text?.toString()?.trim() ?: ""
+                            notifBody += "\n\nRegards,\nTeam CashDash"
+                            
+                            if (notifSubject.isNotEmpty() && notifBody.isNotEmpty()) {
+                                sendAdminInAppNotification(email, notifSubject, notifBody)
+                                payload = mapOf(
+                                    "annTitle" to notifSubject,
+                                    "annBody" to notifBody
+                                )
+                            }
+                        }
+                        
+                        val isSuperAdmin = currentPerms.canSendAnnouncements() && currentPerms.canSendPromotions() && currentPerms.canSendNotifications() && currentPerms.canViewLastSeen() && currentPerms.canViewAdminLogs() && currentPerms.canReplyToQueries() && currentPerms.canAllocateAdmins()
+                        val roleStr = if (isSuperAdmin) "Super administrator" else "admin"
+                        
+                        val msgBuilder = StringBuilder()
+                        msgBuilder.append("The following person's $roleStr access has been revoked:\n")
+                        msgBuilder.append("$email - $name\n\n")
+                        if (reason != null) {
+                            msgBuilder.append("Reason: $reason\n\n")
+                        }
+                        msgBuilder.append("This action is triggered by: $actorEmail")
+                        
+                        logAdminAction("Admin Revocation", "Access Revoked: $name - $email", msgBuilder.toString(), null, payload)
+                        logAdminAction("REVOKED_ACCESS", email, "Revoked all admin privileges.", payload)
+                        
+                        ToastHelper.showToast(this, "Access revoked")
+                        closeEditPermissionsView()
+                    }
+                    .addOnFailureListener { e ->
+                        ToastHelper.showToast(this, "Failed to revoke: ${e.message}")
+                    }
+            }
+            .setNegativeButton("Cancel")
+            .show()
+    }
+
+    private fun logAdminAction(action: String, targetEmail: String, details: String, payload: Map<String, Any>? = null) {
         val currentUserEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "unknown"
-        val logData = hashMapOf(
+        val logData = hashMapOf<String, Any>(
             "action" to action,
             "target_email" to targetEmail.lowercase(),
             "actor_email" to currentUserEmail.lowercase(),
             "timestamp" to com.google.firebase.firestore.FieldValue.serverTimestamp(),
             "details" to details
         )
+        if (payload != null) {
+            logData["payload"] = payload
+        }
         FirebaseFirestore.getInstance().collection("audit_logs").add(logData)
     }
 

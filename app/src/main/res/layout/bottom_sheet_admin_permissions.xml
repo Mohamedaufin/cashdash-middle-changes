@@ -159,16 +159,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_marginTop="16dp">
+        android:layout_marginTop="32dp">
         
         <CheckBox
             android:id="@+id/cbIncludeNotification"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Include in-app notification for changes"
+            android:text="Send announcement regarding the change"
             android:textColor="?attr/textPrimaryColor"
-            android:checked="true"
-            android:textSize="15sp"/>
+            android:textSize="14sp"
+            android:layout_marginBottom="12dp"
+            android:checked="false" />
             
         <LinearLayout
             android:id="@+id/layoutNotificationTemplate"
