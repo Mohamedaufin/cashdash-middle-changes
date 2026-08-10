@@ -120,16 +120,25 @@ class CategoryBreakdownGraphView(context: Context, attrs: AttributeSet?) : View(
             val value = pageValues[i]
             val center = spacing * (i + 1)
 
+            val rawLabel = pageCategories[i]
+            val labelStr = if (rawLabel.equals("no choice", ignoreCase = true)) "No Allocation" else rawLabel
+            
+            var labelSize = context.resources.getDimension(R.dimen.graph_text_body)
+            textPaint.textSize = labelSize
+            while (textPaint.measureText(labelStr) > spacing - 6f && labelSize > (9 * resources.displayMetrics.density)) {
+                labelSize -= 1f
+                textPaint.textSize = labelSize
+            }
+            val finalLabel = android.text.TextUtils.ellipsize(labelStr, android.text.TextPaint(textPaint), spacing - 4f, android.text.TextUtils.TruncateAt.END).toString()
+
             if (value == 0f) {
                 textPaint.color = ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor)
                 canvas.drawText("₹0", center, bottom - 25f, textPaint)
                 
-                val rawLabel = pageCategories[i]
-                val labelStr = if (rawLabel.equals("no choice", ignoreCase = true)) "No Allocation" else rawLabel
                 textPaint.color = if (ThemeHelper.isWhiteTheme(context)) 
                     ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor) 
                     else ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor)
-                canvas.drawText(labelStr, center, height - 70f, textPaint)
+                canvas.drawText(finalLabel, center, height - 70f, textPaint)
                 continue
             }
 
@@ -168,15 +177,8 @@ class CategoryBreakdownGraphView(context: Context, attrs: AttributeSet?) : View(
             canvas.drawText(amountStr, center, top - 20f, textPaint)
 
             textPaint.color = ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor)
-            val rawLabel = pageCategories[i]
-            val labelStr = if (rawLabel.equals("no choice", ignoreCase = true)) "No Allocation" else rawLabel
-            var labelSize = context.resources.getDimension(R.dimen.graph_text_body)
             textPaint.textSize = labelSize
-            while (textPaint.measureText(labelStr) > spacing - 4f && labelSize > (8 * resources.displayMetrics.density)) {
-                labelSize -= 1f
-                textPaint.textSize = labelSize
-            }
-            canvas.drawText(labelStr, center, height - 70f, textPaint)
+            canvas.drawText(finalLabel, center, height - 70f, textPaint)
         }
     }
 }

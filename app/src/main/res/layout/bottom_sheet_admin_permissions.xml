@@ -96,45 +96,52 @@
         android:padding="8dp"/>
     </LinearLayout>
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Admin Validity"
-        android:textColor="?attr/textPrimaryColor"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp"/>
-
     <LinearLayout
+        android:id="@+id/layoutAdminValidity"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:background="?attr/inputBackground"
-        android:padding="12dp"
-        android:layout_marginBottom="8dp">
+        android:orientation="vertical">
 
         <TextView
-            android:id="@+id/tvValidityStatus"
-            android:layout_width="0dp"
-            android:layout_weight="1"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Forever (No expiry)"
+            android:text="Admin Validity"
             android:textColor="?attr/textPrimaryColor"
-            android:textSize="14sp"/>
-
-        <TextView
-            android:id="@+id/btnChangeValidity"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Change"
-            android:textColor="#4E5DFF"
+            android:textSize="16sp"
             android:textStyle="bold"
-            android:textSize="14sp"
-            android:padding="4dp"
-            android:background="?attr/selectableItemBackground"
-            android:clickable="true"/>
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="?attr/inputBackground"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/tvValidityStatus"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Forever (No expiry)"
+                android:textColor="?attr/textPrimaryColor"
+                android:textSize="14sp"/>
+
+            <TextView
+                android:id="@+id/btnChangeValidity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Change"
+                android:textColor="#4E5DFF"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:padding="4dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"/>
+        </LinearLayout>
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton
