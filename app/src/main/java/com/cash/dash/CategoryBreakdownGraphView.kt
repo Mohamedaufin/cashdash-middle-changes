@@ -123,13 +123,23 @@ class CategoryBreakdownGraphView(context: Context, attrs: AttributeSet?) : View(
             val rawLabel = pageCategories[i]
             val labelStr = if (rawLabel.equals("no choice", ignoreCase = true)) "No Allocation" else rawLabel
             
-            var labelSize = context.resources.getDimension(R.dimen.graph_text_body)
+            val labelSize = context.resources.getDimension(R.dimen.graph_text_body)
             textPaint.textSize = labelSize
-            while (textPaint.measureText(labelStr) > spacing - 6f && labelSize > (9 * resources.displayMetrics.density)) {
-                labelSize -= 1f
-                textPaint.textSize = labelSize
+
+            val words = labelStr.split(" ")
+            var line1 = labelStr
+            var line2 = ""
+
+            if (textPaint.measureText(labelStr) > spacing - 4f && words.size > 1) {
+                val mid = (words.size + 1) / 2
+                line1 = words.subList(0, mid).joinToString(" ")
+                line2 = words.subList(mid, words.size).joinToString(" ")
             }
-            val finalLabel = android.text.TextUtils.ellipsize(labelStr, android.text.TextPaint(textPaint), spacing - 4f, android.text.TextUtils.TruncateAt.END).toString()
+
+            line1 = android.text.TextUtils.ellipsize(line1, android.text.TextPaint(textPaint), spacing - 4f, android.text.TextUtils.TruncateAt.END).toString()
+            if (line2.isNotEmpty()) {
+                line2 = android.text.TextUtils.ellipsize(line2, android.text.TextPaint(textPaint), spacing - 4f, android.text.TextUtils.TruncateAt.END).toString()
+            }
 
             if (value == 0f) {
                 textPaint.color = ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor)
@@ -138,7 +148,13 @@ class CategoryBreakdownGraphView(context: Context, attrs: AttributeSet?) : View(
                 textPaint.color = if (ThemeHelper.isWhiteTheme(context)) 
                     ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor) 
                     else ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor)
-                canvas.drawText(finalLabel, center, height - 70f, textPaint)
+                val labelY = height - 70f
+                if (line2.isEmpty()) {
+                    canvas.drawText(line1, center, labelY, textPaint)
+                } else {
+                    canvas.drawText(line1, center, labelY - (labelSize / 2), textPaint)
+                    canvas.drawText(line2, center, labelY + (labelSize / 2) + 4f, textPaint)
+                }
                 continue
             }
 
@@ -178,7 +194,13 @@ class CategoryBreakdownGraphView(context: Context, attrs: AttributeSet?) : View(
 
             textPaint.color = ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor)
             textPaint.textSize = labelSize
-            canvas.drawText(finalLabel, center, height - 70f, textPaint)
+            val labelY = height - 70f
+            if (line2.isEmpty()) {
+                canvas.drawText(line1, center, labelY, textPaint)
+            } else {
+                canvas.drawText(line1, center, labelY - (labelSize / 2), textPaint)
+                canvas.drawText(line2, center, labelY + (labelSize / 2) + 4f, textPaint)
+            }
         }
     }
 }
