@@ -80,7 +80,7 @@ class ManageAdminAccessActivity : ThemedActivity() {
         val layoutSearchWrapper = findViewById<LinearLayout>(R.id.layoutSearchWrapper)
         val btnAddAdminSection = findViewById<LinearLayout>(R.id.btnAddAdminSection)
         
-        btnAddAdminSection?.visibility = View.VISIBLE
+        btnAddAdminSection?.visibility = if (AdminManager.getPermissions().canAllocateAdmins()) View.VISIBLE else View.GONE
         btnAddAdminSection?.setOnClickListener {
             android.transition.TransitionManager.beginDelayedTransition(layoutSearchWrapper?.parent as? android.view.ViewGroup, android.transition.AutoTransition().apply { duration = 200 })
             if (layoutSearchWrapper?.visibility == View.VISIBLE) {
@@ -1268,12 +1268,9 @@ class ManageAdminAccessActivity : ThemedActivity() {
             
             var needsRequest = false
             if (!isCurrentUserOwner) {
-                if (isNewAdmin) {
-                    // Any new admin addition requires owner approval
+                if (!currentUserPerms.canAllocateAdmins()) {
                     needsRequest = true
-                } else if (!currentUserPerms.canAllocateAdmins()) {
-                    needsRequest = true
-                } else if (isSuperAdminSave && (!currentPerms.fullAccess)) {
+                } else if (isSuperAdminSave && (!currentPerms.fullAccess || isNewAdmin)) {
                     needsRequest = true
                 }
             }
