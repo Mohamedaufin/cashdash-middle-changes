@@ -675,6 +675,14 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             val view = layoutInflater.inflate(R.layout.layout_payment_bottom_sheet, null)
             dialog.setContentView(view)
 
+            // Apply theme-aware top border color
+            view.findViewById<View>(R.id.viewTopBorder)?.setBackgroundColor(
+                if (ThemeHelper.isWhiteTheme(this))
+                    android.graphics.Color.parseColor("#33000000") // subtle dark for white theme
+                else
+                    android.graphics.Color.parseColor("#40FFFFFF")  // subtle white for dark/blue theme
+            )
+
             pendingAmount = 0
             pendingCategory = null
             pendingTitle = "To: $name"

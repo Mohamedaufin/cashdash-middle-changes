@@ -7,6 +7,15 @@
     android:padding="24dp"
     android:clipToPadding="false">
 
+    <!-- Theme-aware top border line -->
+    <View
+        android:id="@+id/viewTopBorder"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginBottom="20dp"
+        android:layout_marginHorizontal="-24dp"
+        android:background="?attr/dividerColor" />
+
     <!-- Drag Handle -->
     <View
         android:layout_width="40dp"
