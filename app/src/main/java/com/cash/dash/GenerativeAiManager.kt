@@ -52,7 +52,15 @@ object GenerativeAiManager {
             "Rewrite the following notification message in a highly professional, corporate, and encouraging tone suitable for a fintech platform (CashDash) offering deals, cashback, and financial insights. Only return the rewritten text, do not include any other commentary. Keep the {Validity} placeholder exactly as it is if it exists in the original text.\n\nMessage:\n$text"
         }
 
-        val response = model.generateContent(prompt)
-        return@withContext response.text?.trim()?.removeSurrounding("\"") ?: text
+        try {
+            val response = model.generateContent(prompt)
+            return@withContext response.text?.trim()?.removeSurrounding("\"") ?: text
+        } catch (e: Exception) {
+            val msg = e.message ?: ""
+            if (msg.contains("API_KEY_INVALID") || msg.contains("API key not valid") || msg.contains("Unexpected Response:")) {
+                throw Exception("Invalid API Key. Please use a valid Gemini API Key.")
+            }
+            throw Exception("AI Error: $msg")
+        }
     }
 }

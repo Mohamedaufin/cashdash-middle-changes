@@ -193,7 +193,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <CheckBox
+                    <CheckBox android:buttonTint="?attr/textPrimaryColor"
                         android:id="@+id/cbAnnouncements"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -202,7 +202,7 @@
                         android:textSize="15sp"
                         android:padding="8dp"/>
 
-                    <CheckBox
+                    <CheckBox android:buttonTint="?attr/textPrimaryColor"
                         android:id="@+id/cbPromotions"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -211,7 +211,7 @@
                         android:textSize="15sp"
                         android:padding="8dp"/>
 
-                    <CheckBox
+                    <CheckBox android:buttonTint="?attr/textPrimaryColor"
                         android:id="@+id/cbNotifications"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -220,7 +220,7 @@
                         android:textSize="15sp"
                         android:padding="8dp"/>
 
-                    <CheckBox
+                    <CheckBox android:buttonTint="?attr/textPrimaryColor"
                         android:id="@+id/cbLastSeen"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -229,7 +229,7 @@
                         android:textSize="15sp"
                         android:padding="8dp"/>
 
-                    <CheckBox
+                    <CheckBox android:buttonTint="?attr/textPrimaryColor"
                         android:id="@+id/cbAdminLogs"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -238,7 +238,7 @@
                         android:textSize="15sp"
                         android:padding="8dp"/>
 
-                    <CheckBox
+                    <CheckBox android:buttonTint="?attr/textPrimaryColor"
                         android:id="@+id/cbReplyQueries"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -247,7 +247,7 @@
                         android:textSize="15sp"
                         android:padding="8dp"/>
 
-                    <CheckBox
+                    <CheckBox android:buttonTint="?attr/textPrimaryColor"
                         android:id="@+id/cbAddNewAdmin"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -322,7 +322,7 @@
                     android:orientation="vertical"
                     android:layout_marginTop="16dp">
                     
-                    <CheckBox
+                    <CheckBox android:buttonTint="?attr/textPrimaryColor"
                         android:id="@+id/cbIncludeNotification"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
