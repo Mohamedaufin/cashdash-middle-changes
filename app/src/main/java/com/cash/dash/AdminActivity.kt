@@ -1020,23 +1020,28 @@ class AdminActivity : ThemedActivity() {
         cbReplyQueries.buttonTintList = checkboxTintList
         cbAddNewAdmin.buttonTintList = checkboxTintList
 
+        val isWhite = ThemeHelper.isWhiteTheme(this)
+        val greyTextColor = if (isWhite) android.graphics.Color.parseColor("#475569") else android.graphics.Color.parseColor("#E2E8F0")
+        val greyBgColor = android.content.res.ColorStateList.valueOf(
+            if (isWhite) android.graphics.Color.parseColor("#F1F5F9") else android.graphics.Color.parseColor("#334155")
+        )
+        
+        btnSave.setTextColor(greyTextColor)
+        btnSave.backgroundTintList = greyBgColor
+        // It's a MaterialButton, remove stroke just in case
+        btnSave.strokeWidth = 0
+
         if (isNewAdmin) {
             btnRevoke.text = "Cancel"
-            val isWhite = ThemeHelper.isWhiteTheme(this)
-            btnRevoke.setTextColor(if (isWhite) android.graphics.Color.parseColor("#475569") else android.graphics.Color.parseColor("#E2E8F0"))
-            btnRevoke.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                if (isWhite) android.graphics.Color.parseColor("#F1F5F9") else android.graphics.Color.parseColor("#334155")
-            )
+            btnRevoke.setTextColor(greyTextColor)
+            btnRevoke.backgroundTintList = greyBgColor
             btnRevoke.strokeWidth = 0
             btnRevoke.setOnClickListener { bottomSheet.dismiss() }
         } else if (isReviewingRequest) {
             btnSave.text = "Approve Request"
             btnRevoke.text = "Reject"
-            val isWhite = ThemeHelper.isWhiteTheme(this)
-            btnRevoke.setTextColor(if (isWhite) android.graphics.Color.parseColor("#475569") else android.graphics.Color.parseColor("#E2E8F0"))
-            btnRevoke.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                if (isWhite) android.graphics.Color.parseColor("#F1F5F9") else android.graphics.Color.parseColor("#334155")
-            )
+            btnRevoke.setTextColor(greyTextColor)
+            btnRevoke.backgroundTintList = greyBgColor
             btnRevoke.strokeWidth = 0
         }
 
