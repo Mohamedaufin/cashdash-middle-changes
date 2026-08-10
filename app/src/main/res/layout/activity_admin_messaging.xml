@@ -78,9 +78,20 @@
                 android:textColorHint="?attr/textMutedColor"
                 android:textColor="?attr/textPrimaryColor"
                 android:textSize="@dimen/text_body"
-                android:layout_marginBottom="15dp"
+                android:layout_marginBottom="4dp"
                 android:inputType="textCapSentences"
                 android:singleLine="true"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAIRephraseTitle"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:text="✨ AI Rephrase"
+                android:textColor="#4E5DFF"
+                android:textAllCaps="false"
+                android:layout_marginBottom="15dp"/>
 
             <TextView
                 android:layout_width="match_parent"
@@ -101,10 +112,21 @@
                 android:textColorHint="?attr/textMutedColor"
                 android:textColor="?attr/textPrimaryColor"
                 android:textSize="@dimen/text_body"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="4dp"
                 android:gravity="top|start"
                 android:inputType="textCapSentences|textMultiLine"
                 android:minLines="5"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAIRephraseBody"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:text="✨ AI Rephrase"
+                android:textColor="#4E5DFF"
+                android:textAllCaps="false"
+                android:layout_marginBottom="16dp"/>
 
             <!-- Supporting Media Section -->
             <TextView

@@ -3,6 +3,8 @@ package com.cash.dash
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
@@ -22,10 +24,9 @@ import java.util.Locale
 import java.util.Calendar
 import android.app.DatePickerDialog
 
-class AdminActivity : ThemedActivity() {
+class ManageAdminAccessActivity : ThemedActivity() {
 
     private val userStatusList = mutableListOf<UserStatusItem>()
-    private var selectedDateCalendar = Calendar.getInstance()
     private var usersListenerRegistration: com.google.firebase.firestore.ListenerRegistration? = null
     private val rtdbPresenceMap = mutableMapOf<String, Pair<String, String>>()
     private val currentAdminEmails = mutableSetOf<String>()
@@ -35,25 +36,10 @@ class AdminActivity : ThemedActivity() {
 
     private var isFirstPermissionCheck = true
     private val permissionListener: (AdminManager.AdminPermissions) -> Unit = { perms ->
-        // Skip the first synchronous invocation before Firestore has responded.
         if (!isFirstPermissionCheck) {
             if (!perms.hasAnyAccess) {
                 ToastHelper.showToast(this, "Permission denied")
                 finish()
-            } else {
-                val lastSeenContainer = findViewById<LinearLayout>(R.id.layoutUserStatusContainer)
-                if (!perms.canViewLastSeen()) {
-                    lastSeenContainer?.removeAllViews()
-                    val tv = TextView(this).apply {
-                        text = "Permission denied to view Last Seen status."
-                        setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textMutedColor))
-                        setPadding(16, 16, 16, 16)
-                    }
-                    lastSeenContainer?.addView(tv)
-                } else if (lastSeenContainer?.childCount == 1 && (lastSeenContainer.getChildAt(0) as? TextView)?.text?.contains("Permission denied") == true) {
-                    // Restore if it was previously denied
-                    loadUserStatusList()
-                }
             }
         }
         isFirstPermissionCheck = false
@@ -69,7 +55,7 @@ class AdminActivity : ThemedActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_admin)
+        setContentView(R.layout.activity_manage_admin_access)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             window.decorView.importantForAutofill = android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
         }
@@ -87,94 +73,80 @@ class AdminActivity : ThemedActivity() {
 
         AdminManager.addListener(permissionListener)
 
-        FirebaseDatabase.getInstance().getReference("status").addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                rtdbPresenceMap.clear()
-                val sdf = java.text.SimpleDateFormat("dd/MM/yyyy, h:mm a", java.util.Locale.ENGLISH)
-                sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
-                for (child in snapshot.children) {
-                    val safeEmail = child.key ?: continue
-                    val email = safeEmail.replace(",", ".")
-                    val state = child.child("state").getValue(String::class.java) ?: "Offline"
-                    val lastChanged = child.child("last_changed").getValue(Long::class.java)
-                    val lastActiveTime = if (lastChanged != null) sdf.format(java.util.Date(lastChanged)) else "Never"
-                    rtdbPresenceMap[email] = Pair(state, lastActiveTime)
+
+
+        val etSearchNewAdmin = findViewById<EditText>(R.id.etSearchNewAdmin)
+        val layoutAdminSearchResults = findViewById<LinearLayout>(R.id.layoutAdminSearchResults)
+        val layoutSearchWrapper = findViewById<LinearLayout>(R.id.layoutSearchWrapper)
+        val btnAddAdminSection = findViewById<LinearLayout>(R.id.btnAddAdminSection)
+        
+        btnAddAdminSection?.visibility = View.VISIBLE
+        btnAddAdminSection?.setOnClickListener {
+            android.transition.TransitionManager.beginDelayedTransition(layoutSearchWrapper?.parent as? android.view.ViewGroup, android.transition.AutoTransition().apply { duration = 200 })
+            if (layoutSearchWrapper?.visibility == View.VISIBLE) {
+                layoutSearchWrapper.visibility = View.GONE
+                layoutAdminSearchResults?.visibility = View.GONE
+            } else {
+                layoutSearchWrapper?.visibility = View.VISIBLE
+                etSearchNewAdmin?.requestFocus()
+                etSearchNewAdmin?.setText("")
+                layoutAdminSearchResults?.removeAllViews()
+                layoutAdminSearchResults?.visibility = View.VISIBLE
+                val filteredUsers = userStatusList.filter { !currentAdminEmails.contains(it.email.lowercase(java.util.Locale.getDefault())) }.sortedBy { it.name.lowercase(java.util.Locale.getDefault()) }
+                for (user in filteredUsers) {
+                    addSearchResultRow(layoutAdminSearchResults, user)
                 }
-                
-                // Live update the list with new RTDB data
-                for (i in userStatusList.indices) {
-                    val rtdbData = rtdbPresenceMap[userStatusList[i].email]
-                    if (rtdbData != null) {
-                        userStatusList[i] = userStatusList[i].copy(status = rtdbData.first, lastActiveTime = rtdbData.second)
+            }
+        }
+
+        etSearchNewAdmin?.addTextChangedListener(object : android.text.TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    val container = layoutAdminSearchResults ?: return
+                    container.removeAllViews()
+                    
+                    val query = s.toString().lowercase(java.util.Locale.getDefault()).trim()
+                    val filteredUsers = userStatusList.filter { !currentAdminEmails.contains(it.email.lowercase(java.util.Locale.getDefault())) }.sortedBy { it.name.lowercase(java.util.Locale.getDefault()) }
+                    
+                    if (query.isEmpty()) {
+                        container.visibility = View.VISIBLE
+                        for (user in filteredUsers) {
+                            addSearchResultRow(container, user)
+                        }
+                        return
+                    }
+
+                    val matches = filteredUsers.filter {
+                        it.email.lowercase(java.util.Locale.getDefault()).contains(query) ||
+                        it.name.lowercase(java.util.Locale.getDefault()).contains(query)
+                    }
+
+                    if (matches.isNotEmpty()) {
+                        container.visibility = View.VISIBLE
+                        for (user in matches) {
+                            addSearchResultRow(container, user)
+                        }
                     } else {
-                        userStatusList[i] = userStatusList[i].copy(status = "Offline", lastActiveTime = "Never")
+                        container.visibility = View.GONE
                     }
                 }
-                refreshUserStatusList()
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        })
-
-        findViewById<View>(R.id.btnGoToAnnouncements).setOnClickListener {
-            val p = AdminManager.getPermissions()
-            if (!p.isOwner && !p.canSendAnnouncements()) {
-                ToastHelper.showToast(this, "Permission denied")
-                return@setOnClickListener
-            }
-            val intent = Intent(this, AdminMessagingActivity::class.java)
-            intent.putExtra("isAnnouncement", true)
-            startActivity(intent)
-        }
-
-        findViewById<View>(R.id.btnGoToPushNotifications).setOnClickListener {
-            val p = AdminManager.getPermissions()
-            if (!p.isOwner && !p.canSendNotifications()) {
-                ToastHelper.showToast(this, "Permission denied")
-                return@setOnClickListener
-            }
-            val intent = Intent(this, AdminMessagingActivity::class.java)
-            intent.putExtra("isAnnouncement", false)
-            startActivity(intent)
-        }
-
-        findViewById<View>(R.id.btnGoToPromotions).setOnClickListener {
-            val p = AdminManager.getPermissions()
-            if (!p.isOwner && !p.canSendPromotions()) {
-                ToastHelper.showToast(this, "Permission denied")
-                return@setOnClickListener
-            }
-            val intent = Intent(this, AdminPromotionsActivity::class.java)
-            startActivity(intent)
-        }
-
-        findViewById<View>(R.id.btnGoToManageAdminAccess)?.setOnClickListener {
-            val intent = Intent(this, ManageAdminAccessActivity::class.java)
-            startActivity(intent)
-        }
-
-        val btnHistory = findViewById<ImageButton>(R.id.btnHistory)
-        btnHistory.setOnClickListener {
-            val intent = android.content.Intent(this, AdminLogsActivity::class.java)
-            startActivity(intent)
-        }
-
-        val btnSelectDate = findViewById<android.widget.TextView>(R.id.btnSelectDate)
-        btnSelectDate.setOnClickListener {
-            val year = selectedDateCalendar.get(Calendar.YEAR)
-            val month = selectedDateCalendar.get(Calendar.MONTH)
-            val day = selectedDateCalendar.get(Calendar.DAY_OF_MONTH)
-
-            val dpd = DatePickerDialog(this, ThemeHelper.getDatePickerTheme(this), { _, selectedYear, selectedMonth, selectedDay ->
-                selectedDateCalendar.set(Calendar.YEAR, selectedYear)
-                selectedDateCalendar.set(Calendar.MONTH, selectedMonth)
-                selectedDateCalendar.set(Calendar.DAY_OF_MONTH, selectedDay)
-                refreshUserStatusList()
-            }, year, month, day)
-            dpd.show()
-        }
+                override fun afterTextChanged(s: android.text.Editable?) {}
+            })
 
         loadUserStatusList()
-        loadSupportInbox()
+        setupAdminAccessListener()
+
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (findViewById<View>(R.id.layoutEditPermissionsContainer)?.visibility == View.VISIBLE) {
+                    closeEditPermissionsView(withConfirmation = true)
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
+                }
+            }
+        })
     }
 
     private fun loadSupportInbox() {
@@ -227,7 +199,7 @@ class AdminActivity : ThemedActivity() {
                             val replyUrl = "https://adminreply-khhfw7mtba-uc.a.run.app" +
                                 "?uid=${item.userEmail}&id=${item.docId}&email=${item.userEmail}"
 
-                            val card = LinearLayout(this@AdminActivity).apply {
+                            val card = LinearLayout(this@ManageAdminAccessActivity).apply {
                                 orientation = LinearLayout.HORIZONTAL
                                 gravity = android.view.Gravity.TOP
                                 setPadding(
@@ -235,8 +207,8 @@ class AdminActivity : ThemedActivity() {
                                     (16 * density).toInt(), (14 * density).toInt()
                                 )
                                 background = androidx.core.content.ContextCompat.getDrawable(
-                                    this@AdminActivity,
-                                    ThemeHelper.getDrawable(this@AdminActivity, R.drawable.bg_transaction)
+                                    this@ManageAdminAccessActivity,
+                                    ThemeHelper.getDrawable(this@ManageAdminAccessActivity, R.drawable.bg_transaction)
                                 )
                                 layoutParams = LinearLayout.LayoutParams(
                                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -245,13 +217,13 @@ class AdminActivity : ThemedActivity() {
                             }
 
                             // Right content column
-                            val contentCol = LinearLayout(this@AdminActivity).apply {
+                            val contentCol = LinearLayout(this@ManageAdminAccessActivity).apply {
                                 orientation = LinearLayout.VERTICAL
                                 layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
                             }
 
                             // Subject row with red dot
-                            val headerRow = LinearLayout(this@AdminActivity).apply {
+                            val headerRow = LinearLayout(this@ManageAdminAccessActivity).apply {
                                 orientation = LinearLayout.HORIZONTAL
                                 gravity = android.view.Gravity.CENTER_VERTICAL
                                 layoutParams = LinearLayout.LayoutParams(
@@ -259,19 +231,19 @@ class AdminActivity : ThemedActivity() {
                                     LinearLayout.LayoutParams.WRAP_CONTENT
                                 ).apply { bottomMargin = (4 * density).toInt() }
                             }
-                            val redDot = View(this@AdminActivity).apply {
+                            val redDot = View(this@ManageAdminAccessActivity).apply {
                                 val sz = (8 * density).toInt()
                                 layoutParams = LinearLayout.LayoutParams(sz, sz).apply {
                                     rightMargin = (8 * density).toInt()
                                 }
                                 background = android.graphics.drawable.GradientDrawable().apply {
                                     shape = android.graphics.drawable.GradientDrawable.OVAL
-                                    setColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textRedColor))
+                                    setColor(ThemeHelper.resolveColorAttr(this@ManageAdminAccessActivity, R.attr.textRedColor))
                                 }
                             }
-                            val tvSubject = TextView(this@AdminActivity).apply {
+                            val tvSubject = TextView(this@ManageAdminAccessActivity).apply {
                                 text = item.subject.ifEmpty { "(No Subject)" }
-                                setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textPrimaryColor))
+                                setTextColor(ThemeHelper.resolveColorAttr(this@ManageAdminAccessActivity, R.attr.textPrimaryColor))
                                 textSize = 15f
                                 setTypeface(null, android.graphics.Typeface.BOLD)
                                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
@@ -280,9 +252,9 @@ class AdminActivity : ThemedActivity() {
                             headerRow.addView(tvSubject)
                             contentCol.addView(headerRow)
 
-                            val tvName = TextView(this@AdminActivity).apply {
+                            val tvName = TextView(this@ManageAdminAccessActivity).apply {
                                 text = "👤 ${item.userName.ifEmpty { "Unknown" }}"
-                                setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textMutedColor))
+                                setTextColor(ThemeHelper.resolveColorAttr(this@ManageAdminAccessActivity, R.attr.textMutedColor))
                                 textSize = 13f
                                 layoutParams = LinearLayout.LayoutParams(
                                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -291,9 +263,9 @@ class AdminActivity : ThemedActivity() {
                             }
                             contentCol.addView(tvName)
 
-                            val tvEmail = TextView(this@AdminActivity).apply {
+                            val tvEmail = TextView(this@ManageAdminAccessActivity).apply {
                                 text = "✉️ ${item.userEmail}"
-                                setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textMutedColor))
+                                setTextColor(ThemeHelper.resolveColorAttr(this@ManageAdminAccessActivity, R.attr.textMutedColor))
                                 textSize = 13f
                                 layoutParams = LinearLayout.LayoutParams(
                                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -302,11 +274,11 @@ class AdminActivity : ThemedActivity() {
                             }
                             contentCol.addView(tvEmail)
 
-                            val tvTime = TextView(this@AdminActivity).apply {
+                            val tvTime = TextView(this@ManageAdminAccessActivity).apply {
                                 val sdf = SimpleDateFormat("dd MMM yyyy, h:mm a", Locale.getDefault())
                                 val formattedTime = if (item.timestamp > 0) sdf.format(Date(item.timestamp)) else "Unknown time"
                                 text = "🕒 $formattedTime"
-                                setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textMutedColor))
+                                setTextColor(ThemeHelper.resolveColorAttr(this@ManageAdminAccessActivity, R.attr.textMutedColor))
                                 textSize = 13f
                                 layoutParams = LinearLayout.LayoutParams(
                                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -315,7 +287,7 @@ class AdminActivity : ThemedActivity() {
                             }
                             contentCol.addView(tvTime)
 
-                            val btnOpen = Button(this@AdminActivity).apply {
+                            val btnOpen = Button(this@ManageAdminAccessActivity).apply {
                                 text = "🔗 Open Reply Page"
                                 isAllCaps = false
                                 setTextColor(android.graphics.Color.WHITE)
@@ -328,7 +300,7 @@ class AdminActivity : ThemedActivity() {
                                     (48 * density).toInt()
                                 )
                                 setOnClickListener {
-                                    val intent = Intent(this@AdminActivity, WebViewActivity::class.java).apply {
+                                    val intent = Intent(this@ManageAdminAccessActivity, WebViewActivity::class.java).apply {
                                         putExtra("title", "Admin Reply")
                                         putExtra("url", replyUrl)
                                     }
@@ -479,7 +451,7 @@ class AdminActivity : ThemedActivity() {
         if (!AdminManager.getPermissions().canViewLastSeen()) {
             val tv = TextView(this).apply {
                 text = "Permission denied to view Last Seen status."
-                setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textMutedColor))
+                setTextColor(ThemeHelper.resolveColorAttr(this@ManageAdminAccessActivity, R.attr.textMutedColor))
                 setPadding(16, 16, 16, 16)
             }
             container.addView(tv)
@@ -489,27 +461,27 @@ class AdminActivity : ThemedActivity() {
         val btnSelectDate = findViewById<android.widget.TextView>(R.id.btnSelectDate)
 
         val todayCal = Calendar.getInstance()
-        val isToday = todayCal.get(Calendar.YEAR) == selectedDateCalendar.get(Calendar.YEAR) &&
-                todayCal.get(Calendar.MONTH) == selectedDateCalendar.get(Calendar.MONTH) &&
-                todayCal.get(Calendar.DAY_OF_MONTH) == selectedDateCalendar.get(Calendar.DAY_OF_MONTH)
+        val isToday = todayCal.get(Calendar.YEAR) == 0 &&
+                todayCal.get(Calendar.MONTH) == 0 &&
+                todayCal.get(Calendar.DAY_OF_MONTH) == 0
 
-        val dateTextFormat = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault()).format(selectedDateCalendar.time)
+        val dateTextFormat = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault()).format(java.util.Date())
         btnSelectDate?.text = if (isToday) "Date: Today ($dateTextFormat)" else "Date: $dateTextFormat"
 
         val formattedQueryDateNew = SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH).apply {
             timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
-        }.format(selectedDateCalendar.time)
+        }.format(java.util.Date())
 
         val formattedQueryDateOld = SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).apply {
             timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
-        }.format(selectedDateCalendar.time)
+        }.format(java.util.Date())
 
         val density = resources.displayMetrics.density
 
         if (userStatusList.isEmpty()) {
             val tvEmpty = android.widget.TextView(this).apply {
                 text = "No users loaded."
-                setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textMutedColor))
+                setTextColor(ThemeHelper.resolveColorAttr(this@ManageAdminAccessActivity, R.attr.textMutedColor))
                 textSize = 14f
                 gravity = android.view.Gravity.CENTER
                 setPadding(0, (16 * density).toInt(), 0, (16 * density).toInt())
@@ -568,7 +540,7 @@ class AdminActivity : ThemedActivity() {
             }
             val tvUsername = android.widget.TextView(this).apply {
                 text = displayName
-                setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textPrimaryColor))
+                setTextColor(ThemeHelper.resolveColorAttr(this@ManageAdminAccessActivity, R.attr.textPrimaryColor))
                 textSize = 15f
                 setTypeface(null, android.graphics.Typeface.BOLD)
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
@@ -578,7 +550,7 @@ class AdminActivity : ThemedActivity() {
             // Opened/Not Opened status
             val tvStatus = android.widget.TextView(this).apply {
                 text = if (isActive) "Opened" else "Not Opened"
-                setTextColor(if (isActive) ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textGreenColor) else ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textRedColor))
+                setTextColor(if (isActive) ThemeHelper.resolveColorAttr(this@ManageAdminAccessActivity, R.attr.textGreenColor) else ThemeHelper.resolveColorAttr(this@ManageAdminAccessActivity, R.attr.textRedColor))
                 textSize = 14f
                 setTypeface(null, android.graphics.Typeface.BOLD)
             }
@@ -757,7 +729,7 @@ class AdminActivity : ThemedActivity() {
                 val cancelAction = View.OnClickListener {
                     FirebaseFirestore.getInstance().collection("admin_requests").document(email).delete()
                         .addOnSuccessListener {
-                            ToastHelper.showToast(this@AdminActivity, "Request cancelled")
+                            ToastHelper.showToast(this@ManageAdminAccessActivity, "Request cancelled")
                         }
                 }
                 btnReview?.setOnClickListener(cancelAction)
@@ -837,7 +809,7 @@ class AdminActivity : ThemedActivity() {
             context.theme.resolveAttribute(android.R.attr.selectableItemBackground, typedValue, true)
             setBackgroundResource(typedValue.resourceId)
             setOnClickListener {
-                this@AdminActivity.findViewById<EditText>(R.id.etSearchNewAdmin)?.setText("")
+                this@ManageAdminAccessActivity.findViewById<EditText>(R.id.etSearchNewAdmin)?.setText("")
                 showEditAdminPermissionsDialog(user.email, user.name, AdminManager.AdminPermissions(), isNewAdmin = true)
             }
         }
@@ -846,7 +818,7 @@ class AdminActivity : ThemedActivity() {
             text = "${user.name} - ${user.email}"
             textSize = 15f
             setPadding((16 * density).toInt(), 0, (8 * density).toInt(), 0)
-            setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textPrimaryColor))
+            setTextColor(ThemeHelper.resolveColorAttr(this@ManageAdminAccessActivity, R.attr.textPrimaryColor))
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
         
@@ -865,7 +837,7 @@ class AdminActivity : ThemedActivity() {
         
         val div = View(this).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1)
-            setBackgroundColor(androidx.core.content.ContextCompat.getColor(this@AdminActivity, R.color.border))
+            setBackgroundColor(androidx.core.content.ContextCompat.getColor(this@ManageAdminAccessActivity, R.color.border))
         }
         container.addView(div)
     }
@@ -889,6 +861,37 @@ class AdminActivity : ThemedActivity() {
             }
     }
 
+    private fun showCancelConfirmationDialog(onConfirmed: () -> Unit) {
+        val color = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+        val titleSpan = android.text.SpannableString("Cancel Edit")
+        titleSpan.setSpan(android.text.style.ForegroundColorSpan(color), 0, titleSpan.length, 0)
+
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(titleSpan)
+            .setMessage("Are you sure you want to cancel the action? Unsaved changes will be lost.")
+            .setPositiveButton("Yes") { _, _ -> onConfirmed() }
+            .setNegativeButton("No", null)
+            .create()
+            
+        dialog.setOnShowListener {
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)?.setTextColor(color)
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE)?.setTextColor(color)
+        }
+        dialog.show()
+    }
+
+    private fun closeEditPermissionsView(withConfirmation: Boolean = false) {
+        if (withConfirmation) {
+            showCancelConfirmationDialog {
+                findViewById<View>(R.id.layoutEditPermissionsContainer)?.visibility = View.GONE
+                findViewById<View>(R.id.layoutMainContent)?.visibility = View.VISIBLE
+            }
+        } else {
+            findViewById<View>(R.id.layoutEditPermissionsContainer)?.visibility = View.GONE
+            findViewById<View>(R.id.layoutMainContent)?.visibility = View.VISIBLE
+        }
+    }
+
     private fun showEditAdminPermissionsDialog(
         email: String,
         name: String,
@@ -897,47 +900,71 @@ class AdminActivity : ThemedActivity() {
         isReviewingRequest: Boolean = false,
         isExtensionRequest: Boolean = false
     ) {
-        // BottomSheetDialogTheme makes the container transparent so our dark bg shows through.
-        // Without this style, Material3 forces a white container background.
-        val bottomSheet = com.google.android.material.bottomsheet.BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+        findViewById<View>(R.id.layoutMainContent)?.visibility = View.GONE
+        findViewById<View>(R.id.layoutEditPermissionsContainer)?.visibility = View.VISIBLE
 
-        // Inflate with activity layoutInflater so ?attr colors resolve from the correct dark/light theme
-        val view = layoutInflater.inflate(R.layout.bottom_sheet_admin_permissions, null, false)
+        val tvEmail = findViewById<TextView>(R.id.tvAdminEmail) ?: return
+        tvEmail.text = "$name - $email"
 
-        // Programmatically apply dark background with rounded top corners
-        val bgColor = ThemeHelper.resolveColorAttr(this, com.google.android.material.R.attr.colorSurface)
-        val bg = android.graphics.drawable.GradientDrawable().apply {
-            setColor(bgColor)
-            cornerRadii = floatArrayOf(20f.dp, 20f.dp, 20f.dp, 20f.dp, 0f, 0f, 0f, 0f)
+        val cbAnnouncements = findViewById<android.widget.CheckBox>(R.id.cbAnnouncements) ?: return
+        val cbPromotions = findViewById<android.widget.CheckBox>(R.id.cbPromotions) ?: return
+        val cbNotifications = findViewById<android.widget.CheckBox>(R.id.cbNotifications) ?: return
+        val cbLastSeen = findViewById<android.widget.CheckBox>(R.id.cbLastSeen) ?: return
+        val cbAdminLogs = findViewById<android.widget.CheckBox>(R.id.cbAdminLogs) ?: return
+        val cbReplyQueries = findViewById<android.widget.CheckBox>(R.id.cbReplyQueries) ?: return
+        val cbAddNewAdmin = findViewById<android.widget.CheckBox>(R.id.cbAddNewAdmin) ?: return
+        val btnSave = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSavePermissions) ?: return
+        val btnRevoke = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnRevokeAccess) ?: return
+        val btnCancelEditTop = findViewById<TextView>(R.id.btnCancelEditTop) ?: return
+
+        btnCancelEditTop.setOnClickListener {
+            closeEditPermissionsView(withConfirmation = true)
         }
-        view.background = bg
 
-        bottomSheet.setContentView(view)
+        val cbIncludeNotification = findViewById<android.widget.CheckBox>(R.id.cbIncludeNotification)
+        val layoutNotificationTemplate = findViewById<LinearLayout>(R.id.layoutNotificationTemplate)
+        val actvTitle = findViewById<android.widget.EditText>(R.id.actvNotificationTitle)
+        val actvContent = findViewById<android.widget.EditText>(R.id.actvNotificationContent)
+        val btnAIRephraseTitle = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnAIRephraseTitle)
+        val btnAIRephraseBody = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnAIRephraseBody)
+
+        cbIncludeNotification?.setOnCheckedChangeListener { _, isChecked ->
+            layoutNotificationTemplate?.visibility = if (isChecked) View.VISIBLE else View.GONE
+        }
         
-        bottomSheet.setOnShowListener { dialog ->
-            val d = dialog as com.google.android.material.bottomsheet.BottomSheetDialog
-            val bottomSheetInternal = d.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-            bottomSheetInternal?.let {
-                val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(it)
-                behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
-                behavior.skipCollapsed = true
+        btnAIRephraseTitle?.setOnClickListener {
+            val originalText = actvTitle?.text?.toString() ?: ""
+            if (originalText.isBlank()) {
+                ToastHelper.showToast(this@ManageAdminAccessActivity, "Please type a title first.")
+                return@setOnClickListener
+            }
+            ToastHelper.showToast(this@ManageAdminAccessActivity, "Rephrasing Title...")
+            kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                try {
+                    val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6J98QwRRRH9eNVILdkNQgAMhYmv4jnnDb9EddH9i_XPZw")
+                    actvTitle?.setText(result)
+                } catch (e: Exception) {
+                    ToastHelper.showToast(this@ManageAdminAccessActivity, e.message ?: "AI Error")
+                }
             }
         }
 
-        val tvEmail = view.findViewById<TextView>(R.id.tvAdminEmail) ?: return
-        tvEmail.text = "$name - $email"
-
-        val layoutCheckboxes = view.findViewById<View>(R.id.layoutCheckboxes) ?: return
-        
-        val cbAnnouncements = view.findViewById<android.widget.CheckBox>(R.id.cbAnnouncements) ?: return
-        val cbPromotions = view.findViewById<android.widget.CheckBox>(R.id.cbPromotions) ?: return
-        val cbNotifications = view.findViewById<android.widget.CheckBox>(R.id.cbNotifications) ?: return
-        val cbLastSeen = view.findViewById<android.widget.CheckBox>(R.id.cbLastSeen) ?: return
-        val cbAdminLogs = view.findViewById<android.widget.CheckBox>(R.id.cbAdminLogs) ?: return
-        val cbReplyQueries = view.findViewById<android.widget.CheckBox>(R.id.cbReplyQueries) ?: return
-        val cbAddNewAdmin = view.findViewById<android.widget.CheckBox>(R.id.cbAddNewAdmin) ?: return
-        val btnSave = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSavePermissions) ?: return
-        val btnRevoke = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnRevokeAccess) ?: return
+        btnAIRephraseBody?.setOnClickListener {
+            val originalText = actvContent?.text?.toString() ?: ""
+            if (originalText.isBlank()) {
+                ToastHelper.showToast(this@ManageAdminAccessActivity, "Please type some content first.")
+                return@setOnClickListener
+            }
+            ToastHelper.showToast(this@ManageAdminAccessActivity, "Rephrasing Content...")
+            kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                try {
+                    val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6J98QwRRRH9eNVILdkNQgAMhYmv4jnnDb9EddH9i_XPZw")
+                    actvContent?.setText(result)
+                } catch (e: Exception) {
+                    ToastHelper.showToast(this@ManageAdminAccessActivity, e.message ?: "AI Error")
+                }
+            }
+        }
 
         var selectedValidUntil = currentPerms.validUntil
         
@@ -947,9 +974,9 @@ class AdminActivity : ThemedActivity() {
         val isCurrentUserAdmin = !isCurrentUserOwner && !isCurrentUserSA
         val isCurrentUserLifetime = currentUserPerms.validUntil == 0L
         val canGiveForever = isCurrentUserOwner || (isCurrentUserSA && isCurrentUserLifetime)
-        val tvValidityStatus = view.findViewById<TextView>(R.id.tvValidityStatus)
-        val btnChangeValidity = view.findViewById<TextView>(R.id.btnChangeValidity)
-        val btnRequestExtension = view.findViewById<TextView>(R.id.btnRequestExtension)
+        val tvValidityStatus = findViewById<TextView>(R.id.tvValidityStatus)
+        val btnChangeValidity = findViewById<TextView>(R.id.btnChangeValidity)
+        val btnRequestExtension = findViewById<TextView>(R.id.btnRequestExtension)
         
         val updateValidityUI = {
             if (selectedValidUntil == 0L) {
@@ -961,7 +988,7 @@ class AdminActivity : ThemedActivity() {
         }
         updateValidityUI()
 
-        val layoutAdminValidity = view.findViewById<View>(R.id.layoutAdminValidity)
+        val layoutAdminValidity = findViewById<View>(R.id.layoutAdminValidity)
 
         btnChangeValidity?.setOnClickListener {
             val options = if (canGiveForever) {
@@ -1026,7 +1053,7 @@ class AdminActivity : ThemedActivity() {
                 com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("admin_requests").document(email.lowercase()).set(requestData)
                     .addOnSuccessListener {
                         ToastHelper.showToast(this, "Extension request submitted")
-                        bottomSheet.dismiss()
+                        closeEditPermissionsView()
                     }
                     .addOnFailureListener {
                         ToastHelper.showToast(this, "Failed to submit request")
@@ -1064,7 +1091,6 @@ class AdminActivity : ThemedActivity() {
         
         btnSave.setTextColor(greyTextColor)
         btnSave.backgroundTintList = greyBgColor
-        // It's a MaterialButton, remove stroke just in case
         btnSave.strokeWidth = 0
 
         if (isNewAdmin) {
@@ -1072,7 +1098,7 @@ class AdminActivity : ThemedActivity() {
             btnRevoke.setTextColor(greyTextColor)
             btnRevoke.backgroundTintList = greyBgColor
             btnRevoke.strokeWidth = 0
-            btnRevoke.setOnClickListener { bottomSheet.dismiss() }
+            btnRevoke.setOnClickListener { closeEditPermissionsView(withConfirmation = true) }
         } else if (isReviewingRequest) {
             btnSave.text = "Approve Request"
             btnRevoke.text = "Reject"
@@ -1087,15 +1113,8 @@ class AdminActivity : ThemedActivity() {
         val isTargetSA = !isTargetOwner && (currentPerms.fullAccess || (currentPerms.sendAnnouncements && currentPerms.sendPromotions && currentPerms.sendNotifications && currentPerms.viewLastSeen && currentPerms.viewAdminLogs && currentPerms.replyToQueries && currentPerms.allocateAdmins))
         val isTargetAdmin = !isTargetOwner && !isTargetSA
 
-        // (currentUserPerms, isCurrentUserOwner, isCurrentUserSA, isCurrentUserAdmin defined above)
-
-        val currentRole = if (isTargetOwner) "Owner"
-        else if (isTargetSA) "Super Administrator"
-        else "Admin"
-
         val isSelf = email.lowercase() == com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email?.lowercase()
 
-        // Visibility logic
         val canSeeAnnouncements = isCurrentUserOwner || (isNewAdmin && currentUserPerms.canSendAnnouncements()) || (!isNewAdmin && currentPerms.canSendAnnouncements())
         val canSeePromotions = isCurrentUserOwner || (isNewAdmin && currentUserPerms.canSendPromotions()) || (!isNewAdmin && currentPerms.canSendPromotions())
         val canSeeNotifications = isCurrentUserOwner || (isNewAdmin && currentUserPerms.canSendNotifications()) || (!isNewAdmin && currentPerms.canSendNotifications())
@@ -1110,10 +1129,8 @@ class AdminActivity : ThemedActivity() {
         cbLastSeen.visibility = if (canSeeLastSeen) View.VISIBLE else View.GONE
         cbAdminLogs.visibility = if (canSeeAdminLogs) View.VISIBLE else View.GONE
         cbReplyQueries.visibility = if (canSeeReplyQueries) View.VISIBLE else View.GONE
-        // cbAddNewAdmin visibility is handled dynamically based on other selections, but initial visibility depends on permissions too.
         cbAddNewAdmin.visibility = if (canSeeAddNewAdmin) View.VISIBLE else View.GONE
 
-        // Checked logic
         if (isTargetOwner) {
             cbAnnouncements.isChecked = true
             cbPromotions.isChecked = true
@@ -1140,7 +1157,6 @@ class AdminActivity : ThemedActivity() {
             cbAddNewAdmin.isChecked = currentPerms.canAllocateAdmins()
         }
 
-        // Enable/Disable logic
         if (isTargetOwner) {
             cbAnnouncements.isEnabled = false
             cbPromotions.isEnabled = false
@@ -1162,7 +1178,6 @@ class AdminActivity : ThemedActivity() {
             btnRequestExtension?.visibility = View.GONE
             layoutAdminValidity?.visibility = View.GONE
         } else if (isSelf && !isCurrentUserOwner) {
-            // Cannot enable or disable anything in their own permissions option
             cbAnnouncements.isEnabled = false
             cbPromotions.isEnabled = false
             cbNotifications.isEnabled = false
@@ -1183,7 +1198,6 @@ class AdminActivity : ThemedActivity() {
             }
             layoutAdminValidity?.visibility = View.VISIBLE
         } else {
-            // Can toggle the ones they can see.
             cbAnnouncements.isEnabled = true
             cbPromotions.isEnabled = true
             cbNotifications.isEnabled = true
@@ -1207,7 +1221,6 @@ class AdminActivity : ThemedActivity() {
             }
         }
 
-        // Dynamic visibility for "Add new admin"
         val updateAddNewAdminVisibility = {
             if (cbAnnouncements.isChecked || cbPromotions.isChecked || cbNotifications.isChecked || cbLastSeen.isChecked || cbAdminLogs.isChecked || cbReplyQueries.isChecked) {
                 if (canSeeAddNewAdmin) {
@@ -1226,38 +1239,36 @@ class AdminActivity : ThemedActivity() {
         cbAdminLogs.setOnCheckedChangeListener { _, _ -> updateAddNewAdminVisibility() }
         cbReplyQueries.setOnCheckedChangeListener { _, _ -> updateAddNewAdminVisibility() }
 
-        // Trigger once to set initial state
         updateAddNewAdminVisibility()
 
         btnSave.setOnClickListener {
             if (isSelf) {
-                ToastHelper.showToast(this@AdminActivity, "Permissions saved")
-                bottomSheet.dismiss()
+                ToastHelper.showToast(this@ManageAdminAccessActivity, "Permissions saved")
+                closeEditPermissionsView()
                 return@setOnClickListener
             }
 
             val db = FirebaseFirestore.getInstance()
             
-            // if only cbAddNewAdmin is checked, that's equivalent to 0 features (cannot add admin with just this feature)
             val hasFeaturePermissions = cbAnnouncements.isChecked || cbPromotions.isChecked || cbNotifications.isChecked || cbLastSeen.isChecked || cbAdminLogs.isChecked || cbReplyQueries.isChecked
             val hasZeroPermissions = !hasFeaturePermissions
             
             if (hasZeroPermissions) {
                 if (isNewAdmin) {
-                    ToastHelper.showToast(this@AdminActivity, "Select at least 1 permission.")
+                    ToastHelper.showToast(this@ManageAdminAccessActivity, "Select at least 1 permission.")
                     return@setOnClickListener
                 } else if (!isReviewingRequest) {
                     FirebaseFirestore.getInstance().collection("admins").document(email.lowercase()).delete()
                         .addOnSuccessListener {
-                            ToastHelper.showToast(this@AdminActivity, "Access revoked")
-                            bottomSheet.dismiss()
+                            ToastHelper.showToast(this@ManageAdminAccessActivity, "Access revoked")
+                            closeEditPermissionsView()
                         }
                     return@setOnClickListener
                 }
             }
             
             val isSuperAdminSave = cbAnnouncements.isChecked && cbPromotions.isChecked && cbNotifications.isChecked && cbLastSeen.isChecked && cbAdminLogs.isChecked && cbReplyQueries.isChecked && cbAddNewAdmin.isChecked
-            val isOwnerSave = currentPerms.isPromotedOwner // Can't change owner here anyway since it's removed
+            val isOwnerSave = currentPerms.isPromotedOwner 
             
             var needsRequest = false
             if (!isCurrentUserOwner) {
@@ -1288,11 +1299,11 @@ class AdminActivity : ThemedActivity() {
                 )
                 db.collection("admin_requests").document(email.lowercase()).set(requestData)
                     .addOnSuccessListener {
-                        ToastHelper.showToast(this@AdminActivity, "Request sent to owners for approval")
-                        bottomSheet.dismiss()
+                        ToastHelper.showToast(this@ManageAdminAccessActivity, "Request sent to owners for approval")
+                        closeEditPermissionsView()
                     }
                     .addOnFailureListener { e -> 
-                        ToastHelper.showToast(this@AdminActivity, "Failed to send request. Firebase Rules might be blocking it: ${e.message}") 
+                        ToastHelper.showToast(this@ManageAdminAccessActivity, "Failed to send request. Firebase Rules might be blocking it: ${e.message}") 
                     }
                 return@setOnClickListener
             }
@@ -1316,38 +1327,32 @@ class AdminActivity : ThemedActivity() {
                     .addOnSuccessListener {
                         db.collection("admin_requests").document(email.lowercase()).delete()
                         val approverEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "An administrator"
-                        val approverName = approverEmail.substringBefore("@").replaceFirstChar { it.uppercase() }
                         val validityStr = if (selectedValidUntil == 0L) "Lifetime\n(Note: Your continued access is a reflection of the trust placed in you. It remains subject to review based on your ongoing performance and commitment to the CashDash platform.)" else java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(selectedValidUntil)
                         val roleStr = if (isSuperAdminSave) "Super Administrator" else "Administrator"
 
+                        if (cbIncludeNotification?.isChecked == true) {
+                            val notifSubject = actvTitle?.text?.toString()?.trim() ?: ""
+                            var notifBody = actvContent?.text?.toString()?.trim() ?: ""
+                            notifBody = notifBody.replace("{Validity}", validityStr)
+                            notifBody += "\n\nRegards,\nTeam CashDash"
+                            
+                            if (notifSubject.isNotEmpty() && notifBody.isNotEmpty()) {
+                                sendAdminInAppNotification(email, notifSubject, notifBody)
+                            }
+                        }
+
                         if (isExtensionRequest) {
-                            // Extension approved notification
-                            val notifSubject = "Your Admin Validity Has Been Extended ✅"
-                            val notifBody = "Congratulations, $name!\n\n" +
-                                "Your unwavering dedication and service to CashDash have been truly recognized. $approverName has approved your extension request, honoring the invaluable contribution you continue to bring to our platform.\n\n" +
-                                "New Validity: $validityStr\n\n" +
-                                "Your commitment inspires the entire team, and we look forward to achieving greater milestones together. Thank you for being an integral part of the CashDash journey.\n\n" +
-                                "Regards,\nTeam CashDash"
-                            sendAdminInAppNotification(email, notifSubject, notifBody)
-                            logAdminAction("Admin Extension Approved", notifSubject, "$approverEmail approved extension request for $email. New validity: $validityStr", email)
+                            logAdminAction("Admin Extension Approved", actvTitle?.text?.toString() ?: "Extension Approved", "$approverEmail approved extension request for $email. New validity: $validityStr", email)
                         } else {
-                            // New admin grant / permission update notification
-                            val notifSubject = "Welcome to the CashDash Admin Team! 🎉"
-                            val notifBody = "Congratulations, $name!\n\n" +
-                                "We are thrilled to welcome you as a $roleStr of CashDash. Your passion and dedication have been recognized, and we are excited to have you as part of our trusted operations team.\n\n" +
-                                "Validity: $validityStr\n\n" +
-                                "We look forward to accomplishing great things together. Your role is vital in shaping a better CashDash experience for every user we serve.\n\n" +
-                                "Regards,\nTeam CashDash"
-                            sendAdminInAppNotification(email, notifSubject, notifBody)
-                            logAdminAction("Admin Request Approved", notifSubject, "$approverEmail approved admin request for $email as $roleStr. Validity: $validityStr", email)
+                            logAdminAction("Admin Request Approved", actvTitle?.text?.toString() ?: "Request Approved", "$approverEmail approved admin request for $email as $roleStr. Validity: $validityStr", email)
                         }
 
                         logAdminAction("APPROVED_REQUEST", email, "Approved request and granted/updated permissions.")
-                        ToastHelper.showToast(this@AdminActivity, "Request approved")
-                        bottomSheet.dismiss()
+                        ToastHelper.showToast(this@ManageAdminAccessActivity, "Request approved")
+                        closeEditPermissionsView()
                     }
                     .addOnFailureListener { e ->
-                        ToastHelper.showToast(this@AdminActivity, "Failed: ${e.message}")
+                        ToastHelper.showToast(this@ManageAdminAccessActivity, "Failed: ${e.message}")
                     }
                 return@setOnClickListener
             }
@@ -1359,38 +1364,40 @@ class AdminActivity : ThemedActivity() {
                     logAdminAction(action, email, msg)
 
                     val actorEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "An administrator"
-                    val actorName = actorEmail.substringBefore("@").replaceFirstChar { it.uppercase() }
                     val validityStr = if (selectedValidUntil == 0L) "Lifetime\n(Note: Your continued access is a reflection of the trust placed in you. It remains subject to review based on your ongoing performance and commitment to the CashDash platform.)" else java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(selectedValidUntil)
                     val roleStr = if (isSuperAdminSave) "Super Administrator" else "Administrator"
 
                     if (isNewAdmin) {
-                        val notifSubject = "Welcome to the CashDash Admin Team! 🎉"
-                        val notifBody = "Congratulations, $name!\n\n" +
-                            "We are thrilled to welcome you as a $roleStr of CashDash. Your passion and dedication have been recognized, and we are excited to have you as part of our trusted operations team.\n\n" +
-                            "Validity: $validityStr\n\n" +
-                            "We look forward to accomplishing great things together. Your role is vital in shaping a better CashDash experience for every user we serve.\n\n" +
-                            "Regards,\nTeam CashDash"
-                        sendAdminInAppNotification(email, notifSubject, notifBody)
-                        logAdminAction("Admin Promotion", notifSubject, "$actorEmail granted $roleStr access to $email. Validity: $validityStr", email)
-                    } else if (selectedValidUntil != currentPerms.validUntil) {
-                        // Validity was manually changed by a higher-up without a formal request
-                        val notifSubject = "Your Admin Validity Has Been Updated"
-                        val notifBody = "Hi $name,\n\n" +
-                            "$actorName has reviewed your admin profile and updated your validity, acknowledging your continued dedication to the CashDash platform.\n\n" +
-                            "New Validity: $validityStr\n\n" +
-                            "Thank you for the consistent service you bring to CashDash. We deeply value every contribution you make to our community.\n\n" +
-                            "Regards,\nTeam CashDash"
-                        sendAdminInAppNotification(email, notifSubject, notifBody)
-                        logAdminAction("Admin Validity Update", notifSubject, "$actorEmail updated validity for $email to $validityStr", email)
+                        if (cbIncludeNotification?.isChecked == true) {
+                            val notifSubject = actvTitle?.text?.toString()?.trim() ?: ""
+                            var notifBody = actvContent?.text?.toString()?.trim() ?: ""
+                            notifBody = notifBody.replace("{Validity}", validityStr)
+                            notifBody += "\n\nRegards,\nTeam CashDash"
+                            if (notifSubject.isNotEmpty() && notifBody.isNotEmpty()) {
+                                sendAdminInAppNotification(email, notifSubject, notifBody)
+                            }
+                        }
+                        logAdminAction("Admin Promotion", actvTitle?.text?.toString() ?: "Admin Added", "$actorEmail granted $roleStr access to $email. Validity: $validityStr", email)
+                    } else if (true) {
+                        if (cbIncludeNotification?.isChecked == true) {
+                            val notifSubject = actvTitle?.text?.toString()?.trim() ?: ""
+                            var notifBody = actvContent?.text?.toString()?.trim() ?: ""
+                            notifBody = notifBody.replace("{Validity}", validityStr)
+                            notifBody += "\n\nRegards,\nTeam CashDash"
+                            if (notifSubject.isNotEmpty() && notifBody.isNotEmpty()) {
+                                sendAdminInAppNotification(email, notifSubject, notifBody)
+                            }
+                        }
+                        logAdminAction("Admin Validity Update", actvTitle?.text?.toString() ?: "Access Updated", "$actorEmail updated validity for $email to $validityStr", email)
                     }
 
-                    ToastHelper.showToast(this@AdminActivity, msg)
-                    this@AdminActivity.findViewById<EditText>(R.id.etSearchNewAdmin)?.setText("")
-                    this@AdminActivity.findViewById<LinearLayout>(R.id.layoutAdminSearchResults)?.visibility = View.GONE
-                    bottomSheet.dismiss()
+                    ToastHelper.showToast(this@ManageAdminAccessActivity, msg)
+                    this@ManageAdminAccessActivity.findViewById<EditText>(R.id.etSearchNewAdmin)?.setText("")
+                    this@ManageAdminAccessActivity.findViewById<LinearLayout>(R.id.layoutAdminSearchResults)?.visibility = View.GONE
+                    closeEditPermissionsView()
                 }
                 .addOnFailureListener { e -> 
-                    ToastHelper.showToast(this@AdminActivity, "Failed to save. Firebase Rules might be blocking it: ${e.message}") 
+                    ToastHelper.showToast(this@ManageAdminAccessActivity, "Failed to save. Firebase Rules might be blocking it: ${e.message}") 
                 }
         }
 
@@ -1400,7 +1407,7 @@ class AdminActivity : ThemedActivity() {
                     .addOnSuccessListener {
                         logAdminAction("REJECTED_REQUEST", email, "Rejected admin extension/access request.")
                         ToastHelper.showToast(this, "Request rejected")
-                        bottomSheet.dismiss()
+                        closeEditPermissionsView()
                     }
                     .addOnFailureListener { e ->
                         ToastHelper.showToast(this, "Failed to reject: ${e.message}")
@@ -1421,8 +1428,8 @@ class AdminActivity : ThemedActivity() {
                                 FirebaseFirestore.getInstance().collection("admin_requests").document(email.lowercase()).delete()
                                 logAdminAction("RESIGNED", email, "User voluntarily resigned from admin privileges.")
                                 ToastHelper.showToast(this, "You have resigned as admin.")
-                                bottomSheet.dismiss()
-                                finish() // Exit Admin Activity since they resigned
+                                closeEditPermissionsView()
+                                finish() 
                             }
                             .addOnFailureListener { e ->
                                 ToastHelper.showToast(this, "Failed to resign: ${e.message}")
@@ -1450,18 +1457,19 @@ class AdminActivity : ThemedActivity() {
                         FirebaseFirestore.getInstance().collection("admins").document(email.lowercase()).delete()
                             .addOnSuccessListener {
                                 val actorEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "An administrator"
-                                val actorName = actorEmail.substringBefore("@").replaceFirstChar { it.uppercase() }
-                                val notifSubject = "Admin Access Update"
-                                val notifBody = "Hi $name,\n\n" +
-                                    "Your administrative access to CashDash has been revoked by $actorName.\n\n" +
-                                    "If you believe this was done in error, please reach out to the CashDash team.\n\n" +
-                                    "Thank you for your service and contributions to CashDash. We wish you all the best.\n\n" +
-                                    "Regards,\nTeam CashDash"
-                                sendAdminInAppNotification(email, notifSubject, notifBody)
+                                if (cbIncludeNotification?.isChecked == true) {
+                                    val notifSubject = actvTitle?.text?.toString()?.trim() ?: ""
+                                    var notifBody = actvContent?.text?.toString()?.trim() ?: ""
+                                    notifBody += "\n\nRegards,\nTeam CashDash"
+                                    
+                                    if (notifSubject.isNotEmpty() && notifBody.isNotEmpty()) {
+                                        sendAdminInAppNotification(email, notifSubject, notifBody)
+                                    }
+                                }
                                 logAdminAction("REVOKED_ACCESS", email, "Revoked all admin privileges.")
-                                logAdminAction("Admin Revocation", notifSubject, "$actorEmail revoked admin access for $email", email)
+                                logAdminAction("Admin Revocation", "Access Revoked", "$actorEmail revoked admin access for $email", email)
                                 ToastHelper.showToast(this, "Access revoked")
-                                bottomSheet.dismiss()
+                                closeEditPermissionsView()
                             }
                             .addOnFailureListener { e ->
                                 ToastHelper.showToast(this, "Failed to revoke: ${e.message}")
@@ -1477,8 +1485,6 @@ class AdminActivity : ThemedActivity() {
                 dialog.show()
             }
         }
-
-        bottomSheet.show()
     }
 
     private fun logAdminAction(action: String, targetEmail: String, details: String) {
@@ -1497,17 +1503,17 @@ class AdminActivity : ThemedActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt("selectedYear", selectedDateCalendar.get(Calendar.YEAR))
-        outState.putInt("selectedMonth", selectedDateCalendar.get(Calendar.MONTH))
-        outState.putInt("selectedDay", selectedDateCalendar.get(Calendar.DAY_OF_MONTH))
+        outState.putInt("selectedYear", 0)
+        outState.putInt("selectedMonth", 0)
+        outState.putInt("selectedDay", 0)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
-        val year = savedInstanceState.getInt("selectedYear", selectedDateCalendar.get(Calendar.YEAR))
-        val month = savedInstanceState.getInt("selectedMonth", selectedDateCalendar.get(Calendar.MONTH))
-        val day = savedInstanceState.getInt("selectedDay", selectedDateCalendar.get(Calendar.DAY_OF_MONTH))
-        selectedDateCalendar.set(year, month, day)
+        val year = savedInstanceState.getInt("selectedYear", 0)
+        val month = savedInstanceState.getInt("selectedMonth", 0)
+        val day = savedInstanceState.getInt("selectedDay", 0)
+        
     }
 
 }

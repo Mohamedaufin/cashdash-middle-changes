@@ -116,4 +116,7 @@ dependencies {
     
     // WorkManager for delayed tasks
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+    
+    // Gemini SDK for AI Rephrase
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 }
