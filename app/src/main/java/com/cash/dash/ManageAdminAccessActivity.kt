@@ -405,6 +405,7 @@ class ManageAdminAccessActivity : ThemedActivity() {
             for (doc in querySnapshot.documents) {
                 val email = doc.id
                 val name = doc.getString("name")
+                @Suppress("UNCHECKED_CAST")
                 val activeDates = doc.get("activeDates") as? List<String> ?: emptyList()
                 
                 val rtdbData = rtdbPresenceMap[email]
@@ -924,6 +925,7 @@ class ManageAdminAccessActivity : ThemedActivity() {
                 return@setOnClickListener
             }
             ToastHelper.showToast(this@ManageAdminAccessActivity, "Rephrasing Title...")
+            @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
             kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
                     val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
@@ -947,6 +949,7 @@ class ManageAdminAccessActivity : ThemedActivity() {
                 return@setOnClickListener
             }
             ToastHelper.showToast(this@ManageAdminAccessActivity, "Rephrasing Content...")
+            @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
             kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
                     val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
