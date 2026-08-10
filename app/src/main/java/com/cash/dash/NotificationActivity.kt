@@ -262,12 +262,14 @@ class NotificationActivity : ThemedActivity() {
         outState.putString("currentFilter", currentFilter)
         outState.putString("activePickerQueryId", activePickerQueryId)
         outState.putSerializable("replyDrafts", replyDrafts)
+        outState.putString("searchQuery", searchQuery)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
         currentFilter = savedInstanceState.getString("currentFilter", "all")
         activePickerQueryId = savedInstanceState.getString("activePickerQueryId", activePickerQueryId)
+        searchQuery = savedInstanceState.getString("searchQuery", "")
         
         val drafts = savedInstanceState.getSerializable("replyDrafts") as? HashMap<String, String>
         if (drafts != null) {

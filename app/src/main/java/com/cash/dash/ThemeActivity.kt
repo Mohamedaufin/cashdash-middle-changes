@@ -336,10 +336,9 @@ class ThemeActivity : ThemedActivity() {
     }
 
     private fun navigateToHome() {
-        val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        startActivity(intent)
+        // Just finish — activities in the back stack will detect the theme
+        // change in their own onResume() and call recreate() themselves,
+        // properly saving state first via onSaveInstanceState.
         finish()
     }
 
