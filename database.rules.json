@@ -1,0 +1,16 @@
+{
+  "rules": {
+    "status": {
+      "$userEmail": {
+        // Only the owner of this status node can write their own presence
+        // Any authenticated user (admin) can read status for the admin panel
+        ".read": "auth != null && (root.child('admins').child(auth.token.email.replace('.', ',')).exists() || auth.token.email === 'mohamedaufin64@gmail.com' || auth.token.email === 'arunbhalaji200904@gmail.com')",
+        ".write": "auth != null && auth.token.email.replace('.', ',') === $userEmail"
+      }
+    },
+    "$other": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}

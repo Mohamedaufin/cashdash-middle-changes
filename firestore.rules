@@ -1,13 +1,15 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function to check if the user is signed in and their email matches the document ID
+
+    // --- Helper Functions ---
+
+    // Check if the requester is signed in and is the owner of the document (by email)
     function isOwner(emailId) {
       return request.auth != null && request.auth.token.email.lower() == emailId.lower();
     }
 
-    // Helper function to check if the user is a whitelisted super admin (owner)
+    // Super admins (owners) — hardcoded by email
     function isSuperAdmin() {
       return request.auth != null && (
         request.auth.token.email.lower() == "mohamedaufin64@gmail.com" ||
@@ -15,7 +17,7 @@ service cloud.firestore {
       );
     }
 
-    // Helper function to check if the user has allocateAdmins permission in the admins collection
+    // Admins who specifically have the 'allocateAdmins' permission granted
     function hasAllocateAdminPermission() {
       return request.auth != null && (
         isSuperAdmin() ||
@@ -26,7 +28,7 @@ service cloud.firestore {
       );
     }
 
-    // Helper function to check if the user is any kind of admin (for read access)
+    // Any user who is listed in the admins collection OR is a super admin
     function isAnyAdmin() {
       return request.auth != null && (
         isSuperAdmin() ||
@@ -34,61 +36,84 @@ service cloud.firestore {
       );
     }
 
-    // Match the users collection and the specific user's document
-    match /users/{userEmail} {
-      allow read, write: if isOwner(userEmail) || isAnyAdmin();
+    // Check the user's account is not suspended/deleted
+    function isActiveUser() {
+      return request.auth != null;
+    }
 
-      // Match all subcollections under the user's document
+    // --- Collection Rules ---
+
+    // User documents: owners can manage their own, admins can read all
+    match /users/{userEmail} {
+      allow read: if isOwner(userEmail) || isAnyAdmin();
+      allow write: if isOwner(userEmail);
+
+      // Subcollections (config, notifications, etc.)
       match /{subcollection=**} {
-        allow read, write: if isOwner(userEmail) || isAnyAdmin();
+        allow read: if isOwner(userEmail) || isAnyAdmin();
+        allow write: if isOwner(userEmail);
       }
     }
 
-    // Match the deleted_accounts collection
+    // Deleted accounts: users can read their own (for self-deletion flow), only super admins can write
     match /deleted_accounts/{userEmail} {
-      allow read, write: if isOwner(userEmail) || isSuperAdmin();
+      allow read: if isOwner(userEmail) || isSuperAdmin();
+      allow write: if isSuperAdmin();
     }
 
-    // 🚀 Match the Admins collection
+    // Admins collection
+    // READ: any admin can read (needed to load admin management screens)
+    // WRITE: only admins with allocateAdmins permission or super admins can modify
     match /admins/{adminEmail} {
-      // Any admin can read the list (needed to load admin access section)
       allow read: if isAnyAdmin();
-      // Only those with allocateAdmins permission (or super admins) can write
-      allow write: if isAnyAdmin();
+      allow write: if hasAllocateAdminPermission();
     }
 
-    // 🚀 Match the Admin Requests collection
+    // Admin requests (pending admin promotions)
+    // READ: any admin can view pending requests
+    // WRITE: only admins with allocateAdmins permission can process them
     match /admin_requests/{requestEmail} {
-      allow read, write: if isAnyAdmin();
+      allow read: if isAnyAdmin();
+      allow write: if hasAllocateAdminPermission();
     }
 
-    // 🚀 Match the Admin Announcements collection
+    // Announcements: any signed-in user can read, only admins can write
     match /announcements/{document=**} {
-      allow read: if request.auth != null;
+      allow read: if isActiveUser();
       allow write: if isAnyAdmin();
     }
 
-    // 🚀 Match the Global Pushes collection
+    // Global push notifications: any signed-in user can read, only admins can write
     match /global_pushes/{document=**} {
-      allow read: if request.auth != null;
+      allow read: if isActiveUser();
       allow write: if isAnyAdmin();
     }
 
-    // 🚀 Match the User Pushes collection
+    // User-targeted push notifications: any signed-in user can read their own, only admins can write
     match /user_pushes/{document=**} {
-      allow read: if request.auth != null;
+      allow read: if isActiveUser();
       allow write: if isAnyAdmin();
     }
 
-    // 🚀 Match the Admin Logs collection
+    // Admin action logs: only admins can read/write
+    // Exception: any signed-in user can append their own click to notif_clickers/ann_clickers only
     match /admin_logs/{document=**} {
       allow read, write: if isAnyAdmin();
-
-      // Any signed-in user (the actual recipients of a push/announcement) may record
-      // their own click by appending to notif_clickers / ann_clickers — nothing else
-      // in the log document is exposed or writable to them.
-      allow update: if request.auth != null &&
+      allow update: if isActiveUser() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['notif_clickers', 'ann_clickers']);
+    }
+
+    // Audit logs: written by the app when admin actions occur
+    // Only super admins can read; any admin (or the app acting as admin) can append
+    match /audit_logs/{document=**} {
+      allow read: if isSuperAdmin();
+      allow create: if isAnyAdmin();
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // Deny everything else by default (implicit, but explicit is safer)
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

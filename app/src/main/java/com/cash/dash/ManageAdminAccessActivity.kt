@@ -1503,17 +1503,15 @@ class ManageAdminAccessActivity : ThemedActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt("selectedYear", 0)
-        outState.putInt("selectedMonth", 0)
-        outState.putInt("selectedDay", 0)
+        // EditText contents (search, notification title/body) are auto-saved by Android
+        // via view state since they have android:id set. We only need to persist
+        // variables that aren't reflected in the view hierarchy.
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
-        val year = savedInstanceState.getInt("selectedYear", 0)
-        val month = savedInstanceState.getInt("selectedMonth", 0)
-        val day = savedInstanceState.getInt("selectedDay", 0)
-        
+        // Nothing extra to restore — EditText state is automatically re-applied
+        // by Android's view state restoration.
     }
 
 }

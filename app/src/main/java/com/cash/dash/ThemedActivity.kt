@@ -6,8 +6,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.enableEdgeToEdge
 
 open class ThemedActivity : AppCompatActivity() {
+
+    // Tracks which theme this activity was built with.
+    // If the user changes theme in ThemeActivity and returns, onResume()
+    // will detect the mismatch and call recreate() — which properly calls
+    // onSaveInstanceState first, so no work is lost.
+    private var activityCreatedTheme = ""
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeHelper.applyTheme(this)
+        // Record the theme NOW so onResume() can detect if it changes
+        activityCreatedTheme = ThemeHelper.getSavedTheme(this)
         
         val theme = ThemeHelper.getCurrentTheme(this)
         val isWhite = theme == "White"
@@ -112,6 +120,14 @@ open class ThemedActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Detect if the user changed the theme while this activity was paused
+        // (e.g. they visited ThemeActivity and applied a new theme)
+        val currentSavedTheme = ThemeHelper.getSavedTheme(this)
+        if (activityCreatedTheme.isNotEmpty() && currentSavedTheme != activityCreatedTheme) {
+            // recreate() calls onSaveInstanceState before destroying, so all state is preserved
+            recreate()
+            return
+        }
         trackActivityResume()
     }
 
