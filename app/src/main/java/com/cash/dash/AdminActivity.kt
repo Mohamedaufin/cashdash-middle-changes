@@ -1243,12 +1243,9 @@ class AdminActivity : ThemedActivity() {
             
             var needsRequest = false
             if (!isCurrentUserOwner) {
-                if (isNewAdmin) {
-                    // Any new admin addition requires owner approval
+                if (!currentUserPerms.canAllocateAdmins()) {
                     needsRequest = true
-                } else if (!currentUserPerms.canAllocateAdmins()) {
-                    needsRequest = true
-                } else if (isSuperAdminSave && (!currentPerms.fullAccess)) {
+                } else if (isSuperAdminSave && (!currentPerms.fullAccess || isNewAdmin)) {
                     needsRequest = true
                 }
             }
