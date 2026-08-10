@@ -1013,6 +1013,9 @@ class AdminActivity : ThemedActivity() {
                             updateValidityUI()
                         }, cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH), cal.get(java.util.Calendar.DAY_OF_MONTH))
                         dpd.datePicker.minDate = System.currentTimeMillis() - 1000
+                        if (!isCurrentUserLifetime && currentUserPerms.validUntil > 0L) {
+                            dpd.datePicker.maxDate = currentUserPerms.validUntil
+                        }
                         dpd.show()
                     }
                 }
