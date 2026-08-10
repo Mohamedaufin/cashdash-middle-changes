@@ -299,7 +299,7 @@ class AdminPromotionsActivity : ThemedActivity() {
                     val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
                     edtAnnouncementTitle.setText(result)
                 } catch (e: Exception) {
-                    ToastHelper.showToast(this@AdminPromotionsActivity, e.message ?: "AI Error")
+                    ToastHelper.showErrorDialog(this@AdminPromotionsActivity, "AI Error", e.message ?: "Unknown Error")
                 }
             }
         }
@@ -316,7 +316,7 @@ class AdminPromotionsActivity : ThemedActivity() {
                     val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
                     edtAnnouncementBody.setText(result)
                 } catch (e: Exception) {
-                    ToastHelper.showToast(this@AdminPromotionsActivity, e.message ?: "AI Error")
+                    ToastHelper.showErrorDialog(this@AdminPromotionsActivity, "AI Error", e.message ?: "Unknown Error")
                 }
             }
         }

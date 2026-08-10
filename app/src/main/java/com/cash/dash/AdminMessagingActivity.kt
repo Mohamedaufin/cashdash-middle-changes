@@ -180,7 +180,7 @@ class AdminMessagingActivity : ThemedActivity() {
                     val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6INnxwddAo8VfHAPKNTEnqGWN3cOpTsnP_usdRrkq8CKg")
                     edtMessageTitle.setText(result)
                 } catch (e: Exception) {
-                    ToastHelper.showToast(this@AdminMessagingActivity, e.message ?: "AI Error")
+                    ToastHelper.showErrorDialog(this@AdminMessagingActivity, "AI Error", e.message ?: "Unknown Error")
                 }
             }
         }
@@ -197,7 +197,7 @@ class AdminMessagingActivity : ThemedActivity() {
                     val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6INnxwddAo8VfHAPKNTEnqGWN3cOpTsnP_usdRrkq8CKg")
                     edtMessageBody.setText(result)
                 } catch (e: Exception) {
-                    ToastHelper.showToast(this@AdminMessagingActivity, e.message ?: "AI Error")
+                    ToastHelper.showErrorDialog(this@AdminMessagingActivity, "AI Error", e.message ?: "Unknown Error")
                 }
             }
         }

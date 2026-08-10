@@ -25,4 +25,19 @@ object ToastHelper {
             toast.cancel()
         }, durationMs)
     }
+
+    fun showErrorDialog(context: Context, title: String, message: String) {
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(context)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("OK", null)
+            .setNeutralButton("Copy") { _, _ ->
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                val clip = android.content.ClipData.newPlainText("Error Message", message)
+                clipboard.setPrimaryClip(clip)
+                showToast(context, "Error copied to clipboard")
+            }
+            .create()
+        dialog.show()
+    }
 }

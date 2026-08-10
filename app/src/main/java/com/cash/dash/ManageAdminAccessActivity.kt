@@ -944,7 +944,7 @@ class ManageAdminAccessActivity : ThemedActivity() {
                     val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
                     actvTitle?.setText(result)
                 } catch (e: Exception) {
-                    ToastHelper.showToast(this@ManageAdminAccessActivity, e.message ?: "AI Error")
+                    ToastHelper.showErrorDialog(this@ManageAdminAccessActivity, "AI Error", e.message ?: "Unknown Error")
                 }
             }
         }
@@ -961,7 +961,7 @@ class ManageAdminAccessActivity : ThemedActivity() {
                     val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
                     actvContent?.setText(result)
                 } catch (e: Exception) {
-                    ToastHelper.showToast(this@ManageAdminAccessActivity, e.message ?: "AI Error")
+                    ToastHelper.showErrorDialog(this@ManageAdminAccessActivity, "AI Error", e.message ?: "Unknown Error")
                 }
             }
         }
