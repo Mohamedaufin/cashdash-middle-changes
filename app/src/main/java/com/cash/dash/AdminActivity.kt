@@ -870,25 +870,6 @@ class AdminActivity : ThemedActivity() {
         container.addView(div)
     }
 
-    private fun addAdminToFirestore(email: String, name: String) {
-        val db = FirebaseFirestore.getInstance()
-        val data = hashMapOf(
-            "name" to name,
-            "fullAccess" to false,
-            "sendAnnouncements" to false,
-            "sendPromotions" to false,
-            "sendNotifications" to false,
-            "viewLastSeen" to false,
-            "allocateAdmins" to false
-        )
-        db.collection("admins").document(email.lowercase(java.util.Locale.getDefault())).set(data)
-            .addOnSuccessListener {
-                ToastHelper.showToast(this, "Added admin: $name")
-                findViewById<EditText>(R.id.etSearchNewAdmin)?.setText("")
-                findViewById<LinearLayout>(R.id.layoutAdminSearchResults)?.visibility = View.GONE
-            }
-    }
-
     private fun showEditAdminPermissionsDialog(
         email: String,
         name: String,
@@ -1261,9 +1242,12 @@ class AdminActivity : ThemedActivity() {
             
             var needsRequest = false
             if (!isCurrentUserOwner) {
-                if (!currentUserPerms.canAllocateAdmins()) {
+                if (isNewAdmin) {
+                    // Any new admin addition requires owner approval
                     needsRequest = true
-                } else if (isSuperAdminSave && (!currentPerms.fullAccess || isNewAdmin)) {
+                } else if (!currentUserPerms.canAllocateAdmins()) {
+                    needsRequest = true
+                } else if (isSuperAdminSave && (!currentPerms.fullAccess)) {
                     needsRequest = true
                 }
             }
@@ -1289,6 +1273,21 @@ class AdminActivity : ThemedActivity() {
                 db.collection("admin_requests").document(email.lowercase()).set(requestData)
                     .addOnSuccessListener {
                         ToastHelper.showToast(this@AdminActivity, "Request sent to owners for approval")
+                        
+                        // Notify owners
+                        db.collection("admins").whereEqualTo("isOwner", true).get().addOnSuccessListener { snaps ->
+                            val ownerEmails = snaps.documents.map { it.id }.toMutableSet()
+                            ownerEmails.addAll(AdminManager.superAdmins) // Include fixed owners
+                            
+                            val requesterEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "An admin"
+                            for (owner in ownerEmails) {
+                                sendAdminInAppNotification(
+                                    targetEmail = owner,
+                                    subject = "New Admin Request",
+                                    body = "$requesterEmail requested to add/modify $email as an admin. Please review the request."
+                                )
+                            }
+                        }
                         bottomSheet.dismiss()
                     }
                     .addOnFailureListener { e -> 
