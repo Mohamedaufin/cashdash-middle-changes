@@ -442,8 +442,7 @@ class MainActivity : ThemedActivity() {
         val result = intent.getStringExtra("payment_status")
         if (result == "failed") {
             val snackbar = Snackbar.make(findViewById(android.R.id.content), "❌ Payment Failed or Cancelled", Snackbar.LENGTH_LONG)
-            snackbar.setBackgroundTint(ThemeHelper.getSnackbarBackgroundColor(this))
-            snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)?.setTextColor(ThemeHelper.getSnackbarTextColor(this))
+            ThemeHelper.styleSnackbar(this, snackbar)
             snackbar.show()
         }
         intent.removeExtra("payment_status")

@@ -1,116 +1,161 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="?attr/mainBackground"
-    android:paddingTop="35dp">
+    android:fitsSystemWindows="true">
 
-    <!-- Top section -->
-    <LinearLayout
+    <!-- TOP BAR (Standardized to FinMinder pattern) -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/topBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="10dp">
+        android:paddingTop="4dp"
+        android:paddingStart="25dp"
+        android:paddingEnd="25dp"
+        android:layout_marginBottom="4dp"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <!-- TOP BAR -->
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <ImageButton
-                android:id="@+id/btnBack"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_marginStart="25dp"
-                android:background="?attr/roundBackground"
-                android:padding="10dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_back_arrow1"
-                app:tint="?attr/textPrimaryColor"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-        <!-- TITLE -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:layout_marginBottom="25dp"
-            android:text="Setting limit"
-            android:textColor="?attr/textPrimaryColor"
-            android:textSize="@dimen/text_title"
-            android:paddingTop="35dp" />
-
-        <!-- INPUT BOX -->
-        <!-- AMOUNT DISPLAY BOX (Glass) -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:layout_marginHorizontal="25dp"
-            android:layout_marginTop="20dp"
-            android:background="?attr/cardBackground"
-            android:gravity="center"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="₹"
-                android:textColor="?attr/textPrimaryColor"
-                android:textSize="@dimen/text_headline"
-                android:textStyle="bold"
-                android:layout_marginEnd="10dp"/>
-
-            <EditText
-                android:id="@+id/txtInput"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@android:color/transparent"
-                android:hint="0"
-                android:textColorHint="@color/text_dim"
-                android:text="0"
-                android:gravity="center"
-                android:textColor="?attr/textPrimaryColor"
-                android:textSize="@dimen/text_headline"
-                android:textStyle="bold"
-                android:focusable="false"
-                android:cursorVisible="false"
-                android:inputType="none" />
-
-        </LinearLayout>
-
-        <!-- NEXT BUTTON -->
-        <ImageButton
-            android:id="@+id/btnNext"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:layout_gravity="end"
-            android:layout_marginEnd="25dp"
-            android:layout_marginTop="25dp"
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:background="?attr/roundBackground"
             android:padding="12dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/ic_right_arrow"
-            app:tint="?attr/textPrimaryColor" />
+            android:src="@drawable/ic_back_arrow1"
+            app:tint="?attr/textPrimaryColor"
+            android:clickable="true"
+            android:focusable="true"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="60dp"
+            android:text="Set Limit"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold"
+            android:gravity="center"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <LinearLayout
+        android:id="@+id/categoryInfoContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginStart="25dp"
+        android:layout_marginEnd="25dp"
+        android:layout_marginTop="25dp"
+        app:layout_constraintTop_toBottomOf="@id/topBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+        
+        <TextView
+            android:id="@+id/tvCategoryName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+            
+        <TextView
+            android:id="@+id/tvCurrentLimit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="?attr/textMutedColor"
+            android:textSize="13sp"
+            android:layout_marginTop="2dp" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvSetNewLimit"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Set New Limit:"
+        android:textColor="?attr/textPrimaryColor"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:layout_marginTop="25dp"
+        android:layout_marginStart="25dp"
+        android:layout_marginEnd="25dp"
+        app:layout_constraintTop_toBottomOf="@id/categoryInfoContainer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- AMOUNT DISPLAY BOX -->
+    <LinearLayout
+        android:id="@+id/inputArea"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_marginHorizontal="25dp"
+        android:layout_marginTop="25dp"
+        android:background="?attr/cardBackground"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/tvSetNewLimit">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="₹"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="@dimen/text_headline"
+            android:textStyle="bold"
+            android:layout_marginEnd="10dp"/>
+
+        <EditText
+            android:id="@+id/txtInput"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:hint="0"
+            android:textColorHint="@color/text_dim"
+            android:text="0"
+            android:gravity="center"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="@dimen/text_headline"
+            android:textStyle="bold"
+            android:focusable="false"
+            android:cursorVisible="false"
+            android:inputType="none" />
+    </LinearLayout>
+
+    <!-- NEXT BUTTON -->
+    <ImageButton
+        android:id="@+id/btnNext"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="25dp"
+        android:layout_marginEnd="25dp"
+        android:background="?attr/roundBackground"
+        android:padding="12dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_right_arrow"
+        app:tint="?attr/textPrimaryColor"
+        app:layout_constraintTop_toBottomOf="@id/inputArea"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- NUMPAD CONTAINER -->
     <FrameLayout
         android:id="@+id/numpadContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:background="?attr/keypadRoundedBackground"
-        android:layout_marginTop="30dp"
-        android:paddingTop="10dp"
-        android:paddingBottom="0dp">
+        android:background="?attr/panelBackground"
+        android:layout_marginTop="25dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="10dp"
+        app:layout_constraintTop_toBottomOf="@id/btnNext"
+        app:layout_constraintBottom_toBottomOf="parent">
 
         <GridLayout
             android:id="@+id/numberPad"
@@ -135,12 +180,12 @@
             <androidx.appcompat.widget.AppCompatButton style="@style/keyBtn" android:text="8"/>
             <androidx.appcompat.widget.AppCompatButton style="@style/keyBtn" android:text="9"/>
 
-            <androidx.appcompat.widget.AppCompatButton style="@style/keyBtn" android:id="@+id/btnBackspace" android:text="⌫"/>
+            <androidx.appcompat.widget.AppCompatButton style="@style/keyBtn" android:text="00" />
             <androidx.appcompat.widget.AppCompatButton style="@style/keyBtn" android:text="0"/>
-            <androidx.appcompat.widget.AppCompatButton style="@style/keyBtn" android:id="@+id/btnDone" android:text="➤"/>
+            <androidx.appcompat.widget.AppCompatButton style="@style/keyBtn" android:id="@+id/btnBackspace" android:text="✖" android:textSize="@dimen/text_title"/>
 
         </GridLayout>
 
     </FrameLayout>
 
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

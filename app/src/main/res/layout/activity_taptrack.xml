@@ -20,11 +20,10 @@
             android:paddingTop="4dp"
             android:paddingBottom="75dp">
 
-            <!-- TOP NAV BAR -->
+            <!-- TOP NAV BAR (Standardized to FinMinder pattern) -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingTop="4dp"
                 android:layout_marginBottom="25dp">
 
                 <ImageView

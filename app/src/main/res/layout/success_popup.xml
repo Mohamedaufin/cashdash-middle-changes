@@ -4,7 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="?attr/mainBackground">
+    android:background="?attr/mainBackground"
+    android:fitsSystemWindows="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -13,10 +14,10 @@
 
         <ImageView
             android:id="@+id/btnBack"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="36dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="25dp"
+            android:layout_marginTop="4dp"
             android:background="?attr/roundBackground"
             android:padding="12dp"
             android:src="@drawable/ic_back_arrow1"

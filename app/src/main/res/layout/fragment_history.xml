@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:paddingTop="40dp"
+    android:paddingTop="30dp"
+
     android:paddingBottom="20dp">
     <!-- TOP FILTER BUTTONS -->
     <LinearLayout
@@ -16,7 +17,8 @@
         android:padding="10dp">
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnDaily"
-            android:layout_width="104dp"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
             android:background="?attr/inputBackground"
             android:backgroundTint="@null"
@@ -33,7 +35,8 @@
             android:elevation="0dp" />
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnDate"
-            android:layout_width="135dp"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
             android:layout_marginEnd="12dp"
@@ -52,7 +55,8 @@
             android:elevation="0dp" />
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnOverall"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
             android:background="?attr/inputBackground"
             android:backgroundTint="@null"

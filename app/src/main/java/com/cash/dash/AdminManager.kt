@@ -15,19 +15,27 @@ object AdminManager {
         val sendPromotions: Boolean = false,
         val sendNotifications: Boolean = false,
         val viewLastSeen: Boolean = false,
-        val allocateAdmins: Boolean = false
+        val viewAdminLogs: Boolean = false,
+        val replyToQueries: Boolean = false,
+        val allocateAdmins: Boolean = false,
+        val validUntil: Long = 0L
     ) {
         val isOwner: Boolean
             get() = isFixedOwner || isPromotedOwner
 
         val hasAnyAccess: Boolean
-            get() = isOwner || fullAccess || sendAnnouncements || sendPromotions || sendNotifications || viewLastSeen || allocateAdmins
+            get() = !isExpired && (isOwner || fullAccess || sendAnnouncements || sendPromotions || sendNotifications || viewLastSeen || viewAdminLogs || replyToQueries || allocateAdmins)
 
-        fun canSendAnnouncements() = isOwner || fullAccess || sendAnnouncements
-        fun canSendPromotions() = isOwner || fullAccess || sendPromotions
-        fun canSendNotifications() = isOwner || fullAccess || sendNotifications
-        fun canViewLastSeen() = isOwner || fullAccess || viewLastSeen
-        fun canAllocateAdmins() = isOwner || fullAccess || allocateAdmins
+        val isExpired: Boolean
+            get() = validUntil > 0L && validUntil < System.currentTimeMillis()
+
+        fun canSendAnnouncements() = !isExpired && (isOwner || fullAccess || sendAnnouncements)
+        fun canSendPromotions() = !isExpired && (isOwner || fullAccess || sendPromotions)
+        fun canSendNotifications() = !isExpired && (isOwner || fullAccess || sendNotifications)
+        fun canViewLastSeen() = !isExpired && (isOwner || fullAccess || viewLastSeen)
+        fun canViewAdminLogs() = !isExpired && (isOwner || fullAccess || viewAdminLogs)
+        fun canReplyToQueries() = !isExpired && (isOwner || fullAccess || replyToQueries)
+        fun canAllocateAdmins() = !isExpired && (isOwner || fullAccess || allocateAdmins)
     }
 
     private var currentPermissions = AdminPermissions()
@@ -55,7 +63,10 @@ object AdminManager {
             .putBoolean("sendPromotions", perms.sendPromotions)
             .putBoolean("sendNotifications", perms.sendNotifications)
             .putBoolean("viewLastSeen", perms.viewLastSeen)
+            .putBoolean("viewAdminLogs", perms.viewAdminLogs)
+            .putBoolean("replyToQueries", perms.replyToQueries)
             .putBoolean("allocateAdmins", perms.allocateAdmins)
+            .putLong("validUntil", perms.validUntil)
             .apply()
     }
 
@@ -72,7 +83,10 @@ object AdminManager {
             sendPromotions = prefs.getBoolean("sendPromotions", false),
             sendNotifications = prefs.getBoolean("sendNotifications", false),
             viewLastSeen = prefs.getBoolean("viewLastSeen", false),
-            allocateAdmins = prefs.getBoolean("allocateAdmins", false)
+            viewAdminLogs = prefs.getBoolean("viewAdminLogs", false),
+            replyToQueries = prefs.getBoolean("replyToQueries", false),
+            allocateAdmins = prefs.getBoolean("allocateAdmins", false),
+            validUntil = prefs.getLong("validUntil", 0L)
         )
     }
 
@@ -134,7 +148,10 @@ object AdminManager {
                         sendPromotions = snapshot.getBoolean("sendPromotions") ?: false,
                         sendNotifications = snapshot.getBoolean("sendNotifications") ?: false,
                         viewLastSeen = snapshot.getBoolean("viewLastSeen") ?: false,
-                        allocateAdmins = snapshot.getBoolean("allocateAdmins") ?: false
+                        viewAdminLogs = snapshot.getBoolean("viewAdminLogs") ?: false,
+                        replyToQueries = snapshot.getBoolean("replyToQueries") ?: false,
+                        allocateAdmins = snapshot.getBoolean("allocateAdmins") ?: false,
+                        validUntil = snapshot.getLong("validUntil") ?: 0L
                     )
                 } else {
                     AdminPermissions(isFixedOwner = isFixed)

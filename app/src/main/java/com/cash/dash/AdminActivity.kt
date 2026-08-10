@@ -382,7 +382,10 @@ class AdminActivity : ThemedActivity() {
                                     (48 * density).toInt()
                                 )
                                 setOnClickListener {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(replyUrl))
+                                    val intent = Intent(this@AdminActivity, WebViewActivity::class.java).apply {
+                                        putExtra("title", "Admin Reply")
+                                        putExtra("url", replyUrl)
+                                    }
                                     startActivity(intent)
                                 }
                             }
@@ -443,17 +446,6 @@ class AdminActivity : ThemedActivity() {
     }
 
     private fun loadUserStatusList() {
-        if (!AdminManager.getPermissions().canViewLastSeen()) {
-            val container = findViewById<LinearLayout>(R.id.layoutUserStatusContainer)
-            container?.removeAllViews()
-            val tv = TextView(this).apply {
-                text = "Permission denied to view Last Seen status."
-                setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textMutedColor))
-                setPadding(16, 16, 16, 16)
-            }
-            container?.addView(tv)
-            return
-        }
         val db = FirebaseFirestore.getInstance()
         usersListenerRegistration?.remove()
         usersListenerRegistration = db.collection("users").addSnapshotListener { querySnapshot, error ->
@@ -511,6 +503,16 @@ class AdminActivity : ThemedActivity() {
     private fun refreshUserStatusList() {
         val container = findViewById<LinearLayout>(R.id.layoutUserStatusContainer) ?: return
         container.removeAllViews()
+
+        if (!AdminManager.getPermissions().canViewLastSeen()) {
+            val tv = TextView(this).apply {
+                text = "Permission denied to view Last Seen status."
+                setTextColor(ThemeHelper.resolveColorAttr(this@AdminActivity, R.attr.textMutedColor))
+                setPadding(16, 16, 16, 16)
+            }
+            container.addView(tv)
+            return
+        }
 
         val btnSelectDate = findViewById<android.widget.TextView>(R.id.btnSelectDate)
 
@@ -944,9 +946,56 @@ class AdminActivity : ThemedActivity() {
         val cbPromotions = view.findViewById<android.widget.CheckBox>(R.id.cbPromotions) ?: return
         val cbNotifications = view.findViewById<android.widget.CheckBox>(R.id.cbNotifications) ?: return
         val cbLastSeen = view.findViewById<android.widget.CheckBox>(R.id.cbLastSeen) ?: return
-        val cbAllocateAdmins = view.findViewById<android.widget.CheckBox>(R.id.cbAllocateAdmins) ?: return
+        val cbAdminLogs = view.findViewById<android.widget.CheckBox>(R.id.cbAdminLogs) ?: return
+        val cbReplyQueries = view.findViewById<android.widget.CheckBox>(R.id.cbReplyQueries) ?: return
+        val cbAddNewAdmin = view.findViewById<android.widget.CheckBox>(R.id.cbAddNewAdmin) ?: return
         val btnSave = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSavePermissions) ?: return
         val btnRevoke = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnRevokeAccess) ?: return
+
+        var selectedValidUntil = currentPerms.validUntil
+        val tvValidityStatus = view.findViewById<TextView>(R.id.tvValidityStatus)
+        val btnChangeValidity = view.findViewById<TextView>(R.id.btnChangeValidity)
+        
+        val updateValidityUI = {
+            if (selectedValidUntil == 0L) {
+                tvValidityStatus?.text = "Forever (No expiry)"
+            } else {
+                val formatted = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault()).format(selectedValidUntil)
+                tvValidityStatus?.text = "Valid until: $formatted"
+            }
+        }
+        updateValidityUI()
+
+        btnChangeValidity?.setOnClickListener {
+            val popup = android.widget.PopupMenu(this, btnChangeValidity)
+            popup.menu.add(0, 1, 0, "Forever")
+            popup.menu.add(0, 2, 0, "Choose Date")
+            popup.setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    1 -> {
+                        selectedValidUntil = 0L
+                        updateValidityUI()
+                        true
+                    }
+                    2 -> {
+                        val cal = java.util.Calendar.getInstance()
+                        if (selectedValidUntil > 0) cal.timeInMillis = selectedValidUntil
+                        
+                        val dpd = android.app.DatePickerDialog(this, ThemeHelper.getDatePickerTheme(this), { _, y, m, d ->
+                            val newCal = java.util.Calendar.getInstance()
+                            newCal.set(y, m, d, 23, 59, 59)
+                            selectedValidUntil = newCal.timeInMillis
+                            updateValidityUI()
+                        }, cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH), cal.get(java.util.Calendar.DAY_OF_MONTH))
+                        dpd.datePicker.minDate = System.currentTimeMillis() - 1000
+                        dpd.show()
+                        true
+                    }
+                    else -> false
+                }
+            }
+            popup.show()
+        }
 
         val normalColor = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.parseColor("#1A1A1A") else android.graphics.Color.WHITE
         val disabledColor = android.graphics.Color.parseColor("#44888888")
@@ -964,7 +1013,9 @@ class AdminActivity : ThemedActivity() {
         cbPromotions.buttonTintList = checkboxTintList
         cbNotifications.buttonTintList = checkboxTintList
         cbLastSeen.buttonTintList = checkboxTintList
-        cbAllocateAdmins.buttonTintList = checkboxTintList
+        cbAdminLogs.buttonTintList = checkboxTintList
+        cbReplyQueries.buttonTintList = checkboxTintList
+        cbAddNewAdmin.buttonTintList = checkboxTintList
 
         if (isNewAdmin) {
             btnRevoke.text = "Cancel"
@@ -991,7 +1042,7 @@ class AdminActivity : ThemedActivity() {
         val isFixed = currentPerms.isFixedOwner
         val isPromotedOwner = currentPerms.isPromotedOwner
         val isTargetOwner = isFixed || isPromotedOwner
-        val isTargetSA = !isTargetOwner && (currentPerms.fullAccess || (currentPerms.sendAnnouncements && currentPerms.sendPromotions && currentPerms.sendNotifications && currentPerms.viewLastSeen && currentPerms.allocateAdmins))
+        val isTargetSA = !isTargetOwner && (currentPerms.fullAccess || (currentPerms.sendAnnouncements && currentPerms.sendPromotions && currentPerms.sendNotifications && currentPerms.viewLastSeen && currentPerms.viewAdminLogs && currentPerms.replyToQueries && currentPerms.allocateAdmins))
         val isTargetAdmin = !isTargetOwner && !isTargetSA
 
         val currentUserPerms = AdminManager.getPermissions()
@@ -1010,13 +1061,18 @@ class AdminActivity : ThemedActivity() {
         val canSeePromotions = isCurrentUserOwner || (isNewAdmin && currentUserPerms.canSendPromotions()) || (!isNewAdmin && currentPerms.canSendPromotions())
         val canSeeNotifications = isCurrentUserOwner || (isNewAdmin && currentUserPerms.canSendNotifications()) || (!isNewAdmin && currentPerms.canSendNotifications())
         val canSeeLastSeen = isCurrentUserOwner || (isNewAdmin && currentUserPerms.canViewLastSeen()) || (!isNewAdmin && currentPerms.canViewLastSeen())
-        val canSeeAllocateAdmins = isCurrentUserOwner || (isNewAdmin && currentUserPerms.canAllocateAdmins()) || (!isNewAdmin && currentPerms.canAllocateAdmins())
+        val canSeeAdminLogs = isCurrentUserOwner || (isNewAdmin && currentUserPerms.canViewAdminLogs()) || (!isNewAdmin && currentPerms.canViewAdminLogs())
+        val canSeeReplyQueries = isCurrentUserOwner || (isNewAdmin && currentUserPerms.canReplyToQueries()) || (!isNewAdmin && currentPerms.canReplyToQueries())
+        val canSeeAddNewAdmin = isCurrentUserOwner || (isNewAdmin && currentUserPerms.canAllocateAdmins()) || (!isNewAdmin && currentPerms.canAllocateAdmins())
 
         cbAnnouncements.visibility = if (canSeeAnnouncements) View.VISIBLE else View.GONE
         cbPromotions.visibility = if (canSeePromotions) View.VISIBLE else View.GONE
         cbNotifications.visibility = if (canSeeNotifications) View.VISIBLE else View.GONE
         cbLastSeen.visibility = if (canSeeLastSeen) View.VISIBLE else View.GONE
-        cbAllocateAdmins.visibility = if (canSeeAllocateAdmins) View.VISIBLE else View.GONE
+        cbAdminLogs.visibility = if (canSeeAdminLogs) View.VISIBLE else View.GONE
+        cbReplyQueries.visibility = if (canSeeReplyQueries) View.VISIBLE else View.GONE
+        // cbAddNewAdmin visibility is handled dynamically based on other selections, but initial visibility depends on permissions too.
+        cbAddNewAdmin.visibility = if (canSeeAddNewAdmin) View.VISIBLE else View.GONE
 
         // Checked logic
         if (isTargetOwner) {
@@ -1024,19 +1080,25 @@ class AdminActivity : ThemedActivity() {
             cbPromotions.isChecked = true
             cbNotifications.isChecked = true
             cbLastSeen.isChecked = true
-            cbAllocateAdmins.isChecked = true
+            cbAdminLogs.isChecked = true
+            cbReplyQueries.isChecked = true
+            cbAddNewAdmin.isChecked = true
         } else if (isNewAdmin) {
             cbAnnouncements.isChecked = false
             cbPromotions.isChecked = false
             cbNotifications.isChecked = false
             cbLastSeen.isChecked = false
-            cbAllocateAdmins.isChecked = false
+            cbAdminLogs.isChecked = false
+            cbReplyQueries.isChecked = false
+            cbAddNewAdmin.isChecked = false
         } else {
             cbAnnouncements.isChecked = currentPerms.canSendAnnouncements()
             cbPromotions.isChecked = currentPerms.canSendPromotions()
             cbNotifications.isChecked = currentPerms.canSendNotifications()
             cbLastSeen.isChecked = currentPerms.canViewLastSeen()
-            cbAllocateAdmins.isChecked = currentPerms.canAllocateAdmins()
+            cbAdminLogs.isChecked = currentPerms.canViewAdminLogs()
+            cbReplyQueries.isChecked = currentPerms.canReplyToQueries()
+            cbAddNewAdmin.isChecked = currentPerms.canAllocateAdmins()
         }
 
         // Enable/Disable logic
@@ -1045,29 +1107,60 @@ class AdminActivity : ThemedActivity() {
             cbPromotions.isEnabled = false
             cbNotifications.isEnabled = false
             cbLastSeen.isEnabled = false
-            cbAllocateAdmins.isEnabled = false
+            cbAdminLogs.isEnabled = false
+            cbReplyQueries.isEnabled = false
+            cbAddNewAdmin.isEnabled = false
             btnSave.isEnabled = true
             btnRevoke.visibility = View.GONE
+            btnChangeValidity?.visibility = View.GONE
         } else if (isSelf && !isCurrentUserOwner) {
             // Cannot enable or disable anything in their own permissions option
             cbAnnouncements.isEnabled = false
             cbPromotions.isEnabled = false
             cbNotifications.isEnabled = false
             cbLastSeen.isEnabled = false
-            cbAllocateAdmins.isEnabled = false
+            cbAdminLogs.isEnabled = false
+            cbReplyQueries.isEnabled = false
+            cbAddNewAdmin.isEnabled = false
             btnSave.isEnabled = true
             btnRevoke.visibility = View.GONE
+            btnChangeValidity?.visibility = View.GONE
         } else {
             // Can toggle the ones they can see.
             cbAnnouncements.isEnabled = true
             cbPromotions.isEnabled = true
             cbNotifications.isEnabled = true
             cbLastSeen.isEnabled = true
-            cbAllocateAdmins.isEnabled = true
+            cbAdminLogs.isEnabled = true
+            cbReplyQueries.isEnabled = true
+            cbAddNewAdmin.isEnabled = true
+            btnChangeValidity?.visibility = View.VISIBLE
             if (isSelf) {
                 btnRevoke.visibility = View.GONE
             }
         }
+
+        // Dynamic visibility for "Add new admin"
+        val updateAddNewAdminVisibility = {
+            if (cbAnnouncements.isChecked || cbPromotions.isChecked || cbNotifications.isChecked || cbLastSeen.isChecked || cbAdminLogs.isChecked || cbReplyQueries.isChecked) {
+                if (canSeeAddNewAdmin) {
+                    cbAddNewAdmin.visibility = View.VISIBLE
+                }
+            } else {
+                cbAddNewAdmin.isChecked = false
+                cbAddNewAdmin.visibility = View.GONE
+            }
+        }
+        
+        cbAnnouncements.setOnCheckedChangeListener { _, _ -> updateAddNewAdminVisibility() }
+        cbPromotions.setOnCheckedChangeListener { _, _ -> updateAddNewAdminVisibility() }
+        cbNotifications.setOnCheckedChangeListener { _, _ -> updateAddNewAdminVisibility() }
+        cbLastSeen.setOnCheckedChangeListener { _, _ -> updateAddNewAdminVisibility() }
+        cbAdminLogs.setOnCheckedChangeListener { _, _ -> updateAddNewAdminVisibility() }
+        cbReplyQueries.setOnCheckedChangeListener { _, _ -> updateAddNewAdminVisibility() }
+
+        // Trigger once to set initial state
+        updateAddNewAdminVisibility()
 
         btnSave.setOnClickListener {
             if (isSelf) {
@@ -1078,7 +1171,9 @@ class AdminActivity : ThemedActivity() {
 
             val db = FirebaseFirestore.getInstance()
             
-            val hasZeroPermissions = !cbAnnouncements.isChecked && !cbPromotions.isChecked && !cbNotifications.isChecked && !cbLastSeen.isChecked && !cbAllocateAdmins.isChecked
+            // if only cbAddNewAdmin is checked, that's equivalent to 0 features (cannot add admin with just this feature)
+            val hasFeaturePermissions = cbAnnouncements.isChecked || cbPromotions.isChecked || cbNotifications.isChecked || cbLastSeen.isChecked || cbAdminLogs.isChecked || cbReplyQueries.isChecked
+            val hasZeroPermissions = !hasFeaturePermissions
             
             if (hasZeroPermissions) {
                 if (isNewAdmin) {
@@ -1094,7 +1189,7 @@ class AdminActivity : ThemedActivity() {
                 }
             }
             
-            val isSuperAdminSave = cbAnnouncements.isChecked && cbPromotions.isChecked && cbNotifications.isChecked && cbLastSeen.isChecked && cbAllocateAdmins.isChecked
+            val isSuperAdminSave = cbAnnouncements.isChecked && cbPromotions.isChecked && cbNotifications.isChecked && cbLastSeen.isChecked && cbAdminLogs.isChecked && cbReplyQueries.isChecked && cbAddNewAdmin.isChecked
             val isOwnerSave = currentPerms.isPromotedOwner // Can't change owner here anyway since it's removed
             
             var needsRequest = false
@@ -1116,7 +1211,10 @@ class AdminActivity : ThemedActivity() {
                     "sendPromotions" to cbPromotions.isChecked,
                     "sendNotifications" to cbNotifications.isChecked,
                     "viewLastSeen" to cbLastSeen.isChecked,
-                    "allocateAdmins" to cbAllocateAdmins.isChecked,
+                    "viewAdminLogs" to cbAdminLogs.isChecked,
+                    "replyToQueries" to cbReplyQueries.isChecked,
+                    "allocateAdmins" to cbAddNewAdmin.isChecked,
+                    "validUntil" to selectedValidUntil,
                     "requestedBy" to (com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: ""),
                     "timestamp" to System.currentTimeMillis(),
                     "status" to "pending"
@@ -1140,7 +1238,10 @@ class AdminActivity : ThemedActivity() {
                 "sendPromotions" to cbPromotions.isChecked,
                 "sendNotifications" to cbNotifications.isChecked,
                 "viewLastSeen" to cbLastSeen.isChecked,
-                "allocateAdmins" to cbAllocateAdmins.isChecked
+                "viewAdminLogs" to cbAdminLogs.isChecked,
+                "replyToQueries" to cbReplyQueries.isChecked,
+                "allocateAdmins" to cbAddNewAdmin.isChecked,
+                "validUntil" to selectedValidUntil
             )
 
             if (isReviewingRequest) {

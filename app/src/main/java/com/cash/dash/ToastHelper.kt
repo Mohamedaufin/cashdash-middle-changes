@@ -6,10 +6,14 @@ import android.widget.Toast
 object ToastHelper {
     private var currentToast: Toast? = null
 
-    fun showToast(context: Context, message: String, duration: Int = Toast.LENGTH_SHORT) {
+    fun showToast(context: Context, message: String, duration: Int = Toast.LENGTH_SHORT, gravity: Int? = null, yOffset: Int = 0) {
         currentToast?.cancel()
-        currentToast = Toast.makeText(context, message, duration)
-        currentToast?.show()
+        val toast = Toast.makeText(context, message, duration)
+        if (gravity != null) {
+            toast.setGravity(gravity, 0, yOffset)
+        }
+        currentToast = toast
+        toast.show()
     }
 
     fun showCustomToast(context: Context, message: String, durationMs: Long) {

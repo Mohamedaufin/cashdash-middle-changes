@@ -55,11 +55,6 @@ class FinminderHistoryAdapter(private val onCompleteClicked: (String) -> Unit) :
             "Not completed" -> {
                 holder.tvStatus.visibility = View.GONE
                 holder.btnComplete.visibility = View.VISIBLE
-                holder.btnComplete.text = "Mark completed"
-                holder.btnComplete.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                    android.graphics.Color.parseColor("#4CAF50")
-                )
-                holder.btnComplete.setTextColor(android.graphics.Color.WHITE)
                 holder.btnComplete.setOnClickListener {
                     onCompleteClicked(item.dateStr)
                 }

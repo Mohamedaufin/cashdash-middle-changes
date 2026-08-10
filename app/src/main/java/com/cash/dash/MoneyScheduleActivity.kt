@@ -351,6 +351,8 @@ class MoneyScheduleActivity : ThemedActivity() {
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_3d_card))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt())
+            stateListAnimator = null
+            elevation = 0f
         }
         box.addView(btnReset)
 
@@ -363,6 +365,8 @@ class MoneyScheduleActivity : ThemedActivity() {
             setTextColor(com.cash.dash.ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
             background = androidx.core.content.ContextCompat.getDrawable(context, com.cash.dash.ThemeHelper.getDrawable(context, R.drawable.bg_3d_card))
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (54 * density).toInt())
+            stateListAnimator = null
+            elevation = 0f
         }
         box.addView(btnCancel)
 

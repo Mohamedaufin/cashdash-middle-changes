@@ -17,8 +17,8 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 
 class FinminderActivity : ThemedActivity() {
 
-    private lateinit var rvFinminder: RecyclerView
-    private lateinit var adapter: FinminderAdapter
+    private lateinit var viewPager: androidx.viewpager2.widget.ViewPager2
+    private lateinit var pagerAdapter: FinminderPagerAdapter
     private lateinit var headerRow: View
     private var currentTab = "CASH_OUT"
 
@@ -36,7 +36,7 @@ class FinminderActivity : ThemedActivity() {
         val btnMore = findViewById<android.widget.ImageButton>(R.id.btnMore)
         val toggleMode = findViewById<com.google.android.material.button.MaterialButtonToggleGroup>(R.id.toggleMode)
         val btnAdd = findViewById<Button>(R.id.btnAdd)
-        rvFinminder = findViewById(R.id.rvFinminder)
+        viewPager = findViewById(R.id.viewPager)
         headerRow = findViewById(R.id.headerRow)
 
         btnBack.setOnClickListener { finish() }
@@ -45,22 +45,62 @@ class FinminderActivity : ThemedActivity() {
             createShortcut()
         }
 
-        adapter = FinminderAdapter { item ->
-            deleteWithUndo(item)
-        }
-        rvFinminder.layoutManager = LinearLayoutManager(this)
-        rvFinminder.adapter = adapter
+        pagerAdapter = FinminderPagerAdapter()
+        viewPager.adapter = pagerAdapter
 
         val tvInstruction = findViewById<TextView>(R.id.tvInstruction)
+
+        val btnCashOuts = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCashOuts)
+        val btnCashIns = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCashIns)
+
+        fun updateToggleStyles(checkedId: Int) {
+            val isWhite = ThemeHelper.isWhiteTheme(this@FinminderActivity)
+            val activeColor = if (isWhite) android.graphics.Color.parseColor("#1A1A1A") else android.graphics.Color.WHITE
+            val activeTextColor = if (isWhite) android.graphics.Color.WHITE else android.graphics.Color.BLACK
+            val inactiveTextColor = ThemeHelper.resolveColorAttr(this@FinminderActivity, android.R.attr.textColorPrimary)
+
+            val activeBgColor = android.content.res.ColorStateList.valueOf(activeColor)
+            val inactiveBgColor = android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
+
+            if (checkedId == R.id.btnCashOuts) {
+                btnCashOuts.backgroundTintList = activeBgColor
+                btnCashOuts.setTextColor(activeTextColor)
+                btnCashIns.backgroundTintList = inactiveBgColor
+                btnCashIns.setTextColor(inactiveTextColor)
+            } else {
+                btnCashIns.backgroundTintList = activeBgColor
+                btnCashIns.setTextColor(activeTextColor)
+                btnCashOuts.backgroundTintList = inactiveBgColor
+                btnCashOuts.setTextColor(inactiveTextColor)
+            }
+        }
+
+        // Initialize default tab selection visually
+        toggleMode.check(if (currentTab == "CASH_OUT") R.id.btnCashOuts else R.id.btnCashIns)
+        updateToggleStyles(if (currentTab == "CASH_OUT") R.id.btnCashOuts else R.id.btnCashIns)
+
+        viewPager.registerOnPageChangeCallback(object : androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                currentTab = if (position == 0) "CASH_OUT" else "CASH_IN"
+                updateToggleStyles(if (position == 0) R.id.btnCashOuts else R.id.btnCashIns)
+                val expectedCheckedId = if (position == 0) R.id.btnCashOuts else R.id.btnCashIns
+                if (toggleMode.checkedButtonId != expectedCheckedId) {
+                    toggleMode.check(expectedCheckedId)
+                }
+                updateHeaderAndInstructions()
+            }
+        })
 
         toggleMode.addOnButtonCheckedListener { group, checkedId, isChecked ->
             if (isChecked) {
                 if (checkedId == R.id.btnCashOuts) {
                     currentTab = "CASH_OUT"
+                    if (viewPager.currentItem != 0) viewPager.currentItem = 0
                 } else if (checkedId == R.id.btnCashIns) {
                     currentTab = "CASH_IN"
+                    if (viewPager.currentItem != 1) viewPager.currentItem = 1
                 }
-                loadData()
+                updateToggleStyles(checkedId)
             }
         }
 
@@ -86,10 +126,7 @@ class FinminderActivity : ThemedActivity() {
 
 
 
-    private fun loadData() {
-        val allItems = FinminderRepository.getItems(this)
-        var filtered = allItems.filter { it.type == currentTab }
-        
+    private fun sortItems(items: List<FinminderItem>): List<FinminderItem> {
         val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
         val today = java.util.Calendar.getInstance()
         today.set(java.util.Calendar.HOUR_OF_DAY, 0)
@@ -97,7 +134,7 @@ class FinminderActivity : ThemedActivity() {
         today.set(java.util.Calendar.SECOND, 0)
         today.set(java.util.Calendar.MILLISECOND, 0)
 
-        filtered = filtered.sortedWith { a, b ->
+        return items.sortedWith { a, b ->
             val aIsOverdue = if (a.frequency == "One time") {
                 try {
                     val aDate = sdf.parse(a.dateInfo)
@@ -116,30 +153,35 @@ class FinminderActivity : ThemedActivity() {
             else if (!aIsOverdue && bIsOverdue) 1
             else b.timestamp.compareTo(a.timestamp)
         }
+    }
 
+    private fun loadData() {
+        val allItems = FinminderRepository.getItems(this)
+        val cashOuts = sortItems(allItems.filter { it.type == "CASH_OUT" })
+        val cashIns = sortItems(allItems.filter { it.type == "CASH_IN" })
+        
+        pagerAdapter.cashOutItems = cashOuts
+        pagerAdapter.cashInItems = cashIns
+        pagerAdapter.notifyDataSetChanged()
+        
+        updateHeaderAndInstructions()
+    }
+
+    private fun updateHeaderAndInstructions() {
+        val filtered = if (currentTab == "CASH_OUT") pagerAdapter.cashOutItems else pagerAdapter.cashInItems
         headerRow.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
         
         val tvInstruction = findViewById<TextView>(R.id.tvInstruction)
-        val tvEmptyState = findViewById<TextView>(R.id.tvEmptyState)
         val tvWidgetInstruction = findViewById<TextView>(R.id.tvWidgetInstruction)
         
         if (filtered.isEmpty()) {
             tvInstruction.visibility = View.GONE
             tvWidgetInstruction?.visibility = View.GONE
-            tvEmptyState?.visibility = View.VISIBLE
-            if (currentTab == "CASH_OUT") {
-                tvEmptyState?.text = "Cash-out is an expense where you set a future date to send money, and CashDash reminds you on that date."
-            } else {
-                tvEmptyState?.text = "Cash-in is an income where you expect to receive money from someone on a future date, and CashDash reminds you on that date."
-            }
         } else {
             tvInstruction.visibility = View.VISIBLE
             tvInstruction.text = "Press and hold on any transaction to edit it."
             tvWidgetInstruction?.visibility = View.VISIBLE
-            tvEmptyState?.visibility = View.GONE
         }
-        
-        adapter.submitList(filtered)
     }
 
     private fun deleteWithUndo(item: FinminderItem) {
@@ -149,17 +191,10 @@ class FinminderActivity : ThemedActivity() {
         loadData() // Refresh list
 
         val modeText = if (item.type == "CASH_OUT") "cash-out" else "cash-in"
-        val messageText = if (item.frequency == "One time") {
-            "Task marked as completed"
-        } else {
-            "Deleted $modeText"
-        }
+        val messageText = "Deleted $modeText"
 
-        val snackbar = Snackbar.make(rvFinminder, messageText, 5000)
-        snackbar.setBackgroundTint(ThemeHelper.getSnackbarBackgroundColor(this))
-        val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-        textView.setTextColor(ThemeHelper.getSnackbarTextColor(this))
-        snackbar.setActionTextColor(android.graphics.Color.parseColor("#FF5252"))
+        val snackbar = Snackbar.make(viewPager, messageText, 5000)
+        ThemeHelper.styleSnackbar(this, snackbar)
         
         var timer: CountDownTimer? = null
         
@@ -276,6 +311,46 @@ class FinminderActivity : ThemedActivity() {
             toggleMode.check(R.id.btnCashIns)
         }
         loadData()
+    }
+
+    inner class FinminderPagerAdapter : RecyclerView.Adapter<FinminderPagerAdapter.PageViewHolder>() {
+        
+        var cashOutItems = listOf<FinminderItem>()
+        var cashInItems = listOf<FinminderItem>()
+
+        inner class PageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val rvPage: RecyclerView = view.findViewById(R.id.rvPage)
+            val tvPageEmptyState: TextView = view.findViewById(R.id.tvPageEmptyState)
+            val adapter = FinminderAdapter { item -> deleteWithUndo(item) }
+
+            init {
+                rvPage.layoutManager = LinearLayoutManager(this@FinminderActivity)
+                rvPage.adapter = adapter
+            }
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PageViewHolder {
+            val view = LayoutInflater.from(parent.context).inflate(R.layout.layout_finminder_page, parent, false)
+            return PageViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: PageViewHolder, position: Int) {
+            val items = if (position == 0) cashOutItems else cashInItems
+            holder.adapter.submitList(items)
+            
+            if (items.isEmpty()) {
+                holder.tvPageEmptyState.visibility = View.VISIBLE
+                if (position == 0) {
+                    holder.tvPageEmptyState.text = "Cash-out is an expense where you set a future date to send money, and CashDash reminds you on that date."
+                } else {
+                    holder.tvPageEmptyState.text = "Cash-in is an income where you expect to receive money from someone on a future date, and CashDash reminds you on that date."
+                }
+            } else {
+                holder.tvPageEmptyState.visibility = View.GONE
+            }
+        }
+
+        override fun getItemCount() = 2
     }
 }
 

@@ -38,6 +38,14 @@ class FinminderHistoryActivity : ThemedActivity() {
         rvHistory.adapter = adapter
         rvHistoryRef = rvHistory
 
+        val divider = androidx.recyclerview.widget.DividerItemDecoration(this, androidx.recyclerview.widget.DividerItemDecoration.VERTICAL)
+        val drawable = android.graphics.drawable.GradientDrawable()
+        drawable.setSize(0, (1 * resources.displayMetrics.density).toInt())
+        val isWhite = ThemeHelper.isWhiteTheme(this)
+        drawable.setColor(if (isWhite) android.graphics.Color.parseColor("#E0E0E0") else android.graphics.Color.parseColor("#33FFFFFF"))
+        divider.setDrawable(drawable)
+        rvHistory.addItemDecoration(divider)
+
         loadData()
     }
 
@@ -59,11 +67,8 @@ class FinminderHistoryActivity : ThemedActivity() {
         loadData()
 
         // Snackbar with undo
-        val snackbar = Snackbar.make(rvHistoryRef, "Marked as completed. Tap to undo.", 5000)
-        snackbar.setBackgroundTint(ThemeHelper.getSnackbarBackgroundColor(this))
-        val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-        textView.setTextColor(ThemeHelper.getSnackbarTextColor(this))
-        snackbar.setActionTextColor(android.graphics.Color.parseColor("#FF5252"))
+        val snackbar = Snackbar.make(rvHistoryRef, "Marked as completed", 5000)
+        ThemeHelper.styleSnackbar(this, snackbar)
 
         var timer: CountDownTimer? = null
 

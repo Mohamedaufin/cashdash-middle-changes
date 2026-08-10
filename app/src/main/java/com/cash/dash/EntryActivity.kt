@@ -819,7 +819,7 @@ class EntryActivity : ThemedActivity() {
         val bgColor = when (theme) {
             "White" -> Color.WHITE
             "Blue" -> Color.parseColor("#010A43") // Matches center color of bg_main_gradient_blue
-            else -> Color.parseColor("#1A1A1A")
+            else -> Color.parseColor("#0C0C0F") // Perfectly matches app_bg
         }
         val shape = android.graphics.drawable.GradientDrawable().apply {
             shape = android.graphics.drawable.GradientDrawable.RECTANGLE

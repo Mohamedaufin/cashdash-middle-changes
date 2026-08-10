@@ -399,7 +399,7 @@ class HelpActivity : ThemedActivity() {
             if (i < selectedImageUris.size) {
                 views.slot.visibility = android.view.View.VISIBLE
                 views.preview.visibility = android.view.View.VISIBLE
-                views.preview.setImageURI(selectedImageUris[i])
+                com.bumptech.glide.Glide.with(this@HelpActivity).load(selectedImageUris[i]).override(800).thumbnail(0.1f).into(views.preview)
                 views.preview.clipToOutline = true
                 views.frame.clipToOutline = true
                 views.plus.visibility = android.view.View.GONE
@@ -488,7 +488,16 @@ class HelpActivity : ThemedActivity() {
         closeBtn.setPadding(padding, padding, padding, padding)
 
         closeBtn.setOnClickListener { dialog.dismiss() }
-        imgView.setOnClickListener { dialog.dismiss() }
+                val gestureDetector = android.view.GestureDetector(imgView.context, object : android.view.GestureDetector.SimpleOnGestureListener() {
+            override fun onSingleTapUp(e: android.view.MotionEvent): Boolean {
+                dialog.dismiss()
+                return true
+            }
+        })
+        imgView.setOnTouchListener { _, event ->
+            gestureDetector.onTouchEvent(event)
+            false
+        }
         container.setOnClickListener { dialog.dismiss() }
 
         container.addView(imgView)
@@ -671,3 +680,5 @@ class HelpActivity : ThemedActivity() {
         }
     }
 }
+
+
