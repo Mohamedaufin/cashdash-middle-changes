@@ -20,6 +20,7 @@ import com.bumptech.glide.Glide
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import java.util.*
+import kotlinx.coroutines.launch
 
 data class LinkChip(val text: String, val url: String)
 
