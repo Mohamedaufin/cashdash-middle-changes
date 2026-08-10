@@ -193,7 +193,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <CheckBox android:buttonTint="?attr/textPrimaryColor"
+                    <CheckBox 
                         android:id="@+id/cbAnnouncements"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -202,7 +202,7 @@
                         android:textSize="15sp"
                         android:padding="8dp"/>
 
-                    <CheckBox android:buttonTint="?attr/textPrimaryColor"
+                    <CheckBox 
                         android:id="@+id/cbPromotions"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -211,7 +211,7 @@
                         android:textSize="15sp"
                         android:padding="8dp"/>
 
-                    <CheckBox android:buttonTint="?attr/textPrimaryColor"
+                    <CheckBox 
                         android:id="@+id/cbNotifications"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -220,7 +220,7 @@
                         android:textSize="15sp"
                         android:padding="8dp"/>
 
-                    <CheckBox android:buttonTint="?attr/textPrimaryColor"
+                    <CheckBox 
                         android:id="@+id/cbLastSeen"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -229,7 +229,7 @@
                         android:textSize="15sp"
                         android:padding="8dp"/>
 
-                    <CheckBox android:buttonTint="?attr/textPrimaryColor"
+                    <CheckBox 
                         android:id="@+id/cbAdminLogs"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -238,7 +238,7 @@
                         android:textSize="15sp"
                         android:padding="8dp"/>
 
-                    <CheckBox android:buttonTint="?attr/textPrimaryColor"
+                    <CheckBox 
                         android:id="@+id/cbReplyQueries"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -247,7 +247,7 @@
                         android:textSize="15sp"
                         android:padding="8dp"/>
 
-                    <CheckBox android:buttonTint="?attr/textPrimaryColor"
+                    <CheckBox 
                         android:id="@+id/cbAddNewAdmin"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -322,7 +322,7 @@
                     android:orientation="vertical"
                     android:layout_marginTop="16dp">
                     
-                    <CheckBox android:buttonTint="?attr/textPrimaryColor"
+                    <CheckBox 
                         android:id="@+id/cbIncludeNotification"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -382,6 +382,17 @@
                                 android:padding="8dp"
                                 android:visibility="gone"
                                 android:layout_marginStart="8dp"/>
+
+                            <TextView
+                                android:id="@+id/tvRedoRephraseTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Redo"
+                                android:textColor="#4CAF50"
+                                android:textStyle="bold"
+                                android:padding="8dp"
+                                android:visibility="gone"
+                                android:layout_marginStart="4dp"/>
                         </LinearLayout>
 
                         <EditText
@@ -439,6 +450,17 @@
                                 android:padding="8dp"
                                 android:visibility="gone"
                                 android:layout_marginStart="8dp"/>
+
+                            <TextView
+                                android:id="@+id/tvRedoRephraseBody"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Redo"
+                                android:textColor="#4CAF50"
+                                android:textStyle="bold"
+                                android:padding="8dp"
+                                android:visibility="gone"
+                                android:layout_marginStart="4dp"/>
                         </LinearLayout>
 
                     </LinearLayout>
