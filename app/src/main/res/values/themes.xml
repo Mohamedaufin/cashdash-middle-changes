@@ -296,23 +296,53 @@
     <style name="CustomDatePickerHeaderMonth">
         <item name="android:textAllCaps">false</item>
         <item name="android:textSize">16sp</item>
-        <item name="android:textColor">#475569</item>
+        <item name="android:textColor">#FFFFFF</item>
     </style>
 
     <style name="CustomDatePickerHeaderDay">
         <item name="android:textAllCaps">false</item>
         <item name="android:textSize">30sp</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:textColor">#1A1A1A</item>
+        <item name="android:textColor">#FFFFFF</item>
     </style>
 
     <style name="DatePickerButtonWhite" parent="Widget.Material3.Button.TextButton">
         <item name="android:textColor">#1A1A1A</item>
     </style>
 
+    <style name="CustomDatePickerHeaderMonthDark">
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">#FFFFFF</item>
+    </style>
+
+    <style name="CustomDatePickerHeaderDayDark">
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">30sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">#FFFFFF</item>
+    </style>
+
     <style name="DatePickerThemeDark" parent="ThemeOverlay.Material3.Dialog">
+        <item name="android:colorAccent">#FFFFFF</item>
+        <item name="colorPrimary">#FFFFFF</item>
+        <item name="colorSurface">#121212</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="colorOnSurfaceVariant">#AAAAAA</item>
+        <item name="android:windowBackground">#121212</item>
+        <item name="android:colorBackground">#121212</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#AAAAAA</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:headerBackground">#000000</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="android:colorControlActivated">#FFFFFF</item>
+        <item name="android:colorControlNormal">#FFFFFF</item>
+        <item name="android:windowIsFloating">true</item>
         <item name="android:buttonBarPositiveButtonStyle">@style/DatePickerButtonDark</item>
         <item name="android:buttonBarNegativeButtonStyle">@style/DatePickerButtonDark</item>
+        <item name="android:headerMonthTextAppearance">@style/CustomDatePickerHeaderMonthDark</item>
+        <item name="android:headerDayOfMonthTextAppearance">@style/CustomDatePickerHeaderDayDark</item>
     </style>
 
     <style name="DatePickerButtonDark" parent="Widget.Material3.Button.TextButton">

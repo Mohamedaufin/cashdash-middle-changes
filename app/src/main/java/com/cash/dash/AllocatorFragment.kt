@@ -98,7 +98,7 @@ class AllocatorFragment : Fragment() {
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
-                    setMargins(0, (2 * density).toInt(), 0, (16 * density).toInt())
+                    setMargins(0, (2 * density).toInt(), 0, (6 * density).toInt())
                 }
             }
             categoryContainer.addView(hint1)
@@ -248,7 +248,8 @@ class AllocatorFragment : Fragment() {
         saved.add(name)
         prefs.edit().putStringSet(KEY, saved).apply()
 
-        prefs.edit().putInt("LIMIT_$name", 0).apply()
+        val limitPrefs = requireContext().getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
+        limitPrefs.edit().putInt("LIMIT_$name", 0).apply()
         FirestoreSyncManager.pushAllDataToCloud(requireContext())
     }
 
@@ -257,7 +258,8 @@ class AllocatorFragment : Fragment() {
         val saved = HashSet(prefs.getStringSet(KEY, emptySet()) ?: emptySet())
         saved.remove(name)
         prefs.edit().putStringSet(KEY, saved).apply()
-        prefs.edit().remove("LIMIT_$name").apply()
+        val limitPrefs = requireContext().getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
+        limitPrefs.edit().remove("LIMIT_$name").apply()
         
         val catPrefs = requireContext().getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
         catPrefs.edit().remove("ICON_$name").apply()
@@ -273,8 +275,9 @@ class AllocatorFragment : Fragment() {
             saved.add(newName)
             prefs.edit().putStringSet(KEY, saved).apply()
 
-            val oldLimit = prefs.getInt("LIMIT_$oldName", 0)
-            prefs.edit().putInt("LIMIT_$newName", oldLimit).remove("LIMIT_$oldName").apply()
+            val limitPrefs = requireContext().getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
+            val oldLimit = limitPrefs.getInt("LIMIT_$oldName", 0)
+            limitPrefs.edit().putInt("LIMIT_$newName", oldLimit).remove("LIMIT_$oldName").apply()
             
             val catPrefs = requireContext().getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
             if (catPrefs.contains("ICON_$oldName")) {
@@ -309,8 +312,8 @@ class AllocatorFragment : Fragment() {
             startActivity(intent)
         }
 
-        val prefs = requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val limit = prefs.getInt("LIMIT_$name", 0)
+        val limitPrefs = requireContext().getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
+        val limit = limitPrefs.getInt("LIMIT_$name", 0)
         if (limit > 0) {
             limitText.text = "Limit : ₹$limit"
             limitText.visibility = View.VISIBLE

@@ -59,7 +59,7 @@
         android:background="?attr/inputBackground"
         android:backgroundTint="@null"
         android:stateListAnimator="@null"
-        android:text="Set limit"
+        android:text="Set Limit"
         android:textAllCaps="false"
         android:textColor="?attr/textPrimaryColor"
         android:textSize="@dimen/text_caption"

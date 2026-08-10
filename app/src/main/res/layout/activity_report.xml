@@ -190,29 +190,13 @@
         android:elevation="16dp"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
-    <!-- SCROLL CONTENT (constrained above download bar) -->
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/scrollView"
+    <!-- VIEWPAGER2 SCROLL CONTENT (constrained above download bar) -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPager"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:clipToPadding="false"
-        android:paddingBottom="16dp"
         app:layout_constraintBottom_toTopOf="@id/btnDownloadFinal"
-        app:layout_constraintTop_toBottomOf="@id/selectors">
-
-        <LinearLayout
-            android:id="@+id/reportContent"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="20dp"
-            android:paddingTop="10dp"
-            android:paddingBottom="10dp">
-
-            <!-- Pie Chart + Legend will be injected here programmatically -->
-
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+        app:layout_constraintTop_toBottomOf="@id/selectors" />
 
 
 

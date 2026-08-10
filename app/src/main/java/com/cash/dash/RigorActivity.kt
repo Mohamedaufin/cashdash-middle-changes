@@ -42,7 +42,7 @@ class RigorActivity : ThemedActivity() {
 
 
         val btnBack = findViewById<ImageView>(R.id.btnBack)
-        btnBack.setOnClickListener { finish() }
+        btnBack.setOnClickListener { onBackPressed() }
 
         inputTitle = findViewById(R.id.Title)
         val inputAmount = findViewById<EditText>(R.id.inputAmount)

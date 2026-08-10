@@ -13,7 +13,27 @@
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:background="#40FFFFFF"
-        android:layout_marginBottom="20dp" />
+        android:layout_marginBottom="16dp" />
+
+    <!-- Coming Soon Toast Pill -->
+    <LinearLayout
+        android:id="@+id/layoutComingSoonToast"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Coming Soon! 🚀"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tvReceiverInfo"

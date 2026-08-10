@@ -23,13 +23,21 @@ import java.net.URL
 import android.util.Log
 
 class NotificationActivity : ThemedActivity() {
+    private fun getCurrentRecyclerView(): androidx.recyclerview.widget.RecyclerView? {
+        if (!::viewPager.isInitialized) return null
+        val innerRv = viewPager.getChildAt(0) as? androidx.recyclerview.widget.RecyclerView ?: return null
+        val currentView = innerRv.layoutManager?.findViewByPosition(viewPager.currentItem) ?: return null
+        return currentView.findViewById(R.id.rvPage)
+    }
+
 
     private var allNotifications = listOf<NotificationModel>()
     private var filteredNotifications = listOf<NotificationModel>()
     private var rawUserNotifications = listOf<NotificationEntity>()
     private var rawAnnouncements = listOf<NotificationEntity>()
     private var currentFilter = "all" // "all", "responded", "pending"
-    private lateinit var adapter: NotificationAdapter
+    private lateinit var viewPager: androidx.viewpager2.widget.ViewPager2
+    private lateinit var pagerAdapter: NotificationPagerAdapter
     private var notificationListener: com.google.firebase.firestore.ListenerRegistration? = null
     private var hasScrolledToUnread = false
 
@@ -63,7 +71,7 @@ class NotificationActivity : ThemedActivity() {
                 if (list.size + uploadedCount < 4) {
                     list.add(selectedUri)
                     uploadReplyImage(id, selectedUri)
-                    adapter.notifyDataSetChanged()
+                    if(::pagerAdapter.isInitialized) pagerAdapter.notifyDataSetChanged()
                 }
             } else {
                 val bitmap = result.data?.extras?.get("data") as? android.graphics.Bitmap
@@ -81,7 +89,7 @@ class NotificationActivity : ThemedActivity() {
                         if (list.size + uploadedCount < 4) {
                             list.add(uri)
                             uploadReplyImage(id, uri)
-                            adapter.notifyDataSetChanged()
+                            if(::pagerAdapter.isInitialized) pagerAdapter.notifyDataSetChanged()
                         }
                     } catch (e: Exception) {
                         ToastHelper.showToast(this, "Failed to save camera image: ${e.message}")
@@ -129,7 +137,7 @@ class NotificationActivity : ThemedActivity() {
         progressMap[uri] = 0
 
         // Trigger UI update
-        val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
+        val rv = (getCurrentRecyclerView() ?: androidx.recyclerview.widget.RecyclerView(this@NotificationActivity))
         for (i in 0 until rv.childCount) {
             val child = rv.getChildAt(i)
             val holder = rv.getChildViewHolder(child) as? NotificationAdapter.ViewHolder
@@ -159,7 +167,7 @@ class NotificationActivity : ThemedActivity() {
 
                     // Update visible ViewHolder
                     runOnUiThread {
-                        val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
+                        val rv = (getCurrentRecyclerView() ?: androidx.recyclerview.widget.RecyclerView(this@NotificationActivity))
                         for (i in 0 until rv.childCount) {
                             val child = rv.getChildAt(i)
                             val holder = rv.getChildViewHolder(child) as? NotificationAdapter.ViewHolder
@@ -185,7 +193,7 @@ class NotificationActivity : ThemedActivity() {
                     replyUploadProgress[queryId]?.remove(uri)
 
                     runOnUiThread {
-                        val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
+                        val rv = (getCurrentRecyclerView() ?: androidx.recyclerview.widget.RecyclerView(this@NotificationActivity))
                         for (i in 0 until rv.childCount) {
                             val child = rv.getChildAt(i)
                             val holder = rv.getChildViewHolder(child) as? NotificationAdapter.ViewHolder
@@ -203,9 +211,9 @@ class NotificationActivity : ThemedActivity() {
                     replyUploadProgress[queryId]?.remove(uri)
                     selectedReplyImages[queryId]?.remove(uri)
                     runOnUiThread {
-                        adapter.notifyDataSetChanged()
+                        if(::pagerAdapter.isInitialized) pagerAdapter.notifyDataSetChanged()
                         ToastHelper.showToast(this, "Failed to get download URL: ${e.message}")
-                        val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
+                        val rv = (getCurrentRecyclerView() ?: androidx.recyclerview.widget.RecyclerView(this@NotificationActivity))
                         for (i in 0 until rv.childCount) {
                             val child = rv.getChildAt(i)
                             val holder = rv.getChildViewHolder(child) as? NotificationAdapter.ViewHolder
@@ -225,9 +233,9 @@ class NotificationActivity : ThemedActivity() {
                 replyUploadProgress[queryId]?.remove(uri)
                 selectedReplyImages[queryId]?.remove(uri)
                 runOnUiThread {
-                    adapter.notifyDataSetChanged()
+                    if(::pagerAdapter.isInitialized) pagerAdapter.notifyDataSetChanged()
                     ToastHelper.showToast(this, "Failed to upload image: ${e.message}")
-                    val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
+                    val rv = (getCurrentRecyclerView() ?: androidx.recyclerview.widget.RecyclerView(this@NotificationActivity))
                     for (i in 0 until rv.childCount) {
                         val child = rv.getChildAt(i)
                         val holder = rv.getChildViewHolder(child) as? NotificationAdapter.ViewHolder
@@ -298,20 +306,20 @@ class NotificationActivity : ThemedActivity() {
                         editor.apply()
                     }
                     initiallyReadAnnouncements.addAll(readPrefs.all.keys)
-                    setupRecyclerView()
+                    setupViewPager()
                     setupFilters()
                     loadNotifications()
                 }
                 .addOnFailureListener {
                     // Firestore failed — fall back to whatever is in SharedPreferences
                     initiallyReadAnnouncements.addAll(readPrefs.all.keys)
-                    setupRecyclerView()
+                    setupViewPager()
                     setupFilters()
                     loadNotifications()
                 }
         } else {
             initiallyReadAnnouncements.addAll(readPrefs.all.keys)
-            setupRecyclerView()
+            setupViewPager()
             setupFilters()
             loadNotifications()
         }
@@ -344,14 +352,7 @@ class NotificationActivity : ThemedActivity() {
     }
 
 
-    private fun setupRecyclerView() {
-        val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
-        rv.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
-        adapter = NotificationAdapter(mutableListOf(),
-            onDelete = { model -> showDeleteConfirmDialog(model) }
-        )
-        rv.adapter = adapter
-    }
+
 
     private fun setupSearch() {
         val etSearch = findViewById<EditText>(R.id.etSearch)
@@ -399,7 +400,7 @@ class NotificationActivity : ThemedActivity() {
             if (searchMatches.isNotEmpty()) {
                 currentMatchIndex = if (currentMatchIndex - 1 < 0) searchMatches.size - 1 else currentMatchIndex - 1
                 updateSearchUIAndScroll()
-                adapter.notifyDataSetChanged()
+                if(::pagerAdapter.isInitialized) pagerAdapter.notifyDataSetChanged()
             }
         }
 
@@ -407,7 +408,7 @@ class NotificationActivity : ThemedActivity() {
             if (searchMatches.isNotEmpty()) {
                 currentMatchIndex = if (currentMatchIndex + 1 >= searchMatches.size) 0 else currentMatchIndex + 1
                 updateSearchUIAndScroll()
-                adapter.notifyDataSetChanged()
+                if(::pagerAdapter.isInitialized) pagerAdapter.notifyDataSetChanged()
             }
         }
     }
@@ -526,7 +527,7 @@ class NotificationActivity : ThemedActivity() {
             }
         }
         
-        adapter.notifyDataSetChanged()
+        if(::pagerAdapter.isInitialized) pagerAdapter.notifyDataSetChanged()
     }
 
     private fun updateSearchUIAndScroll() {
@@ -537,9 +538,44 @@ class NotificationActivity : ThemedActivity() {
         val activeMatch = searchMatches[currentMatchIndex]
         val position = filteredNotifications.indexOfFirst { it.id == activeMatch.itemId }
         if (position >= 0) {
-            val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
+            val rv = (getCurrentRecyclerView() ?: androidx.recyclerview.widget.RecyclerView(this@NotificationActivity))
             (rv.layoutManager as? androidx.recyclerview.widget.LinearLayoutManager)?.scrollToPositionWithOffset(position, 100)
         }
+    }
+
+    private val gestureDetector by lazy {
+        android.view.GestureDetector(this, object : android.view.GestureDetector.SimpleOnGestureListener() {
+            private val SWIPE_THRESHOLD = 100
+            private val SWIPE_VELOCITY_THRESHOLD = 100
+
+            override fun onFling(e1: android.view.MotionEvent?, e2: android.view.MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                if (e1 == null) return false
+                val diffY = e2.y - e1.y
+                val diffX = e2.x - e1.x
+                if (Math.abs(diffX) > Math.abs(diffY)) {
+                    if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                        if (diffX > 0) {
+                            // Swipe Left to Right (Backswipe)
+                            handlePageSwipeLeftToRight()
+                            return true
+                        }
+                    }
+                }
+                return false
+            }
+        })
+    }
+
+    private fun handlePageSwipeLeftToRight() {
+        when (currentFilter) {
+            "pending" -> setFilter("responded")
+            "responded" -> setFilter("all")
+        }
+    }
+
+    override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
+        gestureDetector.onTouchEvent(ev)
+        return super.dispatchTouchEvent(ev)
     }
 
     private fun setupFilters() {
@@ -561,7 +597,16 @@ class NotificationActivity : ThemedActivity() {
     private fun setFilter(filter: String) {
         currentFilter = filter
         updateChipAppearance()
-        applyFilter()
+        
+        val pos = when(filter) {
+            "all" -> 0
+            "responded" -> 1
+            "pending" -> 2
+            else -> 0
+        }
+        if (::viewPager.isInitialized && viewPager.currentItem != pos) {
+            viewPager.currentItem = pos
+        }
     }
 
     private fun updateChipAppearance() {
@@ -590,7 +635,7 @@ class NotificationActivity : ThemedActivity() {
         // Update in-memory lists so animation stops/does not trigger
         allNotifications = allNotifications.map { it.copy(isUnread = false) }
         filteredNotifications = filteredNotifications.map { it.copy(isUnread = false) }
-        adapter.updateList(filteredNotifications)
+        // adapter.updateList
 
         // 1. Mark user support queries as read in Firestore and Room
         db.collection("users").document(email).collection("notifications")
@@ -709,8 +754,8 @@ class NotificationActivity : ThemedActivity() {
         val user = FirebaseAuth.getInstance().currentUser ?: return
         val email = user.email ?: getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_email", null) ?: return
         val db = FirebaseFirestore.getInstance()
-        val tvEmpty = findViewById<TextView>(R.id.tvEmptyNotifications)
-        val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
+        val tvEmpty = (TextView(this@NotificationActivity)) // dummy to avoid crash
+        val rv = (getCurrentRecyclerView() ?: androidx.recyclerview.widget.RecyclerView(this@NotificationActivity))
 
         notificationListener?.remove()
         notificationListener = db.collection("users").document(email).collection("notifications")
@@ -745,9 +790,37 @@ class NotificationActivity : ThemedActivity() {
 
                 for (group in grouped.values) {
                     if (group.size > 1) {
-                        val keeper = group.find { (it.getString("reply") ?: "Waiting for reply...") != "Waiting for reply..." }
-                            ?: group.maxByOrNull { it.getLong("timestamp") ?: 0L } ?: group.first()
-                        group.forEach { if (it.id != keeper.id) toDelete.add(it) }
+                        // Only delete duplicates that were created within 5 minutes of each other (prevents double tap)
+                        // Or if they are exact duplicates in reply status
+                        val sorted = group.sortedByDescending { it.getLong("timestamp") ?: 0L }
+                        var keeper = sorted.first()
+                        
+                        // If any has a reply, prioritize keeping the one with a reply ONLY if they were created very close in time
+                        // Actually, let's just avoid deleting NEW queries.
+                        // If the newest one is Pending, and an older one is Responded, they are separate queries. Don't group them.
+                        // We will only delete if they have the exact same reply status, or if they are within 5 minutes.
+                        
+                        val keepList = mutableListOf<com.google.firebase.firestore.DocumentSnapshot>()
+                        for (doc in sorted) {
+                            val docReply = doc.getString("reply") ?: "Waiting for reply..."
+                            val docTime = doc.getLong("timestamp") ?: 0L
+                            
+                            val isDuplicateOfKept = keepList.any { kept ->
+                                val keptReply = kept.getString("reply") ?: "Waiting for reply..."
+                                val keptTime = kept.getLong("timestamp") ?: 0L
+                                
+                                val sameReplyStatus = (docReply == "Waiting for reply...") == (keptReply == "Waiting for reply...")
+                                val closeInTime = Math.abs(docTime - keptTime) < 5 * 60 * 1000L // 5 minutes
+                                
+                                sameReplyStatus || closeInTime
+                            }
+                            
+                            if (!isDuplicateOfKept) {
+                                keepList.add(doc)
+                            } else {
+                                toDelete.add(doc)
+                            }
+                        }
                     }
                 }
 
@@ -954,8 +1027,8 @@ class NotificationActivity : ThemedActivity() {
     }
 
     private fun applyFilter() {
-        val tvEmpty = findViewById<TextView>(R.id.tvEmptyNotifications)
-        val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
+        val tvEmpty = (TextView(this@NotificationActivity)) // dummy to avoid crash
+        val rv = (getCurrentRecyclerView() ?: androidx.recyclerview.widget.RecyclerView(this@NotificationActivity))
         val filterBar = findViewById<LinearLayout>(R.id.filterBar)
 
         // ALWAYS SHOW FILTER BAR AS PER USER REQUEST
@@ -975,6 +1048,45 @@ class NotificationActivity : ThemedActivity() {
         }
 
         filterBar.visibility = View.VISIBLE
+        
+        if (::pagerAdapter.isInitialized) {
+            pagerAdapter.allList = allNotifications
+            pagerAdapter.respondedList = allNotifications.filter { !it.isPending }
+            pagerAdapter.pendingList = allNotifications.filter { it.isPending }
+            pagerAdapter.notifyDataSetChanged()
+
+            // Force update currently visible page viewholders
+            val innerRv = viewPager.getChildAt(0) as? androidx.recyclerview.widget.RecyclerView
+            if (innerRv != null) {
+                for (i in 0 until innerRv.childCount) {
+                    val child = innerRv.getChildAt(i)
+                    val holder = innerRv.getChildViewHolder(child) as? NotificationPagerAdapter.PageViewHolder
+                    if (holder != null) {
+                        val pos = holder.layoutPosition
+                        if (pos != androidx.recyclerview.widget.RecyclerView.NO_POSITION) {
+                            val items = when (pos) {
+                                0 -> pagerAdapter.allList
+                                1 -> pagerAdapter.respondedList
+                                2 -> pagerAdapter.pendingList
+                                else -> pagerAdapter.allList
+                            }
+                            holder.adapter.updateList(items)
+                            if (items.isEmpty()) {
+                                holder.tvPageEmptyState.visibility = android.view.View.VISIBLE
+                                holder.tvPageEmptyState.text = when (pos) {
+                                    1 -> "No queries have been answered yet."
+                                    2 -> "All your queries have been responded!"
+                                    else -> "No notifications yet.\n\nWe'll notify you when your support\nqueries are resolved!"
+                                }
+                            } else {
+                                holder.tvPageEmptyState.visibility = android.view.View.GONE
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if (filteredNotifications.isEmpty()) {
             rv.visibility = View.GONE
             tvEmpty.text = if (currentFilter == "pending") "All your queries have been responded!" else "No queries have been answered yet."
@@ -982,18 +1094,9 @@ class NotificationActivity : ThemedActivity() {
         } else {
             tvEmpty.visibility = View.GONE
             rv.visibility = View.VISIBLE
-            adapter.updateList(filteredNotifications)
 
             if (!hasScrolledToUnread) {
                 hasScrolledToUnread = true
-                val firstUnreadIndex = filteredNotifications.indexOfFirst { it.isUnread }
-                if (firstUnreadIndex != -1) {
-                    rv.post {
-                        val offsetPx = (12 * resources.displayMetrics.density).toInt()
-                        (rv.layoutManager as? androidx.recyclerview.widget.LinearLayoutManager)
-                            ?.scrollToPositionWithOffset(firstUnreadIndex, offsetPx)
-                    }
-                }
                 markAllAsRead()
             }
         }
@@ -1053,7 +1156,7 @@ class NotificationActivity : ThemedActivity() {
             }
             minHeight = (54 * density).toInt()
             setOnClickListener {
-                adapter.notifyDataSetChanged() // Reset swipe state
+                if(::pagerAdapter.isInitialized) pagerAdapter.notifyDataSetChanged() // Reset swipe state
                 dialog.dismiss()
             }
             btnContainer.addView(this)
@@ -1227,31 +1330,7 @@ class NotificationActivity : ThemedActivity() {
             "Notifications cleared",
             5000
         )
-        // Fix for snackbar: use solid theme color with rounded corners
-        val bgDrawable = android.graphics.drawable.GradientDrawable()
-        val snackbarColor = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.WHITE else android.graphics.Color.parseColor("#1C1C1E")
-        bgDrawable.setColor(snackbarColor)
-        bgDrawable.cornerRadius = 16f * resources.displayMetrics.density
-        snackbar.view.backgroundTintList = null
-        snackbar.view.background = bgDrawable
-        snackbar.view.elevation = 8f * resources.displayMetrics.density
-
-        // Adjust margins to make it float nicely
-        val params = snackbar.view.layoutParams as? android.widget.FrameLayout.LayoutParams
-        if (params != null) {
-            params.gravity = android.view.Gravity.BOTTOM or android.view.Gravity.CENTER_HORIZONTAL
-            params.setMargins(16, 0, 16, 16)
-            snackbar.view.layoutParams = params
-        } else if (snackbar.view.layoutParams is androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams) {
-            val coordParams = snackbar.view.layoutParams as androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
-            coordParams.gravity = android.view.Gravity.BOTTOM or android.view.Gravity.CENTER_HORIZONTAL
-            coordParams.setMargins(16, 0, 16, 16)
-            snackbar.view.layoutParams = coordParams
-        }
-
-        val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-        textView.setTextColor(ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor))
-        snackbar.setActionTextColor(android.graphics.Color.parseColor("#FF5252"))
+        ThemeHelper.styleSnackbar(this, snackbar)
 
         var timer: android.os.CountDownTimer? = null
 
@@ -1734,7 +1813,7 @@ class NotificationActivity : ThemedActivity() {
             val scrollAction = Runnable {
                 val pos = holder.adapterPosition
                 if (pos != androidx.recyclerview.widget.RecyclerView.NO_POSITION) {
-                    val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvNotifications)
+                    val rv = (getCurrentRecyclerView() ?: androidx.recyclerview.widget.RecyclerView(this@NotificationActivity))
                     val scroller = object : androidx.recyclerview.widget.LinearSmoothScroller(rv.context) {
                         override fun calculateDtToFit(viewStart: Int, viewEnd: Int, boxStart: Int, boxEnd: Int, snapPreference: Int): Int {
                             val actualBoxBottom = rv.height
@@ -1888,6 +1967,8 @@ class NotificationActivity : ThemedActivity() {
                 
                 com.bumptech.glide.Glide.with(context)
                     .load(url)
+                    .override(800)
+                    .thumbnail(0.1f)
                     .into(object : com.bumptech.glide.request.target.CustomTarget<android.graphics.drawable.Drawable>() {
                         override fun onResourceReady(resource: android.graphics.drawable.Drawable, transition: com.bumptech.glide.request.transition.Transition<in android.graphics.drawable.Drawable>?) {
                             if (isAnnouncement && isSingle && resource.intrinsicWidth > resource.intrinsicHeight) {
@@ -2011,7 +2092,7 @@ class NotificationActivity : ThemedActivity() {
                     scaleType = ImageView.ScaleType.CENTER_CROP
                     clipToOutline = true
                 }
-                com.bumptech.glide.Glide.with(holder.itemView.context).load(uri).into(imgView)
+                com.bumptech.glide.Glide.with(holder.itemView.context).load(uri).override(800).thumbnail(0.1f).into(imgView)
                 imageBox.addView(imgView)
                 
                 val tvProgress = TextView(holder.itemView.context).apply {
@@ -2261,7 +2342,7 @@ class NotificationActivity : ThemedActivity() {
             FrameLayout.LayoutParams.MATCH_PARENT
         )
         imgView.scaleType = ImageView.ScaleType.FIT_CENTER
-        com.bumptech.glide.Glide.with(this@NotificationActivity).load(uri).into(imgView)
+        com.bumptech.glide.Glide.with(this@NotificationActivity).load(uri).override(800).thumbnail(0.1f).into(imgView)
 
         val closeBtn = ImageView(this@NotificationActivity)
         val density = resources.displayMetrics.density
@@ -2293,5 +2374,107 @@ class NotificationActivity : ThemedActivity() {
 
         dialog.setContentView(container)
         dialog.show()
+    }
+    private fun setupViewPager() {
+        viewPager = findViewById(R.id.viewPagerNotifications)
+        pagerAdapter = NotificationPagerAdapter()
+        viewPager.adapter = pagerAdapter
+        viewPager.isUserInputEnabled = true
+        viewPager.registerOnPageChangeCallback(object : androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                val newFilter = when(position) {
+                    0 -> "all"
+                    1 -> "responded"
+                    2 -> "pending"
+                    else -> "all"
+                }
+                if (currentFilter != newFilter) {
+                    currentFilter = newFilter
+                    updateChipAppearance()
+                }
+            }
+        })
+    }
+
+    inner class NotificationPagerAdapter : androidx.recyclerview.widget.RecyclerView.Adapter<NotificationPagerAdapter.PageViewHolder>() {
+        var allList = listOf<NotificationModel>()
+        var respondedList = listOf<NotificationModel>()
+        var pendingList = listOf<NotificationModel>()
+
+        inner class PageViewHolder(view: android.view.View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(view) {
+            val rvPage: androidx.recyclerview.widget.RecyclerView = view.findViewById(R.id.rvPage)
+            val tvPageEmptyState: android.widget.TextView = view.findViewById(R.id.tvPageEmptyState)
+            val adapter = NotificationAdapter(mutableListOf(), onDelete = { model -> showDeleteConfirmDialog(model) })
+
+            init {
+                rvPage.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this@NotificationActivity)
+                rvPage.adapter = adapter
+                
+                // Magic touch interceptor to allow right-to-left swipe-to-delete
+                // while preserving left-to-right ViewPager page swiping
+                rvPage.addOnItemTouchListener(object : androidx.recyclerview.widget.RecyclerView.OnItemTouchListener {
+                    var startX = 0f
+                    var startY = 0f
+                    
+                    override fun onInterceptTouchEvent(rv: androidx.recyclerview.widget.RecyclerView, e: android.view.MotionEvent): Boolean {
+                        when (e.action) {
+                            android.view.MotionEvent.ACTION_DOWN -> {
+                                startX = e.x
+                                startY = e.y
+                                // Don't disallow yet, wait for move
+                                rv.parent.requestDisallowInterceptTouchEvent(false)
+                            }
+                            android.view.MotionEvent.ACTION_MOVE -> {
+                                val dx = e.x - startX
+                                val dy = e.y - startY
+                                // If scrolling horizontally more than vertically
+                                if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10f) {
+                                    if (dx < 0) {
+                                        // User is swiping right-to-left (negative dx) -> Delete item!
+                                        // Disallow ViewPager from intercepting so ItemTouchHelper gets the event
+                                        rv.parent.requestDisallowInterceptTouchEvent(true)
+                                    } else {
+                                        // User is swiping left-to-right (positive dx) -> Change page!
+                                        // Let ViewPager intercept it
+                                        rv.parent.requestDisallowInterceptTouchEvent(false)
+                                    }
+                                }
+                            }
+                        }
+                        return false
+                    }
+
+                    override fun onTouchEvent(rv: androidx.recyclerview.widget.RecyclerView, e: android.view.MotionEvent) {}
+                    override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
+                })
+            }
+        }
+
+        override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): PageViewHolder {
+            val view = android.view.LayoutInflater.from(parent.context).inflate(R.layout.layout_notification_page, parent, false)
+            return PageViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: PageViewHolder, position: Int) {
+            val items = when (position) {
+                0 -> allList
+                1 -> respondedList
+                2 -> pendingList
+                else -> allList
+            }
+            holder.adapter.updateList(items)
+            
+            if (items.isEmpty()) {
+                holder.tvPageEmptyState.visibility = android.view.View.VISIBLE
+                holder.tvPageEmptyState.text = when (position) {
+                    1 -> "No queries have been answered yet."
+                    2 -> "All your queries have been responded!"
+                    else -> "No notifications yet.\n\nWe'll notify you when your support\nqueries are resolved!"
+                }
+            } else {
+                holder.tvPageEmptyState.visibility = android.view.View.GONE
+            }
+        }
+        override fun getItemCount() = 3
     }
 }

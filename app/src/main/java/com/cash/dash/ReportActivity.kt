@@ -23,7 +23,7 @@ import kotlinx.coroutines.withContext
 
 class ReportActivity : ThemedActivity() {
 
-    private lateinit var layoutContent: LinearLayout
+    private lateinit var viewPager: androidx.viewpager2.widget.ViewPager2
 
     private lateinit var btnPeriodSelect: Button
     private lateinit var toggleMode: MaterialButtonToggleGroup
@@ -67,7 +67,14 @@ class ReportActivity : ThemedActivity() {
         }
 
 
-        layoutContent = findViewById(R.id.reportContent)
+        viewPager = findViewById(R.id.viewPager)
+        viewPager.adapter = ReportPagerAdapter()
+        viewPager.registerOnPageChangeCallback(object : androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                val btnId = when(position) { 0 -> R.id.btnWeekly; 1 -> R.id.btnMonthly; else -> R.id.btnCustom }
+                if (toggleMode.checkedButtonId != btnId) toggleMode.check(btnId)
+            }
+        })
         btnPeriodSelect = findViewById(R.id.btnPeriodSelect)
         toggleMode = findViewById(R.id.toggleMode)
         layoutCustomDates = findViewById(R.id.layoutCustomDates)
@@ -89,13 +96,22 @@ class ReportActivity : ThemedActivity() {
             if (isChecked) {
                 isMonthlyMode = (checkedId == R.id.btnMonthly)
                 isCustomMode = (checkedId == R.id.btnCustom)
+                updateToggleHighlight(checkedId)
                 
+                val targetPage = when (checkedId) {
+                    R.id.btnWeekly -> 0
+                    R.id.btnMonthly -> 1
+                    else -> 2
+                }
+                if (viewPager.currentItem != targetPage) {
+                    viewPager.currentItem = targetPage
+                }
+
                 if (isCustomMode) {
                     btnPeriodSelect.visibility = View.GONE
                     layoutCustomDates.visibility = View.VISIBLE
-                    layoutContent.removeAllViews() // wait for dates
                     if (customStartMillis > 0 && customEndMillis > 0) {
-                        loadReport()
+                        viewPager.adapter?.notifyDataSetChanged()
                     }
                 } else {
                     btnPeriodSelect.visibility = View.VISIBLE
@@ -106,7 +122,6 @@ class ReportActivity : ThemedActivity() {
                         }
                         withContext(Dispatchers.Main) {
                             updatePeriodLabel()
-                            loadReport()
                         }
                     }
                 }
@@ -116,7 +131,7 @@ class ReportActivity : ThemedActivity() {
         btnPeriodSelect.setOnClickListener { showPeriodPicker() }
 
         updatePeriodLabel()
-        loadReport()
+        viewPager.adapter?.notifyDataSetChanged()
     }
 
     private fun showDatePicker(isStart: Boolean) {
@@ -147,7 +162,7 @@ class ReportActivity : ThemedActivity() {
             }
             
             if (customStartMillis > 0 && customEndMillis > 0) {
-                loadReport()
+                viewPager.adapter?.notifyDataSetChanged()
             }
         }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
     }
@@ -270,7 +285,7 @@ class ReportActivity : ThemedActivity() {
                 currentMonth = picker.value
                 if (isMonthlyMode) {
                     updatePeriodLabel()
-                    loadReport()
+                    viewPager.adapter?.notifyDataSetChanged()
                 } else {
                     showWeekPicker()
                 }
@@ -344,7 +359,7 @@ class ReportActivity : ThemedActivity() {
                     dialog.dismiss()
                     selectedWeekIndex = position
                     updatePeriodLabel()
-                    loadReport()
+                    viewPager.adapter?.notifyDataSetChanged()
                 }
 
                 dialog.show()
@@ -354,46 +369,48 @@ class ReportActivity : ThemedActivity() {
         }
     }
 
-    private fun loadReport() {
+    private fun loadReportForPage(container: LinearLayout, pageIndex: Int) {
         if (isGenerating) return
         isGenerating = true
         
-        layoutContent.removeAllViews()
+        container.removeAllViews()
         
         lifecycleScope.launch(Dispatchers.IO) {
             try {
+                val isMonthly = (pageIndex == 1)
+                val isCustom = (pageIndex == 2)
                 val insights = FinancialInsightsManager.generateReport(
-                    this@ReportActivity, isMonthlyMode, isCustomMode, customStartMillis, customEndMillis, currentMonth, currentYear, if (isMonthlyMode) -1 else selectedWeekIndex
+                    this@ReportActivity, isMonthly, isCustom, customStartMillis, customEndMillis, currentMonth, currentYear, if (isMonthly) -1 else selectedWeekIndex
                 )
                 withContext(Dispatchers.Main) {
                     isGenerating = false
-                    renderReport(insights)
+                    renderReport(insights, container)
                 }
             } catch (e: Exception) {
                 android.util.Log.e("ReportActivity", "Error generating advisory report", e)
                 withContext(Dispatchers.Main) {
                     isGenerating = false
-                    addCard("Advisory Offline", "Error", "Quantum engine error: ${e.localizedMessage}", R.drawable.ic_glass_menu_vector)
+                    addCard(container, "Advisory Offline", "Error", "Quantum engine error: ${e.localizedMessage}", R.drawable.ic_glass_menu_vector)
                 }
             }
         }
     }
 
-    private fun renderReport(insights: FinancialInsightsManager.AdvisoryInsights) {
+    private fun renderReport(insights: FinancialInsightsManager.AdvisoryInsights, container: LinearLayout) {
         try {
-            layoutContent.removeAllViews()
+            container.removeAllViews()
             if (insights.totalSpent == 0f && insights.topCategories.isEmpty()) {
-                addEmptyStateCard(); return
+                addEmptyStateCard(container); return
             }
 
             // 0. Render 3D Chart
             if (insights.topCategories.isNotEmpty()) {
-                injectPieChartCard(insights)
+                injectPieChartCard(insights, container)
             }
 
             // 1. Summary
             val modeLabel = if (insights.isCustomMode) "Custom" else if (isMonthlyMode) "Monthly" else "Weekly"
-            addCard("$modeLabel Spending Summary", 
+            addCard(container, "$modeLabel Spending Summary", 
                 "₹${insights.totalSpent.toInt()}", 
                 "${if (insights.changePercent >= 0) "↑" else "↓"}${abs(insights.changePercent).toInt()}% vs previous period",
                 R.drawable.ic_glass_menu_vector) {
@@ -402,7 +419,7 @@ class ReportActivity : ThemedActivity() {
 
             val topCategoryName = insights.topCategories.firstOrNull()?.category ?: "None"
             val displayTopCategoryName = if (topCategoryName.equals("no choice", ignoreCase = true)) "No Allocation" else topCategoryName
-            addCard("Category-wise Attribution", 
+            addCard(container, "Category-wise Attribution", 
                 displayTopCategoryName, 
                 "Dominates ${insights.topCategories.firstOrNull()?.percentage?.toInt() ?: 0}% of budget",
                 R.drawable.ic_category_transport) {
@@ -414,7 +431,7 @@ class ReportActivity : ThemedActivity() {
 
             // 3. Weekly/Daily Patterns
             if (insights.isCustomMode) {
-                addCard("Dominant Spending Dates", 
+                addCard(container, "Dominant Spending Dates", 
                     if (insights.dailyPatterns.isNotEmpty()) insights.dailyPatterns[0].dayLabel else "N/A", 
                     "Highest consumption dates in range",
                     R.drawable.ic_glass_menu_vector) {
@@ -424,7 +441,7 @@ class ReportActivity : ThemedActivity() {
                 }
             } else if (isMonthlyMode) {
                 val topWeek = insights.topWeeks.firstOrNull()
-                addCard("Weekly Spending Pattern", 
+                addCard(container, "Weekly Spending Pattern", 
                     topWeek?.weekLabel ?: "N/A", 
                     "Peak consumption week",
                     R.drawable.ic_glass_menu_vector) {
@@ -434,7 +451,7 @@ class ReportActivity : ThemedActivity() {
                 }
             } else {
                 val peak = insights.dailyPatterns.find { it.isPeak }
-                addCard("Daily Spending Pattern", 
+                addCard(container, "Daily Spending Pattern", 
                     peak?.dayLabel ?: "N/A", 
                     "Peak velocity: ₹${peak?.amount?.toInt() ?: 0}",
                     R.drawable.ic_glass_menu_vector) {
@@ -446,7 +463,7 @@ class ReportActivity : ThemedActivity() {
 
             // 4. Budget & Allocation Limits (Weekly Focus)
             if (!isMonthlyMode) {
-                addCard("Allocation Limit Analysis", 
+                addCard(container, "Allocation Limit Analysis", 
                     "${insights.budgetStatus.categoryProgress.count { it.percent > 100 }} Crossed", 
                     "Checking targets vs actuals",
                     R.drawable.ic_plus) {
@@ -467,11 +484,11 @@ class ReportActivity : ThemedActivity() {
 
         } catch (e: Exception) {
             android.util.Log.e("ReportActivity", "Error rendering advisory report", e)
-            addCard("Advisory Offline", "Error", "Quantum engine error: ${e.localizedMessage}", R.drawable.ic_glass_menu_vector)
+            addCard(container, "Advisory Offline", "Error", "Quantum engine error: ${e.localizedMessage}", R.drawable.ic_glass_menu_vector)
         }
     }
 
-    private fun injectPieChartCard(insights: FinancialInsightsManager.AdvisoryInsights) {
+    private fun injectPieChartCard(insights: FinancialInsightsManager.AdvisoryInsights, container: LinearLayout) {
         val summaries = insights.topCategories
         val dp = resources.displayMetrics.density
         val ta = obtainStyledAttributes(intArrayOf(R.attr.cardBackground))
@@ -580,15 +597,15 @@ class ReportActivity : ThemedActivity() {
         }
         cardWrapper.addView(legendContainer)
 
-        layoutContent.addView(cardWrapper, 0) // Insert at top of report
+        container.addView(cardWrapper, 0) // Insert at top of report
     }
 
-    private fun addEmptyStateCard() {
-        addCard("Data Insufficiency", "₹0", "Add more transactions to fuel AI strategy", R.drawable.ic_glass_menu_vector)
+    private fun addEmptyStateCard(container: LinearLayout) {
+        addCard(container, "Data Insufficiency", "₹0", "Add more transactions to fuel AI strategy", R.drawable.ic_glass_menu_vector)
     }
 
-    private fun addCard(title: String, value: String, subtitle: String, iconRes: Int, builder: (LinearLayout.() -> Unit)? = null) {
-        val card = layoutInflater.inflate(R.layout.item_report_card, layoutContent, false)
+    private fun addCard(container: LinearLayout, title: String, value: String, subtitle: String, iconRes: Int, builder: (LinearLayout.() -> Unit)? = null) {
+        val card = layoutInflater.inflate(R.layout.item_report_card, container, false)
         card.findViewById<TextView>(R.id.cardTitle).text = title
         card.findViewById<TextView>(R.id.cardValue).text = value
         card.findViewById<TextView>(R.id.cardSubtitle).text = subtitle
@@ -600,7 +617,7 @@ class ReportActivity : ThemedActivity() {
             extra.builder()
         }
         
-        layoutContent.addView(card)
+        container.addView(card)
     }
 
     private fun LinearLayout.addInfoRow(label: String, value: String, sub: String? = null) {
@@ -696,7 +713,39 @@ class ReportActivity : ThemedActivity() {
         if (isCustomMode && (customStartMillis <= 0 || customEndMillis <= 0)) {
             // Wait for dates
         } else {
-            loadReport()
+            viewPager.adapter?.notifyDataSetChanged()
         }
+    }
+
+    /** Applies a strong active-tab highlight to the selected toggle button, matching FinMinder aesthetics. */
+    private fun updateToggleHighlight(checkedId: Int) {
+        val isWhite = ThemeHelper.isWhiteTheme(this)
+        val activeColor = if (isWhite) Color.parseColor("#1A1A1A") else Color.WHITE
+        val activeTextColor = if (isWhite) Color.WHITE else Color.BLACK
+        val inactiveTextColor = ThemeHelper.resolveColorAttr(this, android.R.attr.textColorPrimary)
+
+        val ids = listOf(R.id.btnWeekly, R.id.btnMonthly, R.id.btnCustom)
+        for (id in ids) {
+            val btn = findViewById<com.google.android.material.button.MaterialButton>(id)
+            val isActive = (id == checkedId)
+            btn.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                if (isActive) activeColor else Color.TRANSPARENT
+            )
+            btn.setTextColor(if (isActive) activeTextColor else inactiveTextColor)
+        }
+    }
+
+    inner class ReportPagerAdapter : androidx.recyclerview.widget.RecyclerView.Adapter<ReportPagerAdapter.ViewHolder>() {
+        inner class ViewHolder(view: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(view) {
+            val reportContent: LinearLayout = view.findViewById(R.id.reportContent)
+        }
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val view = layoutInflater.inflate(R.layout.item_report_page, parent, false)
+            return ViewHolder(view)
+        }
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            loadReportForPage(holder.reportContent, position)
+        }
+        override fun getItemCount() = 3
     }
 }

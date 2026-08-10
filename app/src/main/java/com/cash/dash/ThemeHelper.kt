@@ -153,6 +153,13 @@ object ThemeHelper {
         }
     }
 
+    fun styleSnackbar(context: Context, snackbar: com.google.android.material.snackbar.Snackbar) {
+        snackbar.setBackgroundTint(getSnackbarBackgroundColor(context))
+        val textView = snackbar.view.findViewById<android.widget.TextView>(com.google.android.material.R.id.snackbar_text)
+        textView?.setTextColor(getSnackbarTextColor(context))
+        snackbar.setActionTextColor(android.graphics.Color.parseColor("#FF5252"))
+    }
+
     fun getBottomSheetTheme(context: Context): Int {
         return when (getCurrentTheme(context)) {
             "White" -> R.style.BottomSheetDialogThemeWhite

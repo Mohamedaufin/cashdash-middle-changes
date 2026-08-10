@@ -20,10 +20,25 @@ class SetLimitActivity : ThemedActivity() {
 
         val numberPad: GridLayout = findViewById(R.id.numberPad)
         val backspace: Button = findViewById(R.id.btnBackspace)
-        val done: Button = findViewById(R.id.btnDone)
-        val back: ImageButton = findViewById(R.id.btnBack)
+        val back: ImageView = findViewById(R.id.btnBack)
         val next: ImageButton = findViewById(R.id.btnNext)
         val numpadContainer: FrameLayout = findViewById(R.id.numpadContainer)
+        val categoryInfoContainer: LinearLayout = findViewById(R.id.categoryInfoContainer)
+        val tvCategoryName: TextView = findViewById(R.id.tvCategoryName)
+        val tvCurrentLimit: TextView = findViewById(R.id.tvCurrentLimit)
+
+        val categoryName = intent.getStringExtra("CATEGORY_NAME") ?: ""
+        val prefs = getSharedPreferences("CategoryPrefs", android.content.Context.MODE_PRIVATE)
+        val limit = prefs.getInt("LIMIT_$categoryName", 0)
+
+        if (categoryName.isNotEmpty()) {
+            val limitStr = if (limit > 0) "₹$limit" else "—"
+            tvCategoryName.text = categoryName
+            tvCurrentLimit.text = "Current Limit: $limitStr"
+            categoryInfoContainer.visibility = View.VISIBLE
+        } else {
+            categoryInfoContainer.visibility = View.GONE
+        }
 
         ViewCompat.setOnApplyWindowInsetsListener(numpadContainer) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -33,7 +48,7 @@ class SetLimitActivity : ThemedActivity() {
 
         for (i in 0 until numberPad.childCount) {
             val child = numberPad.getChildAt(i)
-            if (child is Button && child.id != R.id.btnBackspace && child.id != R.id.btnDone) {
+            if (child is Button && child.id != R.id.btnBackspace) {
                 child.setOnClickListener { 
                     val currentText = input.text.toString()
                     if (currentText == "0") {
@@ -63,12 +78,16 @@ class SetLimitActivity : ThemedActivity() {
                 val walletPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
                 val totalBalance = walletPrefs.getInt("initial_balance", 0).coerceAtLeast(0)
 
-                val prefs = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)
-                val categories = prefs.getStringSet("categories", emptySet()) ?: emptySet()
+                val limitPrefs = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)
+                val catPrefs = getSharedPreferences("allocator_prefs", MODE_PRIVATE)
+                val customCategories = catPrefs.getStringSet("allocator_categories", emptySet()) ?: emptySet()
+                val defaultCategories = listOf("Food", "Shopping", "Entertainment", "Travel", "Bills", "Health", "Other")
+                val categories = defaultCategories + customCategories
+
                 var currentSum = 0
                 for (cat in categories) {
                     if (!cat.equals(categoryName, ignoreCase = true)) {
-                        currentSum += prefs.getInt("LIMIT_$cat", 0)
+                        currentSum += limitPrefs.getInt("LIMIT_$cat", 0)
                     }
                 }
                 val maxAllowed = totalBalance - currentSum
@@ -79,7 +98,7 @@ class SetLimitActivity : ThemedActivity() {
                     return
                 }
 
-                prefs.edit().putInt("LIMIT_$categoryName", newLimit).apply()
+                limitPrefs.edit().putInt("LIMIT_$categoryName", newLimit).apply()
 
                 ToastHelper.showToast(this, "Limit for $categoryName updated to ₹$newLimit")
                 
@@ -89,7 +108,6 @@ class SetLimitActivity : ThemedActivity() {
             }
         }
 
-        done.setOnClickListener { saveLimitAndFinish() }
         next.setOnClickListener { saveLimitAndFinish() }
         back.setOnClickListener { finish() }
     }

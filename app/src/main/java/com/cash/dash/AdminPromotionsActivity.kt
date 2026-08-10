@@ -88,9 +88,9 @@ class AdminPromotionsActivity : ThemedActivity() {
             btnDeleteImage.visibility = View.VISIBLE
             btnViewImage.visibility = View.VISIBLE
             if (selectedImageUri != null) {
-                Glide.with(this).load(selectedImageUri).into(imgPreview)
+                Glide.with(this).load(selectedImageUri).override(800).thumbnail(0.1f).into(imgPreview)
             } else {
-                Glide.with(this).load(uploadedImageUrl).into(imgPreview)
+                Glide.with(this).load(uploadedImageUrl).override(800).thumbnail(0.1f).into(imgPreview)
             }
         } else {
             imgPreview.visibility = View.GONE
@@ -328,7 +328,7 @@ class AdminPromotionsActivity : ThemedActivity() {
             val btnDeleteImage = findViewById<View>(R.id.btnDeleteImage)
             val btnViewImage = findViewById<View>(R.id.btnViewImage)
             
-            com.bumptech.glide.Glide.with(this).load(imgUrl).into(imgPreview)
+            com.bumptech.glide.Glide.with(this).load(imgUrl).override(800).thumbnail(0.1f).into(imgPreview)
             imgPreview.visibility = View.VISIBLE
             imgPlus.visibility = View.GONE
             btnDeleteImage.visibility = View.VISIBLE
@@ -1156,7 +1156,16 @@ class AdminPromotionsActivity : ThemedActivity() {
         closeBtn.setPadding(p, p, p, p)
         closeBtn.setOnClickListener { dialog.dismiss() }
 
-        imgView.setOnClickListener { dialog.dismiss() }
+                val gestureDetector = android.view.GestureDetector(imgView.context, object : android.view.GestureDetector.SimpleOnGestureListener() {
+            override fun onSingleTapUp(e: android.view.MotionEvent): Boolean {
+                dialog.dismiss()
+                return true
+            }
+        })
+        imgView.setOnTouchListener { _, event ->
+            gestureDetector.onTouchEvent(event)
+            false
+        }
         container.setOnClickListener { dialog.dismiss() }
 
         container.addView(imgView)
@@ -1214,3 +1223,5 @@ class AdminPromotionsActivity : ThemedActivity() {
         setupTabs()
     }
 }
+
+

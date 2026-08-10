@@ -387,7 +387,7 @@ class AdminMessagingActivity : ThemedActivity() {
                 scaleType = ImageView.ScaleType.CENTER_CROP
                 clipToOutline = true
             }
-            Glide.with(this).load(uri).into(imgView)
+            Glide.with(this).load(uri).override(800).thumbnail(0.1f).into(imgView)
             imageBox.addView(imgView)
             
             val tvProgress = TextView(this).apply {

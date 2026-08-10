@@ -273,20 +273,24 @@ class AdminLogsActivity : ThemedActivity() {
 
     private fun applyFilters() {
         logsList.clear()
-        if (selectedFilters.isEmpty()) {
-            logsList.addAll(fullLogsList)
-        } else {
-            logsList.addAll(fullLogsList.filter { log ->
-                val type = log.rawActionType ?: ""
-                val isNotif = type.contains("Notification", ignoreCase = true) || type.contains("Push", ignoreCase = true)
-                val isAnn = type.contains("Announcement", ignoreCase = true)
-                val isPromo = type.contains("Promotional Activity", ignoreCase = true)
-                
+        logsList.addAll(fullLogsList.filter { log ->
+            val type = log.rawActionType ?: ""
+            val isNotif = type.contains("Notification", ignoreCase = true) || type.contains("Push", ignoreCase = true)
+            val isAnn = type.contains("Announcement", ignoreCase = true)
+            val isPromo = type.contains("Promotional Activity", ignoreCase = true)
+            val perms = AdminManager.getPermissions()
+            if (isNotif && !perms.canSendNotifications()) return@filter false
+            if (isAnn && !perms.canSendAnnouncements()) return@filter false
+            if (isPromo && !perms.canSendPromotions()) return@filter false
+            
+            if (selectedFilters.isEmpty()) {
+                true
+            } else {
                 (selectedFilters.contains("Notifications") && isNotif) ||
                 (selectedFilters.contains("Announcements") && isAnn) ||
                 (selectedFilters.contains("Promotions") && isPromo)
-            })
-        }
+            }
+        })
         adapter.notifyDataSetChanged()
         
         if (logsList.isEmpty()) {
@@ -307,9 +311,14 @@ class AdminLogsActivity : ThemedActivity() {
         val cbAnn = view.findViewById<android.widget.CheckBox>(R.id.cbAnnouncements)
         val cbPromo = view.findViewById<android.widget.CheckBox>(R.id.cbPromotions)
         
-        cbNotif.isChecked = selectedFilters.contains("Notifications")
-        cbAnn.isChecked = selectedFilters.contains("Announcements")
-        cbPromo.isChecked = selectedFilters.contains("Promotions")
+        val perms = AdminManager.getPermissions()
+        cbNotif.visibility = if (perms.canSendNotifications()) View.VISIBLE else View.GONE
+        cbAnn.visibility = if (perms.canSendAnnouncements()) View.VISIBLE else View.GONE
+        cbPromo.visibility = if (perms.canSendPromotions()) View.VISIBLE else View.GONE
+        
+        cbNotif.isChecked = selectedFilters.contains("Notifications") && perms.canSendNotifications()
+        cbAnn.isChecked = selectedFilters.contains("Announcements") && perms.canSendAnnouncements()
+        cbPromo.isChecked = selectedFilters.contains("Promotions") && perms.canSendPromotions()
         
         view.findViewById<View>(R.id.btnApplyFilter).setOnClickListener {
             selectedFilters.clear()

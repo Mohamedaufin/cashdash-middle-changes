@@ -785,8 +785,26 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 payUPI(upi, amtStr, "com.dreamplug.androidapp")
             }
 
+            val layoutComingSoonToast = view.findViewById<LinearLayout>(R.id.layoutComingSoonToast)
+            var comingSoonRunnable: Runnable? = null
+            val comingSoonHandler = android.os.Handler(android.os.Looper.getMainLooper())
+
             btnGPay.setOnClickListener {
-                toast("Coming Soon! 🚀")
+                layoutComingSoonToast?.let { toastView ->
+                    comingSoonRunnable?.let { comingSoonHandler.removeCallbacks(it) }
+                    toastView.animate().cancel()
+                    toastView.alpha = 0f
+                    toastView.visibility = View.VISIBLE
+                    toastView.animate().alpha(1f).setDuration(200).start()
+
+                    val runnable = Runnable {
+                        toastView.animate().alpha(0f).setDuration(300).withEndAction {
+                            toastView.visibility = View.GONE
+                        }.start()
+                    }
+                    comingSoonRunnable = runnable
+                    comingSoonHandler.postDelayed(runnable, 2000)
+                }
             }
 
             dialog.setOnDismissListener {
@@ -1265,7 +1283,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         }
     }
     private fun decode(v: String?) = v?.let { URLDecoder.decode(it, "UTF-8") }
-    private fun toast(s: String) = ToastHelper.showToast(this, s)
+    private fun toast(s: String, gravity: Int? = null, yOffset: Int = 0) = ToastHelper.showToast(this, s, Toast.LENGTH_SHORT, gravity, yOffset)
     private fun successBeep() { try { (getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(VibrationEffect.createOneShot(150, VibrationEffect.DEFAULT_AMPLITUDE)); MediaPlayer.create(this, android.provider.Settings.System.DEFAULT_NOTIFICATION_URI).start() } catch (_: Exception) {} }
     private fun shake() { /* Visual feedback */ }
 
