@@ -941,7 +941,7 @@ class ManageAdminAccessActivity : ThemedActivity() {
             ToastHelper.showToast(this@ManageAdminAccessActivity, "Rephrasing Title...")
             kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
-                    val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6J98QwRRRH9eNVILdkNQgAMhYmv4jnnDb9EddH9i_XPZw")
+                    val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
                     actvTitle?.setText(result)
                 } catch (e: Exception) {
                     ToastHelper.showToast(this@ManageAdminAccessActivity, e.message ?: "AI Error")
@@ -958,7 +958,7 @@ class ManageAdminAccessActivity : ThemedActivity() {
             ToastHelper.showToast(this@ManageAdminAccessActivity, "Rephrasing Content...")
             kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
-                    val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6J98QwRRRH9eNVILdkNQgAMhYmv4jnnDb9EddH9i_XPZw")
+                    val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
                     actvContent?.setText(result)
                 } catch (e: Exception) {
                     ToastHelper.showToast(this@ManageAdminAccessActivity, e.message ?: "AI Error")

@@ -296,7 +296,7 @@ class AdminPromotionsActivity : ThemedActivity() {
             ToastHelper.showToast(this, "Rephrasing Title...")
             kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
-                    val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6J98QwRRRH9eNVILdkNQgAMhYmv4jnnDb9EddH9i_XPZw")
+                    val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
                     edtAnnouncementTitle.setText(result)
                 } catch (e: Exception) {
                     ToastHelper.showToast(this@AdminPromotionsActivity, e.message ?: "AI Error")
@@ -313,7 +313,7 @@ class AdminPromotionsActivity : ThemedActivity() {
             ToastHelper.showToast(this, "Rephrasing Content...")
             kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
-                    val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6J98QwRRRH9eNVILdkNQgAMhYmv4jnnDb9EddH9i_XPZw")
+                    val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
                     edtAnnouncementBody.setText(result)
                 } catch (e: Exception) {
                     ToastHelper.showToast(this@AdminPromotionsActivity, e.message ?: "AI Error")
