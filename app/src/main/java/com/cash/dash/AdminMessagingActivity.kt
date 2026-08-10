@@ -177,7 +177,7 @@ class AdminMessagingActivity : ThemedActivity() {
             ToastHelper.showToast(this, "Rephrasing Title...")
             kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
-                    val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
+                    val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6INnxwddAo8VfHAPKNTEnqGWN3cOpTsnP_usdRrkq8CKg")
                     edtMessageTitle.setText(result)
                 } catch (e: Exception) {
                     ToastHelper.showToast(this@AdminMessagingActivity, e.message ?: "AI Error")
@@ -194,7 +194,7 @@ class AdminMessagingActivity : ThemedActivity() {
             ToastHelper.showToast(this, "Rephrasing Content...")
             kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
-                    val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
+                    val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6INnxwddAo8VfHAPKNTEnqGWN3cOpTsnP_usdRrkq8CKg")
                     edtMessageBody.setText(result)
                 } catch (e: Exception) {
                     ToastHelper.showToast(this@AdminMessagingActivity, e.message ?: "AI Error")
