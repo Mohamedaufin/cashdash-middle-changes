@@ -44,7 +44,6 @@ class ReportActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_report)
 
-        WindowCompat.setDecorFitsSystemWindows(window, false)
         val topBar = findViewById<View>(R.id.topBar)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.reportRoot)) { _, insets ->

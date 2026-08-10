@@ -273,8 +273,7 @@
             android:name="com.google.mlkit.vision.codescanner.internal.GmsBarcodeScanningDelegateActivity"
             tools:node="merge"
             tools:remove="screenOrientation" />
-
-            <activity android:name=".ManageAdminAccessActivity" android:theme="@style/Theme.Cashdash" android:screenOrientation="portrait"/>
+            <activity android:name=".ManageAdminAccessActivity" android:theme="@style/Theme.Cashdash"/>
     </application>
 
 </manifest>
