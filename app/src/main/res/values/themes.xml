@@ -7,6 +7,8 @@
         <item name="buttonStyle">@style/Widget.AppCompat.Button</item>
         <item name="materialButtonStyle">@style/Widget.Cashdash.Button</item>
         <item name="textAppearanceButton">@style/Widget.Cashdash.Button.TextAppearance</item>
+        <item name="radioButtonStyle">@style/Widget.Cashdash.RadioButton</item>
+        <item name="checkboxStyle">@style/Widget.Cashdash.CheckBox</item>
         <item name="colorPrimary">@color/primary_purple</item>
         <item name="colorOnPrimary">@color/white</item>
         <item name="colorSurface">@color/surface</item>
@@ -62,6 +64,14 @@
     <style name="Widget.Cashdash.Button.TextAppearance" parent="TextAppearance.Material3.LabelLarge">
         <item name="android:textAllCaps">false</item>
         <item name="textAllCaps">false</item>
+    </style>
+
+    <style name="Widget.Cashdash.RadioButton" parent="Widget.AppCompat.CompoundButton.RadioButton">
+        <item name="buttonTint">@color/selector_chooser_tint</item>
+    </style>
+
+    <style name="Widget.Cashdash.CheckBox" parent="Widget.AppCompat.CompoundButton.CheckBox">
+        <item name="buttonTint">@color/selector_chooser_tint</item>
     </style>
 
     <style name="Theme.Cashdash" parent="Base.Theme.Cashdash">
@@ -229,9 +239,10 @@
         <item name="android:colorControlNormal">#1A1A1A</item>
         <item name="android:colorControlActivated">#475569</item>
         <item name="android:colorPrimary">@android:color/transparent</item>
-        <item name="android:colorAccent">#1A1A1A</item>
-        <item name="colorPrimary">@android:color/transparent</item>
-        <item name="colorAccent">#1A1A1A</item>
+        <item name="android:colorAccent">#4CAF50</item>
+        <item name="colorPrimary">#4CAF50</item>
+        <item name="android:colorPrimary">#4CAF50</item>
+        <item name="colorAccent">#4CAF50</item>
         <item name="android:dateTextAppearance">@style/CalendarDateTextAppearanceWhite</item>
         <item name="android:focusedMonthDateColor">#1A1A1A</item>
     </style>
@@ -247,12 +258,14 @@
         <item name="android:colorControlNormal">#FFFFFF</item>
         <item name="android:colorBackground">#1A1A2E</item>
         <item name="android:windowBackground">#1A1A2E</item>
-        <item name="android:colorPrimary">@android:color/transparent</item>
-        <item name="android:colorAccent">@android:color/transparent</item>
-        <item name="colorAccent">@android:color/transparent</item>
-        <item name="colorPrimary">@android:color/transparent</item>
-        <item name="android:colorControlActivated">#B39DDB</item>
-        <item name="colorControlActivated">#B39DDB</item>
+        <item name="android:colorPrimary">#4CAF50</item>
+        <item name="android:colorAccent">#4CAF50</item>
+        <item name="colorAccent">#4CAF50</item>
+        <item name="colorPrimary">#4CAF50</item>
+        <item name="android:colorControlActivated">#FFFFFF</item>
+        <item name="colorControlActivated">#FFFFFF</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="android:textColorPrimaryInverse">#000000</item>
         <item name="android:dateTextAppearance">@style/CalendarDateTextAppearanceDark</item>
         <item name="android:focusedMonthDateColor">#FFFFFF</item>
     </style>
