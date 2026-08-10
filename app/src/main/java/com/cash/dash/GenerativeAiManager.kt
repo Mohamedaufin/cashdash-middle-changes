@@ -45,7 +45,7 @@ object GenerativeAiManager {
         
         recordRequest()
 
-        val model = GenerativeModel("gemini-1.5-flash", apiKey)
+        val model = GenerativeModel("gemini-flash-latest", apiKey)
         val prompt = if (isTitle) {
             "Rewrite this title in a highly professional, corporate, and encouraging tone suitable for a fintech platform (CashDash) offering deals, cashback, and financial insights. Keep it short (max 5 words). Only return the rewritten text without quotes, do not include any other commentary.\n\nTitle:\n$text"
         } else {
