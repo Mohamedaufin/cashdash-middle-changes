@@ -1552,6 +1552,26 @@ class AdminActivity : ThemedActivity() {
                     var selectedVersion = actvVersion?.text?.toString()?.trim() ?: currentVersionName
                     selectedVersion = selectedVersion.replace(" (Current)", "").trim()
 
+                    val partsSel = selectedVersion.split(".").map { it.toIntOrNull() ?: 0 }
+                    val partsCur = currentVersionName.split(".").map { it.toIntOrNull() ?: 0 }
+                    val lengthCheck = maxOf(partsSel.size, partsCur.size)
+                    var isSelectedNewer = false
+                    for (i in 0 until lengthCheck) {
+                        val pS = partsSel.getOrElse(i) { 0 }
+                        val pC = partsCur.getOrElse(i) { 0 }
+                        if (pS > pC) {
+                            isSelectedNewer = true
+                            break
+                        } else if (pS < pC) {
+                            break
+                        }
+                    }
+
+                    if (isSelectedNewer) {
+                        ToastHelper.showToast(this, "Cannot set minimum version higher than your current version ()")
+                        return@setOnClickListener
+                    }
+
                     val updatedRawVersions = (rawVersions + listOf(selectedVersion))
                         .distinct()
                         .sortedWith { v1, v2 ->
