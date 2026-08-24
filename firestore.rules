@@ -111,6 +111,14 @@ service cloud.firestore {
       allow update, delete: if isSuperAdmin();
     }
 
+    // System configuration (e.g. app update lock settings)
+    // READ: any signed-in user (needed to check if update is required on splash)
+    // WRITE: only admins
+    match /system/{document=**} {
+      allow read: if isActiveUser();
+      allow write: if isAnyAdmin();
+    }
+
     // Deny everything else by default (implicit, but explicit is safer)
     match /{document=**} {
       allow read, write: if false;
