@@ -1,0 +1,58 @@
+rules_version = '2';
+
+// The project previously shipped no Storage rules at all, which left the bucket
+// on the Firebase default (`allow read, write: if request.auth != null`) — every
+// signed-in user could list, download, overwrite and delete every file.
+//
+// Note on `get` vs `list`: Firebase Storage evaluates them separately.
+// `getDownloadUrl()` needs `get`, so it must stay open to signed-in callers.
+// `list` is what allows bucket enumeration, and nothing in the app uses it.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.email.lower() == 'mohamedaufin64@gmail.com' ||
+        request.auth.token.email.lower() == 'arunbhalaji200904@gmail.com' ||
+        firestore.exists(/databases/(default)/documents/admins/$(request.auth.token.email.lower()))
+      );
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/(png|jpeg|jpg|webp|gif)');
+    }
+
+    function underSizeLimit() {
+      return request.resource.size < 8 * 1024 * 1024;
+    }
+
+    // User support attachments (ContactSupportActivity, HelpActivity,
+    // NotificationActivity) and admin reply attachments written by the
+    // adminReply function via the admin SDK, which bypasses these rules.
+    match /support_attachments/{fileName} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn() && isImage() && underSizeLimit();
+      // Attachments are immutable once sent — this is what stops an attacker
+      // wiping or swapping other users' files.
+      allow update, delete: if false;
+    }
+
+    // Promo / announcement images (AdminMessagingActivity, AdminPromotionsActivity).
+    // These are pushed to every user, so only admins may write them.
+    match /promotions/{fileName} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isAdmin() && isImage() && underSizeLimit();
+      allow update, delete: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

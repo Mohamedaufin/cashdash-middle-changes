@@ -28,9 +28,10 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val data = hashMapOf("fcmToken" to token, "email" to email)
         db.collection("users").document(email)
             .set(data, com.google.firebase.firestore.SetOptions.merge())
-        // Also save to fcmTokens collection for targeted push lookups
-        db.collection("fcmTokens").document(email)
-            .set(hashMapOf("token" to token, "email" to email), com.google.firebase.firestore.SetOptions.merge())
+        // The old second write to a `fcmTokens` collection was dead code: no
+        // security rule ever matched it, so the catch-all denied every attempt
+        // and Firestore retried forever. Nothing reads it — the Cloud Functions
+        // all use users/{email}.fcmToken, which the write above sets.
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {

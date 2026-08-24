@@ -69,6 +69,8 @@ class AdminActivity : ThemedActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Admin screens show other users' data — block screenshots/recents thumbnail.
+        SecureScreen.apply(this)
         setContentView(R.layout.activity_admin)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             window.decorView.importantForAutofill = android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
@@ -233,8 +235,6 @@ class AdminActivity : ThemedActivity() {
                         allItems.sortByDescending { it.timestamp }
 
                         for (item in allItems) {
-                            val replyUrl = "https://adminreply-khhfw7mtba-uc.a.run.app" +
-                                "?uid=${item.userEmail}&id=${item.docId}&email=${item.userEmail}"
 
                             val card = LinearLayout(this@AdminActivity).apply {
                                 orientation = LinearLayout.HORIZONTAL
@@ -337,11 +337,11 @@ class AdminActivity : ThemedActivity() {
                                     (48 * density).toInt()
                                 )
                                 setOnClickListener {
-                                    val intent = Intent(this@AdminActivity, WebViewActivity::class.java).apply {
-                                        putExtra("title", "Admin Reply")
-                                        putExtra("url", replyUrl)
-                                    }
-                                    startActivity(intent)
+                                    SupportReplyLink.openReplyPage(
+                                        this@AdminActivity,
+                                        item.userEmail,
+                                        item.docId
+                                    )
                                 }
                             }
                             contentCol.addView(btnOpen)

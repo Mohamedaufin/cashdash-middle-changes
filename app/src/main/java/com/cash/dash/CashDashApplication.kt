@@ -20,6 +20,32 @@ import android.content.SharedPreferences
 class CashDashApplication : Application(), DefaultLifecycleObserver {
     private var walletPrefsListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
     private var themePrefsListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
+
+    /**
+     * Attests that requests really come from a genuine, unmodified build of this app.
+     * Without this, the API key shipped in google-services.json is enough for anyone
+     * to call Firestore / Auth / Storage directly from a script, which makes every
+     * client-side control (login lockout, admin gating, rate limits) advisory only.
+     *
+     * Enforcement still has to be switched on per-product in the Firebase console.
+     */
+    private fun initAppCheck() {
+        try {
+            val appCheck = com.google.firebase.appcheck.FirebaseAppCheck.getInstance()
+            if (BuildConfig.DEBUG) {
+                appCheck.installAppCheckProviderFactory(
+                    com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory.getInstance()
+                )
+            } else {
+                appCheck.installAppCheckProviderFactory(
+                    com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory.getInstance()
+                )
+            }
+        } catch (e: Exception) {
+            Log.e("CashDashApplication", "App Check init failed: ${e.message}")
+        }
+    }
+
     override fun onCreate() {
         val tPrefs = getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE)
         if (!tPrefs.getBoolean("theme_reset_v2", false)) {
@@ -42,9 +68,11 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
         }
         AppCompatDelegate.setDefaultNightMode(targetMode)
         super<Application>.onCreate()
-        
+
+        initAppCheck()
+
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
-        
+
         // Start Security Monitoring globally
         SecurityManager.startListening(this)
         

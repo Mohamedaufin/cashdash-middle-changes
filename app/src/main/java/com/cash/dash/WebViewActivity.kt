@@ -20,13 +20,36 @@ class WebViewActivity : ThemedActivity() {
     private lateinit var webView: WebView
     private lateinit var progressBar: ProgressBar
 
+    companion object {
+        private const val DEFAULT_URL = "https://www.cashdash.co.in"
+
+        /**
+         * JavaScript is enabled in this WebView, so it must only ever load our own
+         * origins. Previously it loaded whatever "url" extra it was handed.
+         */
+        private val ALLOWED_HOSTS = setOf(
+            "cashdash.co.in",
+            "www.cashdash.co.in",
+            "adminreply-khhfw7mtba-uc.a.run.app"
+        )
+
+        fun isAllowed(url: String?): Boolean {
+            if (url.isNullOrBlank()) return false
+            val uri = android.net.Uri.parse(url)
+            if (!uri.scheme.equals("https", ignoreCase = true)) return false
+            val host = uri.host?.lowercase() ?: return false
+            return ALLOWED_HOSTS.contains(host)
+        }
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_webview)
 
         val titleStr = intent.getStringExtra("title") ?: "CashDash"
-        val url = intent.getStringExtra("url") ?: "https://www.cashdash.co.in"
+        val requestedUrl = intent.getStringExtra("url")
+        val url = if (isAllowed(requestedUrl)) requestedUrl!! else DEFAULT_URL
 
         findViewById<TextView>(R.id.tvHeaderTitle).text = titleStr
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
@@ -42,12 +65,25 @@ class WebViewActivity : ThemedActivity() {
         settings.useWideViewPort = true
         settings.builtInZoomControls = true
         settings.displayZoomControls = false
+        settings.allowFileAccess = false
+        settings.allowContentAccess = false
+        settings.javaScriptCanOpenWindowsAutomatically = false
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val uri = request?.url?.toString() ?: ""
                 if (uri.startsWith("mailto:")) {
                     return true // Disable email clicks
+                }
+                // Keep in-WebView navigation on our own origins. Anything else is
+                // handed to the browser, where it runs without our app context.
+                if (!isAllowed(uri)) {
+                    try {
+                        startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, request!!.url))
+                    } catch (e: Exception) {
+                        Toast.makeText(this@WebViewActivity, "Could not open link.", Toast.LENGTH_SHORT).show()
+                    }
+                    return true
                 }
                 return super.shouldOverrideUrlLoading(view, request)
             }

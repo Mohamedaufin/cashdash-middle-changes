@@ -50,10 +50,46 @@ object AdminManager {
     // fires, so pages open without error even when the device is offline.
     // ------------------------------------------------------------------
 
-    private const val PREFS_NAME = "admin_perms_cache"
+    private const val PREFS_NAME = "admin_perms_cache_v2"
+    private const val LEGACY_PREFS_NAME = "admin_perms_cache"
+
+    /**
+     * The permission cache is stored encrypted. It used to be plaintext booleans,
+     * which on a rooted device could be flipped to unlock the admin UI locally.
+     * Server-side rules are the real defence — this closes the local tamper path.
+     *
+     * Falls back to plain prefs if the Android keystore is unavailable
+     * (some OEM images and older devices fail here). A cache miss is harmless:
+     * permissions simply reload from Firestore, so failing soft is correct.
+     */
+    private fun securePrefs(context: Context): SharedPreferences {
+        return try {
+            val masterKey = androidx.security.crypto.MasterKey.Builder(context)
+                .setKeyScheme(androidx.security.crypto.MasterKey.KeyScheme.AES256_GCM)
+                .build()
+            androidx.security.crypto.EncryptedSharedPreferences.create(
+                context,
+                PREFS_NAME,
+                masterKey,
+                androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (e: Exception) {
+            android.util.Log.e("AdminManager", "Encrypted prefs unavailable, falling back: ${e.message}")
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        }
+    }
+
+    /** Drop the old plaintext cache left by previous versions. */
+    private fun purgeLegacyPlaintextCache(context: Context) {
+        val legacy = context.getSharedPreferences(LEGACY_PREFS_NAME, Context.MODE_PRIVATE)
+        if (legacy.all.isNotEmpty()) {
+            legacy.edit().clear().apply()
+        }
+    }
 
     private fun saveToCache(context: Context, email: String, perms: AdminPermissions) {
-        val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val prefs: SharedPreferences = securePrefs(context)
         prefs.edit()
             .putString("cached_email", email)
             .putBoolean("isFixedOwner", perms.isFixedOwner)
@@ -71,7 +107,8 @@ object AdminManager {
     }
 
     private fun loadFromCache(context: Context, email: String): AdminPermissions? {
-        val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        purgeLegacyPlaintextCache(context)
+        val prefs: SharedPreferences = securePrefs(context)
         val cachedEmail = prefs.getString("cached_email", null) ?: return null
         // Only use cached data for the same email account
         if (!cachedEmail.equals(email, ignoreCase = true)) return null
@@ -91,7 +128,8 @@ object AdminManager {
     }
 
     private fun clearCache(context: Context) {
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().apply()
+        securePrefs(context).edit().clear().apply()
+        purgeLegacyPlaintextCache(context)
     }
 
     /**

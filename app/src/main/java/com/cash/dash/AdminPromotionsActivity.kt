@@ -1,5 +1,6 @@
 package com.cash.dash
 
+import androidx.lifecycle.lifecycleScope
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -105,6 +106,8 @@ class AdminPromotionsActivity : ThemedActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Admin screens show other users' data — block screenshots/recents thumbnail.
+        SecureScreen.apply(this)
         setContentView(R.layout.activity_admin_promotions)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             window.decorView.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
@@ -298,9 +301,9 @@ class AdminPromotionsActivity : ThemedActivity() {
                 return@setOnClickListener
             }
             ToastHelper.showToast(this, "Rephrasing Title...")
-            kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+            lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
-                    val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
+                    val result = GenerativeAiManager.rephraseText(originalText, true, GenerativeAiManager.Scope.ADMIN)
                     titleRephraseState.saveState(originalText)
                     edtAnnouncementTitle.setText(result)
                     titleRephraseState.saveState(result)
@@ -321,9 +324,9 @@ class AdminPromotionsActivity : ThemedActivity() {
                 return@setOnClickListener
             }
             ToastHelper.showToast(this, "Rephrasing Content...")
-            kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+            lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
-                    val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
+                    val result = GenerativeAiManager.rephraseText(originalText, false, GenerativeAiManager.Scope.ADMIN)
                     bodyRephraseState.saveState(originalText)
                     edtAnnouncementBody.setText(result)
                     bodyRephraseState.saveState(result)

@@ -1,6 +1,7 @@
-const { onRequest } = require("firebase-functions/v2/https");
+const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const nodemailer = require("nodemailer");
+const crypto = require("crypto");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -12,7 +13,118 @@ const { defineSecret } = require("firebase-functions/params");
 // ─────────────────────────────────────────────
 const ADMIN_EMAIL = "support@cashdash.co.in";
 const GMAIL_USER = "support@cashdash.co.in";
-const EMAIL_PASS_SECRET = defineSecret("GMAIL_PASS"); // We'll keep the secret name GMAIL_PASS for now to avoid re-setting it immediately, but it now holds your Zoho App Password.
+const EMAIL_PASS_SECRET = defineSecret("GMAIL_PASS"); // Holds the Zoho App Password.
+
+// Signs the one-click admin reply links. Set with:
+//   firebase functions:secrets:set REPLY_SIGNING_SECRET
+const REPLY_SIGNING_SECRET = defineSecret("REPLY_SIGNING_SECRET");
+
+// Gemini keys, moved off the Android client. Two of them, mirroring the split the
+// app used to have hardcoded, so the two areas draw on separate billing quotas:
+//   GEMINI_API_KEY       -> announcements + push notifications (AdminMessagingActivity)
+//   GEMINI_API_KEY_ADMIN -> promotions + admin access (AdminPromotions/ManageAdminAccess)
+// Set with: firebase functions:secrets:set <NAME>
+const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
+const GEMINI_API_KEY_ADMIN = defineSecret("GEMINI_API_KEY_ADMIN");
+
+const REPHRASE_SCOPES = {
+    messaging: () => GEMINI_API_KEY.value(),
+    admin: () => GEMINI_API_KEY_ADMIN.value(),
+};
+
+const SUPER_ADMINS = ["mohamedaufin64@gmail.com", "arunbhalaji200904@gmail.com"];
+
+const REPLY_LINK_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+const MAX_UPLOAD_FILES = 4;
+const ALLOWED_UPLOAD_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"];
+
+// ─────────────────────────────────────────────
+// SECURITY HELPERS
+// ─────────────────────────────────────────────
+
+/** Escape a value for interpolation into HTML text or a quoted attribute. */
+function esc(value) {
+    return String(value == null ? "" : value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+/**
+ * The admin reply page is opened from an email client and from an in-app WebView,
+ * neither of which carries a Firebase session. Access is therefore granted by an
+ * HMAC-signed, expiring token bound to the exact (targetUser, notificationId) pair.
+ */
+function signReplyToken(targetUser, id, exp) {
+    return crypto
+        .createHmac("sha256", REPLY_SIGNING_SECRET.value())
+        .update(`${targetUser}|${id}|${exp}`)
+        .digest("base64url");
+}
+
+function verifyReplyToken(targetUser, id, exp, sig) {
+    if (!targetUser || !id || !exp || !sig) return false;
+    const expNum = Number(exp);
+    if (!Number.isFinite(expNum) || expNum < Date.now()) return false;
+
+    const expected = Buffer.from(signReplyToken(targetUser, id, expNum));
+    const provided = Buffer.from(String(sig));
+    if (expected.length !== provided.length) return false;
+    return crypto.timingSafeEqual(expected, provided);
+}
+
+function buildReplyUrl(targetUser, id, email) {
+    const exp = Date.now() + REPLY_LINK_TTL_MS;
+    const sig = signReplyToken(targetUser, id, exp);
+    const q = new URLSearchParams({
+        uid: String(targetUser),
+        id: String(id),
+        email: String(email || ""),
+        exp: String(exp),
+        sig,
+    });
+    return `https://adminreply-khhfw7mtba-uc.a.run.app?${q.toString()}`;
+}
+
+/** Reject anything that is not a currently-valid admin. Returns the caller's email. */
+async function assertAdmin(request) {
+    const email = request.auth && request.auth.token && request.auth.token.email
+        ? String(request.auth.token.email).toLowerCase()
+        : null;
+    if (!email) throw new HttpsError("unauthenticated", "Sign in required.");
+    if (SUPER_ADMINS.includes(email)) return email;
+
+    const snap = await db.collection("admins").doc(email).get();
+    if (!snap.exists) throw new HttpsError("permission-denied", "Admin access required.");
+
+    const data = snap.data() || {};
+    const validUntil = Number(data.validUntil || 0);
+    if (validUntil > 0 && validUntil < Date.now()) {
+        throw new HttpsError("permission-denied", "Admin access has expired.");
+    }
+    return email;
+}
+
+/** Fixed-window rate limit, enforced server-side so it cannot be bypassed by the client. */
+async function enforceRateLimit(key, maxPerWindow, windowMs) {
+    const ref = db.collection("rate_limits").doc(key);
+    const now = Date.now();
+    await db.runTransaction(async (t) => {
+        const snap = await t.get(ref);
+        const data = snap.exists ? snap.data() : null;
+        if (!data || now - Number(data.windowStart || 0) >= windowMs) {
+            t.set(ref, { windowStart: now, count: 1 });
+            return;
+        }
+        if (Number(data.count || 0) >= maxPerWindow) {
+            throw new HttpsError("resource-exhausted", "Rate limit exceeded. Please try again shortly.");
+        }
+        t.update(ref, { count: Number(data.count || 0) + 1 });
+    });
+}
 
 // ─────────────────────────────────────────────
 // NODEMAILER HELPER
@@ -31,9 +143,18 @@ function createTransporter() {
 
 const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 
+// ─────────────────────────────────────────────
+// FUNCTION 1: onSupportQuery
+// Fires on the Firestore write the app makes. Firestore rules already restrict
+// that write to the document owner, so this trigger is the authenticated path
+// for support mail. (The old unauthenticated `cashdashWebhook` duplicated this
+// and has been removed.)
+// ─────────────────────────────────────────────
 exports.onSupportQuery = onDocumentWritten({
     document: "users/{userEmail}/notifications/{notificationId}",
-    secrets: [EMAIL_PASS_SECRET]
+    secrets: [EMAIL_PASS_SECRET, REPLY_SIGNING_SECRET],
+    memory: "128MiB",
+    maxInstances: 10
 }, async (event) => {
     const newData = event.data.after.data();
     if (!newData) return; // Document was deleted, ignore
@@ -52,7 +173,7 @@ exports.onSupportQuery = onDocumentWritten({
         });
         if (!shouldSend) return; // Duplicate detected, skip
 
-        const { name, email, time, subject, query } = newData;
+        const { name, email, subject, query } = newData;
         const targetUser = email || event.params.userEmail;
         const id = event.params.notificationId;
 
@@ -66,7 +187,7 @@ exports.onSupportQuery = onDocumentWritten({
 
         // Remove attachment links/tags from the email body
         let cleanEmailQuery = emailQuery.replace(/\[Attachment:\s*(https?:\/\/[^\s\]]+)\]/g, "").trim();
-        
+
         // If the query is just the prefix, it means only an attachment was sent
         if (cleanEmailQuery.trim() === `User (${userName}):`) {
             cleanEmailQuery = `User (${userName}): (Sent an Attachment)`;
@@ -76,7 +197,7 @@ exports.onSupportQuery = onDocumentWritten({
             month: "short", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false
         });
 
-        const replyUrl = `https://adminreply-khhfw7mtba-uc.a.run.app?uid=${targetUser}&id=${id}&email=${email || ""}`;
+        const replyUrl = buildReplyUrl(targetUser, id, email);
 
         let emailBody = "";
         let emailSubject = "";
@@ -97,7 +218,8 @@ ${cleanEmailQuery || "No query text found."}
 -----------------------------------
 
 REPLY TO THIS QUERY:
-Click the link below to send your reply directly to the user's app:
+Click the link below to send your reply directly to the user's app.
+This link expires in 7 days.
 
 ${replyUrl}
 `.trim();
@@ -118,7 +240,8 @@ ${cleanEmailQuery || "No query text found."}
 -----------------------------------
 
 REPLY TO THIS QUERY:
-Click the link below to send your reply directly to the user's app:
+Click the link below to send your reply directly to the user's app.
+This link expires in 7 days.
 
 ${replyUrl}
 `.trim();
@@ -141,141 +264,127 @@ ${replyUrl}
 });
 
 // ─────────────────────────────────────────────
-// FUNCTION 1: cashdashWebhook (v2 / Cloud Run)
+// FUNCTION 2: getSupportReplyLink (callable, admin-only)
+// The in-app admin inbox used to build the reply URL itself. It cannot any more,
+// because the URL now needs a server-held signing key — so it asks for one here.
 // ─────────────────────────────────────────────
-exports.cashdashWebhook = onRequest({ cors: true, region: "us-central1", secrets: [EMAIL_PASS_SECRET] }, async (req, res) => {
-    if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
+exports.getSupportReplyLink = onCall({
+    region: "us-central1",
+    secrets: [REPLY_SIGNING_SECRET],
+    memory: "128MiB",
+    maxInstances: 5
+}, async (request) => {
+    await assertAdmin(request);
 
-    const {
-        uid, id, name, email, subject,
-        query, rawQuery, originalQuery, teamReply, userFollowup,
-        time, timestamp, is_reply
-    } = req.body;
+    const userEmail = String((request.data && request.data.userEmail) || "").trim();
+    const docId = String((request.data && request.data.docId) || "").trim();
+    if (!userEmail || !docId) {
+        throw new HttpsError("invalid-argument", "userEmail and docId are required.");
+    }
+    if (userEmail.includes("/") || docId.includes("/")) {
+        throw new HttpsError("invalid-argument", "Invalid identifier.");
+    }
 
-    const targetUser = email || uid;
+    return { url: buildReplyUrl(userEmail, docId, userEmail) };
+});
+
+// ─────────────────────────────────────────────
+// FUNCTION 3: rephraseSupportText (callable, admin-only)
+// Holds the Gemini keys server-side. Used to be hardcoded in the APK.
+// ─────────────────────────────────────────────
+exports.rephraseSupportText = onCall({
+    region: "us-central1",
+    secrets: [GEMINI_API_KEY, GEMINI_API_KEY_ADMIN],
+    memory: "128MiB",
+    maxInstances: 5
+}, async (request) => {
+    const callerEmail = await assertAdmin(request);
+
+    // Which key to bill. The client names a scope; the keys themselves never
+    // leave the server. Unknown scopes fall back to messaging rather than erroring.
+    const scope = REPHRASE_SCOPES[String((request.data && request.data.scope) || "")]
+        ? String(request.data.scope)
+        : "messaging";
+
+    // Limited per admin PER SCOPE, since the two scopes draw on separate quotas.
+    await enforceRateLimit(`rephrase_${scope}_${callerEmail}`, 20, 60 * 1000);
+
+    const text = String((request.data && request.data.text) || "").trim();
+    const isTitle = Boolean(request.data && request.data.isTitle);
+
+    if (!text) throw new HttpsError("invalid-argument", "text is required.");
+    if (text.length > 4000) throw new HttpsError("invalid-argument", "text is too long.");
+
+    const prompt = isTitle
+        ? "Rewrite this title in a highly professional, corporate, and encouraging tone suitable for a fintech platform (CashDash). CashDash offers legitimate deals, announcements, and admin communications. CRITICAL: Do not invent or add features like 'cashback', 'rewards', or 'discounts' unless they are explicitly mentioned in the original text. Keep it short (max 5 words). Only return the rewritten text without quotes, do not include any other commentary.\n\nTitle:\n" + text
+        : "Rewrite the following notification message in a highly professional, corporate, and encouraging tone suitable for a fintech platform (CashDash). CashDash offers legitimate deals, announcements, and admin communications. CRITICAL: Do not invent or add features like 'cashback', 'rewards', or 'discounts' unless they are explicitly mentioned in the original text. Only return the rewritten text, do not include any other commentary. Keep the {Validity} placeholder exactly as it is if it exists in the original text.\n\nMessage:\n" + text;
+
     try {
-        if (!is_reply) {
-            const docData = {
-                name: name || "",
-                email: email || "",
-                time: time || "",
-                subject: subject || "General Help",
-                originalSubject: subject || "General Help",
-                query: rawQuery || query || "",
-                timestamp: timestamp || Date.now(),
-                read: false,
-                status: "pending",
-                reply: "Waiting for reply...",
-            };
-            // Save attachment URLs if provided in the body
-            const bodyImageUrl = req.body.imageUrl;
-            const bodyImageUrls = req.body.imageUrls;
-            if (bodyImageUrl) docData.imageUrl = bodyImageUrl;
-            if (Array.isArray(bodyImageUrls) && bodyImageUrls.length > 0) docData.imageUrls = bodyImageUrls;
-            await db.collection("users").doc(targetUser).collection("notifications").doc(String(id)).set(docData);
+        const resp = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${encodeURIComponent(REPHRASE_SCOPES[scope]())}`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+            }
+        );
+
+        if (!resp.ok) {
+            console.error(`Gemini API error [scope=${scope}]:`, resp.status, await resp.text());
+            throw new HttpsError("internal", `Rephrase service is unavailable (${scope}).`);
         }
 
-        const replyUrl = `https://adminreply-khhfw7mtba-uc.a.run.app?uid=${uid}&id=${id}&email=${email || ""}`;
+        const data = await resp.json();
+        const out = data &&
+            data.candidates &&
+            data.candidates[0] &&
+            data.candidates[0].content &&
+            data.candidates[0].content.parts &&
+            data.candidates[0].content.parts[0]
+            ? data.candidates[0].content.parts[0].text
+            : null;
 
-        // Helper: strip [Attachment: url] markers and replace empty lines with "(Sent an Attachment)"
-        function cleanTextForEmail(text) {
-            if (!text) return "";
-            // Per-line fix: if a line is just "Name: " with nothing after, add (Sent an Attachment)
-            const lines = text.split('\n');
-            const fixedLines = lines.map(line => {
-                const stripped = line.replace(/\[Attachment:\s*(https?:\/\/[^\s\]]+)\]/g, '').trim();
-                const hasAttachment = /\[Attachment:/.test(line);
-                if (hasAttachment && stripped === '') return '(Sent an Attachment)';
-                if (hasAttachment && /^[A-Za-z0-9 ]+:\s*$/.test(stripped)) return stripped + ' (Sent an Attachment)';
-                return stripped;
-            });
-            return fixedLines.filter((l, i, arr) => !(l === '' && arr[i-1] === '')).join('\n').trim();
-        }
-
-        let cleanOriginalQuery = cleanTextForEmail(originalQuery);
-        if (!cleanOriginalQuery && (originalQuery || "").includes("[Attachment:")) cleanOriginalQuery = "(Sent an Attachment)";
-
-        let cleanTeamReply = cleanTextForEmail(teamReply);
-        if (!cleanTeamReply && (teamReply || "").includes("[Attachment:")) cleanTeamReply = "(Sent an Attachment)";
-
-        let cleanUserFollowup = cleanTextForEmail(userFollowup);
-        if (!cleanUserFollowup && (userFollowup || "").includes("[Attachment:")) cleanUserFollowup = "(Sent an Attachment)";
-
-        let cleanQuery = cleanTextForEmail(rawQuery || query);
-        if (!cleanQuery && (rawQuery || query || "").includes("[Attachment:")) cleanQuery = "(Sent an Attachment)";
-
-        let emailBody = "";
-        if (is_reply && userFollowup) {
-            emailBody = `
-NEW FOLLOW-UP MESSAGE
-
-Name: ${name || "User"}
-Email: ${email || "No Email"}
-Time: ${time || "Just now"}
-
------------------------------------
-CONVERSATION THREAD:
------------------------------------
-User (${name || "User"}): ${cleanOriginalQuery || "No original message found."}
-
-Team Cashdash: ${cleanTeamReply || "No team reply found."}
-
-User (${name || "User"}): ${cleanUserFollowup}
------------------------------------
-
-REPLY TO THIS QUERY:
-Click the link below to send your reply directly to the user's app:
-
-${replyUrl}
-`.trim();
-        } else {
-            emailBody = `
-NEW SUPPORT QUERY RECEIVED
-
-Name: ${name || "User"}
-Email: ${email || "No Email"}
-Time: ${time || "Just now"}
-Subject: ${subject || "General Help"}
-
------------------------------------
-MESSAGE:
------------------------------------
-User (${name || "User"}): ${cleanQuery || "No query text found."}
------------------------------------
-
-REPLY TO THIS QUERY:
-Click the link below to send your reply directly to the user's app:
-
-${replyUrl}
-`.trim();
-        }
-
-        await createTransporter().sendMail({
-            from: `"CashDash Support" <${GMAIL_USER}>`,
-            to: ADMIN_EMAIL,
-            subject: is_reply ? `Follow-up: ${subject}` : `New Query: ${subject}`,
-            text: emailBody,
-        });
-
-        return res.status(200).json({ success: true });
-    } catch (error) {
-        console.error("cashdashWebhook error:", error);
-        return res.status(500).json({ error: error.message });
+        return { text: out ? String(out).trim().replace(/^"|"$/g, "") : text };
+    } catch (err) {
+        if (err instanceof HttpsError) throw err;
+        console.error("rephraseSupportText error:", err);
+        throw new HttpsError("internal", "Rephrase failed.");
     }
 });
 
 // ─────────────────────────────────────────────
-exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EMAIL_PASS_SECRET] }, async (req, res) => {
+// FUNCTION 4: adminReply
+// Access is granted by the HMAC-signed `exp`/`sig` pair on the URL, which binds
+// the request to one notification and expires. Previously this endpoint had no
+// access control at all.
+// ─────────────────────────────────────────────
+exports.adminReply = onRequest({ cors: false, region: "us-central1", secrets: [EMAIL_PASS_SECRET, REPLY_SIGNING_SECRET], memory: "256MiB", maxInstances: 5 }, async (req, res) => {
     const Busboy = require("busboy");
     const path = require("path");
     const os = require("os");
     const fs = require("fs");
 
+    res.set("Content-Security-Policy",
+        "default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action 'self'; connect-src 'self'");
+    res.set("X-Content-Type-Options", "nosniff");
+    res.set("Referrer-Policy", "no-referrer");
+
+    const denied = (why) => res.status(403).send(`
+<html><body style='background:#0a0a1a;color:#f87171;text-align:center;padding-top:100px;font-family:sans-serif;'>
+  <h2>Link no longer valid</h2>
+  <p style='color:#88a'>${esc(why)}</p>
+</body></html>`);
+
     if (req.method === "GET") {
-        const { uid, id, email } = req.query;
+        const { uid, id, email, exp, sig } = req.query;
+        const targetUser = email || uid;
+
+        if (!verifyReplyToken(targetUser, id, exp, sig)) {
+            return denied("This reply link has expired or is not valid. Open the query from the CashDash admin panel to get a fresh link.");
+        }
+
         let queryText = "Loading...";
         let subjectText = "Support Query";
-        const targetUser = email || uid;
         let hasPreviousReply = false;
         let legacyImages = [];
 
@@ -328,6 +437,11 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
             queryText = "Could not load query.";
         }
 
+        // Only render attachment images that live in our own Storage bucket, so a
+        // crafted [Attachment: ...] marker cannot point the page at arbitrary hosts.
+        const isTrustedAttachment = (url) =>
+            /^https:\/\/(storage\.googleapis\.com|firebasestorage\.googleapis\.com)\//.test(url);
+
         // Collect which URLs are already referenced via [Attachment:] markers in the query text
         const referencedInText = new Set();
         const refScanRegex = /\[Attachment:\s*(https?:\/\/[^\s\]]+)\]/g;
@@ -337,42 +451,41 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
         }
 
         // Legacy image URLs that are NOT already embedded as [Attachment:] markers
-        // These come from the original imageUrl/imageUrls fields (pre-[Attachment:] era)
         const unreferencedLegacy = Array.isArray(legacyImages)
-            ? legacyImages.filter(url => !referencedInText.has(url))
+            ? legacyImages.filter(url => !referencedInText.has(url) && isTrustedAttachment(url))
             : [];
 
-        let escapedQueryText = queryText.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        const attachmentRegex = /\[Attachment:\s*(https?:\/\/[^\s\]]+)\]/g;
-        let hasNewMarkers = false;
-        escapedQueryText = escapedQueryText.replace(attachmentRegex, (match, url) => {
-            hasNewMarkers = true;
-            return `<div style="margin: 8px 0;"><img src="${url}" style="max-width: 100%; max-height: 250px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); cursor: pointer;" onclick="window.open('${url}', '_blank')"></div>`;
-        });
+        const imgTag = (url) =>
+            `<div style="margin: 8px 0;"><a href="${esc(url)}" target="_blank" rel="noopener noreferrer">` +
+            `<img src="${esc(url)}" style="max-width: 100%; max-height: 250px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15);">` +
+            `</a></div>`;
+
+        // Escape FIRST, then substitute the (validated) image markup. The previous
+        // version escaped and then re-injected the raw URL into src="" and an
+        // inline onclick, which let a crafted marker break out of the attribute.
+        // `esc` has already turned any & into &amp;, so undo that before validating.
+        let escapedQueryText = esc(queryText).replace(
+            /\[Attachment:\s*(https?:[^\s\]]*)\]/g,
+            (match, rawUrl) => {
+                const url = rawUrl.replace(/&amp;/g, "&");
+                return isTrustedAttachment(url) ? imgTag(url) : "(Attachment removed)";
+            }
+        );
 
         // Fix: if a speaker line ("Name: ") has no text before an image, insert "(Sent an Attachment)"
-        // Case 1: "Name: \n<div" — newline between colon and image
         escapedQueryText = escapedQueryText.replace(/([A-Za-z0-9 ]+:)[ \t]*\n(<div style)/g, '$1 (Sent an Attachment)\n$2');
-        // Case 2: "Name: <div" — image immediately after colon with no text
         escapedQueryText = escapedQueryText.replace(/([A-Za-z0-9 ]+:)[ \t]*(<div style)/g, '$1 (Sent an Attachment)\n$2');
 
         // Inject unreferenced legacy images after the FIRST block (the original user message)
-        // so they always appear attached to the first message, not dumped at the end
         if (unreferencedLegacy.length > 0) {
-            const legacyImgHtml = unreferencedLegacy.map(url =>
-                `<div style="margin: 8px 0;"><img src="${url}" style="max-width: 100%; max-height: 250px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); cursor: pointer;" onclick="window.open('${url}', '_blank')"></div>`
-            ).join('');
-            // Find the end of the first \n\n separated block
+            const legacyImgHtml = unreferencedLegacy.map(imgTag).join('');
             const firstDoubleBreak = escapedQueryText.indexOf('\n\n');
             if (firstDoubleBreak !== -1) {
-                // Insert images between first block and the rest
                 escapedQueryText = escapedQueryText.slice(0, firstDoubleBreak) + '\n' + legacyImgHtml + escapedQueryText.slice(firstDoubleBreak);
             } else {
-                // Only one block — append at end
                 escapedQueryText = escapedQueryText + '\n' + legacyImgHtml;
             }
         }
-
 
         return res.status(200).send(`
 <!DOCTYPE html>
@@ -413,13 +526,15 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
 <body>
   <div class="card">
     <h2>📨 CashDash Support Reply</h2>
-    <div style="font-size:12px;color:#88a;margin-bottom:10px;">Subject: ${subjectText}</div>
+    <div style="font-size:12px;color:#88a;margin-bottom:10px;">Subject: ${esc(subjectText)}</div>
     <div class="query-box">${escapedQueryText}</div>
 
     <div id="form-area">
-      <input type="hidden" id="f-uid" value="${uid}">
-      <input type="hidden" id="f-email" value="${email || ""}">
-      <input type="hidden" id="f-id" value="${id}">
+      <input type="hidden" id="f-uid" value="${esc(uid)}">
+      <input type="hidden" id="f-email" value="${esc(email || "")}">
+      <input type="hidden" id="f-id" value="${esc(id)}">
+      <input type="hidden" id="f-exp" value="${esc(exp)}">
+      <input type="hidden" id="f-sig" value="${esc(sig)}">
 
       <button id="btn-resolve-only" class="btn-resolve" style="margin-bottom: 20px;" onclick="submitAction('resolve_only')" ${hasPreviousReply ? "disabled" : ""}>1. Mark as resolved without reply</button>
 
@@ -457,35 +572,36 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
   </div>
 
   <script>
-    const MAX_IMAGES = 4;
-    const hasPrev = ${hasPreviousReply};
+    const MAX_IMAGES = ${MAX_UPLOAD_FILES};
+    const MAX_BYTES = ${MAX_UPLOAD_BYTES};
+    const hasPrev = ${hasPreviousReply ? "true" : "false"};
     let selectedFiles = [];
     let currentAction = '';
 
     function renderSlots() {
       const container = document.getElementById('imgSlots');
       container.innerHTML = '';
-      
+
       selectedFiles.forEach((file, i) => {
         const wrapper = document.createElement('div');
         wrapper.className = 'img-slot-wrapper';
-        
+
         const slot = document.createElement('div');
         slot.className = 'img-slot';
         const img = document.createElement('img');
         img.src = URL.createObjectURL(file);
         slot.appendChild(img);
-        
+
         const delTxt = document.createElement('div');
         delTxt.className = 'delete-txt';
         delTxt.textContent = 'Delete';
         delTxt.onclick = () => { selectedFiles.splice(i, 1); renderSlots(); };
-        
+
         wrapper.appendChild(slot);
         wrapper.appendChild(delTxt);
         container.appendChild(wrapper);
       });
-      
+
       if (selectedFiles.length < MAX_IMAGES) {
         const addWrapper = document.createElement('div');
         addWrapper.className = 'img-slot-wrapper';
@@ -499,13 +615,15 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
     }
 
     document.getElementById('hiddenPicker').addEventListener('change', function() {
-      if (this.files[0] && selectedFiles.length < MAX_IMAGES) {
-        selectedFiles.push(this.files[0]);
-        this.value = '';
-        renderSlots();
-      }
+      const f = this.files[0];
+      this.value = '';
+      if (!f || selectedFiles.length >= MAX_IMAGES) return;
+      if (!/^image\\//.test(f.type)) { alert('Only image files can be attached.'); return; }
+      if (f.size > MAX_BYTES) { alert('That image is larger than 8 MB.'); return; }
+      selectedFiles.push(f);
+      renderSlots();
     });
-    
+
     renderSlots();
 
     function enableActionButtons() {
@@ -547,6 +665,8 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
       fd.append('uid', document.getElementById('f-uid').value);
       fd.append('email', document.getElementById('f-email').value);
       fd.append('id', document.getElementById('f-id').value);
+      fd.append('exp', document.getElementById('f-exp').value);
+      fd.append('sig', document.getElementById('f-sig').value);
       fd.append('reply', text);
       fd.append('action', action);
       fd.append('consecutive_mode', consecutiveMode);
@@ -557,7 +677,7 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
       const progressBar = document.getElementById('progress-bar');
       const progressLabel = document.getElementById('progress-label');
       const progressBarWrap = document.getElementById('progress-bar-wrap');
-      
+
       const hasImages = selectedFiles.length > 0;
       progressSection.style.display = 'block';
       if (hasImages) {
@@ -600,9 +720,13 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
     if (req.method === "POST") {
         const parseMultipart = () => {
             return new Promise((resolve, reject) => {
-                const busboy = Busboy({ headers: req.headers });
+                const busboy = Busboy({
+                    headers: req.headers,
+                    limits: { fileSize: MAX_UPLOAD_BYTES, files: MAX_UPLOAD_FILES, fields: 20 },
+                });
                 const fields = {};
                 const files = [];
+                let rejected = null;
 
                 busboy.on("field", (fieldName, val) => {
                     fields[fieldName] = val;
@@ -610,30 +734,49 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
 
                 busboy.on("file", (fieldName, file, info) => {
                     const { filename, mimeType } = info;
-                    if (!filename) {
+                    if (!filename || !ALLOWED_UPLOAD_TYPES.includes(String(mimeType).toLowerCase())) {
                         file.resume();
                         return;
                     }
-                    const filepath = path.join(os.tmpdir(), `${Date.now()}_${filename}`);
+                    // Never trust the client filename: strip any path component and
+                    // any character that could escape the destination directory.
+                    const safeName = path.basename(String(filename)).replace(/[^A-Za-z0-9._-]/g, "_").slice(-64) || "upload";
+                    const filepath = path.join(os.tmpdir(), `${Date.now()}_${safeName}`);
                     const writeStream = fs.createWriteStream(filepath);
+
+                    let overLimit = false;
+                    file.on("limit", () => {
+                        overLimit = true;
+                        rejected = "One of the images is larger than 8 MB.";
+                        writeStream.destroy();
+                    });
+
                     file.pipe(writeStream);
-                    
-                    files.push(new Promise((res, rej) => {
-                        writeStream.on("finish", () => {
-                            res({
-                                fieldName,
-                                filepath,
-                                filename,
-                                mimeType
-                            });
+
+                    // Settle on "close", which fires on both success and destroy,
+                    // so an over-limit file can never leave the promise pending.
+                    files.push(new Promise((res2) => {
+                        let settled = false;
+                        const done = (value) => {
+                            if (settled) return;
+                            settled = true;
+                            res2(value);
+                        };
+                        writeStream.on("error", () => done(null));
+                        writeStream.on("close", () => {
+                            if (overLimit) {
+                                try { fs.unlinkSync(filepath); } catch (e) { /* already gone */ }
+                                return done(null);
+                            }
+                            done({ fieldName, filepath, filename: safeName, mimeType });
                         });
-                        writeStream.on("error", rej);
                     }));
                 });
 
                 busboy.on("finish", async () => {
                     try {
-                        const resolvedFiles = await Promise.all(files);
+                        const resolvedFiles = (await Promise.all(files)).filter(Boolean);
+                        if (rejected) return reject(new Error(rejected));
                         resolve({ fields, files: resolvedFiles });
                     } catch (e) {
                         reject(e);
@@ -652,10 +795,16 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
 
         try {
             const parsed = await parseMultipart();
-            let { uid, id, email, reply, action, consecutive_mode } = parsed.fields;
+            let { uid, id, email, reply, action, consecutive_mode, exp, sig } = parsed.fields;
             if (!uid || !id) return res.status(400).send("Missing data.");
 
             const targetUser = email || uid;
+
+            if (!verifyReplyToken(targetUser, id, exp, sig)) {
+                parsed.files.forEach(f => { try { fs.unlinkSync(f.filepath); } catch (e) { /* ignore */ } });
+                return denied("This reply link has expired or is not valid.");
+            }
+
             const actionStr = String(action || "reply");
 
             const bucket = admin.storage().bucket();
@@ -701,7 +850,6 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
             const timestamp = Date.now();
             // NOTE: imageUrls field is intentionally NOT updated with admin reply images.
             // Admin images are embedded as [Attachment:] markers in the reply text itself.
-            // Appending them to imageUrls would cause double display on the client.
             // imageUrls only holds the user's original submission attachments.
 
             const updateData = {
@@ -719,24 +867,19 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
                 const fcmToken = userDoc.data()?.fcmToken;
 
                 if (fcmToken) {
+                    // Data-only message: MyFirebaseMessagingService builds the notification
+                    // and its own PendingIntent, so NotificationActivity does not need to
+                    // be an exported component. Matches the onUserPush pattern.
                     await admin.messaging().send({
                         token: fcmToken,
-                        notification: {
+                        data: {
                             title: "Cashdash Support",
                             body: isResolvedAction ? "Your query has been resolved !" : "Your query has got a response ! Tap to view.",
+                            uid: String(uid),
+                            id: String(id),
                         },
                         android: {
                             priority: "high",
-                            notification: {
-                                channelId: "cashdash_urgent_heads_up_v10",
-                                icon: "ic_bell",
-                                color: "#4ADE80",
-                                clickAction: "NotificationActivity",
-                            },
-                        },
-                        data: {
-                            uid: String(uid),
-                            id: String(id),
                         },
                     });
                 }
@@ -748,38 +891,26 @@ exports.adminReply = onRequest({ cors: true, region: "us-central1", secrets: [EM
 <html>
 <body style='background:#0a0a1a;color:#4ade80;text-align:center;padding-top:100px;font-family:sans-serif;'>
   <h2>✅ Success!</h2>
-  <p style='color:#88a'>Action: ${actionStr.replace(/_/g, " ")}</p>
+  <p style='color:#88a'>Action: ${esc(actionStr.replace(/_/g, " "))}</p>
   <p style='color:#88a'>The user has been notified.</p>
 </body>
 </html>`);
         } catch (error) {
-            return res.status(500).send("Error: " + error.message);
+            console.error("adminReply POST error:", error);
+            return res.status(500).send("Error: " + esc(error.message));
         }
     }
     return res.status(405).send("Method Not Allowed");
 });
 
 // ─────────────────────────────────────────────
-// FUNCTION 3: syncPresenceToFirestore
-// ─────────────────────────────────────────────
-const { onValueWritten } = require("firebase-functions/v2/database");
-
-exports.syncPresenceToFirestore = onValueWritten({
-    ref: "/status/{safeEmail}",
-    region: "us-central1"
-}, async (event) => {
-    // 🔥 Deprecated: We no longer sync status or lastActiveTime to Firestore.
-    // Real-time presence is handled exclusively via RTDB on the client side now.
-    // This function body has been cleared to prevent legacy field resurrection.
-    return;
-});
-
-// ─────────────────────────────────────────────
-// FUNCTION 4: onGlobalPush
+// FUNCTION 5: onGlobalPush
 // ─────────────────────────────────────────────
 exports.onGlobalPush = onDocumentWritten({
     document: "global_pushes/{pushId}",
-    region: "us-central1"
+    region: "us-central1",
+    memory: "128MiB",
+    maxInstances: 5
 }, async (event) => {
     const newData = event.data.after.data();
     if (!newData) return; // Document was deleted, ignore
@@ -789,9 +920,9 @@ exports.onGlobalPush = onDocumentWritten({
     const imageUrl = newData.imageUrl || "";
     const triggerUrl = newData.triggerUrl || "";
     const triggerText = newData.triggerText || "";
-    
+
     const promoId = newData.promo_id || "";
-    
+
     if (!message) return;
 
     const adminOnly = newData.adminOnly === true;
@@ -821,11 +952,13 @@ exports.onGlobalPush = onDocumentWritten({
 });
 
 // ─────────────────────────────────────────────
-// FUNCTION 5: onUserPush
+// FUNCTION 6: onUserPush
 // ─────────────────────────────────────────────
 exports.onUserPush = onDocumentWritten({
     document: "user_pushes/{pushId}",
-    region: "us-central1"
+    region: "us-central1",
+    memory: "128MiB",
+    maxInstances: 10
 }, async (event) => {
     const newData = event.data.after.data();
     if (!newData) return; // Document was deleted, ignore
@@ -888,7 +1021,7 @@ exports.onUserPush = onDocumentWritten({
 });
 
 // ─────────────────────────────────────────────
-// FUNCTION 6: onAuthUserDeleted
+// FUNCTION 7: onAuthUserDeleted
 // ─────────────────────────────────────────────
 const functionsv1 = require("firebase-functions/v1");
 

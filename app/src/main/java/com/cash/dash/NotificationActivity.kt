@@ -2225,18 +2225,9 @@ class NotificationActivity : ThemedActivity() {
                         holder.btnSendReply.isEnabled = true
                         loadNotifications()
 
-                        triggerImmediateWebhook(
-                            uid = user.uid,
-                            id = model.id,
-                            name = userName,
-                            email = email,
-                            subject = model.originalSubject,
-                            updatedQuery = updatedQuery,
-                            originalQuery = model.originalQuery,
-                            teamReply = model.originalReply,
-                            userFollowup = textWithAttachments,
-                            timestamp = timestamp
-                        )
+                        // Support email is dispatched server-side by the onSupportQuery Cloud Function,
+                        // which fires on the needs_admin_email flag written above. The old
+                        // cashdashWebhook endpoint was unauthenticated and has been removed.
                     }
                     .addOnFailureListener {
                         holder.btnSendReply.isEnabled = true
@@ -2247,48 +2238,6 @@ class NotificationActivity : ThemedActivity() {
             sendReplyWithAttachments()
         }
 
-        private fun triggerImmediateWebhook(
-            uid: String, id: String, name: String, email: String, subject: String,
-            updatedQuery: String, originalQuery: String, teamReply: String, userFollowup: String, timestamp: Long
-        ) {
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val webhookUrl = "https://cashdashwebhook-khhfw7mtba-uc.a.run.app"
-                    val url = URL(webhookUrl)
-                    val conn = url.openConnection() as HttpURLConnection
-                    conn.requestMethod = "POST"
-                    conn.setRequestProperty("Content-Type", "application/json; utf-8")
-                    conn.doOutput = true
-
-                    val payload = JSONObject().apply {
-                        put("uid", uid)
-                        put("id", id)
-                        put("name", name)
-                        put("email", email)
-                        put("subject", subject)
-                        put("query", updatedQuery) // Unified history format for DB backward compat
-                        put("originalQuery", originalQuery) // Thread separation for cleaner email render
-                        put("teamReply", teamReply)
-                        put("userFollowup", userFollowup)
-                        put("is_reply", true)
-                        put("timestamp", timestamp)
-                    }
-
-                    val os = conn.outputStream
-                    val writer = OutputStreamWriter(os, "UTF-8")
-                    writer.write(payload.toString())
-                    writer.flush()
-                    writer.close()
-                    os.close()
-
-                    val responseCode = conn.responseCode
-                    Log.d("NotificationActivity", "⚡ Reply Webhook Sent. Response: $responseCode")
-                    conn.disconnect()
-                } catch (e: Exception) {
-                    Log.e("NotificationActivity", "❌ Reply Webhook Failed: ${e.message}")
-                }
-            }
-        }
 
 
 

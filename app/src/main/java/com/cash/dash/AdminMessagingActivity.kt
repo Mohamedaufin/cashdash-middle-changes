@@ -1,5 +1,6 @@
 package com.cash.dash
 
+import androidx.lifecycle.lifecycleScope
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
@@ -89,6 +90,8 @@ class AdminMessagingActivity : ThemedActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Admin screens show other users' data — block screenshots/recents thumbnail.
+        SecureScreen.apply(this)
         setContentView(R.layout.activity_admin_messaging)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             window.decorView.importantForAutofill = android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
@@ -179,9 +182,9 @@ class AdminMessagingActivity : ThemedActivity() {
                 return@setOnClickListener
             }
             ToastHelper.showToast(this, "Rephrasing Title...")
-            kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+            lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
-                    val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6INnxwddAo8VfHAPKNTEnqGWN3cOpTsnP_usdRrkq8CKg")
+                    val result = GenerativeAiManager.rephraseText(originalText, true, GenerativeAiManager.Scope.MESSAGING)
                     titleRephraseState.saveState(originalText)
                     edtMessageTitle.setText(result)
                     titleRephraseState.saveState(result)
@@ -202,9 +205,9 @@ class AdminMessagingActivity : ThemedActivity() {
                 return@setOnClickListener
             }
             ToastHelper.showToast(this, "Rephrasing Content...")
-            kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+            lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                 try {
-                    val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6INnxwddAo8VfHAPKNTEnqGWN3cOpTsnP_usdRrkq8CKg")
+                    val result = GenerativeAiManager.rephraseText(originalText, false, GenerativeAiManager.Scope.MESSAGING)
                     bodyRephraseState.saveState(originalText)
                     edtMessageBody.setText(result)
                     bodyRephraseState.saveState(result)

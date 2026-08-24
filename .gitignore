@@ -26,3 +26,18 @@ replay_pid*
 *.dex
 *.class
 *.jks
+
+# Captured device logs and crash dumps — these contained real user emails (PII).
+# Never commit these; they are working files only.
+logcat*.txt
+current_logcat.txt
+crash.txt
+all_history.txt
+themes_git.txt
+*_dump.txt
+
+# Scratch / superseded working copies
+old_*.kt
+old_*.xml
+temp_*.kt
+temp_*.xml

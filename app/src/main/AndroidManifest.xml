@@ -126,11 +126,13 @@
         <activity android:configChanges="uiMode" android:name=".FinminderHistoryActivity"  android:exported="false" />
         <activity android:configChanges="uiMode" android:name=".AdminPromotionsActivity" android:exported="false" />
 
-        <activity android:configChanges="uiMode" 
-            android:name=".NotificationActivity" 
-            android:exported="true"
+        <!-- Not exported: reached only via the PendingIntent that
+             MyFirebaseMessagingService builds, which does not require export. -->
+        <activity android:configChanges="uiMode"
+            android:name=".NotificationActivity"
+            android:exported="false"
             android:launchMode="singleTop"
-            
+
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="NotificationActivity" />
@@ -138,19 +140,13 @@
             </intent-filter>
         </activity>
 
-        <!-- 📷 QR Scanner + Deep Link -->
+        <!-- 📷 QR Scanner.
+             The cashdash:// BROWSABLE deep link was removed: ScannerActivity never
+             read intent.data, so the filter only let any web page or installed app
+             launch the payment scanner. It is launched internally. -->
         <activity android:configChanges="uiMode"
             android:name=".ScannerActivity"
-            
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="cashdash" />
-            </intent-filter>
-        </activity>
+            android:exported="false" />
 
 
 
@@ -283,7 +279,10 @@
             android:name="com.google.mlkit.vision.codescanner.internal.GmsBarcodeScanningDelegateActivity"
             tools:node="merge"
             tools:remove="screenOrientation" />
-            <activity android:name=".ManageAdminAccessActivity" android:theme="@style/Theme.Cashdash"/>
+        <activity
+            android:name=".ManageAdminAccessActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Cashdash" />
     </application>
 
 </manifest>

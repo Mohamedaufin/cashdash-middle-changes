@@ -1,18 +1,35 @@
 package com.cash.dash
 
-import com.google.ai.client.generativeai.GenerativeModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.util.LinkedList
 import android.widget.EditText
 import android.widget.TextView
 import android.view.View
 
+/**
+ * Rephrasing runs through the `rephraseSupportText` Cloud Function.
+ *
+ * The Gemini API key used to be passed in from the call sites as a string literal,
+ * which put it in plaintext inside every shipped APK — R8 obfuscates identifiers,
+ * not string constants. The key now lives in Firebase secrets and never reaches
+ * the client. Rate limiting is enforced server-side per admin for the same reason:
+ * the old in-process counter here was trivially bypassed.
+ */
 object GenerativeAiManager {
 
-    private val requestTimestamps = LinkedList<Long>()
-    private const val MAX_REQUESTS_PER_MINUTE = 10
-    private const val TIME_WINDOW_MS = 60000L
+    /**
+     * Which Gemini key the server should bill. The two scopes map to separate keys
+     * so announcements/notifications and promotions/admin-access draw on separate
+     * quotas — the same split the app used to have hardcoded. The key values
+     * themselves stay in Firebase secrets; the client only names a scope.
+     */
+    object Scope {
+        /** AdminMessagingActivity — announcements and push notifications. */
+        const val MESSAGING = "messaging"
+
+        /** AdminPromotionsActivity and ManageAdminAccessActivity. */
+        const val ADMIN = "admin"
+    }
 
     class RephraseState(
         val editText: EditText,
@@ -63,60 +80,55 @@ object GenerativeAiManager {
             }
             updateVisibility()
         }
-        
+
         fun updateVisibility() {
             undoView.visibility = if (currentIndex > 0) View.VISIBLE else View.GONE
             redoView.visibility = if (currentIndex < history.size - 1) View.VISIBLE else View.GONE
         }
     }
 
-    fun canMakeRequest(): Boolean {
-        cleanOldRequests()
-        return requestTimestamps.size < MAX_REQUESTS_PER_MINUTE
-    }
-
-    fun getWaitTimeSeconds(): Long {
-        cleanOldRequests()
-        if (requestTimestamps.isEmpty()) return 0
-        val oldest = requestTimestamps.first
-        val now = System.currentTimeMillis()
-        val timePassed = now - oldest
-        val remainingMs = TIME_WINDOW_MS - timePassed
-        return if (remainingMs > 0) remainingMs / 1000 else 0
-    }
-
-    private fun cleanOldRequests() {
-        val now = System.currentTimeMillis()
-        val threshold = now - TIME_WINDOW_MS
-        while (requestTimestamps.isNotEmpty() && requestTimestamps.first < threshold) {
-            requestTimestamps.removeFirst()
-        }
-    }
-
-    private fun recordRequest() {
-        requestTimestamps.addLast(System.currentTimeMillis())
-    }
-
-    suspend fun rephraseText(text: String, isTitle: Boolean, apiKey: String): String = withContext(Dispatchers.IO) {
-        if (!canMakeRequest()) {
-            throw Exception("Rate limit exceeded. Try again in ${getWaitTimeSeconds()} seconds.")
-        }
-        
-        recordRequest()
-
-        val model = GenerativeModel("gemini-flash-latest", apiKey)
-        val prompt = if (isTitle) {
-            "Rewrite this title in a highly professional, corporate, and encouraging tone suitable for a fintech platform (CashDash). CashDash offers legitimate deals, announcements, and admin communications. CRITICAL: Do not invent or add features like 'cashback', 'rewards', or 'discounts' unless they are explicitly mentioned in the original text. Keep it short (max 5 words). Only return the rewritten text without quotes, do not include any other commentary.\n\nTitle:\n$text"
-        } else {
-            "Rewrite the following notification message in a highly professional, corporate, and encouraging tone suitable for a fintech platform (CashDash). CashDash offers legitimate deals, announcements, and admin communications. CRITICAL: Do not invent or add features like 'cashback', 'rewards', or 'discounts' unless they are explicitly mentioned in the original text. Only return the rewritten text, do not include any other commentary. Keep the {Validity} placeholder exactly as it is if it exists in the original text.\n\nMessage:\n$text"
-        }
+    suspend fun rephraseText(
+        text: String,
+        isTitle: Boolean,
+        scope: String = Scope.MESSAGING
+    ): String = withContext(Dispatchers.IO) {
+        val payload = hashMapOf(
+            "text" to text,
+            "isTitle" to isTitle,
+            "scope" to scope
+        )
 
         try {
-            val response = model.generateContent(prompt)
-            return@withContext response.text?.trim()?.removeSurrounding("\"") ?: text
+            val task = com.google.firebase.functions.FirebaseFunctions
+                .getInstance("us-central1")
+                .getHttpsCallable("rephraseSupportText")
+                .call(payload)
+
+            // Already on Dispatchers.IO, so blocking on the Task is safe here and
+            // avoids pulling in kotlinx-coroutines-play-services just for await().
+            val result = com.google.android.gms.tasks.Tasks.await(task)
+
+            @Suppress("UNCHECKED_CAST")
+            val data = result.getData() as? Map<String, Any?>
+            return@withContext (data?.get("text") as? String)?.trim().takeUnless { it.isNullOrEmpty() } ?: text
         } catch (e: Exception) {
-            val msg = e.message ?: ""
-            throw Exception("API Error: $msg")
+            val cause = e.cause ?: e
+            val msg = when {
+                cause is com.google.firebase.functions.FirebaseFunctionsException &&
+                    cause.code == com.google.firebase.functions.FirebaseFunctionsException.Code.RESOURCE_EXHAUSTED ->
+                    "Rate limit reached. Please try again in a minute."
+                cause is com.google.firebase.functions.FirebaseFunctionsException &&
+                    cause.code == com.google.firebase.functions.FirebaseFunctionsException.Code.PERMISSION_DENIED ->
+                    "You do not have permission to use rephrase."
+                cause is com.google.firebase.functions.FirebaseFunctionsException &&
+                    cause.code == com.google.firebase.functions.FirebaseFunctionsException.Code.NOT_FOUND ->
+                    "Rephrase service is not deployed yet. Run: firebase deploy --only functions"
+                cause is com.google.firebase.functions.FirebaseFunctionsException &&
+                    cause.code == com.google.firebase.functions.FirebaseFunctionsException.Code.UNAUTHENTICATED ->
+                    "Please sign in again."
+                else -> cause.message ?: "Rephrase failed."
+            }
+            throw Exception(msg)
         }
     }
 }

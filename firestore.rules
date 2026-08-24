@@ -17,23 +17,65 @@ service cloud.firestore {
       );
     }
 
-    // Admins who specifically have the 'allocateAdmins' permission granted
-    function hasAllocateAdminPermission() {
-      return request.auth != null && (
-        isSuperAdmin() ||
-        (
-          exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower())) &&
-          get(/databases/$(database)/documents/admins/$(request.auth.token.email.lower())).data.allocateAdmins == true
-        )
-      );
+    function adminExists() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower()));
     }
 
-    // Any user who is listed in the admins collection OR is a super admin
+    function adminData() {
+      return get(/databases/$(database)/documents/admins/$(request.auth.token.email.lower())).data;
+    }
+
+    // An admin whose validUntil has passed is no longer an admin. This used to be
+    // checked only in the Kotlin client, which meant expired admins kept full
+    // server-side access to every user's data.
+    function adminNotExpired() {
+      return adminData().get('validUntil', 0) == 0 ||
+             adminData().get('validUntil', 0) > request.time.toMillis();
+    }
+
+    // Any user who is a current, unexpired admin OR is a super admin
     function isAnyAdmin() {
-      return request.auth != null && (
-        isSuperAdmin() ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower()))
-      );
+      return isSuperAdmin() || (adminExists() && adminNotExpired());
+    }
+
+    // Grants that imply every other permission
+    function adminHasBlanket() {
+      return adminData().get('isOwner', false) == true ||
+             adminData().get('fullAccess', false) == true;
+    }
+
+    // --- Granular permissions ---
+    // These mirror AdminManager.AdminPermissions in the app. They used to be
+    // enforced only in the client, so any admin could read anything.
+
+    function canReplyToQueries() {
+      return isSuperAdmin() || (adminExists() && adminNotExpired() &&
+        (adminHasBlanket() || adminData().get('replyToQueries', false) == true));
+    }
+
+    function canViewLastSeen() {
+      return isSuperAdmin() || (adminExists() && adminNotExpired() &&
+        (adminHasBlanket() || adminData().get('viewLastSeen', false) == true));
+    }
+
+    function canViewAdminLogs() {
+      return isSuperAdmin() || (adminExists() && adminNotExpired() &&
+        (adminHasBlanket() || adminData().get('viewAdminLogs', false) == true));
+    }
+
+    function canAllocateAdmins() {
+      return isSuperAdmin() || (adminExists() && adminNotExpired() &&
+        (adminHasBlanket() || adminData().get('allocateAdmins', false) == true));
+    }
+
+    function canBroadcast() {
+      return isSuperAdmin() || (adminExists() && adminNotExpired() && (
+        adminHasBlanket() ||
+        adminData().get('sendAnnouncements', false) == true ||
+        adminData().get('sendPromotions', false) == true ||
+        adminData().get('sendNotifications', false) == true
+      ));
     }
 
     // Check the user's account is not suspended/deleted
@@ -43,15 +85,34 @@ service cloud.firestore {
 
     // --- Collection Rules ---
 
-    // User documents: owners can manage their own, admins can read all
     match /users/{userEmail} {
+      // The top-level user doc holds name + fcmToken, and admins need to list this
+      // collection to build the support inbox.
       allow read: if isOwner(userEmail) || isAnyAdmin();
       allow write: if isOwner(userEmail);
 
-      // Subcollections (config, notifications, etc.)
-      match /{subcollection=**} {
+      // Support threads: readable by admins who actually handle queries.
+      match /notifications/{notificationId} {
+        allow read: if isOwner(userEmail) || canReplyToQueries();
+        allow write: if isOwner(userEmail);
+      }
+
+      // Name / phone card shown in the admin screens.
+      match /config/profile {
         allow read: if isOwner(userEmail) || isAnyAdmin();
         allow write: if isOwner(userEmail);
+      }
+
+      // Everything else under config is the user's financial data — wallet,
+      // history, analytics, categories, finminder, upi_allocations. Owner only.
+      // Admins previously had blanket read over all of this.
+      match /config/{docId} {
+        allow read, write: if isOwner(userEmail);
+      }
+
+      // Any other subcollection — owner only.
+      match /{subcollection}/{docId=**} {
+        allow read, write: if isOwner(userEmail);
       }
     }
 
@@ -62,52 +123,83 @@ service cloud.firestore {
     }
 
     // Admins collection
-    // READ: any admin can read (needed to load admin management screens)
-    // WRITE: only admins with allocateAdmins permission or super admins can modify
+    // READ: any current admin can read (needed to load admin management screens)
+    // WRITE: super admins without restriction; allocateAdmins holders may manage
+    //        OTHER admins only, and may not mint new owners. This blocks the
+    //        self-escalation path where an allocateAdmins holder wrote isOwner:true
+    //        onto their own document.
     match /admins/{adminEmail} {
       allow read: if isAnyAdmin();
-      allow write: if hasAllocateAdminPermission();
+
+      allow create, update: if isSuperAdmin() || (
+        canAllocateAdmins() &&
+        adminEmail.lower() != request.auth.token.email.lower() &&
+        request.resource.data.get('isOwner', false) != true
+      );
+
+      allow delete: if isSuperAdmin() || (
+        canAllocateAdmins() &&
+        adminEmail.lower() != request.auth.token.email.lower()
+      );
     }
 
     // Admin requests (pending admin promotions)
-    // READ: any admin can view pending requests
-    // WRITE: only admins with allocateAdmins permission can process them
     match /admin_requests/{requestEmail} {
       allow read: if isAnyAdmin();
-      allow write: if hasAllocateAdminPermission();
+      allow write: if canAllocateAdmins();
     }
 
-    // Announcements: any signed-in user can read, only admins can write
+    // Announcements: any signed-in user can read, only broadcasting admins can write
     match /announcements/{document=**} {
       allow read: if isActiveUser();
-      allow write: if isAnyAdmin();
+      allow write: if canBroadcast();
     }
 
-    // Global push notifications: any signed-in user can read, only admins can write
+    // Global push notifications
     match /global_pushes/{document=**} {
       allow read: if isActiveUser();
-      allow write: if isAnyAdmin();
+      allow write: if canBroadcast();
     }
 
-    // User-targeted push notifications: any signed-in user can read their own, only admins can write
+    // User-targeted push notifications
     match /user_pushes/{document=**} {
       allow read: if isActiveUser();
-      allow write: if isAnyAdmin();
+      allow write: if canBroadcast();
     }
 
-    // Admin action logs: only admins can read/write
-    // Exception: any signed-in user can append their own click to notif_clickers/ann_clickers only
+    // Admin action logs.
+    // Exception: a signed-in user may APPEND THEIR OWN EMAIL to the click arrays
+    // and nothing else. Previously `hasOnly` constrained which keys changed but
+    // not how, so any user could overwrite or wipe the arrays wholesale.
     match /admin_logs/{document=**} {
       allow read, write: if isAnyAdmin();
-      allow update: if isActiveUser() &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['notif_clickers', 'ann_clickers']);
+
+      allow update: if isActiveUser()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['notif_clickers', 'ann_clickers'])
+        && request.resource.data.get('notif_clickers', [])
+             .removeAll(resource.data.get('notif_clickers', []))
+             .hasOnly([request.auth.token.email])
+        && resource.data.get('notif_clickers', [])
+             .removeAll(request.resource.data.get('notif_clickers', []))
+             .size() == 0
+        && request.resource.data.get('ann_clickers', [])
+             .removeAll(resource.data.get('ann_clickers', []))
+             .hasOnly([request.auth.token.email])
+        && resource.data.get('ann_clickers', [])
+             .removeAll(request.resource.data.get('ann_clickers', []))
+             .size() == 0;
     }
 
-    // Audit logs: written by the app when admin actions occur
-    // Only super admins can read; any admin (or the app acting as admin) can append
+    // Audit logs: written by the app when admin actions occur.
+    // Clients may still create, but only entries naming themselves as actor with
+    // a server timestamp — so cross-admin forgery is blocked without needing to
+    // move the write into a Cloud Function.
     match /audit_logs/{document=**} {
       allow read: if isSuperAdmin();
-      allow create: if isAnyAdmin();
+      allow create: if isAnyAdmin()
+        && request.resource.data.actor_email == request.auth.token.email.lower()
+        && request.resource.data.timestamp == request.time;
       allow update, delete: if isSuperAdmin();
     }
 
@@ -117,6 +209,11 @@ service cloud.firestore {
     match /system/{document=**} {
       allow read: if isActiveUser();
       allow write: if isAnyAdmin();
+    }
+
+    // Server-side rate limit counters, written only by Cloud Functions (admin SDK).
+    match /rate_limits/{document=**} {
+      allow read, write: if false;
     }
 
     // Deny everything else by default (implicit, but explicit is safer)

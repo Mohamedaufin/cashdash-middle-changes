@@ -464,7 +464,16 @@ class EntryActivity : ThemedActivity() {
                                             .addOnCompleteListener { profileTask ->
                                                 val profileDoc = if (profileTask.isSuccessful) profileTask.result else null
                                                 val status = profileDoc?.getString("account_status") ?: ""
-                                                val isZombie = profileDoc == null || !profileDoc.exists() || status == "admin_deleted"
+
+                                                // Only a POSITIVE marker counts as a zombie. This previously also
+                                                // treated a missing or unreadable profile doc as proof, so a user
+                                                // whose profile write failed mid-registration — or whose read simply
+                                                // failed — had their real Firebase Auth account deleted on the next
+                                                // registration attempt. A failed read is never grounds for deletion.
+                                                val isZombie = profileTask.isSuccessful &&
+                                                        profileDoc != null &&
+                                                        profileDoc.exists() &&
+                                                        status == "admin_deleted"
 
                                                 if (isZombie) {
                                                     // Zombie account — delete Auth entry and re-register fresh

@@ -448,61 +448,11 @@ class ContactSupportActivity : ThemedActivity() {
             }
 
         ToastHelper.showToast(this, "Query sent! We'll notify you when we reply.")
-        triggerImmediateWebhook(user.uid, name, userEmail, time, subject, queryWithAttachments, timestamp, imageUrl, allUrls)
+        // Support email is dispatched server-side by the onSupportQuery Cloud Function,
+        // which fires on the needs_admin_email flag written above. The old
+        // cashdashWebhook endpoint was unauthenticated and has been removed.
     }
 
-    private fun triggerImmediateWebhook(
-        uid: String,
-        name: String,
-        email: String,
-        time: String,
-        subject: String,
-        query: String,
-        timestamp: Long,
-        imageUrl: String?,
-        imageUrls: List<String>
-    ) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val webhookUrl = "https://cashdashwebhook-khhfw7mtba-uc.a.run.app"
-                val url = URL(webhookUrl)
-                val conn = url.openConnection() as HttpURLConnection
-                conn.requestMethod = "POST"
-                conn.setRequestProperty("Content-Type", "application/json; utf-8")
-                conn.doOutput = true
-
-                val payload = JSONObject().apply {
-                    put("uid", uid)
-                    put("id", timestamp.toString())
-                    put("name", name)
-                    put("email", email)
-                    put("time", time)
-                    put("subject", subject)
-                    put("query", query)
-                    put("timestamp", timestamp)
-                    if (imageUrl != null) {
-                        put("imageUrl", imageUrl)
-                    }
-                    if (imageUrls.isNotEmpty()) {
-                        put("imageUrls", org.json.JSONArray(imageUrls))
-                    }
-                }
-
-                val os = conn.outputStream
-                val writer = OutputStreamWriter(os, "UTF-8")
-                writer.write(payload.toString())
-                writer.flush()
-                writer.close()
-                os.close()
-
-                val responseCode = conn.responseCode
-                Log.d("ContactSupportActivity", "⚡ Immediate Webhook Sent. Response: $responseCode")
-                conn.disconnect()
-            } catch (e: Exception) {
-                Log.e("ContactSupportActivity", "❌ Immediate Webhook Failed: ${e.message}")
-            }
-        }
-    }
 }
 
 

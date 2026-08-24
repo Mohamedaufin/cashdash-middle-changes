@@ -68,6 +68,8 @@ android {
 
     buildFeatures {
         viewBinding = true
+        // Required for BuildConfig.DEBUG (App Check provider selection).
+        buildConfig = true
     }
 }
 
@@ -97,14 +99,22 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging")
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.firebase:firebase-storage")
+    // Callable functions: keeps the Gemini keys and the reply-link signing key server-side.
     implementation("com.google.firebase:firebase-functions")
+    // App Check: without it, anyone holding the (publicly shipped) API key can talk
+    // to Firestore/Auth/Storage directly and bypass every client-side control.
+    implementation("com.google.firebase:firebase-appcheck-playintegrity")
+    implementation("com.google.firebase:firebase-appcheck-debug")
 
     implementation("com.airbnb.android:lottie:6.1.0")
-    
+
     // Image Loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
     kapt("com.github.bumptech.glide:compiler:4.16.0")
     implementation("com.github.chrisbanes:PhotoView:2.3.0")
+
+    // Encrypted prefs for the cached admin-permission blob (AdminManager).
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
     // Room Database
     val roomVersion = "2.6.1"
@@ -119,6 +129,6 @@ dependencies {
     // WorkManager for delayed tasks
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     
-    // Gemini SDK for AI Rephrase
-    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+    // NOTE: the Gemini SDK dependency was removed. Rephrasing now goes through the
+    // `rephraseSupportText` Cloud Function so the API keys never ship in the APK.
 }
