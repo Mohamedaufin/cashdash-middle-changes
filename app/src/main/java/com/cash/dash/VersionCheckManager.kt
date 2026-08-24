@@ -34,6 +34,9 @@ object VersionCheckManager {
                     return@addOnSuccessListener
                 }
 
+                val rawMinVersion = doc.getString("min_supported_version_name") ?: "0.4.0"
+                val minSupportedVersionName = rawMinVersion.replace(" (Current)", "").trim()
+
                 // Default version history list
                 val defaultList = listOf(
                     "0.4.8", "0.4.7", "0.4.6", "0.4.5", "0.4.4", "0.4.3", "0.4.2", "0.4.1", "0.4.0",
@@ -41,10 +44,24 @@ object VersionCheckManager {
                     "0.3.1", "0.3.0", "0.2.0", "0.1.0"
                 )
                 val cloudList = doc.get("version_history") as? List<String> ?: emptyList()
-                val versionHistory = (cloudList + defaultList + listOf(installedVersionName)).distinct().sortedDescending()
+                
+                // Combine all versions and sort them semantically descending (e.g. 0.4.10 comes before 0.4.9)
+                val versionHistory = (cloudList + defaultList + listOf(installedVersionName, minSupportedVersionName))
+                    .distinct()
+                    .sortedWith { v1, v2 ->
+                        val parts1 = v1.split(".").map { it.toIntOrNull() ?: 0 }
+                        val parts2 = v2.split(".").map { it.toIntOrNull() ?: 0 }
+                        val length = maxOf(parts1.size, parts2.size)
+                        for (i in 0 until length) {
+                            val p1 = parts1.getOrElse(i) { 0 }
+                            val p2 = parts2.getOrElse(i) { 0 }
+                            if (p1 != p2) return@sortedWith p2.compareTo(p1) // Descending
+                        }
+                        0
+                    }
 
                 // Auto-sync current app's versionName to Firestore version_history if missing
-                if (!versionHistory.contains(installedVersionName)) {
+                if (!(cloudList + defaultList).contains(installedVersionName)) {
                     doc.reference.set(
                         mapOf(
                             "version_history" to FieldValue.arrayUnion(installedVersionName),
@@ -55,8 +72,6 @@ object VersionCheckManager {
                     )
                 }
 
-                val rawMinVersion = doc.getString("min_supported_version_name") ?: "0.4.0"
-                val minSupportedVersionName = rawMinVersion.replace(" (Current)", "").trim()
                 val latestPlayStoreVersionCode = doc.getLong("latest_version_code") ?: 0L
 
                 // Version name index comparison (list is sorted descending: index 0 is newest)

@@ -1515,20 +1515,33 @@ class AdminActivity : ThemedActivity() {
                 switchLock?.isChecked = forceUpdateEnabled
 
                 val defaultVersions = listOf(
-                    "0.4.7", "0.4.6", "0.4.5", "0.4.4", "0.4.3", "0.4.2", "0.4.1", "0.4.0",
+                    "0.4.8", "0.4.7", "0.4.6", "0.4.5", "0.4.4", "0.4.3", "0.4.2", "0.4.1", "0.4.0",
                     "0.3.9", "0.3.8", "0.3.7", "0.3.6", "0.3.5", "0.3.4", "0.3.3", "0.3.2",
                     "0.3.1", "0.3.0", "0.2.0", "0.1.0"
                 )
                 val cloudVersions = doc.get("version_history") as? List<String> ?: emptyList()
-                val rawVersions = (cloudVersions + defaultVersions + listOf(currentVersionName)).distinct().sortedDescending()
+                val minVersion = doc.getString("min_supported_version_name") ?: currentVersionName
+                
+                val rawVersions = (cloudVersions + defaultVersions + listOf(currentVersionName, minVersion))
+                    .distinct()
+                    .sortedWith { v1, v2 ->
+                        val parts1 = v1.split(".").map { it.toIntOrNull() ?: 0 }
+                        val parts2 = v2.split(".").map { it.toIntOrNull() ?: 0 }
+                        val length = maxOf(parts1.size, parts2.size)
+                        for (i in 0 until length) {
+                            val p1 = parts1.getOrElse(i) { 0 }
+                            val p2 = parts2.getOrElse(i) { 0 }
+                            if (p1 != p2) return@sortedWith p2.compareTo(p1)
+                        }
+                        0
+                    }
 
                 val displayVersions = rawVersions.map { ver ->
                     if (ver == currentVersionName) "$ver (Current)" else ver
                 }
 
-                val minVersion = doc.getString("min_supported_version_name") ?: currentVersionName
                 val initialDisplay = if (minVersion == currentVersionName) "$minVersion (Current)" else minVersion
-
+                
                 val adapter = android.widget.ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, displayVersions)
                 actvVersion?.setAdapter(adapter)
                 actvVersion?.threshold = 1
@@ -1539,10 +1552,24 @@ class AdminActivity : ThemedActivity() {
                     var selectedVersion = actvVersion?.text?.toString()?.trim() ?: currentVersionName
                     selectedVersion = selectedVersion.replace(" (Current)", "").trim()
 
+                    val updatedRawVersions = (rawVersions + listOf(selectedVersion))
+                        .distinct()
+                        .sortedWith { v1, v2 ->
+                            val parts1 = v1.split(".").map { it.toIntOrNull() ?: 0 }
+                            val parts2 = v2.split(".").map { it.toIntOrNull() ?: 0 }
+                            val length = maxOf(parts1.size, parts2.size)
+                            for (i in 0 until length) {
+                                val p1 = parts1.getOrElse(i) { 0 }
+                                val p2 = parts2.getOrElse(i) { 0 }
+                                if (p1 != p2) return@sortedWith p2.compareTo(p1)
+                            }
+                            0
+                        }
+
                     val updateData = hashMapOf<String, Any>(
                         "force_update_enabled" to isEnabled,
                         "min_supported_version_name" to selectedVersion,
-                        "version_history" to rawVersions,
+                        "version_history" to updatedRawVersions,
                         "last_updated_at" to com.google.firebase.firestore.FieldValue.serverTimestamp()
                     )
 
@@ -1561,11 +1588,23 @@ class AdminActivity : ThemedActivity() {
             .addOnFailureListener {
                 // Network error: still show dialog with defaults so user isn't blocked
                 val defaultVersions = listOf(
-                    "0.4.7", "0.4.6", "0.4.5", "0.4.4", "0.4.3", "0.4.2", "0.4.1", "0.4.0",
+                    "0.4.8", "0.4.7", "0.4.6", "0.4.5", "0.4.4", "0.4.3", "0.4.2", "0.4.1", "0.4.0",
                     "0.3.9", "0.3.8", "0.3.7", "0.3.6", "0.3.5", "0.3.4", "0.3.3", "0.3.2",
                     "0.3.1", "0.3.0", "0.2.0", "0.1.0"
                 )
-                val rawVersions = (defaultVersions + listOf(currentVersionName)).distinct().sortedDescending()
+                val rawVersions = (defaultVersions + listOf(currentVersionName))
+                    .distinct()
+                    .sortedWith { v1, v2 ->
+                        val parts1 = v1.split(".").map { it.toIntOrNull() ?: 0 }
+                        val parts2 = v2.split(".").map { it.toIntOrNull() ?: 0 }
+                        val length = maxOf(parts1.size, parts2.size)
+                        for (i in 0 until length) {
+                            val p1 = parts1.getOrElse(i) { 0 }
+                            val p2 = parts2.getOrElse(i) { 0 }
+                            if (p1 != p2) return@sortedWith p2.compareTo(p1)
+                        }
+                        0
+                    }
                 val displayVersions = rawVersions.map { ver ->
                     if (ver == currentVersionName) "$ver (Current)" else ver
                 }
