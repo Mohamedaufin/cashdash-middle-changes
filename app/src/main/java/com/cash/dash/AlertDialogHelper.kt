@@ -122,6 +122,14 @@ object AlertDialogHelper {
         private var titleTypeface: android.graphics.Typeface? = null
         private var positiveTextColor: Int? = null
 
+        private var editTextHint: String? = null
+        private var editTextCallback: ((String) -> Unit)? = null
+
+        fun setEditText(hint: String, callback: (String) -> Unit) = apply {
+            this.editTextHint = hint
+            this.editTextCallback = callback
+        }
+
         fun setTitle(title: String) = apply { this.title = title }
         fun setMessage(message: String) = apply { this.message = message }
         fun setPositiveButton(text: String, listener: (() -> Unit)? = null) = apply {
@@ -209,9 +217,45 @@ object AlertDialogHelper {
                 }
             }
 
-            btnPositive.setOnClickListener {
-                dialog.dismiss()
-                positiveListener?.invoke()
+            if (editTextHint != null) {
+                val et = android.widget.EditText(context).apply {
+                    hint = editTextHint
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        topMargin = (16 * density).toInt()
+                    }
+                    setPadding(
+                        (16 * density).toInt(),
+                        (12 * density).toInt(),
+                        (16 * density).toInt(),
+                        (12 * density).toInt()
+                    )
+                    val tvInputBg = android.util.TypedValue()
+                    context.theme.resolveAttribute(R.attr.inputBackground, tvInputBg, true)
+                    setBackgroundResource(tvInputBg.resourceId)
+                    setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                    setHintTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor))
+                    textSize = 14f
+                }
+                
+                val parent = tvMessage.parent as? android.widget.LinearLayout
+                if (parent != null) {
+                    val index = parent.indexOfChild(tvMessage)
+                    parent.addView(et, index + 1)
+                }
+                
+                btnPositive.setOnClickListener {
+                    dialog.dismiss()
+                    editTextCallback?.invoke(et.text.toString())
+                    positiveListener?.invoke()
+                }
+            } else {
+                btnPositive.setOnClickListener {
+                    dialog.dismiss()
+                    positiveListener?.invoke()
+                }
             }
 
             btnNegative.setOnClickListener {
