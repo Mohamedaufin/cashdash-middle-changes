@@ -1,0 +1,153 @@
+import os
+
+base_path = r's:\AndroidStudioProjects\AndroidStudioProjects\cashdash\app\src\main'
+
+# 1. activity_edit_admin_permissions.xml
+xml_content = '''<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/mainBackground">
+
+    <LinearLayout
+        android:id="@+id/appBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_back"
+            app:tint="?attr/textPrimaryColor"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Edit Permissions"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginStart="16dp"/>
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/appBar"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:clipToPadding="false"
+        android:paddingBottom="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/tvAdminEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="user@gmail.com"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="14sp"
+                android:layout_marginBottom="24dp"/>
+
+            <LinearLayout
+                android:id="@+id/layoutCheckboxes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <CheckBox android:id="@+id/cbAnnouncements" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Send Announcements" android:textColor="?attr/textPrimaryColor" android:textSize="15sp" android:padding="8dp"/>
+                <CheckBox android:id="@+id/cbPromotions" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Send Promotions" android:textColor="?attr/textPrimaryColor" android:textSize="15sp" android:padding="8dp"/>
+                <CheckBox android:id="@+id/cbNotifications" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Send Notifications" android:textColor="?attr/textPrimaryColor" android:textSize="15sp" android:padding="8dp"/>
+                <CheckBox android:id="@+id/cbLastSeen" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="View last seen of users" android:textColor="?attr/textPrimaryColor" android:textSize="15sp" android:padding="8dp"/>
+                <CheckBox android:id="@+id/cbAdminLogs" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="View admin activity logs" android:textColor="?attr/textPrimaryColor" android:textSize="15sp" android:padding="8dp"/>
+                <CheckBox android:id="@+id/cbReplyQueries" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Reply to queries" android:textColor="?attr/textPrimaryColor" android:textSize="15sp" android:padding="8dp"/>
+                <CheckBox android:id="@+id/cbAddNewAdmin" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Add new admins" android:textColor="?attr/textPrimaryColor" android:textSize="15sp" android:padding="8dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutAdminValidity"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Admin Validity" android:textColor="?attr/textPrimaryColor" android:textSize="16sp" android:textStyle="bold" android:layout_marginTop="16dp" android:layout_marginBottom="8dp"/>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:background="?attr/inputBackground" android:padding="12dp" android:layout_marginBottom="8dp">
+                    <TextView android:id="@+id/tvValidityStatus" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Forever (No expiry)" android:textColor="?attr/textPrimaryColor" android:textSize="14sp"/>
+                    <TextView android:id="@+id/btnChangeValidity" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Change" android:textColor="#4E5DFF" android:textStyle="bold" android:textSize="14sp" android:padding="4dp" android:clickable="true"/>
+                    <TextView android:id="@+id/btnRequestExtension" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Request Extension" android:textColor="#4E5DFF" android:textStyle="bold" android:textSize="14sp" android:padding="4dp" android:clickable="true" android:visibility="gone"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="16dp">
+                <CheckBox android:id="@+id/cbIncludeNotification" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Include in-app notification for changes" android:textColor="?attr/textPrimaryColor" android:checked="false" android:textSize="15sp"/>
+                <LinearLayout android:id="@+id/layoutNotificationTemplate" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="8dp">
+                    <EditText android:id="@+id/actvNotificationTitle" android:layout_width="match_parent" android:layout_height="50dp" android:hint="Notification Title" android:inputType="textCapSentences" android:textColor="?attr/textPrimaryColor" android:textColorHint="?attr/textMutedColor" android:background="?attr/inputBackground" android:paddingStart="16dp" android:paddingEnd="16dp" android:textSize="14sp" android:layout_marginBottom="4dp"/>
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:layout_gravity="end" android:orientation="horizontal" android:gravity="center_vertical">
+                        <com.google.android.material.button.MaterialButton android:id="@+id/btnAIRephraseTitle" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="✨ AI Rephrase" android:textColor="#4E5DFF" android:textAllCaps="false" android:insetTop="0dp" android:insetBottom="0dp" android:minHeight="0dp" />
+                        <TextView android:id="@+id/tvUndoRephraseTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Undo" android:textColor="#FF4D4D" android:textStyle="bold" android:padding="8dp" android:visibility="gone" android:layout_marginStart="8dp"/>
+                        <TextView android:id="@+id/tvRedoRephraseTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Redo" android:textColor="#4CAF50" android:textStyle="bold" android:padding="8dp" android:visibility="gone" android:layout_marginStart="4dp"/>
+                    </LinearLayout>
+                    <EditText android:id="@+id/actvNotificationContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="120dp" android:hint="Notification Content" android:inputType="textCapSentences|textMultiLine" android:textColor="?attr/textPrimaryColor" android:textColorHint="?attr/textMutedColor" android:background="?attr/inputBackground" android:padding="16dp" android:gravity="top|start" android:textSize="14sp" android:layout_marginTop="12dp" android:layout_marginBottom="4dp"/>
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:layout_marginStart="4dp" android:text="Regards,\nTeam CashDash." android:textColor="?attr/textMutedColor" android:textSize="14sp"/>
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:layout_gravity="end" android:orientation="horizontal" android:gravity="center_vertical">
+                        <com.google.android.material.button.MaterialButton android:id="@+id/btnAIRephraseBody" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="✨ AI Rephrase" android:textColor="#4E5DFF" android:textAllCaps="false" android:insetTop="0dp" android:insetBottom="0dp" android:minHeight="0dp" />
+                        <TextView android:id="@+id/tvUndoRephraseBody" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Undo" android:textColor="#FF4D4D" android:textStyle="bold" android:padding="8dp" android:visibility="gone" android:layout_marginStart="8dp"/>
+                        <TextView android:id="@+id/tvRedoRephraseBody" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Redo" android:textColor="#4CAF50" android:textStyle="bold" android:padding="8dp" android:visibility="gone" android:layout_marginStart="4dp"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSavePermissions"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:text="Save"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#4E5DFF"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginTop="24dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRevokeAccess"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:text="Revoke Access"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                app:backgroundTint="#FF3B30"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"/>
+
+        </LinearLayout>
+    </ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>
+'''
+with open(os.path.join(base_path, 'res/layout/activity_edit_admin_permissions.xml'), 'w', encoding='utf-8') as f:
+    f.write(xml_content)
+
+xml_path = os.path.join(base_path, 'res/layout/activity_manage_admin_access.xml')
+with open(xml_path, 'r', encoding='utf-8') as f:
+    lines = f.readlines()
+
+out_lines = []
+for i, line in enumerate(lines):
+    if 143 <= i + 1 <= 493:
+        continue
+    out_lines.append(line)
+
+with open(xml_path, 'w', encoding='utf-8') as f:
+    f.writelines(out_lines)
+
+print("Done")

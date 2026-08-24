@@ -30,6 +30,23 @@ class MoneyScheduleActivity : ThemedActivity() {
 
 
             val rgFrequency = findViewById<RadioGroup>(R.id.rgFrequency)
+
+            val chooserTint = android.content.res.ColorStateList(
+                arrayOf(
+                    intArrayOf(android.R.attr.state_checked),
+                    intArrayOf(-android.R.attr.state_checked)
+                ),
+                intArrayOf(
+                    ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor),
+                    ThemeHelper.resolveColorAttr(this, R.attr.textMutedColor)
+                )
+            )
+            listOf(R.id.rbMonthly, R.id.rbWeekly, R.id.rbCustom).forEach { id ->
+                androidx.core.widget.CompoundButtonCompat.setButtonTintList(
+                    findViewById<android.widget.RadioButton>(id), chooserTint
+                )
+            }
+
             val calendarView = findViewById<CalendarView>(R.id.calendarView)
             val btnSave = findViewById<Button>(R.id.btnSaveSchedule)
             tvCyclePreview = findViewById(R.id.tvCyclePreview)

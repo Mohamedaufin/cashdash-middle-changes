@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/cardBackground"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- Top Drag Handle Bar -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:background="?attr/dividerColor" />
+
+    <!-- Sheet Title -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🔒 App Update Lock Settings"
+        android:textColor="?attr/textPrimaryColor"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="20dp"
+        android:text="Manage version enforcement and minimum required version for all users."
+        android:textColor="?attr/textMutedColor"
+        android:textSize="13sp" />
+
+    <!-- Enable / Disable Switch Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/transactionItemBackground"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:layout_marginBottom="20dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Enable Update Lock"
+                android:textColor="?attr/textPrimaryColor"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="If disabled, update enforcement is turned off for everyone."
+                android:textColor="?attr/textMutedColor"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchUpdateLock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true" />
+    </LinearLayout>
+
+    <!-- Version Selection Section -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Minimum Required Version Name"
+        android:textColor="?attr/textPrimaryColor"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        app:boxStrokeColor="?attr/textPrimaryColor"
+        app:endIconMode="dropdown_menu"
+        app:hintEnabled="false">
+
+        <AutoCompleteTextView
+            android:id="@+id/actvMinVersionName"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:background="?attr/inputBackground"
+            android:inputType="text"
+            android:dropDownHeight="240dp"
+            android:completionThreshold="1"
+            android:paddingHorizontal="16dp"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="15sp"
+            tools:text="0.4.7 (Current)" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Save Button -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnSaveUpdateLock"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@drawable/bg_btn_white"
+        android:backgroundTint="@null"
+        android:elevation="0dp"
+        android:stateListAnimator="@null"
+        android:text="SAVE VERSION SETTINGS"
+        android:textAllCaps="true"
+        android:textColor="#000000"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+</LinearLayout>

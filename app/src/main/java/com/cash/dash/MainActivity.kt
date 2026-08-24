@@ -437,6 +437,7 @@ class MainActivity : ThemedActivity() {
 
     override fun onResume() {
         super.onResume()
+        VersionCheckManager.checkAppVersion(this) {}
         FirestoreSyncManager.updateLastActiveTime(this)
         
         val result = intent.getStringExtra("payment_status")

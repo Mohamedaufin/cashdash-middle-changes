@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/mainBackground"
+    android:orientation="vertical"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="24dp"
+    android:paddingBottom="16dp"
+    tools:context=".ForceUpdateActivity">
+
+    <!-- Top & Main Content (Scrollable & Centered) -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <!-- Top Pill Badge -->
+            <TextView
+                android:id="@+id/tvUpdateBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_capsule_themed"
+                android:paddingHorizontal="18dp"
+                android:paddingVertical="8dp"
+                android:text="✨ NEW UPDATE AVAILABLE"
+                android:textColor="?attr/textPrimaryColor"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.06" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="36dp" />
+
+            <!-- Hero Graphic Container -->
+            <FrameLayout
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:layout_gravity="center_horizontal">
+
+                <!-- Outer Soft Ambient Glow Circle -->
+                <View
+                    android:layout_width="160dp"
+                    android:layout_height="160dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_circle_black_transparent"
+                    android:alpha="0.3" />
+
+                <!-- Center App Icon Graphic -->
+                <ImageView
+                    android:id="@+id/imgUpdateHero"
+                    android:layout_width="130dp"
+                    android:layout_height="130dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_scanner"
+                    app:tint="?attr/textPrimaryColor"
+                    android:contentDescription="Update Illustration" />
+
+                <!-- Floating Accent Badge -->
+                <ImageView
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginEnd="20dp"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/bg_white_circle"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_bell"
+                    app:tint="#000000"
+                    android:elevation="6dp" />
+            </FrameLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="36dp" />
+
+            <!-- Main Heading -->
+            <TextView
+                android:id="@+id/tvUpdateTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:paddingHorizontal="12dp"
+                android:text="We're better than ever"
+                android:textColor="?attr/textPrimaryColor"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:letterSpacing="-0.02" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="12dp" />
+
+            <!-- Subtitle Description -->
+            <TextView
+                android:id="@+id/tvUpdateSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:lineSpacingExtra="5dp"
+                android:paddingHorizontal="20dp"
+                android:text="The current version of the application is no longer supported. Please update the app to continue."
+                android:textColor="?attr/textMutedColor"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Anchored Bottom Action Container -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp">
+
+        <!-- Primary Action CTA Button -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnUpdateApp"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="@drawable/bg_btn_white"
+            android:backgroundTint="@null"
+            android:elevation="0dp"
+            android:stateListAnimator="@null"
+            android:text="UPDATE NEW VERSION"
+            android:textAllCaps="true"
+            android:textColor="#000000"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.04" />
+
+        <!-- Footer Tagline -->
+        <TextView
+            android:id="@+id/tvPlayStoreFooter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Available on Google Play Store"
+            android:textColor="?attr/textMutedColor"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+</LinearLayout>

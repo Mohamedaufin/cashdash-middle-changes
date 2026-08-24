@@ -84,18 +84,21 @@
             <RadioButton
                 android:id="@+id/rbMonthly"
                 android:text="Monthly (30 days)"
+                android:buttonTint="@color/selector_chooser_tint"
                 android:textColor="?attr/textPrimaryColor"/>
 
 
             <RadioButton
                 android:id="@+id/rbWeekly"
                 android:text="Weekly (7 days)"
+                android:buttonTint="@color/selector_chooser_tint"
                 android:textColor="?attr/textPrimaryColor"/>
 
 
             <RadioButton
                 android:id="@+id/rbCustom"
                 android:text="Custom (Days)"
+                android:buttonTint="@color/selector_chooser_tint"
                 android:textColor="?attr/textPrimaryColor"/>
 
         </RadioGroup>

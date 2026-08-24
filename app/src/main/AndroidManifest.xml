@@ -58,6 +58,16 @@
 
         <!-- 🚀 Launcher Activity -->
         <activity android:configChanges="uiMode"
+            android:name=".EditAdminPermissionsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity android:configChanges="uiMode"
+            android:name=".ForceUpdateActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity android:configChanges="uiMode"
             android:name=".AdminActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
@@ -277,3 +287,4 @@
     </application>
 
 </manifest>
+

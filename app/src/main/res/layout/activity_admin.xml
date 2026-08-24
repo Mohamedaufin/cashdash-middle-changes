@@ -176,6 +176,19 @@
                 android:background="?attr/dividerColor"
                 android:layout_marginBottom="24dp"/>
 
+            <!-- App Update Lock Button -->
+            <TextView
+                android:id="@+id/btnGoToUpdateLock"
+                android:layout_width="match_parent"
+                android:layout_height="65dp"
+                android:text="🔒 App Update Lock Settings"
+                android:gravity="center"
+                android:textColor="?attr/textPrimaryColor"
+                android:background="?attr/roundBackground"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="24dp"/>
+
             <!-- Support Inbox Section -->
             <TextView
                 android:layout_width="match_parent"
