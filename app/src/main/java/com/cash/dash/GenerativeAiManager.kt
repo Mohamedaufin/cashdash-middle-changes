@@ -99,10 +99,16 @@ object GenerativeAiManager {
         )
 
         try {
-            val task = com.google.firebase.functions.FirebaseFunctions
+            // The SDK default is 70s. The server budgets its model chain to 24s and
+            // is itself capped at 30s, so anything past 30s here means the call is
+            // never coming back — fail fast rather than leaving the admin staring
+            // at a spinner.
+            val callable = com.google.firebase.functions.FirebaseFunctions
                 .getInstance("us-central1")
                 .getHttpsCallable("rephraseSupportText")
-                .call(payload)
+            callable.setTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+
+            val task = callable.call(payload)
 
             // Already on Dispatchers.IO, so blocking on the Task is safe here and
             // avoids pulling in kotlinx-coroutines-play-services just for await().

@@ -324,7 +324,10 @@ exports.rephraseSupportText = onCall({
     region: "us-central1",
     secrets: [GEMINI_API_KEY, GEMINI_API_KEY_ADMIN],
     memory: "256MiB",
-    maxInstances: 5
+    maxInstances: 5,
+    // Server-side hard stop. The model chain budgets 24s and returns a friendly
+    // error first; this only fires if something pathological gets past it.
+    timeoutSeconds: 30
 }, async (request) => {
     const callerEmail = await assertAdmin(request);
 
@@ -363,30 +366,39 @@ exports.rephraseSupportText = onCall({
         // Pinned IDs, not aliases — Google's own guidance, and it keeps a model
         // swap from silently changing behaviour. A 404 (retired ID) just falls
         // through to the next entry, so a stale name degrades instead of breaking.
+        // Newest lite first: later generations are both faster and better at this,
+        // and each older entry behind it is a less contended pool to fall back to.
         const MODEL_CHAIN = [
-            "gemini-2.5-flash-lite",
             "gemini-3.5-flash-lite",
+            "gemini-3.1-flash-lite",
+            "gemini-2.5-flash-lite",
             "gemini-2.5-flash",
-            "gemini-flash-latest",
         ];
-        const ATTEMPT_TIMEOUT_MS = 12000;
-        // Stay inside the 60s function timeout and the client's 70s deadline even
-        // if every model in the chain stalls.
-        const TOTAL_BUDGET_MS = 45000;
+        // Hard requirement: nobody waits more than 30s. Cold start plus auth and
+        // the rate-limit transaction cost a few seconds before we get here, so the
+        // fetch phase is capped at 24s to leave headroom. A lite model answers a
+        // one-line rewrite in 1-3s, so 7s per attempt is already generous — the
+        // timeout exists to move on from a stalled pool, not to wait out a slow one.
+        const ATTEMPT_TIMEOUT_MS = 7000;
+        const TOTAL_BUDGET_MS = 24000;
         const startedAt = Date.now();
 
         let resp = null;
         let lastStatus = null;
         let usedModel = null;
+        let usedModelMs = 0;
 
         for (const model of MODEL_CHAIN) {
-            if (Date.now() - startedAt > TOTAL_BUDGET_MS) {
+            const remaining = TOTAL_BUDGET_MS - (Date.now() - startedAt);
+            if (remaining <= 1000) {
                 console.error(`Gemini budget exhausted [scope=${scope}] before trying ${model}`);
                 break;
             }
 
+            const attemptStart = Date.now();
             const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), ATTEMPT_TIMEOUT_MS);
+            // Never let one attempt run past the overall budget.
+            const timer = setTimeout(() => controller.abort(), Math.min(ATTEMPT_TIMEOUT_MS, remaining));
             try {
                 resp = await fetch(
                     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(REPHRASE_SCOPES[scope]())}`,
@@ -407,12 +419,13 @@ exports.rephraseSupportText = onCall({
 
             if (resp && resp.ok) {
                 usedModel = model;
+                usedModelMs = Date.now() - attemptStart;
                 break;
             }
 
             lastStatus = resp ? resp.status : "timeout";
             if (resp) {
-                console.warn(`Gemini unavailable [scope=${scope}, model=${model}]:`, resp.status, await resp.text());
+                console.warn(`Gemini unavailable [scope=${scope}, model=${model}, ${Date.now() - attemptStart}ms]:`, resp.status, await resp.text());
                 // 400/403 mean the key or request is wrong, not the model — no
                 // other model in the chain will do better, so stop here.
                 if (resp.status === 400 || resp.status === 403) break;
@@ -429,9 +442,9 @@ exports.rephraseSupportText = onCall({
             );
         }
 
-        if (usedModel !== MODEL_CHAIN[0]) {
-            console.log(`Rephrase served by fallback model ${usedModel} [scope=${scope}]`);
-        }
+        // Latency is logged every time so the model order can be re-tuned against
+        // real numbers rather than assumptions about which pool is busy.
+        console.log(`Rephrase served by ${usedModel} in ${usedModelMs}ms [scope=${scope}]`);
 
         const data = await resp.json();
         const out = data &&
