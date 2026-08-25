@@ -87,7 +87,50 @@
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:textSize="14sp"
-                android:layout_marginBottom="8dp"/>
+                android:layout_marginBottom="4dp"/>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginBottom="8dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAIRephraseNotifTitle"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="✨ AI Rephrase"
+                    android:textColor="#4E5DFF"
+                    android:textAllCaps="false"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:minHeight="0dp" />
+
+                <TextView
+                    android:id="@+id/tvUndoRephraseNotifTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Undo"
+                    android:textColor="#FF4D4D"
+                    android:textStyle="bold"
+                    android:padding="8dp"
+                    android:visibility="gone"
+                    android:layout_marginStart="8dp"/>
+
+                <TextView
+                    android:id="@+id/tvRedoRephraseNotifTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Redo"
+                    android:textColor="#4CAF50"
+                    android:textStyle="bold"
+                    android:padding="8dp"
+                    android:visibility="gone"
+                    android:layout_marginStart="4dp"/>
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/edtNotifBody"
@@ -102,7 +145,50 @@
                 android:padding="16dp"
                 android:gravity="top|start"
                 android:textSize="14sp"
-                android:layout_marginBottom="8dp"/>
+                android:layout_marginBottom="4dp"/>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginBottom="8dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAIRephraseNotifBody"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="✨ AI Rephrase"
+                    android:textColor="#4E5DFF"
+                    android:textAllCaps="false"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:minHeight="0dp" />
+
+                <TextView
+                    android:id="@+id/tvUndoRephraseNotifBody"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Undo"
+                    android:textColor="#FF4D4D"
+                    android:textStyle="bold"
+                    android:padding="8dp"
+                    android:visibility="gone"
+                    android:layout_marginStart="8dp"/>
+
+                <TextView
+                    android:id="@+id/tvRedoRephraseNotifBody"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Redo"
+                    android:textColor="#4CAF50"
+                    android:textStyle="bold"
+                    android:padding="8dp"
+                    android:visibility="gone"
+                    android:layout_marginStart="4dp"/>
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/edtTriggerUrlTitle"

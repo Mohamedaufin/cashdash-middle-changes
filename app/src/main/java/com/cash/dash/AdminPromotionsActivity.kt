@@ -290,6 +290,59 @@ class AdminPromotionsActivity : ThemedActivity() {
         
         fetchAllUsers()
 
+        // Push notification title / body. Same treatment as the announcement
+        // fields below; the trigger URL and its label are deliberately left
+        // alone, since neither is prose for a model to rewrite.
+        val tvUndoRephraseNotifTitle = findViewById<android.widget.TextView>(R.id.tvUndoRephraseNotifTitle)
+        val tvRedoRephraseNotifTitle = findViewById<android.widget.TextView>(R.id.tvRedoRephraseNotifTitle)
+        val notifTitleRephraseState = GenerativeAiManager.RephraseState(edtNotifTitle, tvUndoRephraseNotifTitle, tvRedoRephraseNotifTitle)
+
+        findViewById<android.view.View>(R.id.btnAIRephraseNotifTitle)?.setOnClickListener {
+            val originalText = edtNotifTitle.text.toString()
+            if (originalText.isBlank()) {
+                ToastHelper.showToast(this, "Please type a notification title first.")
+                return@setOnClickListener
+            }
+            ToastHelper.showToast(this, "Rephrasing Notification Title...")
+            lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                try {
+                    val result = GenerativeAiManager.rephraseText(originalText, true, GenerativeAiManager.Scope.ADMIN)
+                    notifTitleRephraseState.saveState(originalText)
+                    edtNotifTitle.setText(result)
+                    notifTitleRephraseState.saveState(result)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    ToastHelper.showErrorDialog(this@AdminPromotionsActivity, "AI Error", e.message ?: "Unknown Error")
+                }
+            }
+        }
+
+        val tvUndoRephraseNotifBody = findViewById<android.widget.TextView>(R.id.tvUndoRephraseNotifBody)
+        val tvRedoRephraseNotifBody = findViewById<android.widget.TextView>(R.id.tvRedoRephraseNotifBody)
+        val notifBodyRephraseState = GenerativeAiManager.RephraseState(edtNotifBody, tvUndoRephraseNotifBody, tvRedoRephraseNotifBody)
+
+        findViewById<android.view.View>(R.id.btnAIRephraseNotifBody)?.setOnClickListener {
+            val originalText = edtNotifBody.text.toString()
+            if (originalText.isBlank()) {
+                ToastHelper.showToast(this, "Please type a notification body first.")
+                return@setOnClickListener
+            }
+            ToastHelper.showToast(this, "Rephrasing Notification Body...")
+            lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                try {
+                    val result = GenerativeAiManager.rephraseText(originalText, false, GenerativeAiManager.Scope.ADMIN)
+                    notifBodyRephraseState.saveState(originalText)
+                    edtNotifBody.setText(result)
+                    notifBodyRephraseState.saveState(result)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    ToastHelper.showErrorDialog(this@AdminPromotionsActivity, "AI Error", e.message ?: "Unknown Error")
+                }
+            }
+        }
+
         val tvUndoRephraseTitle = findViewById<android.widget.TextView>(R.id.tvUndoRephraseTitle)
         val tvRedoRephraseTitle = findViewById<android.widget.TextView>(R.id.tvRedoRephraseTitle)
         val titleRephraseState = GenerativeAiManager.RephraseState(edtAnnouncementTitle, tvUndoRephraseTitle, tvRedoRephraseTitle)
