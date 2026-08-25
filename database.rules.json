@@ -2,12 +2,30 @@
   "rules": {
     "status": {
       "$userEmail": {
-        // Owner can read their own presence; admins can read any for the admin panel.
-        ".read": "auth != null && (auth.token.email.replace('.', ',') === $userEmail || root.child('admins').child(auth.token.email.replace('.', ',')).exists() || auth.token.email === 'mohamedaufin64@gmail.com' || auth.token.email === 'arunbhalaji200904@gmail.com')",
+        // Owner reads their own presence. Admins read any, but only if they actually
+        // hold viewLastSeen (or a blanket grant) and their access has not expired.
+        //
+        // The admin check reads /admins/{safeEmail}, which is mirrored from Firestore
+        // by the mirrorAdminToRtdb function. Before that existed this clause was dead
+        // code — nothing ever wrote an /admins node — so the viewLastSeen grant was
+        // unenforced and only the two hardcoded super admins could read presence.
+        //
+        // validUntil is checked here rather than trusted from the mirrored flag because
+        // the mirror only updates on writes: an admin whose window simply elapses must
+        // lose access without needing their document to be touched. 0 means no expiry.
+        ".read": "auth != null && (auth.token.email.replace('.', ',') === $userEmail || auth.token.email === 'mohamedaufin64@gmail.com' || auth.token.email === 'arunbhalaji200904@gmail.com' || (root.child('admins').child(auth.token.email.replace('.', ',')).child('canViewLastSeen').val() === true && (root.child('admins').child(auth.token.email.replace('.', ',')).child('validUntil').val() === 0 || root.child('admins').child(auth.token.email.replace('.', ',')).child('validUntil').val() > now)))",
         // Only the owner of this status node can write their own presence.
         ".write": "auth != null && auth.token.email.replace('.', ',') === $userEmail",
         ".validate": "newData.hasChildren()"
       }
+    },
+    // Written only by mirrorAdminToRtdb via the Admin SDK, which bypasses these rules.
+    // No client may read or write it: the rule expressions above can still evaluate
+    // against it, so denying client access costs nothing and keeps the admin roster
+    // from being enumerable.
+    "admins": {
+      ".read": false,
+      ".write": false
     },
     "$other": {
       ".read": false,

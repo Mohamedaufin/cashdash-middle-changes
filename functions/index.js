@@ -1240,3 +1240,55 @@ exports.onAuthUserDeleted = functionsv1.auth.user().onDelete(async (user) => {
         console.error(`Error cleaning up Firestore data for deleted user ${email}:`, error);
     }
 });
+
+// ─────────────────────────────────────────────
+// FUNCTION 8: mirrorAdminToRtdb
+//
+// Presence lives in the Realtime Database (status/{safeEmail}) but admins live in
+// Firestore, so the RTDB rule's `root.child('admins')...` clause could never match
+// anything — nothing ever wrote an /admins node. The practical effect was that the
+// viewLastSeen grant did nothing and only the two hardcoded super admins could read
+// presence at all.
+//
+// This mirrors just enough of each admin document into RTDB for the rule to make a
+// decision. Deliberately NOT the whole document: only a precomputed permission flag
+// and the expiry. Clients cannot read /admins (the $other rule denies it) — rule
+// expressions can still evaluate against it, which is all that is needed.
+// ─────────────────────────────────────────────
+exports.mirrorAdminToRtdb = onDocumentWritten({
+    document: "admins/{adminEmail}",
+    region: "asia-south1",
+    memory: "256MiB",
+    maxInstances: 5
+}, async (event) => {
+    const email = String(event.params.adminEmail || "").toLowerCase();
+    if (!email) return;
+
+    // RTDB keys cannot contain '.', matching the safeEmail convention the app already
+    // uses for status/{safeEmail}.
+    const safeEmail = email.replace(/\./g, ",");
+    const ref = admin.database().ref(`admins/${safeEmail}`);
+
+    const after = event.data && event.data.after && event.data.after.exists
+        ? event.data.after.data()
+        : null;
+
+    if (!after) {
+        await ref.remove();
+        console.log(`Removed RTDB admin mirror for ${email}`);
+        return;
+    }
+
+    // Mirrors adminHasBlanket() in firestore.rules: isOwner and fullAccess imply
+    // every granular permission.
+    const hasBlanket = after.isOwner === true || after.fullAccess === true;
+
+    await ref.set({
+        canViewLastSeen: hasBlanket || after.viewLastSeen === true,
+        // Expiry is re-checked in the RTDB rule rather than baked into the flag above,
+        // because this function only runs on writes — an admin whose validUntil simply
+        // elapses would otherwise keep access until their document was next touched.
+        validUntil: Number(after.validUntil || 0),
+    });
+    console.log(`Mirrored admin ${email} to RTDB (canViewLastSeen=${hasBlanket || after.viewLastSeen === true})`);
+});
