@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">CashDash</string>
     <string name="accessibility_service_description">CashDash requires this permission to detect when you open shopping apps (like Swiggy or Zomato) so it can display the Floating Assistant widget. No personal data or screen content is collected.</string>
-    <string name="gemini_api_key">AQ.Ab8RN6J98QwRRRH9eNVILdkNQgAMhYmv4jnnDb9EddH9i_XPZw</string>
+    <!-- No API keys here. String resources are plain text in the APK and are
+         trivially extracted, so credentials live in Cloud Functions secrets and
+         are reached through the rephraseSupportText callable. -->
+
 </resources>

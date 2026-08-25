@@ -32,6 +32,13 @@ const REPHRASE_SCOPES = {
     admin: () => GEMINI_API_KEY_ADMIN.value(),
 };
 
+// Every function in this file pays for the module-scope requires above
+// (firebase-admin, nodemailer, busboy), which measured 133-135 MiB at startup.
+// At 128MiB the container failed its readiness probe and never started —
+// "Memory limit of 128 MiB exceeded with 135 MiB used" — so rephraseSupportText
+// and onSupportQuery were dead on every invocation. 256MiB is the floor here;
+// do not lower it without checking actual startup memory in the logs.
+
 const SUPER_ADMINS = ["mohamedaufin64@gmail.com", "arunbhalaji200904@gmail.com"];
 
 const REPLY_LINK_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -89,8 +96,17 @@ function buildReplyUrl(targetUser, id, email) {
     return `https://adminreply-khhfw7mtba-uc.a.run.app?${q.toString()}`;
 }
 
-/** Reject anything that is not a currently-valid admin. Returns the caller's email. */
-async function assertAdmin(request) {
+/**
+ * Reject anything that is not a currently-valid admin. Returns the caller's email.
+ *
+ * [requiredPermission] names a granular grant from AdminManager.AdminPermissions
+ * (e.g. "replyToQueries"). Pass it whenever the function does something the
+ * Firestore rules gate on that same grant — otherwise the callable becomes a way
+ * around the rule, which is exactly what getSupportReplyLink used to be.
+ * `isOwner` / `fullAccess` are blanket grants, matching adminHasBlanket() in
+ * firestore.rules.
+ */
+async function assertAdmin(request, requiredPermission = null) {
     const email = request.auth && request.auth.token && request.auth.token.email
         ? String(request.auth.token.email).toLowerCase()
         : null;
@@ -104,6 +120,13 @@ async function assertAdmin(request) {
     const validUntil = Number(data.validUntil || 0);
     if (validUntil > 0 && validUntil < Date.now()) {
         throw new HttpsError("permission-denied", "Admin access has expired.");
+    }
+
+    if (requiredPermission) {
+        const hasBlanket = data.isOwner === true || data.fullAccess === true;
+        if (!hasBlanket && data[requiredPermission] !== true) {
+            throw new HttpsError("permission-denied", "Your admin access does not allow this.");
+        }
     }
     return email;
 }
@@ -153,7 +176,7 @@ const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 exports.onSupportQuery = onDocumentWritten({
     document: "users/{userEmail}/notifications/{notificationId}",
     secrets: [EMAIL_PASS_SECRET, REPLY_SIGNING_SECRET],
-    memory: "128MiB",
+    memory: "256MiB",
     maxInstances: 10
 }, async (event) => {
     const newData = event.data.after.data();
@@ -267,14 +290,19 @@ ${replyUrl}
 // FUNCTION 2: getSupportReplyLink (callable, admin-only)
 // The in-app admin inbox used to build the reply URL itself. It cannot any more,
 // because the URL now needs a server-held signing key — so it asks for one here.
+//
+// The link it mints grants read + reply on one support thread, which is the
+// access firestore.rules restricts to canReplyToQueries(). It therefore requires
+// that same grant: without the check, an admin holding only (say) viewLastSeen
+// could pull any user's support conversation and answer as CashDash Support.
 // ─────────────────────────────────────────────
 exports.getSupportReplyLink = onCall({
     region: "us-central1",
     secrets: [REPLY_SIGNING_SECRET],
-    memory: "128MiB",
+    memory: "256MiB",
     maxInstances: 5
 }, async (request) => {
-    await assertAdmin(request);
+    await assertAdmin(request, "replyToQueries");
 
     const userEmail = String((request.data && request.data.userEmail) || "").trim();
     const docId = String((request.data && request.data.docId) || "").trim();
@@ -295,7 +323,7 @@ exports.getSupportReplyLink = onCall({
 exports.rephraseSupportText = onCall({
     region: "us-central1",
     secrets: [GEMINI_API_KEY, GEMINI_API_KEY_ADMIN],
-    memory: "128MiB",
+    memory: "256MiB",
     maxInstances: 5
 }, async (request) => {
     const callerEmail = await assertAdmin(request);
@@ -320,18 +348,62 @@ exports.rephraseSupportText = onCall({
         : "Rewrite the following notification message in a highly professional, corporate, and encouraging tone suitable for a fintech platform (CashDash). CashDash offers legitimate deals, announcements, and admin communications. CRITICAL: Do not invent or add features like 'cashback', 'rewards', or 'discounts' unless they are explicitly mentioned in the original text. Only return the rewritten text, do not include any other commentary. Keep the {Validity} placeholder exactly as it is if it exists in the original text.\n\nMessage:\n" + text;
 
     try {
-        const resp = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${encodeURIComponent(REPHRASE_SCOPES[scope]())}`,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-            }
-        );
+        // The bare fetch here had no timeout and no retry. Gemini returns 503
+        // ("experiencing high demand") intermittently on the free tier, and when it
+        // instead hung, undici eventually raised a Headers Timeout — long after the
+        // caller's 70s callable deadline had passed, so the app showed
+        // DEADLINE_EXCEEDED with nothing actionable. Bound each attempt well inside
+        // the 60s function timeout and retry once, since 503 here is transient.
+        const GEMINI_ATTEMPT_TIMEOUT_MS = 20000;
+        const GEMINI_MAX_ATTEMPTS = 2;
+        const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 
-        if (!resp.ok) {
-            console.error(`Gemini API error [scope=${scope}]:`, resp.status, await resp.text());
-            throw new HttpsError("internal", `Rephrase service is unavailable (${scope}).`);
+        let resp = null;
+        let lastStatus = null;
+
+        for (let attempt = 1; attempt <= GEMINI_MAX_ATTEMPTS; attempt++) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), GEMINI_ATTEMPT_TIMEOUT_MS);
+            try {
+                resp = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${encodeURIComponent(REPHRASE_SCOPES[scope]())}`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+                        signal: controller.signal,
+                    }
+                );
+            } catch (fetchErr) {
+                // Abort or network failure. Treat like a retryable upstream fault.
+                console.error(`Gemini fetch failed [scope=${scope}, attempt=${attempt}]:`, fetchErr.message);
+                resp = null;
+            } finally {
+                clearTimeout(timer);
+            }
+
+            if (resp && resp.ok) break;
+
+            lastStatus = resp ? resp.status : "timeout";
+            if (resp) {
+                console.error(`Gemini API error [scope=${scope}, attempt=${attempt}]:`, resp.status, await resp.text());
+                if (!RETRYABLE_STATUS.has(resp.status)) break;
+            }
+
+            if (attempt < GEMINI_MAX_ATTEMPTS) {
+                await new Promise((r) => setTimeout(r, 1000));
+                resp = null;
+            }
+        }
+
+        if (!resp || !resp.ok) {
+            // "unavailable" rather than "internal": this is an upstream capacity
+            // problem the admin can simply retry, and the client maps it to a
+            // clearer message than a generic failure.
+            throw new HttpsError(
+                "unavailable",
+                `The rephrase model is busy right now (${scope}, ${lastStatus}). Please try again in a moment.`
+            );
         }
 
         const data = await resp.json();
@@ -811,14 +883,23 @@ exports.adminReply = onRequest({ cors: false, region: "us-central1", secrets: [E
             const uploadedUrls = [];
             for (const file of parsed.files) {
                 const dest = `support_attachments/${Date.now()}_${file.filename}`;
-                const [uploadedFile] = await bucket.upload(file.filepath, {
+                // These are support-thread images — screenshots of balances,
+                // statements, whatever the user was asked to send. They used to be
+                // makePublic()'d, which grants allUsers read on the object and
+                // bypasses Storage rules entirely: world-readable, forever.
+                // A download token keeps the URL unguessable, leaves the object
+                // private, and can be revoked by clearing the metadata.
+                const downloadToken = crypto.randomUUID();
+                await bucket.upload(file.filepath, {
                     destination: dest,
                     metadata: {
                         contentType: file.mimeType,
+                        metadata: { firebaseStorageDownloadTokens: downloadToken },
                     }
                 });
-                await uploadedFile.makePublic();
-                const publicUrl = `https://storage.googleapis.com/${bucket.name}/${dest}`;
+                const publicUrl =
+                    `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/` +
+                    `${encodeURIComponent(dest)}?alt=media&token=${downloadToken}`;
                 uploadedUrls.push(publicUrl);
                 fs.unlinkSync(file.filepath);
             }
@@ -909,7 +990,7 @@ exports.adminReply = onRequest({ cors: false, region: "us-central1", secrets: [E
 exports.onGlobalPush = onDocumentWritten({
     document: "global_pushes/{pushId}",
     region: "us-central1",
-    memory: "128MiB",
+    memory: "256MiB",
     maxInstances: 5
 }, async (event) => {
     const newData = event.data.after.data();
@@ -957,7 +1038,7 @@ exports.onGlobalPush = onDocumentWritten({
 exports.onUserPush = onDocumentWritten({
     document: "user_pushes/{pushId}",
     region: "us-central1",
-    memory: "128MiB",
+    memory: "256MiB",
     maxInstances: 10
 }, async (event) => {
     const newData = event.data.after.data();
@@ -1070,12 +1151,16 @@ exports.onAuthUserDeleted = functionsv1.auth.user().onDelete(async (user) => {
             console.error(`Error sending force_logout FCM message to ${email}:`, fcmError);
         }
 
-        // 2. Wipe sub-collections under config
-        const configDocs = ["profile", "wallet", "categories", "history", "analytics", "history_scanner", "undo_details"];
+        // 2. Wipe everything under config.
+        // This used to delete a hardcoded list of document names, which silently
+        // missed scanner_metadata, finminder and upi_allocations — financial data
+        // left orphaned in Firestore after the user asked for deletion. Enumerate
+        // instead, so documents added later are covered without a code change.
         const batch = db.batch();
-        for (const docName of configDocs) {
-            batch.delete(userRef.collection("config").doc(docName));
-        }
+        const configSnapshot = await userRef.collection("config").get();
+        configSnapshot.forEach((doc) => {
+            batch.delete(doc.ref);
+        });
 
         // 3. Wipe sub-collections under notifications
         const notificationsSnapshot = await userRef.collection("notifications").get();

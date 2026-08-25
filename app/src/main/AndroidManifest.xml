@@ -209,13 +209,16 @@
                 android:resource="@xml/tracker_widget_info" />
         </receiver>
 
+        <!-- The TAPTRACK_WIDGET_TOGGLE action was removed: an AppWidgetProvider is
+             necessarily exported, so advertising a toggle action let any installed
+             app start or stop usage tracking. The widget click now goes through
+             WidgetLaunchActivity, which is not exported. -->
         <receiver
             android:name=".TaptrackWidget"
             android:label="TapTrack"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.cash.dash.TAPTRACK_WIDGET_TOGGLE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"

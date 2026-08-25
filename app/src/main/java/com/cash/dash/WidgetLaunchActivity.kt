@@ -14,13 +14,22 @@ class WidgetLaunchActivity : Activity() {
         val firebaseUser = FirebaseAuth.getInstance().currentUser
         
         if (firebaseUser == null) {
-            val displayType = if (widgetType == "FinminderList") "Finminder" else widgetType
+            val displayType = when (widgetType) {
+                "FinminderList" -> "Finminder"
+                "TapTrackToggle" -> "TapTrack"
+                else -> widgetType
+            }
             Toast.makeText(this, "Login/Register to continue using $displayType", Toast.LENGTH_LONG).show()
             finish()
             return
         }
-        
-        if (widgetType == "Scanner") {
+
+        if (widgetType == "TapTrackToggle") {
+            // Handled here rather than in TaptrackWidget.onReceive: the widget
+            // provider must stay exported for APPWIDGET_UPDATE, but this activity
+            // is not exported, so only our own PendingIntent can reach the toggle.
+            TaptrackWidget.handleToggle(this)
+        } else if (widgetType == "Scanner") {
             startActivity(Intent(this, ScannerActivity::class.java))
         } else if (widgetType == "TapTrack") {
             startActivity(Intent(this, TaptrackActivity::class.java))

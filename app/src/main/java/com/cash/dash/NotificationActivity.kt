@@ -77,7 +77,10 @@ class NotificationActivity : ThemedActivity() {
                 val bitmap = result.data?.extras?.get("data") as? android.graphics.Bitmap
                 if (bitmap != null) {
                     try {
-                        val file = java.io.File(externalCacheDir, "reply_img_${System.currentTimeMillis()}.jpg")
+                        // Internal cache — see ContactSupportActivity: external app
+                        // storage is world-readable to apps with READ_EXTERNAL_STORAGE
+                        // on API <= 28, and these attachments are user financial data.
+                        val file = java.io.File(cacheDir, "reply_img_${System.currentTimeMillis()}.jpg")
                         val out = java.io.FileOutputStream(file)
                         bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
                         out.flush()

@@ -54,10 +54,14 @@ service cloud.firestore {
         (adminHasBlanket() || adminData().get('replyToQueries', false) == true));
     }
 
-    function canViewLastSeen() {
-      return isSuperAdmin() || (adminExists() && adminNotExpired() &&
-        (adminHasBlanket() || adminData().get('viewLastSeen', false) == true));
-    }
+    // NOTE: there is deliberately no canViewLastSeen() here. Presence data lives
+    // in the Realtime Database (status/{email}), not Firestore, so this file
+    // cannot gate it — see database.rules.json. That permission is currently
+    // enforced only in the client, and the RTDB rule's admin clause
+    // (root.child('admins')...) never matches because admins are stored in
+    // Firestore and nothing writes an /admins node to RTDB. Net effect: only the
+    // two hardcoded super admins can read presence. Fail-closed, but the granular
+    // grant is not doing any work.
 
     function canViewAdminLogs() {
       return isSuperAdmin() || (adminExists() && adminNotExpired() &&
@@ -116,10 +120,21 @@ service cloud.firestore {
       }
     }
 
-    // Deleted accounts: users can read their own (for self-deletion flow), only super admins can write
+    // Deleted accounts: users can read their own (for self-deletion flow).
+    // A user may CREATE their own "I deleted myself" marker — the self-deletion
+    // flow in ProfileActivity writes one, and denying it used to fail the whole
+    // wipe batch, leaving the account's financial documents behind in Firestore.
+    // Only the status a self-deletion produces is accepted, and only when no
+    // marker exists yet, so an admin_deleted flag can never be overwritten.
     match /deleted_accounts/{userEmail} {
       allow read: if isOwner(userEmail) || isSuperAdmin();
-      allow write: if isSuperAdmin();
+
+      allow create: if isSuperAdmin() || (
+        isOwner(userEmail) &&
+        request.resource.data.get('status', '') == 'PERMANENT_WIPE_COMPLETED'
+      );
+
+      allow update, delete: if isSuperAdmin();
     }
 
     // Admins collection
@@ -131,10 +146,14 @@ service cloud.firestore {
     match /admins/{adminEmail} {
       allow read: if isAnyAdmin();
 
+      // `fullAccess` is blocked alongside `isOwner`: adminHasBlanket() treats the
+      // two identically, so allowing one and not the other let an allocateAdmins
+      // holder mint a second account with blanket power and escalate through it.
       allow create, update: if isSuperAdmin() || (
         canAllocateAdmins() &&
         adminEmail.lower() != request.auth.token.email.lower() &&
-        request.resource.data.get('isOwner', false) != true
+        request.resource.data.get('isOwner', false) != true &&
+        request.resource.data.get('fullAccess', false) != true
       );
 
       allow delete: if isSuperAdmin() || (
@@ -161,9 +180,13 @@ service cloud.firestore {
       allow write: if canBroadcast();
     }
 
-    // User-targeted push notifications
+    // User-targeted push notifications.
+    // Unlike announcements and global_pushes these are addressed mail: each doc
+    // carries the recipient's email plus the message. Readable by every signed-in
+    // user, the collection was an email-harvesting list. Delivery happens via FCM
+    // and the mirrored users/{email}/notifications doc, so no client reads this.
     match /user_pushes/{document=**} {
-      allow read: if isActiveUser();
+      allow read: if canBroadcast() || isOwner(resource.data.get('email', ''));
       allow write: if canBroadcast();
     }
 
@@ -172,7 +195,18 @@ service cloud.firestore {
     // and nothing else. Previously `hasOnly` constrained which keys changed but
     // not how, so any user could overwrite or wipe the arrays wholesale.
     match /admin_logs/{document=**} {
-      allow read, write: if isAnyAdmin();
+      // Reading the log is what viewAdminLogs gates in AdminLogsActivity; the rule
+      // used to accept any admin, so the grant was advisory only.
+      allow read: if canViewAdminLogs();
+
+      // Any admin may append an entry for an action they just took — logging must
+      // not depend on holding the permission to read the log back.
+      allow create: if isAnyAdmin();
+
+      // Editing or removing existing entries is tampering with the audit trail,
+      // so it is super-admin only. Nothing in the app does this; the user
+      // click-tracking case is the separate, tightly-scoped update rule below.
+      allow update, delete: if isSuperAdmin();
 
       allow update: if isActiveUser()
         && request.resource.data.diff(resource.data).affectedKeys()
@@ -205,10 +239,13 @@ service cloud.firestore {
 
     // System configuration (e.g. app update lock settings)
     // READ: any signed-in user (needed to check if update is required on splash)
-    // WRITE: only admins
+    // WRITE: mirrors the gate on the Update Lock screen in AdminActivity
+    //        (owner or allocateAdmins). This used to be any admin at all, so the
+    //        least-privileged admin could set force_update_enabled with an
+    //        arbitrary minimum version and lock every user out of the app.
     match /system/{document=**} {
       allow read: if isActiveUser();
-      allow write: if isAnyAdmin();
+      allow write: if canAllocateAdmins();
     }
 
     // Server-side rate limit counters, written only by Cloud Functions (admin SDK).

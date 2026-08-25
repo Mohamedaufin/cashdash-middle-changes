@@ -75,7 +75,10 @@ class HelpActivity : ThemedActivity() {
                 val bitmap = intentData?.extras?.get("data") as? android.graphics.Bitmap
                 if (bitmap != null && selectedImageUris.size < 4) {
                     try {
-                        val file = java.io.File(externalCacheDir, "support_img_${System.currentTimeMillis()}.jpg")
+                        // Internal cache — see ContactSupportActivity: external app
+                        // storage is world-readable to apps with READ_EXTERNAL_STORAGE
+                        // on API <= 28, and these attachments are user financial data.
+                        val file = java.io.File(cacheDir, "support_img_${System.currentTimeMillis()}.jpg")
                         val out = java.io.FileOutputStream(file)
                         bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
                         out.flush()

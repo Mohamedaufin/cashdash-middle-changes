@@ -58,7 +58,12 @@ class ContactSupportActivity : ThemedActivity() {
                 val bitmap = intentData?.extras?.get("data") as? android.graphics.Bitmap
                 if (bitmap != null && selectedImageUris.size < 4) {
                     try {
-                        val file = File(externalCacheDir, "support_img_${System.currentTimeMillis()}.jpg")
+                        // Internal cache, not externalCacheDir: support attachments can
+                        // be screenshots of balances or statements, and external app
+                        // storage is readable by any app holding READ_EXTERNAL_STORAGE
+                        // on API <= 28 (minSdk is 26). Nothing outside this process
+                        // needs the file — it is uploaded and previewed in-app.
+                        val file = File(cacheDir, "support_img_${System.currentTimeMillis()}.jpg")
                         val out = FileOutputStream(file)
                         bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
                         out.flush()

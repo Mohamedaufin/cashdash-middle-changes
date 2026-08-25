@@ -17,29 +17,15 @@ import androidx.core.content.ContextCompat
 class TaptrackWidget : AppWidgetProvider() {
 
     companion object {
-        const val ACTION_TOGGLE = "com.cash.dash.TAPTRACK_WIDGET_TOGGLE"
-
-        fun refreshAllWidgets(context: Context) {
-            val manager = AppWidgetManager.getInstance(context)
-            val ids = manager.getAppWidgetIds(ComponentName(context, TaptrackWidget::class.java))
-            if (ids.isNotEmpty()) {
-                val intent = Intent(context, TaptrackWidget::class.java)
-                intent.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
-                context.sendBroadcast(intent)
-            }
-        }
-    }
-
-    override fun onReceive(context: Context, intent: Intent) {
-        super.onReceive(context, intent)
-        if (intent.action == ACTION_TOGGLE) {
-            val firebaseUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-            if (firebaseUser == null) {
-                android.widget.Toast.makeText(context, "Login/Register to continue using TapTrack", android.widget.Toast.LENGTH_LONG).show()
-                return
-            }
-
+        /**
+         * Flips tracking on or off.
+         *
+         * Called from [WidgetLaunchActivity], which is not exported. It used to be
+         * a broadcast action on this receiver — but an AppWidgetProvider has to be
+         * exported to receive APPWIDGET_UPDATE, so any installed app could send the
+         * toggle and start or stop the overlay service behind the user's back.
+         */
+        fun handleToggle(context: Context) {
             val prefs = context.getSharedPreferences("SmartAssistantPrefs", Context.MODE_PRIVATE)
             val isOn = prefs.getBoolean("tracking_enabled", false)
             val hasOverlay = Settings.canDrawOverlays(context)
@@ -63,6 +49,28 @@ class TaptrackWidget : AppWidgetProvider() {
             }
             refreshAllWidgets(context)
         }
+
+        private fun hasUsageStatsPermission(context: Context): Boolean {
+            val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                appOps.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName)
+            } else {
+                @Suppress("DEPRECATION")
+                appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName)
+            }
+            return mode == AppOpsManager.MODE_ALLOWED
+        }
+
+        fun refreshAllWidgets(context: Context) {
+            val manager = AppWidgetManager.getInstance(context)
+            val ids = manager.getAppWidgetIds(ComponentName(context, TaptrackWidget::class.java))
+            if (ids.isNotEmpty()) {
+                val intent = Intent(context, TaptrackWidget::class.java)
+                intent.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+                context.sendBroadcast(intent)
+            }
+        }
     }
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
@@ -84,27 +92,17 @@ class TaptrackWidget : AppWidgetProvider() {
             views.setImageViewResource(R.id.ivWidgetToggle, R.drawable.ic_widget_switch_off)
         }
 
-        // Toggle click
-        val toggleIntent = Intent(context, TaptrackWidget::class.java).apply {
-            action = ACTION_TOGGLE
+        // Toggle click. Routed through WidgetLaunchActivity (not exported) rather
+        // than a broadcast back to this receiver, which any app could send.
+        val toggleIntent = Intent(context, WidgetLaunchActivity::class.java).apply {
+            putExtra("WIDGET_TYPE", "TapTrackToggle")
         }
-        val togglePendingIntent = PendingIntent.getBroadcast(
+        val togglePendingIntent = PendingIntent.getActivity(
             context, 0, toggleIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         views.setOnClickPendingIntent(R.id.widgetContainer, togglePendingIntent)
 
         appWidgetManager.updateAppWidget(appWidgetId, views)
-    }
-
-    private fun hasUsageStatsPermission(context: Context): Boolean {
-        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            appOps.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName)
-        } else {
-            @Suppress("DEPRECATION")
-            appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName)
-        }
-        return mode == AppOpsManager.MODE_ALLOWED
     }
 }

@@ -282,29 +282,42 @@ class ProfileActivity : ThemedActivity() {
             "status" to "PERMANENT_WIPE_COMPLETED"
         )
 
+        // The deleted_accounts marker is written on its own, NOT inside the wipe
+        // batch. Security rules allow the owner to create it but nothing more, and
+        // a batch is atomic: when this write was part of it, one rejected document
+        // failed the whole thing and the account's financial data survived the
+        // "irreversible" deletion. The marker is best-effort; the wipe is not.
+        db.collection("deleted_accounts").document(email).set(logData)
+            .addOnFailureListener { e ->
+                android.util.Log.w("ProfileActivity", "Could not write deletion marker", e)
+            }
+
         // Retrieve notifications to include in a single atomic batch deletion
         db.collection("users").document(email).collection("notifications")
             .get()
             .addOnCompleteListener { task ->
                 val batch = db.batch()
 
-                // 1. Log deletion request in deleted_accounts
-                batch.set(db.collection("deleted_accounts").document(email), logData)
-
-                // 2. Wipe sub-collections under config
-                val docs = listOf("profile", "wallet", "categories", "history", "analytics", "history_scanner", "undo_details", "scanner_metadata")
+                // Wipe sub-collections under config. Keep this list in step with
+                // the documents FirestoreSyncManager writes — the Cloud Function
+                // that runs on account deletion enumerates the collection instead.
+                val docs = listOf(
+                    "profile", "wallet", "categories", "history", "analytics",
+                    "history_scanner", "undo_details", "scanner_metadata",
+                    "finminder", "upi_allocations"
+                )
                 docs.forEach { docName ->
                     batch.delete(db.collection("users").document(email).collection("config").document(docName))
                 }
 
-                // 3. Wipe sub-collections under notifications if found
+                // Wipe sub-collections under notifications if found
                 if (task.isSuccessful && task.result != null) {
                     for (doc in task.result.documents) {
                         batch.delete(doc.reference)
                     }
                 }
 
-                // 4. Finally delete the root document itself
+                // Finally delete the root document itself
                 batch.delete(db.collection("users").document(email))
 
                 // Remove RTDB presence data so admin center no longer shows deleted users
@@ -318,7 +331,14 @@ class ProfileActivity : ThemedActivity() {
                     }
                     .addOnFailureListener { e ->
                         android.util.Log.e("ProfileActivity", "Firestore batch wipe failed", e)
-                        // Fallback: Proceed with Auth deletion anyway
+                        // Proceed with Auth deletion anyway: the onAuthUserDeleted
+                        // Cloud Function wipes the same data with admin rights, so
+                        // stopping here would strand the account instead. Tell the
+                        // user rather than reporting a clean deletion silently.
+                        ToastHelper.showToast(
+                            this@ProfileActivity,
+                            "Some data could not be removed from this device's session — server cleanup will finish it."
+                        )
                         onComplete()
                     }
             }

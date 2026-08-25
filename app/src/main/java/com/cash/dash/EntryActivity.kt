@@ -384,8 +384,11 @@ class EntryActivity : ThemedActivity() {
             return
         }
 
-        if (pass.length < 6) {
-            tvStatus.text = "Password must be at least 6 characters"
+        // Length is enforced on registration only. Existing accounts were created
+        // under a 6-character minimum and must still be able to sign in — raising
+        // the bar on the login path would lock those users out of their own data.
+        if (!isLogin && pass.length < 8) {
+            tvStatus.text = "Password must be at least 8 characters"
             return
         }
 
@@ -594,7 +597,11 @@ class EntryActivity : ThemedActivity() {
                                 }
                             }
                             batch.delete(db.collection("users").document(email))
-                            batch.delete(db.collection("deleted_accounts").document(email))
+                            // The deleted_accounts marker is deliberately left alone:
+                            // only super admins may remove it (a user clearing their
+                            // own ban flag would defeat the point), and including the
+                            // delete here failed the entire atomic batch, so none of
+                            // the data above was actually being wiped.
 
                             val safeEmail = email.replace(".", ",")
                             com.google.firebase.database.FirebaseDatabase.getInstance().getReference("status").child(safeEmail).removeValue()
