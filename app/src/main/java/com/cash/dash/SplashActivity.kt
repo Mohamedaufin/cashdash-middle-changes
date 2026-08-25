@@ -31,7 +31,7 @@ class SplashActivity : ThemedActivity() {
             return
         }
 
-        val walletPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
+        val walletPrefs = WalletStore.get(this)
         val initialBalance = walletPrefs.getInt("initial_balance", -1)
 
         if (initialBalance >= 0) {

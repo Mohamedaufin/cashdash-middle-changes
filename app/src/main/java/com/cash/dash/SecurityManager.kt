@@ -106,7 +106,7 @@ object SecurityManager {
 
         // 1. Clear all SharedPreferences
         val prefsToClear = listOf(
-            "AppPrefs", "WalletPrefs", "CategoryPrefs",
+            "AppPrefs", "WalletPrefs", "WalletPrefs_v2", "CategoryPrefs",
             "GraphData", "CategoryWeekData", "MoneySchedulePrefs",
             "ScannerHistory", "LocalScanPrefs", "NotificationCache"
         )

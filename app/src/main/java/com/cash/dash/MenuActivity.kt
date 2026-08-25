@@ -37,7 +37,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 class MenuActivity : ThemedActivity() {
 
-    private val PREFS = "WalletPrefs"
     private val KEY_BALANCE = "wallet_balance"
 
     private val syncReceiver = object : android.content.BroadcastReceiver() {

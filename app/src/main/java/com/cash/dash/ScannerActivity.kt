@@ -732,7 +732,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                 }
             }
 
-            val balance = getSharedPreferences("WalletPrefs", MODE_PRIVATE).getInt("wallet_balance", 0)
+            val balance = WalletStore.get(this).getInt("wallet_balance", 0)
             tvWalletBalance.text = "Wallet Balance: ₹$balance"
 
             btnCred.visibility = View.VISIBLE
@@ -1077,7 +1077,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
                     val limitStr = inputLimit.text.toString()
                     val newLimit = if (limitStr.isNotEmpty()) limitStr.toIntOrNull() ?: 0 else 0
 
-                    val walletPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
+                    val walletPrefs = WalletStore.get(this@ScannerActivity)
                     val totalBalance = walletPrefs.getInt("initial_balance", 0).coerceAtLeast(0)
 
                     var currentSumOfLimits = 0

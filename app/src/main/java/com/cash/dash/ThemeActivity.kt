@@ -91,7 +91,7 @@ class ThemeActivity : ThemedActivity() {
         initialAppTheme = themePrefs.getString("current_theme", "System") ?: "System"
         selectedAppTheme = initialAppTheme
 
-        val bbPrefs = getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
+        val bbPrefs = WalletStore.get(this)
         initialBBMode = bbPrefs.getString("balance_bar_mode", "gradient") ?: "gradient"
         initialBBType = bbPrefs.getString("balance_bar_type", "gradient1") ?: "gradient1"
         selectedBBMode = initialBBMode
@@ -327,7 +327,7 @@ class ThemeActivity : ThemedActivity() {
 
     private fun saveSettings() {
         getSharedPreferences("ThemePrefs", Context.MODE_PRIVATE).edit().putString("current_theme", selectedAppTheme).apply()
-        getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE).edit()
+        WalletStore.get(this).edit()
             .putString("balance_bar_mode", selectedBBMode)
             .putString("balance_bar_type", selectedBBType)
             .apply()

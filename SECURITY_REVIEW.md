@@ -10,7 +10,7 @@
 
 **Status: 24 closed · 1 accepted risk · 3 open · 1 unfixable upstream · 1 area newly assessed.**
 
-Reverse-engineering and tamper posture — carried as *"not covered"* by both earlier reviews — was assessed on 2026-08-26 and now has its own section. One actionable item came out of it: `WalletPrefs` is plaintext.
+Reverse-engineering and tamper posture — carried as *"not covered"* by both earlier reviews — was assessed on 2026-08-26 and now has its own section. The one actionable item it produced, plaintext `WalletPrefs`, has since been fixed and ships in the next release.
 
 Two audits existed with different numbering, which is a hazard in itself — a finding closed in one and open in the other is easy to lose. This is now the single tracker. Where the two overlapped, the older number is shown in brackets.
 
@@ -151,7 +151,7 @@ Previously listed as *"not covered"* in both reviews. Now actually examined agai
 
 | Gap | Assessment |
 |---|---|
-| **`WalletPrefs` stored plaintext** | Balance and financial state in `MODE_PRIVATE` `SharedPreferences` across 6+ call sites. Readable and editable on any rooted device. **The only item here where real user data sits in the clear.** |
+| ~~**`WalletPrefs` stored plaintext**~~ | **Fixed 2026-08-26.** Now encrypted via [WalletStore.kt](app/src/main/java/com/cash/dash/WalletStore.kt) — same `MasterKey` / `EncryptedSharedPreferences` scheme as the admin cache. 34 call sites across 14 files routed through it, with a one-time migration off the plaintext file. **Ships in the next release; migration is not runtime-tested.** |
 | No root / emulator / debugger detection | Nothing present. A UPI payment app runs unmodified under Frida. |
 | No certificate pinning | No `networkSecurityConfig` declared at all. |
 | No string encryption | R8 obfuscates identifiers, never string constants. |
@@ -161,7 +161,7 @@ Previously listed as *"not covered"* in both reviews. Now actually examined agai
 
 ### Recommendation
 
-1. **Encrypt `WalletPrefs`** — the one worth doing. Reuse the proven `AdminManager` pattern (same `MasterKey`, same soft-fail), plus a one-time migration that reads the old file and rewrites it encrypted. Not yet implemented.
+1. ~~**Encrypt `WalletPrefs`**~~ — **done 2026-08-26.** See the implementation note below.
 2. **Root detection — optional.** Trivially bypassed by anyone competent; it raises cost against casual tampering and nothing more. Do it only if you want the signal.
 3. **Certificate pinning — recommended against.** Pinning Firebase SDK traffic is a known operational footgun: Google rotates certificates, and a stale pin bricks the app for every user with no server-side remedy.
 4. **String encryption — now low value.** Its entire justification was the Gemini keys, and none remain in the client.
@@ -170,7 +170,21 @@ Two deliberate calls, unchanged and still correct: `FLAG_SECURE` is *not* applie
 
 ### Hygiene
 
-`app/src/main/res/xml/accessibility_service_config.xml` exists but **no accessibility service is declared** in the manifest. Orphaned file — delete it so no future reviewer assumes there is a service to audit.
+~~`app/src/main/res/xml/accessibility_service_config.xml` exists but no accessibility service is declared in the manifest.~~ **Deleted 2026-08-26** after confirming nothing referenced it.
+
+### Implementation note — `WalletStore` (2026-08-26)
+
+Encryption is applied to a **new file** (`WalletPrefs_v2`) rather than in place, because `EncryptedSharedPreferences` cannot read a plaintext file. The old contents are copied once and the old file is then cleared, using `commit()` rather than `apply()` so the new file is durable *before* the old one is emptied — a crash between the two would otherwise lose a user's balance. If the write fails the legacy file is left intact and the copy retries next launch.
+
+Three things checked before writing any code, each of which would have made this unsafe:
+
+- **Change listeners still work.** [CashDashApplication](app/src/main/java/com/cash/dash/CashDashApplication.kt) watches `wallet_balance` to drive `Finminder.pushUpdate`. Verified against the `security-crypto` 1.1.0-alpha06 bytecode that `Editor.notifyListeners()` dispatches from `mKeysChanged`, which records the **plaintext** key before encryption — so the listener keeps firing.
+- **Single process.** No `android:process` anywhere in the manifest. `EncryptedSharedPreferences` is explicitly not multi-process safe, so this mattered.
+- **The account-wipe paths enumerate prefs by filename.** `WalletPrefs_v2` was added alongside `WalletPrefs` in all five lists (`EntryActivity`, `FirestoreSyncManager`, `ProfileActivity` ×2, `SecurityManager`); without that, deleting an account would have left the encrypted wallet behind.
+
+The instance is cached, because `EncryptedSharedPreferences.create()` does keystore work per call and the wallet is read on widget refreshes and every HomeFragment bind. As on the admin cache, it falls back to plaintext if the keystore is unavailable — but to the *same* filename, so a device that later gains keystore support does not start from an empty wallet.
+
+**Verified:** `:app:assembleDebug` passes. **Not verified:** the migration has not been exercised on a device with real data. Worth one manual check on an install that has a balance set before shipping.
 
 ---
 
@@ -197,7 +211,7 @@ RTDB remains in the US and cannot be relocated in place; presence writes still c
 3. **App Check → Monitor, then Enforce** (B) once adoption climbs.
 4. **Finish the region migration** after adoption.
 5. **Email verification** (A) — the remaining High, alongside Google Sign-In.
-6. **Encrypt `WalletPrefs`** — reuse the `AdminManager` pattern plus a one-time migration. See the tamper-posture section; the only item where user financial data sits in plaintext on device.
+6. ~~Encrypt `WalletPrefs`~~ — done 2026-08-26. Before shipping, **exercise the migration once on an install that already has a balance** — it is the one part that compiles but has not been run against real data.
 
 Delete the backup bundle `S:/AndroidStudioProjects/cashdash-backup-20260825-231858.bundle` once satisfied with the history rewrite; it still contains the old APKs and therefore the revoked keys.
 

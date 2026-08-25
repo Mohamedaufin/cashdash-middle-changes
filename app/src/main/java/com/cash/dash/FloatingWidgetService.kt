@@ -300,7 +300,7 @@ class FloatingWidgetService : Service() {
 
         serviceScope.launch(Dispatchers.IO) {
             val db = AppDatabase.getDatabase(this@FloatingWidgetService)
-            val prefsWallet = getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
+            val prefsWallet = WalletStore.get(this@FloatingWidgetService)
             val walletMaxObj = prefsWallet.all["initial_balance"]
             val walletMax = walletMaxObj?.toString()?.toFloatOrNull()?.toInt() ?: 0
             val currentWalletObj = prefsWallet.all["wallet_balance"]

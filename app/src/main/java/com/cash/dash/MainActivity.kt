@@ -25,7 +25,6 @@ class MainActivity : ThemedActivity() {
 
     private val PREFS = "AppPrefs"
     private val KEY_NAME = "user_name"
-    private val PREFS_WALLET = "WalletPrefs"
     private val KEY_BALANCE = "wallet_balance"
 
     private val PREFS_SCHEDULE = "MoneySchedulePrefs"

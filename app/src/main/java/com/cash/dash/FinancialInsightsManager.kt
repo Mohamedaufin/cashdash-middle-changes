@@ -223,7 +223,7 @@ object FinancialInsightsManager {
 
     private fun calculateBudgetStatus(context: Context, breakdown: HistoryDataManager.BreakdownResult): BudgetStatus {
         val prefs = context.getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
-        val walletPrefs = context.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
+        val walletPrefs = WalletStore.get(context)
         val initialBalance = walletPrefs.getInt("initial_balance", 0)
         
         val progress = mutableListOf<CategoryBudget>()

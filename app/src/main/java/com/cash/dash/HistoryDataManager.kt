@@ -68,7 +68,7 @@ object HistoryDataManager {
             editor.commit()
 
             // 3. Update Wallet Balance
-            val prefsWallet = context.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
+            val prefsWallet = WalletStore.get(context)
             val currentBal = prefsWallet.getInt("wallet_balance", 0)
             prefsWallet.edit().putInt("wallet_balance", currentBal - amount.toInt()).commit()
 
@@ -124,7 +124,7 @@ object HistoryDataManager {
         }
 
         // 3. Restore Wallet Balance
-        val prefsWallet = context.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
+        val prefsWallet = WalletStore.get(context)
         val currentBal = prefsWallet.getInt("wallet_balance", 0)
         prefsWallet.edit().putInt("wallet_balance", currentBal + actualAmount.toInt()).apply()
 
@@ -275,7 +275,7 @@ object HistoryDataManager {
         if (historyList.remove(oldRawEntry)) {
             historyList.add(newRawEntry)
             
-            val prefsWallet = context.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
+            val prefsWallet = WalletStore.get(context)
             val currentBal = prefsWallet.getInt("wallet_balance", 0)
             prefsWallet.edit().putInt("wallet_balance", currentBal - delta).apply()
 

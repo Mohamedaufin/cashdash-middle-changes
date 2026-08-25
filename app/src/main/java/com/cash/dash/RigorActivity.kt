@@ -318,7 +318,7 @@ class RigorActivity : ThemedActivity() {
                     val limitStr = inputLimit.text.toString()
                     val newLimit = if (limitStr.isNotEmpty()) limitStr.toIntOrNull() ?: 0 else 0
                     
-                    val walletPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
+                    val walletPrefs = WalletStore.get(this@RigorActivity)
                     val totalBalance = walletPrefs.getInt("initial_balance", 0).coerceAtLeast(0)
                     
                     var currentSumOfLimits = 0

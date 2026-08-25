@@ -53,7 +53,7 @@ class MoneyScheduleActivity : ThemedActivity() {
             etCustomDays = findViewById(R.id.etCustomDays)
             
             val tvCycleSubTitle = findViewById<TextView>(R.id.tvCycleSubTitle)
-            val wPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
+            val wPrefs = WalletStore.get(this)
             val budget = wPrefs.getInt("initial_balance", 0)
             tvCycleSubTitle.text = "Select when your current budget (₹$budget) should expire"
 
@@ -212,7 +212,7 @@ class MoneyScheduleActivity : ThemedActivity() {
         graphEditor.apply()
 
         // Replenish wallet balance to initial limit
-        val wPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
+        val wPrefs = WalletStore.get(this)
         val nextCycleBal = wPrefs.getInt("next_cycle_initial_balance", -1)
         val initialBal = if (nextCycleBal != -1) {
             wPrefs.edit().putInt("initial_balance", nextCycleBal).remove("next_cycle_initial_balance").apply()
@@ -281,7 +281,7 @@ class MoneyScheduleActivity : ThemedActivity() {
 
     private fun showResetConfirmationDialog() {
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
-        val wPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
+        val wPrefs = WalletStore.get(this)
         val budget = wPrefs.getInt("initial_balance", 0)
         
         val density = resources.displayMetrics.density
@@ -413,7 +413,7 @@ class MoneyScheduleActivity : ThemedActivity() {
     }
 
     private fun showResetInfoDialog() {
-        val walletPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
+        val walletPrefs = WalletStore.get(this)
         val initialBal = walletPrefs.getInt("initial_balance", 0)
 
         val density = resources.displayMetrics.density

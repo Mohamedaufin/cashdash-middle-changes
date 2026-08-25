@@ -75,7 +75,7 @@ class SetLimitActivity : ThemedActivity() {
             if (value.isNotEmpty()) {
                 val newLimit = value.toInt()
 
-                val walletPrefs = getSharedPreferences("WalletPrefs", MODE_PRIVATE)
+                val walletPrefs = WalletStore.get(this)
                 val totalBalance = walletPrefs.getInt("initial_balance", 0).coerceAtLeast(0)
 
                 val limitPrefs = getSharedPreferences("CategoryPrefs", MODE_PRIVATE)

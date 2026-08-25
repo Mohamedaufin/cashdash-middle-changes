@@ -81,7 +81,7 @@ object FirestoreSyncManager {
                     val db = FirebaseFirestore.getInstance()
                     Log.d(TAG, "Starting consolidated ATOMIC batch sync to cloud for $email")
 
-                    val walletPrefs = appContext.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
+                    val walletPrefs = WalletStore.get(appContext)
                     val categoryPrefs = appContext.getSharedPreferences("CategoryPrefs", Context.MODE_PRIVATE)
                 val graphPrefs = appContext.getSharedPreferences("GraphData", Context.MODE_PRIVATE)
                 val schedulePrefs = appContext.getSharedPreferences("MoneySchedulePrefs", Context.MODE_PRIVATE)
@@ -408,7 +408,7 @@ object FirestoreSyncManager {
                     // 2. Wallet & Schedule
                     val walletDoc = try { if (tWallet.isSuccessful) tWallet.result else null } catch (e: Exception) { null }
                     if (walletDoc != null && walletDoc.exists()) {
-                        val walletPrefs = context.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
+                        val walletPrefs = WalletStore.get(context)
                         val schedulePrefs = context.getSharedPreferences("MoneySchedulePrefs", Context.MODE_PRIVATE)
 
                         isSyncingFromCloud = true
@@ -696,7 +696,7 @@ object FirestoreSyncManager {
         val appContext = context.applicationContext
 
         val prefsToWatch = listOf(
-            "AppPrefs", "WalletPrefs", "CategoryPrefs", "GraphData",
+            "AppPrefs", "WalletPrefs", "WalletPrefs_v2", "CategoryPrefs", "GraphData",
             "CategoryWeekData", "MoneySchedulePrefs", "ScannerHistory", "LocalScanPrefs", "ScannerMetadataPrefs", "FinminderPrefs"
         )
 
@@ -745,7 +745,7 @@ object FirestoreSyncManager {
             if (snapshot == null || !snapshot.exists()) return@addSnapshotListener
 
             isSyncingFromCloud = true
-            val walletPrefs = appContext.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
+            val walletPrefs = WalletStore.get(appContext)
             val schedulePrefs = appContext.getSharedPreferences("MoneySchedulePrefs", Context.MODE_PRIVATE)
 
             val wEdit = walletPrefs.edit()

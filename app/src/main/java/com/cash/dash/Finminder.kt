@@ -23,7 +23,7 @@ class Finminder : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
-        val prefs = context.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
+        val prefs = WalletStore.get(context)
         val currentIndex = prefs.getInt("widget_current_index", 0)
 
         when (intent.action) {
@@ -88,7 +88,7 @@ class Finminder : AppWidgetProvider() {
                 views.setViewVisibility(R.id.tvEmptyState, View.GONE)
                 views.setViewVisibility(R.id.layoutContent, View.VISIBLE)
 
-                val prefs = context.getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
+                val prefs = WalletStore.get(context)
                 var currentIndex = prefs.getInt("widget_current_index", 0)
                 if (currentIndex >= todayItems.size) {
                     currentIndex = 0

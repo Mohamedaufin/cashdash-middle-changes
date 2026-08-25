@@ -192,7 +192,7 @@ class ProfileActivity : ThemedActivity() {
 
                 // 1. Clear ALL local data to prevent leak between accounts
                 val prefsToClear = listOf(
-                    "AppPrefs", "WalletPrefs", "CategoryPrefs",
+                    "AppPrefs", "WalletPrefs", "WalletPrefs_v2", "CategoryPrefs",
                     "GraphData", "CategoryWeekData", "MoneySchedulePrefs",
                     "ScannerHistory", "LocalScanPrefs", "NotificationCache"
                 )
@@ -250,7 +250,7 @@ class ProfileActivity : ThemedActivity() {
                     SecurityManager.stopListening()
 
                     val prefsToClear = listOf(
-                        "AppPrefs", "WalletPrefs", "CategoryPrefs",
+                        "AppPrefs", "WalletPrefs", "WalletPrefs_v2", "CategoryPrefs",
                         "GraphData", "CategoryWeekData", "MoneySchedulePrefs",
                         "ScannerHistory", "LocalScanPrefs", "ScannerMetadataPrefs", "NotificationCache"
                     )

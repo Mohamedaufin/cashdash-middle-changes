@@ -532,7 +532,7 @@ class EntryActivity : ThemedActivity() {
         // 🚨 CRITICAL SANITIZATION: Thoroughly purge stale state from previous device users
         // so new registrations don't inherit ghosts of older local caches.
         val prefsToPurge = listOf(
-            "WalletPrefs", "CategoryPrefs", "GraphData",
+            "WalletPrefs", "WalletPrefs_v2", "CategoryPrefs", "GraphData",
             "CategoryWeekData", "MoneySchedulePrefs", "ScannerHistory",
             "LocalScanPrefs", "ScannerMetadataPrefs", "NotificationCache", "AppPrefs" // Cleared carefully below
         )

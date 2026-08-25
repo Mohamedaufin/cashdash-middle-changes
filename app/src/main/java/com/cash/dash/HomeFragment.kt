@@ -25,7 +25,6 @@ class HomeFragment : Fragment() {
 
     private val PREFS = "AppPrefs"
     private val KEY_NAME = "user_name"
-    private val PREFS_WALLET = "WalletPrefs"
     private val KEY_BALANCE = "wallet_balance"
     private val PREFS_SCHEDULE = "MoneySchedulePrefs"
     private val KEY_NEXT_DATE = "next_date"
@@ -199,7 +198,7 @@ class HomeFragment : Fragment() {
             }
         })
 
-        val wPrefs = requireContext().getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
+        val wPrefs = WalletStore.get(requireContext())
         wPrefs.registerOnSharedPreferenceChangeListener(walletListener)
         val appPrefs = requireContext().getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
         appPrefs.registerOnSharedPreferenceChangeListener(appPrefsListener)
@@ -207,7 +206,7 @@ class HomeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        val wPrefs = requireContext().getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
+        val wPrefs = WalletStore.get(requireContext())
         wPrefs.unregisterOnSharedPreferenceChangeListener(walletListener)
         val appPrefs = requireContext().getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
         appPrefs.unregisterOnSharedPreferenceChangeListener(appPrefsListener)
@@ -334,7 +333,7 @@ class HomeFragment : Fragment() {
 
     private fun checkInitialSetup() {
         val density = resources.displayMetrics.density
-        val prefs = requireContext().getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
+        val prefs = WalletStore.get(requireContext())
         val initialBalance = prefs.getInt("initial_balance", -1)
 
         // 🔧 FIX: Explicitly aligns with BalanceSetupActivity logic where <= 0 is treated as unset
@@ -426,7 +425,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun loadBalance(view: View) {
-        val prefs = requireContext().getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
+        val prefs = WalletStore.get(requireContext())
         val bal = prefs.getInt(KEY_BALANCE, 0)
         val initialRaw = prefs.getInt("initial_balance", -1)
 
@@ -569,7 +568,7 @@ class HomeFragment : Fragment() {
             cal.get(Calendar.YEAR)
         )
 
-        val wPrefs = context.getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
+        val wPrefs = WalletStore.get(context)
         val nextCycleBal = wPrefs.getInt("next_cycle_initial_balance", -1)
         val initialBal = if (nextCycleBal > 0) nextCycleBal else wPrefs.getInt("initial_balance", 0)
 
@@ -909,7 +908,7 @@ class HomeFragment : Fragment() {
             graphEditor.putFloat("SPENT_no choice", 0f)
             graphEditor.apply()
 
-            val wPrefs = context.getSharedPreferences(PREFS_WALLET, android.content.Context.MODE_PRIVATE)
+            val wPrefs = WalletStore.get(context)
             val nextCycleBal = wPrefs.getInt("next_cycle_initial_balance", -1)
             val initialBal = if (nextCycleBal != -1) {
                 wPrefs.edit().putInt("initial_balance", nextCycleBal).remove("next_cycle_initial_balance").apply()

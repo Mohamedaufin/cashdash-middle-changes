@@ -82,7 +82,7 @@ class CashDashApplication : Application(), DefaultLifecycleObserver {
         createNotificationChannel()
         com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("all_users")
         
-        val walletPrefs = getSharedPreferences("WalletPrefs", Context.MODE_PRIVATE)
+        val walletPrefs = WalletStore.get(this)
         walletPrefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "wallet_balance" || key == "initial_balance" || key == "balance_bar_mode" || key == "balance_bar_type") {
                 Finminder.pushUpdate(this)

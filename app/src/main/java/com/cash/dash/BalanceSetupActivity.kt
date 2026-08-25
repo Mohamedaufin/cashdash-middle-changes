@@ -16,7 +16,6 @@ import androidx.appcompat.app.AppCompatActivity
 
 class BalanceSetupActivity : ThemedActivity() {
 
-    private val PREFS = "WalletPrefs"
     private val KEY_BALANCE = "wallet_balance"
 
     private lateinit var tvAmount: TextView
@@ -33,7 +32,7 @@ class BalanceSetupActivity : ThemedActivity() {
         tvReplaceHint = findViewById(R.id.tvReplaceHint)
         val tvCurrentBalance = findViewById<TextView>(R.id.tvCurrentBalance)
 
-        val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val prefs = WalletStore.get(this)
         val currentBal = prefs.getInt(KEY_BALANCE, 0)
         tvCurrentBalance.text = "Current balance: ₹$currentBal"
 
@@ -104,7 +103,7 @@ class BalanceSetupActivity : ThemedActivity() {
             return
         }
 
-        val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val prefs = WalletStore.get(this)
         val oldBalance = prefs.getInt("initial_balance", 0)
         val newBalance = oldBalance + amount
         
@@ -209,7 +208,7 @@ class BalanceSetupActivity : ThemedActivity() {
         
         val amount = currentAmount.toIntOrNull() ?: 0
         if (amount > 0) {
-            val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val prefs = WalletStore.get(this)
             val oldBalance = prefs.getInt(KEY_BALANCE, 0)
             val oldInitial = prefs.getInt("initial_balance", oldBalance)
             
@@ -233,7 +232,7 @@ class BalanceSetupActivity : ThemedActivity() {
             return
         }
 
-        val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val prefs = WalletStore.get(this)
         val oldBalance = prefs.getInt(KEY_BALANCE, 0)
         val oldInitial = prefs.getInt("initial_balance", oldBalance)
         
@@ -274,7 +273,7 @@ class BalanceSetupActivity : ThemedActivity() {
     }
 
     private fun showEditBalanceDialog(tvDisplay: TextView) {
-        val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val prefs = WalletStore.get(this)
         val current = prefs.getInt(KEY_BALANCE, 0)
 
         val dialogView = layoutInflater.inflate(R.layout.dialog_edit_balance, null)
@@ -313,7 +312,7 @@ class BalanceSetupActivity : ThemedActivity() {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val prefs = WalletStore.get(this)
         val isFirstTime = prefs.getInt("initial_balance", -1) <= 0
         
         if (isFirstTime) {
