@@ -2,13 +2,15 @@
 
 | | |
 |---|---|
-| **Date** | 2026-08-25 |
-| **HEAD** | `1986ea5` on `main` |
+| **Date** | 2026-08-26 |
+| **HEAD** | `b8f4268` on `main` |
 | **App version** | 0.5.0 (versionCode 23) — in Play review |
 | **Scope** | Android client, Cloud Functions, Firestore / RTDB / Storage rules, dependencies, build config, repo hygiene |
 | **Supersedes** | `CASHDASH_SECURITY_AUDIT.md` (2026-08-24, 22 findings, at `525a302`) and the earlier 15-finding review. Both are merged here. |
 
-**Status: 24 closed · 1 accepted risk · 3 open · 1 unfixable upstream.**
+**Status: 24 closed · 1 accepted risk · 3 open · 1 unfixable upstream · 1 area newly assessed.**
+
+Reverse-engineering and tamper posture — carried as *"not covered"* by both earlier reviews — was assessed on 2026-08-26 and now has its own section. One actionable item came out of it: `WalletPrefs` is plaintext.
 
 Two audits existed with different numbering, which is a hazard in itself — a finding closed in one and open in the other is easy to lose. This is now the single tracker. Where the two overlapped, the older number is shown in brackets.
 
@@ -135,18 +137,40 @@ Also worth destroying `GEMINI_API_KEY` v1, still ENABLED and superseded.
 
 ---
 
-## Not covered by this audit
+## Reverse-engineering and tamper posture `[old #15]` — assessed 2026-08-26
 
-Carried from the older document's #15, and **not** re-examined here. Reverse-engineering and tamper posture is a coverage gap in both reviews rather than a set of closed findings:
+Previously listed as *"not covered"* in both reviews. Now actually examined against current source. Nothing here exposes another user's data — server-side rules do that work and they hold. This is a **device-scoped** problem: it concerns a user tampering with their own client, and an attacker reading your schema out of the APK.
 
-- No root / emulator / debugger detection — a finance app with UPI flows runs unmodified under Frida on a rooted device
-- `WalletPrefs` and `LocalScanPrefs` (which stores `last_upi`) are plaintext `SharedPreferences`
-- No string encryption — R8 obfuscates identifiers, not string constants
-- `-keep` rules expose the Room/Firestore data model in the DEX
-- No certificate pinning on Firebase SDK traffic
-- `FLAG_SECURE` covers the 5 admin screens only; wallet/history/payment screens are screenshottable — a deliberate product call
+### Verified sound
 
-What is already right: `isMinifyEnabled`, `isShrinkResources`, `allowBackup="false"`, `debuggable` false, `Log.d/v/i/w` stripped in release, encrypted admin permission cache.
+`isMinifyEnabled` + `isShrinkResources` on release with `proguard-android-optimize`; release signing read from gitignored `local.properties` with the keystore outside the repo; `allowBackup="false"`, `fullBackupContent="false"` and 12 explicit extraction excludes; `debuggable` never set; `Log.d/v/i/w` stripped via `-assumenosideeffects`; no hardcoded API keys anywhere in `res/`.
+
+**The admin permission cache is genuinely encrypted** — [AdminManager.kt:65](app/src/main/java/com/cash/dash/AdminManager.kt) builds a `MasterKey` (AES256_GCM) and uses `EncryptedSharedPreferences` with `AES256_SIV` keys / `AES256_GCM` values, and `purgeLegacyPlaintextCache()` clears the old plaintext `admin_perms_cache` on every load. `FLAG_SECURE` is applied through [SecureScreen.kt](app/src/main/java/com/cash/dash/SecureScreen.kt) on all 5 admin screens.
+
+### Residual gaps
+
+| Gap | Assessment |
+|---|---|
+| **`WalletPrefs` stored plaintext** | Balance and financial state in `MODE_PRIVATE` `SharedPreferences` across 6+ call sites. Readable and editable on any rooted device. **The only item here where real user data sits in the clear.** |
+| No root / emulator / debugger detection | Nothing present. A UPI payment app runs unmodified under Frida. |
+| No certificate pinning | No `networkSecurityConfig` declared at all. |
+| No string encryption | R8 obfuscates identifiers, never string constants. |
+| `-keep` exposes the data model | `NotificationEntity`, `TransactionEntity`, `NotificationModel` and `@Room.Entity` kept whole — schema fully readable in the DEX. Required for Room/Firestore reflection, so not removable without breaking them. |
+| Encrypted prefs fall back to plaintext | If the Android keystore is unavailable, `securePrefs()` returns plain `SharedPreferences`. Deliberate and documented — a cache miss is harmless because permissions reload from Firestore — but the local tamper path reopens on those devices. |
+| No standalone integrity check | Play Integrity exists only via App Check, which is not enforced (see B). Effectively zero tamper signal today. |
+
+### Recommendation
+
+1. **Encrypt `WalletPrefs`** — the one worth doing. Reuse the proven `AdminManager` pattern (same `MasterKey`, same soft-fail), plus a one-time migration that reads the old file and rewrites it encrypted. Not yet implemented.
+2. **Root detection — optional.** Trivially bypassed by anyone competent; it raises cost against casual tampering and nothing more. Do it only if you want the signal.
+3. **Certificate pinning — recommended against.** Pinning Firebase SDK traffic is a known operational footgun: Google rotates certificates, and a stale pin bricks the app for every user with no server-side remedy.
+4. **String encryption — now low value.** Its entire justification was the Gemini keys, and none remain in the client.
+
+Two deliberate calls, unchanged and still correct: `FLAG_SECURE` is *not* applied to wallet/history/payment screens, because plenty of users legitimately screenshot their spending — a product decision. And `Log.e` is *not* stripped, since an app can only read its own logcat since Android 4.1, making the leak require ADB or physical access — marginal security value against a real cost to debugging.
+
+### Hygiene
+
+`app/src/main/res/xml/accessibility_service_config.xml` exists but **no accessibility service is declared** in the manifest. Orphaned file — delete it so no future reviewer assumes there is a service to audit.
 
 ---
 
@@ -173,6 +197,7 @@ RTDB remains in the US and cannot be relocated in place; presence writes still c
 3. **App Check → Monitor, then Enforce** (B) once adoption climbs.
 4. **Finish the region migration** after adoption.
 5. **Email verification** (A) — the remaining High, alongside Google Sign-In.
+6. **Encrypt `WalletPrefs`** — reuse the `AdminManager` pattern plus a one-time migration. See the tamper-posture section; the only item where user financial data sits in plaintext on device.
 
 Delete the backup bundle `S:/AndroidStudioProjects/cashdash-backup-20260825-231858.bundle` once satisfied with the history rewrite; it still contains the old APKs and therefore the revoked keys.
 
