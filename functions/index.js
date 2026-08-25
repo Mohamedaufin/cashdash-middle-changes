@@ -348,25 +348,48 @@ exports.rephraseSupportText = onCall({
         : "Rewrite the following notification message in a highly professional, corporate, and encouraging tone suitable for a fintech platform (CashDash). CashDash offers legitimate deals, announcements, and admin communications. CRITICAL: Do not invent or add features like 'cashback', 'rewards', or 'discounts' unless they are explicitly mentioned in the original text. Only return the rewritten text, do not include any other commentary. Keep the {Validity} placeholder exactly as it is if it exists in the original text.\n\nMessage:\n" + text;
 
     try {
-        // The bare fetch here had no timeout and no retry. Gemini returns 503
-        // ("experiencing high demand") intermittently on the free tier, and when it
-        // instead hung, undici eventually raised a Headers Timeout — long after the
-        // caller's 70s callable deadline had passed, so the app showed
-        // DEADLINE_EXCEEDED with nothing actionable. Bound each attempt well inside
-        // the 60s function timeout and retry once, since 503 here is transient.
-        const GEMINI_ATTEMPT_TIMEOUT_MS = 20000;
-        const GEMINI_MAX_ATTEMPTS = 2;
-        const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
+        // The original call hit `gemini-flash-latest` with no timeout and no retry.
+        // Two problems: that alias is the busiest pool on the free tier, so it
+        // returns 503 "experiencing high demand" regularly, and when it hung
+        // instead, undici raised a Headers Timeout long after the caller's 70s
+        // callable deadline — the app just showed DEADLINE_EXCEEDED.
+        //
+        // Rephrasing one short line of admin copy does not need a frontier model, and
+        // this feature is used a handful of times a day, so rather than paying for
+        // priority capacity we walk a chain of free models and take whichever
+        // answers first. Lite models are listed first: they are the least contended
+        // and comfortably good enough for "rewrite this professionally".
+        //
+        // Pinned IDs, not aliases — Google's own guidance, and it keeps a model
+        // swap from silently changing behaviour. A 404 (retired ID) just falls
+        // through to the next entry, so a stale name degrades instead of breaking.
+        const MODEL_CHAIN = [
+            "gemini-2.5-flash-lite",
+            "gemini-3.5-flash-lite",
+            "gemini-2.5-flash",
+            "gemini-flash-latest",
+        ];
+        const ATTEMPT_TIMEOUT_MS = 12000;
+        // Stay inside the 60s function timeout and the client's 70s deadline even
+        // if every model in the chain stalls.
+        const TOTAL_BUDGET_MS = 45000;
+        const startedAt = Date.now();
 
         let resp = null;
         let lastStatus = null;
+        let usedModel = null;
 
-        for (let attempt = 1; attempt <= GEMINI_MAX_ATTEMPTS; attempt++) {
+        for (const model of MODEL_CHAIN) {
+            if (Date.now() - startedAt > TOTAL_BUDGET_MS) {
+                console.error(`Gemini budget exhausted [scope=${scope}] before trying ${model}`);
+                break;
+            }
+
             const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), GEMINI_ATTEMPT_TIMEOUT_MS);
+            const timer = setTimeout(() => controller.abort(), ATTEMPT_TIMEOUT_MS);
             try {
                 resp = await fetch(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${encodeURIComponent(REPHRASE_SCOPES[scope]())}`,
+                    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(REPHRASE_SCOPES[scope]())}`,
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -375,35 +398,39 @@ exports.rephraseSupportText = onCall({
                     }
                 );
             } catch (fetchErr) {
-                // Abort or network failure. Treat like a retryable upstream fault.
-                console.error(`Gemini fetch failed [scope=${scope}, attempt=${attempt}]:`, fetchErr.message);
+                // Abort or network failure — treat as this model being unusable.
+                console.error(`Gemini fetch failed [scope=${scope}, model=${model}]:`, fetchErr.message);
                 resp = null;
             } finally {
                 clearTimeout(timer);
             }
 
-            if (resp && resp.ok) break;
+            if (resp && resp.ok) {
+                usedModel = model;
+                break;
+            }
 
             lastStatus = resp ? resp.status : "timeout";
             if (resp) {
-                console.error(`Gemini API error [scope=${scope}, attempt=${attempt}]:`, resp.status, await resp.text());
-                if (!RETRYABLE_STATUS.has(resp.status)) break;
+                console.warn(`Gemini unavailable [scope=${scope}, model=${model}]:`, resp.status, await resp.text());
+                // 400/403 mean the key or request is wrong, not the model — no
+                // other model in the chain will do better, so stop here.
+                if (resp.status === 400 || resp.status === 403) break;
             }
-
-            if (attempt < GEMINI_MAX_ATTEMPTS) {
-                await new Promise((r) => setTimeout(r, 1000));
-                resp = null;
-            }
+            resp = null;
         }
 
         if (!resp || !resp.ok) {
-            // "unavailable" rather than "internal": this is an upstream capacity
-            // problem the admin can simply retry, and the client maps it to a
-            // clearer message than a generic failure.
+            // "unavailable" rather than "internal": every free model was busy, which
+            // the admin can simply retry. The client maps this to a clear message.
             throw new HttpsError(
                 "unavailable",
-                `The rephrase model is busy right now (${scope}, ${lastStatus}). Please try again in a moment.`
+                `All rephrase models are busy right now (${scope}, last status ${lastStatus}). Please try again in a moment.`
             );
+        }
+
+        if (usedModel !== MODEL_CHAIN[0]) {
+            console.log(`Rephrase served by fallback model ${usedModel} [scope=${scope}]`);
         }
 
         const data = await resp.json();
