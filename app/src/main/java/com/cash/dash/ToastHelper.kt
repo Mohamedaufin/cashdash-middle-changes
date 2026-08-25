@@ -26,7 +26,27 @@ object ToastHelper {
         }, durationMs)
     }
 
+    /** The Activity behind a Context, unwrapping ContextWrappers (themed contexts). */
+    private fun activityOf(context: Context): android.app.Activity? {
+        var current: Context? = context
+        while (current is android.content.ContextWrapper) {
+            if (current is android.app.Activity) return current
+            current = current.baseContext
+        }
+        return null
+    }
+
     fun showErrorDialog(context: Context, title: String, message: String) {
+        // Callers reach this from coroutines that may resume after their host
+        // Activity is gone — showing a dialog on a dead window throws
+        // BadTokenException ("token ... is not valid; is your activity running?")
+        // and takes the whole app down. There is no window to show it in, so drop it.
+        val activity = activityOf(context)
+        if (activity != null && (activity.isFinishing || activity.isDestroyed)) {
+            android.util.Log.w("ToastHelper", "Dropped error dialog for a dead activity: $title — $message")
+            return
+        }
+
         val dialog = androidx.appcompat.app.AlertDialog.Builder(context)
             .setTitle(title)
             .setMessage(message)

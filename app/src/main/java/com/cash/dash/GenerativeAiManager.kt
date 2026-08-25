@@ -111,6 +111,12 @@ object GenerativeAiManager {
             @Suppress("UNCHECKED_CAST")
             val data = result.getData() as? Map<String, Any?>
             return@withContext (data?.get("text") as? String)?.trim().takeUnless { it.isNullOrEmpty() } ?: text
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // Must propagate untouched. Tasks.await below is a blocking call, so when
+            // the caller's lifecycleScope is cancelled (activity destroyed) the
+            // cancellation surfaces here — repackaging it as a plain Exception made
+            // call sites treat a dead screen as an API error and pop a dialog on it.
+            throw e
         } catch (e: Exception) {
             val cause = e.cause ?: e
             val msg = when {
@@ -126,6 +132,12 @@ object GenerativeAiManager {
                 cause is com.google.firebase.functions.FirebaseFunctionsException &&
                     cause.code == com.google.firebase.functions.FirebaseFunctionsException.Code.UNAUTHENTICATED ->
                     "Please sign in again."
+                cause is com.google.firebase.functions.FirebaseFunctionsException &&
+                    cause.code == com.google.firebase.functions.FirebaseFunctionsException.Code.UNAVAILABLE ->
+                    "The rephrase model is busy right now. Please try again in a moment."
+                cause is com.google.firebase.functions.FirebaseFunctionsException &&
+                    cause.code == com.google.firebase.functions.FirebaseFunctionsException.Code.DEADLINE_EXCEEDED ->
+                    "Rephrase took too long to respond. Please try again."
                 else -> cause.message ?: "Rephrase failed."
             }
             throw Exception(msg)

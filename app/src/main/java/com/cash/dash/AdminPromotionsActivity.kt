@@ -307,6 +307,8 @@ class AdminPromotionsActivity : ThemedActivity() {
                     titleRephraseState.saveState(originalText)
                     edtAnnouncementTitle.setText(result)
                     titleRephraseState.saveState(result)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     ToastHelper.showErrorDialog(this@AdminPromotionsActivity, "AI Error", e.message ?: "Unknown Error")
                 }
@@ -330,6 +332,8 @@ class AdminPromotionsActivity : ThemedActivity() {
                     bodyRephraseState.saveState(originalText)
                     edtAnnouncementBody.setText(result)
                     bodyRephraseState.saveState(result)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     ToastHelper.showErrorDialog(this@AdminPromotionsActivity, "AI Error", e.message ?: "Unknown Error")
                 }
