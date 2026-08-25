@@ -175,6 +175,9 @@ const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 // ─────────────────────────────────────────────
 exports.onSupportQuery = onDocumentWritten({
     document: "users/{userEmail}/notifications/{notificationId}",
+    // Co-located with Firestore (asia-south1). Previously had no region declared,
+    // so it defaulted to us-central1 and every trigger event crossed the Pacific.
+    region: "asia-south1",
     secrets: [EMAIL_PASS_SECRET, REPLY_SIGNING_SECRET],
     memory: "256MiB",
     maxInstances: 10
@@ -1038,7 +1041,7 @@ exports.adminReply = onRequest({ cors: false, region: ["us-central1", "asia-sout
 // ─────────────────────────────────────────────
 exports.onGlobalPush = onDocumentWritten({
     document: "global_pushes/{pushId}",
-    region: "us-central1",
+    region: "asia-south1",
     memory: "256MiB",
     maxInstances: 5
 }, async (event) => {
@@ -1086,7 +1089,7 @@ exports.onGlobalPush = onDocumentWritten({
 // ─────────────────────────────────────────────
 exports.onUserPush = onDocumentWritten({
     document: "user_pushes/{pushId}",
-    region: "us-central1",
+    region: "asia-south1",
     memory: "256MiB",
     maxInstances: 10
 }, async (event) => {
