@@ -20,10 +20,16 @@ const EMAIL_PASS_SECRET = defineSecret("GMAIL_PASS"); // Holds the Zoho App Pass
 const REPLY_SIGNING_SECRET = defineSecret("REPLY_SIGNING_SECRET");
 
 // Gemini keys, moved off the Android client. Two of them, mirroring the split the
-// app used to have hardcoded, so the two areas draw on separate billing quotas:
+// app used to have hardcoded:
 //   GEMINI_API_KEY       -> announcements + push notifications (AdminMessagingActivity)
 //   GEMINI_API_KEY_ADMIN -> promotions + admin access (AdminPromotions/ManageAdminAccess)
 // Set with: firebase functions:secrets:set <NAME>
+//
+// NOTE: these do NOT give the two areas separate quotas, despite what this comment
+// used to claim. Gemini rate limits are enforced per Google Cloud project, not per
+// API key, and both keys currently live in the same project. The split is useful for
+// attribution and for revoking one area independently — not for isolation. Putting
+// the second key in its own project is the only way to actually separate the pools.
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 const GEMINI_API_KEY_ADMIN = defineSecret("GEMINI_API_KEY_ADMIN");
 
@@ -345,8 +351,12 @@ exports.rephraseSupportText = onCall({
         ? String(request.data.scope)
         : "messaging";
 
-    // Limited per admin PER SCOPE, since the two scopes draw on separate quotas.
-    await enforceRateLimit(`rephrase_${scope}_${callerEmail}`, 20, 60 * 1000);
+    // Limited per admin, NOT per scope. This used to be keyed per scope on the
+    // premise that the two scopes had separate quotas — they do not (see the note on
+    // the key definitions above), so that keying handed each admin 20/min on
+    // messaging plus another 20/min on admin: 40/min against one shared pool, double
+    // the intended ceiling. One bucket per admin makes the limit mean what it says.
+    await enforceRateLimit(`rephrase_${callerEmail}`, 20, 60 * 1000);
 
     const text = String((request.data && request.data.text) || "").trim();
     const isTitle = Boolean(request.data && request.data.isTitle);

@@ -18,10 +18,15 @@ import android.view.View
 object GenerativeAiManager {
 
     /**
-     * Which Gemini key the server should bill. The two scopes map to separate keys
-     * so announcements/notifications and promotions/admin-access draw on separate
-     * quotas — the same split the app used to have hardcoded. The key values
-     * themselves stay in Firebase secrets; the client only names a scope.
+     * Which Gemini key the server should bill. The two scopes map to separate keys —
+     * the same split the app used to have hardcoded — which is useful for attribution
+     * and for revoking one area independently.
+     *
+     * It does NOT give them separate quotas: Gemini rate limits are per Google Cloud
+     * project, not per key, and both keys sit in the same project. The server's own
+     * rate limit is therefore one bucket per admin, not one per scope.
+     *
+     * The key values stay in Firebase secrets; the client only names a scope.
      */
     object Scope {
         /** AdminMessagingActivity — announcements and push notifications. */
