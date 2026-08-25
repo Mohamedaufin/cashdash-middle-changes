@@ -24,7 +24,7 @@ object SupportReplyLink {
         )
 
         com.google.firebase.functions.FirebaseFunctions
-            .getInstance("us-central1")
+            .getInstance("asia-south1")
             .getHttpsCallable("getSupportReplyLink")
             .call(payload)
             .addOnSuccessListener { result ->

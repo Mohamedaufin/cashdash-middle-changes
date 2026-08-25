@@ -296,8 +296,12 @@ ${replyUrl}
 // that same grant: without the check, an admin holding only (say) viewLastSeen
 // could pull any user's support conversation and answer as CashDash Support.
 // ─────────────────────────────────────────────
+// MIGRATION (asia-south1): deployed to both regions during the transition.
+// Old app builds have getInstance("us-central1") compiled in, so the Iowa copy
+// has to stay alive until Play adoption shows those versions are gone. See
+// MIGRATION_ASIA_SOUTH1.md step 1.
 exports.getSupportReplyLink = onCall({
-    region: "us-central1",
+    region: ["us-central1", "asia-south1"],
     secrets: [REPLY_SIGNING_SECRET],
     memory: "256MiB",
     maxInstances: 5
@@ -320,8 +324,9 @@ exports.getSupportReplyLink = onCall({
 // FUNCTION 3: rephraseSupportText (callable, admin-only)
 // Holds the Gemini keys server-side. Used to be hardcoded in the APK.
 // ─────────────────────────────────────────────
+// MIGRATION (asia-south1): both regions during transition — see getSupportReplyLink.
 exports.rephraseSupportText = onCall({
-    region: "us-central1",
+    region: ["us-central1", "asia-south1"],
     secrets: [GEMINI_API_KEY, GEMINI_API_KEY_ADMIN],
     memory: "256MiB",
     maxInstances: 5,
@@ -470,7 +475,11 @@ exports.rephraseSupportText = onCall({
 // the request to one notification and expires. Previously this endpoint had no
 // access control at all.
 // ─────────────────────────────────────────────
-exports.adminReply = onRequest({ cors: false, region: "us-central1", secrets: [EMAIL_PASS_SECRET, REPLY_SIGNING_SECRET], memory: "256MiB", maxInstances: 5 }, async (req, res) => {
+// MIGRATION (asia-south1): both regions. buildReplyUrl still emits the us-central1
+// URL deliberately — it is baked into already-sent emails with a 7-day TTL, and the
+// app's WebViewActivity allowlist has to learn the new host before we switch it.
+// See MIGRATION_ASIA_SOUTH1.md step 2.
+exports.adminReply = onRequest({ cors: false, region: ["us-central1", "asia-south1"], secrets: [EMAIL_PASS_SECRET, REPLY_SIGNING_SECRET], memory: "256MiB", maxInstances: 5 }, async (req, res) => {
     const Busboy = require("busboy");
     const path = require("path");
     const os = require("os");

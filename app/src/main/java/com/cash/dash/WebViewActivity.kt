@@ -30,7 +30,12 @@ class WebViewActivity : ThemedActivity() {
         private val ALLOWED_HOSTS = setOf(
             "cashdash.co.in",
             "www.cashdash.co.in",
-            "adminreply-khhfw7mtba-uc.a.run.app"
+            // adminReply runs in both regions during the asia-south1 migration.
+            // The us-central1 host must stay listed until every reply link emitted
+            // before the switch has passed its 7-day TTL, or older emailed links
+            // stop opening in-app. See MIGRATION_ASIA_SOUTH1.md step 2.
+            "adminreply-khhfw7mtba-uc.a.run.app",
+            "asia-south1-cashdash-8cd8b.cloudfunctions.net"
         )
 
         fun isAllowed(url: String?): Boolean {

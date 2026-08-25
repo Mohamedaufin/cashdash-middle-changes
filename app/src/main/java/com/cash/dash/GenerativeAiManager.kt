@@ -103,8 +103,11 @@ object GenerativeAiManager {
             // is itself capped at 30s, so anything past 30s here means the call is
             // never coming back — fail fast rather than leaving the admin staring
             // at a spinner.
+            // asia-south1: co-located with Firestore, so the rate-limit transaction
+            // this function runs no longer crosses the Pacific. The us-central1 copy
+            // stays deployed for older installs still pointing there.
             val callable = com.google.firebase.functions.FirebaseFunctions
-                .getInstance("us-central1")
+                .getInstance("asia-south1")
                 .getHttpsCallable("rephraseSupportText")
             callable.setTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
 

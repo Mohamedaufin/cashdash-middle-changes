@@ -4,8 +4,41 @@
 |---|---|
 | **Goal** | Move the backend from `us-central1` (Iowa) to `asia-south1` (Mumbai), next to Firestore and the users |
 | **Written** | 2026-08-25 |
-| **Status** | Plan only — nothing here has been executed |
+| **Status** | **Steps 0–2 executed 2026-08-25.** Step 4 (Firestore triggers) not started — needs a chosen quiet hour. |
 | **Risk** | Medium. Three Firestore triggers require a delete-then-create window; everything else can run in parallel with zero downtime. |
+
+## Progress
+
+| Step | State |
+|---|---|
+| 0 — settle unknowns | Done. `onAuthUserDeleted` confirmed **gcfv1** in `us-east1`; decision below is to leave it. Storage bucket location still unverified (no CLI access) — informational only, does not block. |
+| 1 — callables to both regions | **Done.** `rephraseSupportText` and `getSupportReplyLink` now deployed in `us-central1` *and* `asia-south1`. Client switched to `asia-south1`. |
+| 2 — `adminReply` to both regions | **Done.** New URL: `https://asia-south1-cashdash-8cd8b.cloudfunctions.net/adminReply`. Added to `WebViewActivity.ALLOWED_HOSTS`. `buildReplyUrl` still emits the us-central1 URL on purpose — see below. |
+| 3 — verify | Both regions confirmed responding: asia-south1 `adminReply` → 403 on unsigned GET, asia-south1 `rephraseSupportText` → 401 unauthenticated (exists, not 404). us-central1 copies still alive. |
+| 4 — Firestore triggers | **Not started.** Has a downtime window. |
+| 5 — cleanup | Blocked on step 4 and on Play adoption. |
+
+### Decisions taken during execution
+
+- **`onAuthUserDeleted` stays in `us-east1`.** It is a v1 auth trigger, fires once per account
+  deletion, and nothing waits on its latency. Moving a v1 auth trigger risks breaking
+  deletion cleanup for no measurable gain.
+- **`buildReplyUrl` deliberately still emits the us-central1 URL.** Switching it before a
+  client build ships would hand admins on the current build a link whose host is not in
+  their `ALLOWED_HOSTS`, and `WebViewActivity` would silently load the default page
+  instead of the reply form. Switch it only after the new build has rolled out.
+- **Artifact cleanup policy** set for `asia-south1` (deletes container images older than
+  1 day), matching the existing behaviour in us-central1.
+
+### Next actions, in order
+
+1. Ship a client build. It points callables at `asia-south1` and allowlists the new
+   `adminReply` host. Until it rolls out, existing installs keep using us-central1 —
+   which still works, because both regions are live.
+2. Once Play adoption shows old versions are gone, switch `buildReplyUrl` to the
+   asia-south1 URL, wait 7 days for outstanding links to expire, then drop
+   `us-central1` from the three functions' region arrays and redeploy.
+3. Do step 4 (triggers) at a quiet hour — see the warning in that section.
 
 ---
 
