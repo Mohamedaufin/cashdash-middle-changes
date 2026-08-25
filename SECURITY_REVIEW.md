@@ -6,7 +6,8 @@
 | **Commit reviewed** | `525a302` — *Restore security hardening lost in rebase* |
 | **Date** | 2026-08-24 |
 | **Scope** | Android client (`app/src/main`), Firestore / Realtime Database / Cloud Storage rules, Cloud Functions backend (`functions/index.js`), build configuration, repository hygiene |
-| **Method** | Manual source review. No dynamic testing, no live rules simulation, no dependency CVE scan, no penetration testing against the deployed project. |
+| **Method** | Manual source review. No dynamic testing, no live rules simulation, no penetration testing against the deployed project. A dependency scan was added later, out of the original scope — see *Dependency advisories*. |
+| **Last updated** | 2026-08-25 — statuses re-verified against the deployed project. |
 
 ---
 
@@ -20,11 +21,11 @@ Three issues are High: a live API key still shipping in the APK, an identity mod
 |---|---|---|---|---|
 | 1 | **High** | Live Gemini API key still ships in the APK; a second key is in git history and in published builds | Android build | **Resolved** — keys revoked, verified dead 2026-08-24 |
 | 2 | **High** | All authorization keys off an unverified email address | Auth / rules | Open — needs a migration decision |
-| 3 | **High** | `getSupportReplyLink` ignores the `replyToQueries` permission | Cloud Functions | Fixed (deploy pending) |
-| 4 | Medium | Any admin can force-update-lock every user out of the app | Firestore rules | Fixed (deploy pending) |
-| 5 | Medium | `admins` self-escalation block is bypassable via `fullAccess` | Firestore rules | Fixed (deploy pending) |
-| 6 | Medium | `user_pushes` is readable by every signed-in user (email harvesting) | Firestore rules | Fixed (deploy pending) |
-| 7 | Medium | Admin reply attachments are made permanently world-public | Cloud Functions / Storage | New uploads fixed — **existing objects still need a manual revoke** |
+| 3 | **High** | `getSupportReplyLink` ignores the `replyToQueries` permission | Cloud Functions | **Resolved** — deployed 2026-08-24 |
+| 4 | Medium | Any admin can force-update-lock every user out of the app | Firestore rules | **Resolved** — deployed 2026-08-24 |
+| 5 | Medium | `admins` self-escalation block is bypassable via `fullAccess` | Firestore rules | **Resolved** — deployed 2026-08-24 |
+| 6 | Medium | `user_pushes` is readable by every signed-in user (email harvesting) | Firestore rules | **Resolved** — deployed 2026-08-24 |
+| 7 | Medium | Admin reply attachments are made permanently world-public | Cloud Functions / Storage | **Resolved** — new uploads use private tokens; 83 legacy public objects revoked 2026-08-25, verified `403` |
 | 8 | Medium | "Delete Account" silently fails to delete cloud data | Client + rules + Functions | **Fixed** — ships in next app release |
 | 9 | Medium | App Check is not enforced on the callable functions | Cloud Functions | Open — needs a rollout decision |
 | 10 | Low | Exported widget receiver lets any app toggle the tracking service | Android manifest | **Fixed** — ships in next app release |
@@ -34,7 +35,7 @@ Three issues are High: a live API key still shipping in the APK, an identity mod
 | 14 | Low | Release APKs and scratch files committed to git; keystore in working tree | Repository | Open — needs owner action |
 | 15 | Medium | `viewAdminLogs` and `viewLastSeen` grants are not enforced server-side | Firestore + RTDB rules | **`admin_logs` fix deployed and verified live**; presence gap documented, not fixable without a larger change |
 
-**"Deploy pending"** means the change is in the working tree and verified locally (Kotlin compiles, `node --check` passes, rules load in the Firestore emulator) but is not live until `firebase deploy` runs and a new build ships.
+**Status as of 2026-08-25.** Every server-side fix (rules, Storage rules, Cloud Functions) is deployed and live — verified against the deployed function source, which the Firebase CLI reports as matching the current tree. The four findings marked *"ships in next app release"* (8, 10, 12, 13) are client-side: they are committed and compile, but **no release build has gone out yet**, so they protect nobody until an APK ships. Treat those as fixed-in-repo, not fixed-in-production.
 
 ---
 
@@ -155,6 +156,15 @@ The client does not appear to read this collection at all (delivery happens via 
 
 **Remediation** — Drop `makePublic()` and issue a time-limited signed URL (`getSignedUrl` with an expiry), or store the object path and resolve it through an authenticated download. Audit the bucket for objects already made public and revoke `allUsers` on them. Note that user-side uploads from the client use `getDownloadUrl()` tokens, which are unguessable but also permanent — worth revisiting on the same pass.
 
+**Resolution (2026-08-25)** — Both halves are closed.
+
+- *New uploads*: `makePublic()` replaced with a random download token, so objects stay private. Deployed 2026-08-24.
+- *Legacy objects*: the bucket was swept — **85 scanned, 83 `allUsers` grants revoked, 2 skipped** (already on the new token scheme), 0 errors. Verified by fetching a revoked URL directly and receiving `403`, rather than trusting the API response.
+
+The sweep ran from a temporary, single-purpose Cloud Function authenticated by a one-off generated secret; the function, the secret, and the scratch code were all destroyed afterwards, leaving no residual attack surface and no trace in git history.
+
+**Known consequence** — those 83 images are referenced by their old public URLs inside existing Firestore support threads, so they now render broken in the admin dashboard, the `adminReply` page, and in-app notification history. Conversation text is untouched; only images in already-closed threads are affected. This is the fix behaving correctly, not a regression.
+
 ---
 
 ### 8. "Delete Account" silently fails to delete cloud data
@@ -269,10 +279,22 @@ Verification: `./gradlew :app:compileDebugKotlin` succeeds, `node --check functi
 
 1. ~~Rotate both Gemini API keys~~ — done and verified 2026-08-24 (see finding 1).
 2. ~~Deploy functions~~ — done 2026-08-24 12:53 UTC. ~~Deploy rules~~ — done and verified: the finding-15 `admin_logs` fix is live, confirmed by an independent redeploy returning zero compiler warnings and `already up to date`. (An earlier redeploy printed the pre-fix warnings again — that was a stale echo from the Firebase CLI's local compile-check cache, not a sign the fix hadn't landed; worth knowing if it happens again after a future rules edit — re-running once more clears it.)
-3. **Ship the app update.** Findings 8, 10, 12, 13 and the `strings.xml` cleanup are code-complete and marked Fixed on the strength of the planned release — confirm this after the build goes out.
-4. **Revoke `allUsers` on existing `support_attachments` objects.** Not resolved by the app update — this is a one-time Storage console action. The code fix only covers uploads made after 2026-08-24 12:53 UTC; everything before that stays world-readable until revoked.
+3. **Ship the app update — still outstanding as of 2026-08-25.** Findings 8, 10, 12, 13 and the `strings.xml` cleanup are code-complete and marked Fixed on the strength of the planned release. No release build has gone out yet, so none of them protect users today. This is now the single largest gap between the report and reality; confirm here once the build ships.
+4. ~~Revoke `allUsers` on existing `support_attachments` objects~~ — done 2026-08-25: 83 of 85 objects revoked, verified `403` on a live fetch. See finding 7's resolution note, including the expected broken-image side effect in old support threads.
 5. **App Check is failing, not merely unenforced.** Function logs show `{"verifications":{"app":"INVALID"}}` followed by *"Allowing request with invalid AppCheck token because enforcement is disabled"*. Fix the attestation setup (app SHA-256 registered in Firebase, or a debug token for debug builds) **before** enabling enforcement, or admin calls will start failing. See finding 9.
 6. **Findings 2, 11, 14** are left open deliberately — each needs a decision rather than an edit. See those sections.
+7. **`nodemailer` 8.0.11 — GHSA-p6gq-j5cr-w38f (HIGH), open.** The `raw` option bypasses `disableFileAccess` / `disableUrlAccess`, permitting arbitrary file read and SSRF. **Not exploitable as the code stands**: `sendMail` is only ever called with fixed `from` / `to` / `subject` / `html` fields, never `raw`. The fix is a semver-major bump to 9.x in the support-email path, deliberately not applied without a test send to confirm delivery still works. Decide and either bump or record the acceptance.
+
+### Dependency advisories (added 2026-08-25, outside the original scope)
+
+The original review explicitly did **not** include a dependency scan. One was run afterwards: `npm audit` on production dependencies reported 13 issues. The non-breaking fixes were applied in commit `7334813` and are live:
+
+| Package | Was → Now | Severity | Reachable? |
+|---|---|---|---|
+| `websocket-driver` | 0.7.4 → 0.7.5 | **Critical** | No — nothing here serves websockets |
+| `form-data` | 2.5.5 → 2.5.6 | High | No — multipart is parsed with busboy, not built with form-data |
+
+Both are transitive, via `firebase-admin` and the google-cloud storage chain. Hygiene rather than an active hole. `nodemailer` is the one advisory left open — see item 7 above.
 
 ## Suggested order of work
 
