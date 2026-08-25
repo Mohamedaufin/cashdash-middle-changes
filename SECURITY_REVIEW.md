@@ -29,7 +29,7 @@ Three issues are High: a live API key still shipping in the APK, an identity mod
 | 8 | Medium | "Delete Account" silently fails to delete cloud data | Client + rules + Functions | **Fixed** — ships in next app release |
 | 9 | Medium | App Check is not enforced on the callable functions | Cloud Functions | Open — needs a rollout decision |
 | 10 | Low | Exported widget receiver lets any app toggle the tracking service | Android manifest | **Fixed** — ships in next app release |
-| 11 | Low | Push notifications can carry arbitrary outbound links | Android client | Open — product decision |
+| 11 | Low | Push notifications can carry arbitrary outbound links | Android client | **Accepted risk** 2026-08-25 — see revisit condition below |
 | 12 | Low | Camera attachments written to external cache storage | Android client | **Fixed** — ships in next app release |
 | 13 | Low | Login lockout is client-side and in-memory only | Android client | **Fixed** (8-char registration minimum) — ships in next app release |
 | 14 | Low | Release APKs and scratch files committed to git; keystore in working tree | Repository | **Keystore resolved** 2026-08-25 — moved outside the repo, path via `KEYSTORE_FILE` in local.properties. Old APKs still in git history (see below) |
@@ -229,6 +229,25 @@ Next steps, in order:
 
 ### 11. Push notifications can carry arbitrary outbound links
 [`app/src/main/java/com/cash/dash/MyFirebaseMessagingService.kt:58`](app/src/main/java/com/cash/dash/MyFirebaseMessagingService.kt), [`app/src/main/java/com/cash/dash/NotificationActionReceiver.kt:34`](app/src/main/java/com/cash/dash/NotificationActionReceiver.kt) — `triggerUrl` is only prefix-checked for `http(s)` before being fired as an `ACTION_VIEW`. The `WebViewActivity` host allowlist does not apply on this path. Any admin with a broadcast permission can push a phishing link, with CashDash branding, to the entire user base. Consider constraining destinations to app-owned domains or showing the target host in the notification.
+
+**Accepted as a risk, 2026-08-25.** The only admins are the two hardcoded super
+admins, who trust each other, so there is no untrusted party in the threat model and
+no fix was applied. `triggerUrl` is still only prefix-checked and still opens in the
+system browser, bypassing `WebViewActivity`'s host allowlist.
+
+**Revisit if any of these become true**, because the accepted premise stops holding:
+
+- A third admin is added. The app already ships an allocation system
+  (`allocateAdmins`, `admin_requests`, `ManageAdminAccessActivity`), so this is a
+  supported operation rather than a hypothetical — and finding 5 showed how a
+  delegate can widen their own grants.
+- An admin account is compromised. The blast radius here is a branded push to the
+  entire user base with an invisible destination.
+- The app moves to a wider audience where a phishing push carries more weight.
+
+The fix, if revisited, is small and client-side: reuse `WebViewActivity.ALLOWED_HOSTS`
+for silent opening and show the destination host for anything else — see options A–C
+in the review discussion.
 
 ### 12. Camera attachments written to external cache storage
 [`app/src/main/java/com/cash/dash/ContactSupportActivity.kt:60`](app/src/main/java/com/cash/dash/ContactSupportActivity.kt), [`app/src/main/java/com/cash/dash/HelpActivity.kt:83`](app/src/main/java/com/cash/dash/HelpActivity.kt), [`app/src/main/java/com/cash/dash/NotificationActivity.kt:85`](app/src/main/java/com/cash/dash/NotificationActivity.kt) — support attachments captured from the camera are written to `externalCacheDir` and referenced via `Uri.fromFile`. On API ≤ 28 (minSdk is 26) any app holding `READ_EXTERNAL_STORAGE` can read them. Use `cacheDir` with a FileProvider.
