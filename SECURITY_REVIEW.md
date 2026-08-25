@@ -32,8 +32,8 @@ Three issues are High: a live API key still shipping in the APK, an identity mod
 | 11 | Low | Push notifications can carry arbitrary outbound links | Android client | Open — product decision |
 | 12 | Low | Camera attachments written to external cache storage | Android client | **Fixed** — ships in next app release |
 | 13 | Low | Login lockout is client-side and in-memory only | Android client | **Fixed** (8-char registration minimum) — ships in next app release |
-| 14 | Low | Release APKs and scratch files committed to git; keystore in working tree | Repository | Open — needs owner action |
-| 15 | Medium | `viewAdminLogs` and `viewLastSeen` grants are not enforced server-side | Firestore + RTDB rules | **`admin_logs` fix deployed and verified live**; presence gap documented, not fixable without a larger change |
+| 14 | Low | Release APKs and scratch files committed to git; keystore in working tree | Repository | **Keystore resolved** 2026-08-25 — moved outside the repo, path via `KEYSTORE_FILE` in local.properties. Old APKs still in git history (see below) |
+| 15 | Medium | `viewAdminLogs` and `viewLastSeen` grants are not enforced server-side | Firestore + RTDB rules | **Resolved** 2026-08-25 — `admin_logs` deployed earlier; `viewLastSeen` now enforced via the `mirrorAdminToRtdb` function and updated RTDB rules |
 
 **Status as of 2026-08-25.** Every server-side fix (rules, Storage rules, Cloud Functions) is deployed and live — verified against the deployed function source, which the Firebase CLI reports as matching the current tree. The four findings marked *"ships in next app release"* (8, 10, 12, 13) are client-side: they are committed and compile, but **no release build has gone out yet**, so they protect nobody until an APK ships. Treat those as fixed-in-repo, not fixed-in-production.
 
