@@ -30,7 +30,14 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("../keydash.jks")
+            // The keystore path comes from local.properties (KEYSTORE_FILE), which is
+            // gitignored, so the release signing key can live outside the repository.
+            // Keeping it in the repo root meant a single `git add -f`, or zipping the
+            // project folder, would leak the key that signs every release.
+            // Falls back to the old in-repo path so a checkout without the property set
+            // still builds rather than failing confusingly.
+            val keystorePath = localProperties.getProperty("KEYSTORE_FILE")
+            storeFile = if (!keystorePath.isNullOrBlank()) file(keystorePath) else file("../keydash.jks")
             storePassword = localProperties.getProperty("KEYSTORE_PASSWORD", "")
             keyAlias = localProperties.getProperty("KEY_ALIAS", "")
             keyPassword = localProperties.getProperty("KEY_PASSWORD", "")
