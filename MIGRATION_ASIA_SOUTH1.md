@@ -15,8 +15,23 @@
 | 1 — callables to both regions | **Done.** `rephraseSupportText` and `getSupportReplyLink` now deployed in `us-central1` *and* `asia-south1`. Client switched to `asia-south1`. |
 | 2 — `adminReply` to both regions | **Done.** New URL: `https://asia-south1-cashdash-8cd8b.cloudfunctions.net/adminReply`. Added to `WebViewActivity.ALLOWED_HOSTS`. `buildReplyUrl` still emits the us-central1 URL on purpose — see below. |
 | 3 — verify | Both regions confirmed responding: asia-south1 `adminReply` → 403 on unsigned GET, asia-south1 `rephraseSupportText` → 401 unauthenticated (exists, not 404). us-central1 copies still alive. |
-| 4 — Firestore triggers | **Not started.** Has a downtime window. |
-| 5 — cleanup | Blocked on step 4 and on Play adoption. |
+| 4 — Firestore triggers | **Done 2026-08-25.** Deleted from us-central1, recreated in `asia-south1`. Verified each exists in exactly one region, so no duplicate-fire path. `onSupportQuery` previously declared no region and defaulted to us-central1; now explicit. |
+| 5 — cleanup | Remaining. Blocked on Play adoption — see next actions. |
+
+### Post-migration verification worth running once
+
+The trigger move had a delete-then-create gap. Confirm normal operation:
+
+1. File a support query from the app → exactly **one** email should arrive at
+   `support@cashdash.co.in`, and the thread should appear in the admin inbox.
+2. Send a test push to a single user → it should arrive exactly **once**.
+3. `firebase functions:log --only onSupportQuery --project cashdash-8cd8b` should show
+   the invocation running in asia-south1 with no errors.
+
+If a support query was filed during the gap it will have `needs_admin_email: true` still
+set and no email was sent. Firestore does not replay missed triggers; any later write to
+that document will fire the trigger and the flag will still be true, so it recovers on
+the next message in that thread.
 
 ### Decisions taken during execution
 
