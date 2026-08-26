@@ -57,12 +57,6 @@
             android:name="com.google.mlkit.vision.dependencies"
             android:value="barcode" />
 
-        <!-- 🚀 Launcher Activity -->
-        <activity android:configChanges="uiMode"
-            android:name=".EditAdminPermissionsActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
-
         <activity android:configChanges="uiMode"
             android:name=".ForceUpdateActivity"
             android:exported="false"

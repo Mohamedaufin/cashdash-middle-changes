@@ -833,6 +833,11 @@ class ManageAdminAccessActivity : ThemedActivity() {
         container.addView(div)
     }
 
+    // Was: build an Intent full of putExtras and startActivity(EditAdminPermissionsActivity).
+    // That activity rendered the controls and then wrote nothing at all -- adding an admin,
+    // editing grants, approving a request and revoking access were all silent no-ops, with
+    // revoke reporting success while every grant stayed in place. It now opens the same
+    // bottom sheet AdminActivity uses, which is the code that actually performs the writes.
     private fun launchEditPermissionsActivity(
         email: String,
         name: String,
@@ -840,27 +845,9 @@ class ManageAdminAccessActivity : ThemedActivity() {
         isNewAdmin: Boolean = false,
         isReviewingRequest: Boolean = false,
         isExtensionRequest: Boolean = false
-    ) {
-        val intent = android.content.Intent(this, EditAdminPermissionsActivity::class.java).apply {
-            putExtra("email", email)
-            putExtra("name", name)
-            putExtra("isNewAdmin", isNewAdmin)
-            putExtra("isReviewingRequest", isReviewingRequest)
-            putExtra("isExtensionRequest", isExtensionRequest)
-            putExtra("isFixedOwner", perms.isFixedOwner)
-            putExtra("isPromotedOwner", perms.isPromotedOwner)
-            putExtra("fullAccess", perms.fullAccess)
-            putExtra("sendAnnouncements", perms.sendAnnouncements)
-            putExtra("sendPromotions", perms.sendPromotions)
-            putExtra("sendNotifications", perms.sendNotifications)
-            putExtra("viewLastSeen", perms.viewLastSeen)
-            putExtra("viewAdminLogs", perms.viewAdminLogs)
-            putExtra("replyToQueries", perms.replyToQueries)
-            putExtra("allocateAdmins", perms.allocateAdmins)
-            putExtra("validUntil", perms.validUntil)
-        }
-        startActivity(intent)
-    }
+    ) = AdminPermissionsSheet.show(
+        this, email, name, perms, isNewAdmin, isReviewingRequest, isExtensionRequest
+    )
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)

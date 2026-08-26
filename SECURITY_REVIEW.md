@@ -8,7 +8,7 @@
 | **Scope** | Android client, Cloud Functions, Firestore / RTDB / Storage rules, dependencies, build config, repo hygiene |
 | **Supersedes** | `CASHDASH_SECURITY_AUDIT.md` (2026-08-24, 22 findings, at `525a302`) and the earlier 15-finding review. Both are merged here. |
 
-**Status: 27 closed · 1 accepted risk · 2 open · 1 unfixable upstream · 1 area newly assessed.**
+**Status: 27 closed · 1 accepted risk · 3 open · 1 unfixable upstream · 1 area newly assessed.**
 
 Reverse-engineering and tamper posture — carried as *"not covered"* by both earlier reviews — was assessed on 2026-08-26 and now has its own section. Everything actionable it produced has been done: `WalletPrefs` and `LocalScanPrefs` are both encrypted at rest, and the admin cache no longer falls back to plaintext. What remains is either blocked on App Check enforcement or deliberately declined — see that section's recommendations, which record the reasoning rather than leaving them as open to-dos.
 
@@ -45,6 +45,28 @@ Enforcement is still off, so it protects nothing yet. Gated on 0.5.0 adoption: e
 
 Also outstanding from the earlier audit: restrict the API key in Cloud Console (Android restriction + package + SHA-1, plus an API allowlist).
 
+### H. Admin permission editor wrote nothing, including Revoke `[found 2026-08-26]` — **fixed in code, not yet released**
+
+`EditAdminPermissionsActivity` rendered the full permission editor and then discarded every change:
+
+```kotlin
+btnSave.setOnClickListener {
+    // Simplified for now
+    Toast.makeText(this, "Permissions saved", Toast.LENGTH_SHORT).show()
+    finish()
+}
+```
+
+`btnRevoke` was the same, with an "Access revoked" toast. Nothing was written to Firestore. The screen was live — registered in the manifest and launched by `ManageAdminAccessActivity` for three flows: add a new admin, edit an existing admin's grants, and approve an access request. All three silently did nothing.
+
+**Revoke is the serious one.** An owner removing an admin through that screen was told "Access revoked" while the target kept every grant, including `allocateAdmins`. A revocation you believe succeeded and hasn't is worse than no revoke button at all, because it stops you looking further.
+
+Not a rules problem — `firestore.rules` was never consulted, because no write was ever attempted.
+
+**Fix:** the working editor already existed as a private method on `AdminActivity` (the bottom sheet at `AdminActivity.kt:1220`), which writes `admins`, deletes the doc when grants drop to zero, routes non-owners through `admin_requests`, and guards self-edits. It is now extracted to `AdminPermissionsSheet` and called by both screens; the stub activity, its layout and its manifest entry are deleted. One code path writes admin permissions, so the two cannot diverge again.
+
+**Still open because it is not in anyone's hands yet.** The fix is client-side and needs a release; 0.5.0 is in Play review, so this rides on the next build. Until then, use the Admin screen's own bottom sheet — that path always worked. Anyone "revoked" through Manage Admin Access before this ships is still an admin and should be re-checked against the `admins` collection.
+
 ---
 
 ## Recently resolved
@@ -59,8 +81,8 @@ So both live values were written to disk in plaintext:
 
 | Secret | Exposed version | Live version | Status |
 |---|---|---|---|
-| `GEMINI_API_KEY` | v2 | **v3** | rotated 2026-08-26; v2 DESTROYED, **not yet revoked** |
-| `GEMINI_API_KEY_ADMIN` | v1 | **v2** | rotated 2026-08-26; v1 DESTROYED, **not yet revoked** |
+| `GEMINI_API_KEY` | v2 | **v3** | rotated 2026-08-26; v2 DESTROYED **and revoked** |
+| `GEMINI_API_KEY_ADMIN` | v1 | **v2** | rotated 2026-08-26; v1 DESTROYED **and revoked** |
 
 Neither is the key that leaked via the APK — that one returns 401 and is dead. This is materially lower risk: a local transcript is not public, not indexed, and not reachable by the bots that scrape APKs and repos. The two transcript files were deleted on 2026-08-26 and no key material remains under `~/.claude`, but deletion does not invalidate a credential, and copies may survive in File History, a restore point, or folder sync.
 
