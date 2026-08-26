@@ -123,8 +123,6 @@ class EntryActivity : ThemedActivity() {
             edtPassword.setSelection(edtPassword.text.length)
         }
 
-        setupGenderChips()
-
         tvDob.setOnClickListener {
             showDobPickerDialog(tvDob)
         }
@@ -156,7 +154,7 @@ class EntryActivity : ThemedActivity() {
             edtPassword.text.clear()
             tvDob.text = ""
             selectedDob = ""
-            clearGenderSelection()
+            selectedGender = ""
             edtName.clearFocus()
             edtPhone.clearFocus()
             edtEmail.clearFocus()
@@ -248,7 +246,6 @@ class EntryActivity : ThemedActivity() {
             edtName.visibility = View.GONE
             edtPhone.visibility = View.GONE
             tvDob.visibility = View.GONE
-            findViewById<View>(R.id.layoutGender).visibility = View.GONE
             findViewById<View>(R.id.layoutTerms).visibility = View.GONE
             btnAction.text = "Login"
             tvForgot.visibility = View.VISIBLE
@@ -268,7 +265,6 @@ class EntryActivity : ThemedActivity() {
             edtName.visibility = View.VISIBLE
             edtPhone.visibility = View.VISIBLE
             tvDob.visibility = View.VISIBLE
-            findViewById<View>(R.id.layoutGender).visibility = View.VISIBLE
             findViewById<View>(R.id.layoutTerms).visibility = View.VISIBLE
             btnAction.text = "Register"
             tvForgot.visibility = View.GONE
@@ -827,48 +823,12 @@ class EntryActivity : ThemedActivity() {
         }
     }
 
-    /**
-     * Gender is a single choice presented as three chips.
-     *
-     * The chips are plain TextViews on ?attr/inputBackground rather than
-     * Material Chip widgets. That drawable already defines a state_selected
-     * variant in all three themes -- the same purple stroke and glow a focused
-     * input gets -- so selection is expressed through View.isSelected and the
-     * control inherits the form's existing visual language instead of adding a
-     * second one.
-     *
-     * The value stored is a stable key rather than the visible label. Renaming a
-     * chip later should not silently change what is already recorded against
-     * existing accounts.
-     */
-    private fun setupGenderChips() {
-        val male = findViewById<TextView>(R.id.chipGenderMale)
-        val female = findViewById<TextView>(R.id.chipGenderFemale)
-        val unspecified = findViewById<TextView>(R.id.chipGenderUnspecified)
-        val chips = listOf(male, female, unspecified)
-        val values = mapOf(male to "male", female to "female", unspecified to "undisclosed")
-
-        chips.forEach { chip ->
-            chip.setOnClickListener {
-                selectedGender = values[chip] ?: ""
-                chips.forEach { other ->
-                    val isChosen = other === chip
-                    other.isSelected = isChosen
-                    other.setTypeface(null, if (isChosen) Typeface.BOLD else Typeface.NORMAL)
-                }
-            }
-        }
-    }
-
-    /** Resets the chips when the user switches between the Login and Register tabs. */
-    private fun clearGenderSelection() {
-        selectedGender = ""
-        listOf(R.id.chipGenderMale, R.id.chipGenderFemale, R.id.chipGenderUnspecified).forEach { id ->
-            findViewById<TextView>(id).apply {
-                isSelected = false
-                setTypeface(null, Typeface.NORMAL)
-            }
-        }
+    /** Display text for a stored gender key. The key is what persists; this is only shown. */
+    private fun genderLabel(key: String): String = when (key) {
+        "male" -> "Male"
+        "female" -> "Female"
+        "undisclosed" -> "Prefer not to say"
+        else -> ""
     }
 
     private fun showDobPickerDialog(tvDob: TextView) {
@@ -880,6 +840,33 @@ class EntryActivity : ThemedActivity() {
         val pickerMonth = sheetView.findViewById<android.widget.NumberPicker>(R.id.pickerMonth)
         val pickerDay = sheetView.findViewById<android.widget.NumberPicker>(R.id.pickerDay)
         val btnSave = sheetView.findViewById<android.widget.Button>(R.id.btnSaveDate)
+
+        // Gender lives in this sheet too, so both permanent choices are made -- and
+        // warned about -- in one place. Chips are plain TextViews on
+        // ?attr/inputBackground, whose state_selected variant every theme defines.
+        val chipMale = sheetView.findViewById<TextView>(R.id.chipGenderMale)
+        val chipFemale = sheetView.findViewById<TextView>(R.id.chipGenderFemale)
+        val chipUnspecified = sheetView.findViewById<TextView>(R.id.chipGenderUnspecified)
+        val genderChips = listOf(chipMale, chipFemale, chipUnspecified)
+        val genderKeys = mapOf(chipMale to "male", chipFemale to "female", chipUnspecified to "undisclosed")
+
+        // Local until Save, so dismissing the sheet cannot half-apply a change.
+        var pendingGender = selectedGender
+
+        fun paintGenderChips() {
+            genderChips.forEach { chip ->
+                val isChosen = genderKeys[chip] == pendingGender
+                chip.isSelected = isChosen
+                chip.setTypeface(null, if (isChosen) Typeface.BOLD else Typeface.NORMAL)
+            }
+        }
+        genderChips.forEach { chip ->
+            chip.setOnClickListener {
+                pendingGender = genderKeys[chip] ?: ""
+                paintGenderChips()
+            }
+        }
+        paintGenderChips()
 
         // Setup Year
         val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
@@ -909,8 +896,9 @@ class EntryActivity : ThemedActivity() {
         var startMonth = 6
         var startDay = 15
 
-        val currentText = tvDob.text.toString().trim()
-        if (currentText.isNotEmpty() && !currentText.equals("Date of Birth", ignoreCase = true)) {
+        // Parse from selectedDob rather than the field, which now reads "12 Mar 2000 · Male".
+        val currentText = selectedDob.trim()
+        if (currentText.isNotEmpty()) {
             try {
                 val parts = currentText.split(" ")
                 if (parts.size == 3) {
@@ -959,12 +947,19 @@ class EntryActivity : ThemedActivity() {
         customizePicker(pickerDay)
 
         btnSave.setOnClickListener {
+            if (pendingGender.isEmpty()) {
+                ToastHelper.showToast(this, "Please choose a gender")
+                return@setOnClickListener
+            }
+
             val year = pickerYear.value
             val month = pickerMonth.value
             val day = pickerDay.value
             val formattedDate = String.format("%02d %s %d", day, monthNames[month - 1].substring(0, 3), year)
-            tvDob.text = formattedDate
+
             selectedDob = formattedDate
+            selectedGender = pendingGender
+            tvDob.text = "$formattedDate  ·  ${genderLabel(pendingGender)}"
             dialog.dismiss()
         }
 

@@ -108,7 +108,7 @@
             android:layout_width="match_parent"
             android:layout_height="60dp"
             android:background="?attr/inputBackground"
-            android:hint="Date of Birth"
+            android:hint="Date of Birth and Gender"
             android:textColor="?attr/textPrimaryColor"
             android:textColorHint="@color/text_dim"
             android:gravity="center_vertical"
@@ -118,89 +118,6 @@
             android:clickable="true"
             android:focusable="true"
             android:visibility="gone"/>
-
-        <!-- GENDER
-             Deliberately built from the same parts as the rest of the form rather
-             than com.google.android.material Chip: ?attr/inputBackground already
-             carries a state_selected variant in all three themes (purple stroke
-             plus glow), so reusing it keeps the selected state identical to a
-             focused input instead of introducing a second visual language.
-             Equal weights and a fixed row height keep the three aligned; the
-             longest label wraps to a second line inside the same box. -->
-        <LinearLayout
-            android:id="@+id/layoutGender"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="16dp"
-            android:visibility="gone">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="GENDER"
-                android:textColor="?attr/textPrimaryColor"
-                android:textSize="10sp"
-                android:letterSpacing="0.1"
-                android:alpha="0.5"
-                android:layout_marginStart="4dp"
-                android:layout_marginBottom="8dp"/>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/chipGenderMale"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
-                    android:background="?attr/inputBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:maxLines="2"
-                    android:paddingHorizontal="4dp"
-                    android:text="Male"
-                    android:textColor="?attr/textPrimaryColor"
-                    android:textSize="13sp"/>
-
-                <TextView
-                    android:id="@+id/chipGenderFemale"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:layout_marginStart="4dp"
-                    android:layout_marginEnd="4dp"
-                    android:background="?attr/inputBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:maxLines="2"
-                    android:paddingHorizontal="4dp"
-                    android:text="Female"
-                    android:textColor="?attr/textPrimaryColor"
-                    android:textSize="13sp"/>
-
-                <TextView
-                    android:id="@+id/chipGenderUnspecified"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:layout_marginStart="4dp"
-                    android:background="?attr/inputBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:maxLines="2"
-                    android:paddingHorizontal="4dp"
-                    android:text="Prefer not to say"
-                    android:textColor="?attr/textPrimaryColor"
-                    android:textSize="13sp"/>
-            </LinearLayout>
-        </LinearLayout>
 
         <!-- EMAIL -->
         <EditText

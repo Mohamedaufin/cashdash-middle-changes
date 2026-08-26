@@ -20,7 +20,7 @@
         android:id="@+id/tvSheetTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Select Date of Birth"
+        android:text="Select Date of Birth and Gender"
         android:textColor="?attr/textPrimaryColor"
         android:textSize="18sp"
         android:textStyle="bold"
@@ -31,7 +31,7 @@
         android:id="@+id/tvSheetHint"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Note: This is permanent and cannot be changed."
+        android:text="Note: These are permanent and cannot be changed."
         android:textColor="?attr/textRedColor"
         android:textSize="@dimen/text_body"
         android:textStyle="bold"
@@ -67,6 +67,78 @@
             android:layout_height="match_parent"
             android:layout_weight="1" />
 
+    </LinearLayout>
+
+    <!-- GENDER
+         Same construction as the rest of the form: plain TextViews on
+         ?attr/inputBackground, whose state_selected variant every theme already
+         defines. Lives in this sheet rather than on the register screen so date
+         of birth and gender are chosen, and warned about, in one place. -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="GENDER"
+        android:textColor="?attr/textPrimaryColor"
+        android:textSize="10sp"
+        android:letterSpacing="0.1"
+        android:alpha="0.5"
+        android:layout_marginStart="4dp"
+        android:layout_marginBottom="8dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:layout_marginBottom="24dp">
+
+        <TextView
+            android:id="@+id/chipGenderMale"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:background="?attr/inputBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:maxLines="2"
+            android:paddingHorizontal="4dp"
+            android:text="Male"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/chipGenderFemale"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:background="?attr/inputBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:maxLines="2"
+            android:paddingHorizontal="4dp"
+            android:text="Female"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/chipGenderUnspecified"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:background="?attr/inputBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:maxLines="2"
+            android:paddingHorizontal="4dp"
+            android:text="Prefer not to say"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="13sp" />
     </LinearLayout>
 
     <!-- Save Button -->
