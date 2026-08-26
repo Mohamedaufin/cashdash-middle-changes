@@ -99,8 +99,13 @@ class ProfileActivity : ThemedActivity() {
             }
         })
 
+        // Date of birth is set once at registration and is not editable here. The picker
+        // sheet says so at the point of entry, so this has to hold or that promise is a
+        // lie. Kept tappable on purpose: a field that silently ignores a tap reads as a
+        // bug, so explain instead. Dimmed to signal it is not an input.
+        tvDob.alpha = 0.6f
         tvDob.setOnClickListener {
-            showDobPickerDialog(tvDob)
+            ToastHelper.showToast(this, "Date of birth cannot be changed.")
         }
 
         findViewById<View>(R.id.btnBack)?.setOnClickListener {
