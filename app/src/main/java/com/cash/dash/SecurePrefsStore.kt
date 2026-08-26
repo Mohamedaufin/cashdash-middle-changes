@@ -31,6 +31,18 @@ open class SecurePrefsStore(
     private val logTag: String
 ) {
 
+    /**
+     * Plaintext fallback for devices with no working keystore.
+     *
+     * A *separate* file, deliberately. It originally shared [fileName], on the
+     * reasoning that a device which later gained keystore support would not lose
+     * its data — but that produces a file holding a mix of encrypted and
+     * plaintext entries, and EncryptedSharedPreferences throws on the first
+     * entry it cannot decrypt. Keeping them apart makes that impossible. Data
+     * written while in fallback is migrated in by [migrateIfNeeded].
+     */
+    private val fallbackFileName: String = "${fileName}_plain"
+
     @Volatile
     private var cached: SharedPreferences? = null
 
@@ -38,30 +50,64 @@ open class SecurePrefsStore(
         cached?.let { return it }
         return synchronized(this) {
             cached ?: create(context.applicationContext).also {
-                migrateIfNeeded(context.applicationContext, it)
+                migrateIfNeeded(context.applicationContext, it, legacyFileName)
+                migrateIfNeeded(context.applicationContext, it, fallbackFileName)
                 cached = it
             }
         }
     }
 
+    /**
+     * Opens the encrypted store, and **verifies it is actually readable** before
+     * handing it out.
+     *
+     * The verification is the point. `EncryptedSharedPreferences.create()`
+     * succeeds even when the file cannot be decrypted — the failure surfaces
+     * later, on the first read or on `edit().clear()`, which calls `getAll()`
+     * internally. That turned a recoverable state into a crash on launch:
+     * the keyset and the master key can drift apart (keystore reset, a restored
+     * data directory, a regenerated keyset), and from then on every start threw
+     * SecurityException from deep inside the sync path.
+     *
+     * If the store is unreadable the file is deleted and rebuilt. That discards
+     * the local cache, which is the right trade: this data is mirrored in
+     * Firestore and re-pulls on the next sync, whereas the alternative is an app
+     * that cannot open at all.
+     */
     private fun create(context: Context): SharedPreferences {
-        return try {
-            val masterKey = androidx.security.crypto.MasterKey.Builder(context)
-                .setKeyScheme(androidx.security.crypto.MasterKey.KeyScheme.AES256_GCM)
-                .build()
-            androidx.security.crypto.EncryptedSharedPreferences.create(
-                context,
-                fileName,
-                masterKey,
-                androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-            )
+        try {
+            return buildVerifiedEncrypted(context)
         } catch (e: Exception) {
-            // Same filename, so a device that later gains keystore support does
-            // not silently start from an empty store.
-            android.util.Log.e(logTag, "Encrypted prefs unavailable, using plaintext: ${e.message}")
-            context.getSharedPreferences(fileName, Context.MODE_PRIVATE)
+            android.util.Log.e(logTag, "Encrypted prefs unreadable, rebuilding: ${e.message}")
         }
+
+        // The keyset lives inside the same file, so deleting it clears both the
+        // data and the keys that can no longer read it.
+        try {
+            context.deleteSharedPreferences(fileName)
+            return buildVerifiedEncrypted(context)
+        } catch (e: Exception) {
+            android.util.Log.e(logTag, "Encrypted prefs unavailable, using plaintext: ${e.message}")
+        }
+
+        return context.getSharedPreferences(fallbackFileName, Context.MODE_PRIVATE)
+    }
+
+    private fun buildVerifiedEncrypted(context: Context): SharedPreferences {
+        val masterKey = androidx.security.crypto.MasterKey.Builder(context)
+            .setKeyScheme(androidx.security.crypto.MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        val prefs = androidx.security.crypto.EncryptedSharedPreferences.create(
+            context,
+            fileName,
+            masterKey,
+            androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+        // Forces decryption of every key. Throws here, where it can be handled,
+        // rather than later on a caller's edit().clear().
+        prefs.all
+        return prefs
     }
 
     /**
@@ -72,8 +118,14 @@ open class SecurePrefsStore(
      * data. If the write fails, the legacy file is left untouched and the copy
      * is retried on the next launch.
      */
-    private fun migrateIfNeeded(context: Context, target: SharedPreferences) {
-        val legacy = context.getSharedPreferences(legacyFileName, Context.MODE_PRIVATE)
+    private fun migrateIfNeeded(context: Context, target: SharedPreferences, sourceName: String) {
+        // Nothing to do when the store itself fell back to plaintext: source and
+        // target would be the same file.
+        if (sourceName == fallbackFileName && target === context.getSharedPreferences(fallbackFileName, Context.MODE_PRIVATE)) {
+            return
+        }
+
+        val legacy = context.getSharedPreferences(sourceName, Context.MODE_PRIVATE)
         val entries = legacy.all
         if (entries.isEmpty()) return
 

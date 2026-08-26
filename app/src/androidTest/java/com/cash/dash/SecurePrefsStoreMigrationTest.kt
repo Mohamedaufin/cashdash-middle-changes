@@ -44,6 +44,7 @@ class SecurePrefsStoreMigrationTest {
     private fun wipe() {
         ctx.deleteSharedPreferences(legacyName)
         ctx.deleteSharedPreferences(encryptedName)
+        ctx.deleteSharedPreferences("${encryptedName}_plain")
     }
 
     private fun seedLegacy() {
@@ -133,6 +134,57 @@ class SecurePrefsStoreMigrationTest {
 
         val afterRelaunch = newStore().get(ctx)
         assertEquals(999, afterRelaunch.getInt("wallet_balance", -1))
+    }
+
+    /**
+     * Regression test for the launch crash of 2026-08-26.
+     *
+     * When the Tink keyset and the master key drift apart — a keystore reset, a
+     * restored data directory, a regenerated keyset — every entry in the file
+     * becomes undecryptable. `EncryptedSharedPreferences.create()` still
+     * succeeds, so the failure surfaced later inside `edit().clear()`, which
+     * calls `getAll()` internally. On the device this threw
+     * `SecurityException: Could not decrypt key` from the cloud-sync path on
+     * every launch, so the app could not start at all.
+     *
+     * The store must now detect an unreadable file, rebuild it, and carry on.
+     * Losing the local cache is correct — it re-pulls from Firestore.
+     */
+    @Test
+    fun unreadableStoreIsRebuiltInsteadOfCrashing() {
+        newStore().get(ctx).edit().putInt("wallet_balance", 4213).commit()
+
+        // Inject an entry that decrypts to nothing, as a drifted keyset would.
+        // Valid base64 so it gets past the decode and fails in the cipher.
+        ctx.getSharedPreferences(encryptedName, Context.MODE_PRIVATE).edit()
+            .putString("AVlYhHhorYiKC4wjYlU5zbHUIB5ZXwRHca3oNFTa/zsLfB7mmQ==", "AScorruptedvalue==")
+            .commit()
+
+        // A fresh store over the same files must recover, not throw.
+        val recovered = newStore().get(ctx)
+
+        // The exact call that crashed on device.
+        recovered.edit().clear().apply()
+
+        recovered.edit().putInt("wallet_balance", 99).commit()
+        assertEquals(99, recovered.getInt("wallet_balance", -1))
+    }
+
+    /** Recovery must not leave the store writing in the clear. */
+    @Test
+    fun rebuiltStoreIsStillEncrypted() {
+        newStore().get(ctx).edit().putInt("wallet_balance", 4213).commit()
+        ctx.getSharedPreferences(encryptedName, Context.MODE_PRIVATE).edit()
+            .putString("AVlYhHhorYiKC4wjYlU5zbHUIB5ZXwRHca3oNFTa/zsLfB7mmQ==", "AScorruptedvalue==")
+            .commit()
+
+        val recovered = newStore().get(ctx)
+        recovered.edit().putString("last_upi", "someone@okhdfcbank").commit()
+
+        val raw = ctx.getSharedPreferences(encryptedName, Context.MODE_PRIVATE).all
+        assertFalse("plaintext key survived the rebuild", raw.containsKey("last_upi"))
+        val blob = raw.entries.joinToString { "${it.key}=${it.value}" }
+        assertFalse("UPI readable after rebuild", blob.contains("okhdfcbank"))
     }
 
     /** The singletons must point at the filenames the wipe and sync lists use. */

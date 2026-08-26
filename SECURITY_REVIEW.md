@@ -199,7 +199,19 @@ Three things checked before writing any code, each of which would have made this
 - **Single process.** No `android:process` anywhere in the manifest. `EncryptedSharedPreferences` is explicitly not multi-process safe, so this mattered.
 - **The account-wipe paths enumerate prefs by filename.** `WalletPrefs_v2` was added alongside `WalletPrefs` in all five lists (`EntryActivity`, `FirestoreSyncManager`, `ProfileActivity` ×2, `SecurityManager`); without that, deleting an account would have left the encrypted wallet behind.
 
-The instance is cached, because `EncryptedSharedPreferences.create()` does keystore work per call and the wallet is read on widget refreshes and every HomeFragment bind. As on the admin cache, it falls back to plaintext if the keystore is unavailable — but to the *same* filename, so a device that later gains keystore support does not start from an empty wallet.
+The instance is cached, because `EncryptedSharedPreferences.create()` does keystore work per call and the wallet is read on widget refreshes and every HomeFragment bind.
+
+### Launch crash, 2026-08-26 — found on device, fixed
+
+The first version of this shipped two defects that only appear once the file exists and the keys stop matching it.
+
+**The store had no recovery path.** `EncryptedSharedPreferences.create()` succeeds even when the file cannot be decrypted; the failure surfaces later, on the first read or on `edit().clear()`, which calls `getAll()` internally and decrypts every key. When the Tink keyset and the master key drift apart — keystore reset, restored data directory, regenerated keyset — every launch threw `SecurityException: Could not decrypt key` from `FirestoreSyncManager`'s cloud-pull path. **The app could not start at all.**
+
+The store now verifies readability at open time by forcing `prefs.all`, and on failure deletes the file and rebuilds. Discarding the local cache is the right trade: this data is mirrored in Firestore and re-pulls on the next sync, against an alternative of an app that never opens.
+
+**The plaintext fallback shared the encrypted filename.** That was deliberate and wrong — it produces a file holding both encrypted and plaintext entries, and the first undecryptable one throws. The fallback now uses a separate file, and anything written there is migrated in when the keystore recovers.
+
+Both are covered by regression tests that fail against the old code.
 
 **Verified on device 2026-08-26.** [SecurePrefsStoreMigrationTest](app/src/androidTest/java/com/cash/dash/SecurePrefsStoreMigrationTest.kt) — 7 instrumented tests, all passing on a physical Galaxy S23 against a real Android keystore:
 
