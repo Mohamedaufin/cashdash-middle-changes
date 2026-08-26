@@ -969,12 +969,16 @@ class EntryActivity : ThemedActivity() {
     private fun setupTermsCheckbox(cbTerms: CheckBox, tvTerms: TextView, layoutTerms: LinearLayout) {
         val isWhiteTheme = ThemeHelper.isWhiteTheme(this)
 
-        val checkboxColor = if (isWhiteTheme) {
-            Color.parseColor("#1A1A1A") // Black background for white theme
-        } else {
-            Color.WHITE // White background for black theme
-        }
-        cbTerms.buttonTintList = android.content.res.ColorStateList.valueOf(checkboxColor)
+        // The box tint is left to Widget.Cashdash.CheckBox (applied in activity_entry.xml),
+        // which uses selector_checkbox_tint: the accent when checked, ?attr/textMutedColor
+        // when not.
+        //
+        // This used to overwrite that here with
+        //     cbTerms.buttonTintList = ColorStateList.valueOf(Color.WHITE)
+        // on every non-White theme. ColorStateList.valueOf() carries a single colour with
+        // no state variation, so the UNCHECKED box was tinted solid white as well -- which
+        // is why it drew as a filled white square on Black and Blue instead of an outline.
+        // Styling the widget in XML could not win against it, because this ran afterwards.
 
         val primaryColor = ThemeHelper.resolveColorAttr(this, androidx.appcompat.R.attr.colorPrimary)
         val linkColor = if (isWhiteTheme) {

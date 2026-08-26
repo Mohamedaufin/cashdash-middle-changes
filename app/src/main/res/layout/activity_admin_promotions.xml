@@ -629,7 +629,7 @@
                     android:gravity="center_vertical"
                     android:paddingStart="8dp"
                     android:layout_marginBottom="8dp">
-                    <CheckBox
+                    <com.google.android.material.checkbox.MaterialCheckBox
                         android:id="@+id/cbSelectAll"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"/>

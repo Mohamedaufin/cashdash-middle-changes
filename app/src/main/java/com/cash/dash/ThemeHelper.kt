@@ -29,6 +29,36 @@ object ThemeHelper {
         return getCurrentTheme(context) == "White"
     }
 
+    /**
+     * Box tint for check boxes and radio buttons that are tinted at runtime.
+     *
+     * Mirrors color/selector_checkbox_tint.xml and adds a disabled state, which the XML
+     * selector cannot express for controls that are conditionally greyed out.
+     *
+     * Every caller previously built its own list keyed only on state_enabled, with the
+     * "enabled" colour hardcoded to white on the dark themes. A ColorStateList entry of
+     * intArrayOf(state_enabled) matches an enabled box whether or not it is checked, so
+     * the unchecked box was tinted solid white too and rendered as a filled white square
+     * instead of an outline. Some callers used ColorStateList.valueOf(), which is worse:
+     * one colour for every state at once.
+     *
+     * Order matters. ColorStateList returns the FIRST entry whose states are all present,
+     * so disabled has to precede checked, and the empty catch-all has to come last.
+     */
+    fun compoundButtonTint(context: Context): android.content.res.ColorStateList {
+        val disabled = android.graphics.Color.parseColor("#44888888")
+        val checked = androidx.core.content.ContextCompat.getColor(context, R.color.primary_purple)
+        val unchecked = resolveColorAttr(context, R.attr.textMutedColor)
+        return android.content.res.ColorStateList(
+            arrayOf(
+                intArrayOf(-android.R.attr.state_enabled),
+                intArrayOf(android.R.attr.state_checked),
+                intArrayOf()
+            ),
+            intArrayOf(disabled, checked, unchecked)
+        )
+    }
+
     fun applyTheme(activity: android.app.Activity) {
         val theme = getCurrentTheme(activity)
         val targetMode = if (theme == "White") {

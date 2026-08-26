@@ -933,14 +933,10 @@ class ManageAdminAccessActivity : ThemedActivity() {
         // and quietly send them a notification nobody asked for.
         cbIncludeNotification?.isChecked = false
         layoutNotificationTemplate?.visibility = View.GONE
-        // Match checkbox tick colour to the rest of the page (theme-aware)
-        val notifCbNormalColor = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.parseColor("#1A1A1A") else android.graphics.Color.WHITE
-        val notifCbDisabledColor = android.graphics.Color.parseColor("#44888888")
-        val notifCbTintList = android.content.res.ColorStateList(
-            arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf(android.R.attr.state_enabled)),
-            intArrayOf(notifCbDisabledColor, notifCbNormalColor)
-        )
-        cbIncludeNotification?.buttonTintList = notifCbTintList
+        // Same shared tint as the permission check boxes above. This one also keyed only
+        // on state_enabled, so checked and unchecked both came out white on the dark
+        // themes and the box read as filled rather than as an outline.
+        cbIncludeNotification?.buttonTintList = ThemeHelper.compoundButtonTint(this)
         
         val tvUndoRephraseTitle = findViewById<android.widget.TextView>(R.id.tvUndoRephraseTitle)
         val tvRedoRephraseTitle = findViewById<android.widget.TextView>(R.id.tvRedoRephraseTitle)
@@ -1084,18 +1080,12 @@ class ManageAdminAccessActivity : ThemedActivity() {
             dpd.show()
         }
 
-        val normalColor = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.parseColor("#1A1A1A") else android.graphics.Color.WHITE
-        val disabledColor = android.graphics.Color.parseColor("#44888888")
 
-        val states = arrayOf(
-            intArrayOf(-android.R.attr.state_enabled),
-            intArrayOf(android.R.attr.state_enabled)
-        )
-        val colors = intArrayOf(
-            disabledColor,
-            normalColor
-        )
-        val checkboxTintList = android.content.res.ColorStateList(states, colors)
+        // Shared tint: disabled, then checked, then a catch-all for unchecked. The
+        // list built here previously keyed only on state_enabled, so an enabled box
+        // got the same colour whether or not it was checked, and the unchecked box
+        // rendered as a solid white square on the dark themes.
+        val checkboxTintList = ThemeHelper.compoundButtonTint(this)
         cbAnnouncements.buttonTintList = checkboxTintList
         cbPromotions.buttonTintList = checkboxTintList
         cbNotifications.buttonTintList = checkboxTintList

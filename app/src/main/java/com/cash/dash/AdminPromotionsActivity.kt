@@ -242,8 +242,9 @@ class AdminPromotionsActivity : ThemedActivity() {
         setupUserSearch()
         
         val cbSelectAll = findViewById<CheckBox>(R.id.cbSelectAll)
-        val checkboxColor = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.parseColor("#1A1A1A") else android.graphics.Color.WHITE
-        cbSelectAll.buttonTintList = android.content.res.ColorStateList.valueOf(checkboxColor)
+        // Was ColorStateList.valueOf(white on the dark themes), which is a single colour
+        // for every state at once, so the unchecked box drew as a solid white square.
+        cbSelectAll.buttonTintList = ThemeHelper.compoundButtonTint(this)
         
         cbSelectAll.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
@@ -679,8 +680,9 @@ class AdminPromotionsActivity : ThemedActivity() {
         
         tvEmptyList.visibility = View.GONE
         val density = resources.displayMetrics.density
-        val checkboxColor = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.parseColor("#1A1A1A") else android.graphics.Color.WHITE
-        val checkboxTintList = android.content.res.ColorStateList.valueOf(checkboxColor)
+        // Was ColorStateList.valueOf(white on the dark themes), which is a single colour
+        // for every state at once, so the unchecked box drew as a solid white square.
+        val checkboxTintList = ThemeHelper.compoundButtonTint(this)
 
         for (target in filteredUsers) {
             val email = target.first
