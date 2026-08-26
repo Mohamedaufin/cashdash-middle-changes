@@ -4,7 +4,9 @@ import android.view.View
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.lifecycle.lifecycleScope
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
 
 /**
  * The admin permission editor, shared by AdminActivity and ManageAdminAccessActivity.
@@ -158,6 +160,54 @@ object AdminPermissionsSheet {
         updateValidityUI()
 
         val layoutAdminValidity = view.findViewById<View>(R.id.layoutAdminValidity)
+
+        // "Send announcement regarding the change". The template block, its two fields and
+        // the AI Rephrase button all shipped in the layout with no code reading them, so the
+        // checkbox did nothing and the button was inert. Ticking it now replaces the built-in
+        // notice for this change with the admin's own wording rather than adding a second
+        // message, so the target receives exactly one notification either way.
+        val cbIncludeNotification = view.findViewById<android.widget.CheckBox>(R.id.cbIncludeNotification)
+        val layoutNotificationTemplate = view.findViewById<View>(R.id.layoutNotificationTemplate)
+        val actvNotificationTitle = view.findViewById<EditText>(R.id.actvNotificationTitle)
+        val actvNotificationContent = view.findViewById<EditText>(R.id.actvNotificationContent)
+
+        layoutNotificationTemplate?.visibility =
+            if (cbIncludeNotification?.isChecked == true) View.VISIBLE else View.GONE
+        cbIncludeNotification?.setOnCheckedChangeListener { _, checked ->
+            layoutNotificationTemplate?.visibility = if (checked) View.VISIBLE else View.GONE
+        }
+
+        // Notifies the admin being edited. Owner-facing notices (the new-request alert) keep
+        // calling sendAdminInAppNotification directly -- different audience, and not something
+        // the edited admin's announcement should overwrite.
+        fun notifyTarget(defaultSubject: String, defaultBody: String) {
+            val customTitle = actvNotificationTitle?.text?.toString()?.trim().orEmpty()
+            val customBody = actvNotificationContent?.text?.toString()?.trim().orEmpty()
+            if (cbIncludeNotification?.isChecked == true && customBody.isNotBlank()) {
+                sendAdminInAppNotification(email, customTitle.ifBlank { defaultSubject }, customBody)
+            } else {
+                sendAdminInAppNotification(email, defaultSubject, defaultBody)
+            }
+        }
+
+        view.findViewById<View>(R.id.btnAIRephrase)?.setOnClickListener {
+            val original = actvNotificationContent?.text?.toString().orEmpty()
+            if (original.isBlank()) {
+                ToastHelper.showToast(activity, "Type the announcement first.")
+                return@setOnClickListener
+            }
+            ToastHelper.showToast(activity, "Rephrasing announcement...")
+            activity.lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                try {
+                    val result = GenerativeAiManager.rephraseText(original, false, GenerativeAiManager.Scope.ADMIN)
+                    actvNotificationContent?.setText(result)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    ToastHelper.showErrorDialog(activity, "AI Error", e.message ?: "Unknown Error")
+                }
+            }
+        }
 
         btnChangeValidity?.setOnClickListener {
             val options = if (canGiveForever) {
@@ -536,7 +586,7 @@ object AdminPermissionsSheet {
                                 "New Validity: $validityStr\n\n" +
                                 "Your commitment inspires the entire team, and we look forward to achieving greater milestones together. Thank you for being an integral part of the CashDash journey.\n\n" +
                                 "Regards,\nTeam CashDash"
-                            sendAdminInAppNotification(email, notifSubject, notifBody)
+                            notifyTarget(notifSubject, notifBody)
                             logAuditAction("Admin Extension Approved", notifSubject, "$approverEmail approved extension request for $email. New validity: $validityStr", email)
                         } else {
                             // New admin grant / permission update notification
@@ -546,7 +596,7 @@ object AdminPermissionsSheet {
                                 "Validity: $validityStr\n\n" +
                                 "We look forward to accomplishing great things together. Your role is vital in shaping a better CashDash experience for every user we serve.\n\n" +
                                 "Regards,\nTeam CashDash"
-                            sendAdminInAppNotification(email, notifSubject, notifBody)
+                            notifyTarget(notifSubject, notifBody)
                             logAuditAction("Admin Request Approved", notifSubject, "$approverEmail approved admin request for $email as $roleStr. Validity: $validityStr", email)
                         }
 
@@ -578,7 +628,7 @@ object AdminPermissionsSheet {
                             "Validity: $validityStr\n\n" +
                             "We look forward to accomplishing great things together. Your role is vital in shaping a better CashDash experience for every user we serve.\n\n" +
                             "Regards,\nTeam CashDash"
-                        sendAdminInAppNotification(email, notifSubject, notifBody)
+                        notifyTarget(notifSubject, notifBody)
                         logAuditAction("Admin Promotion", notifSubject, "$actorEmail granted $roleStr access to $email. Validity: $validityStr", email)
                     } else if (selectedValidUntil != currentPerms.validUntil) {
                         // Validity was manually changed by a higher-up without a formal request
@@ -588,7 +638,7 @@ object AdminPermissionsSheet {
                             "New Validity: $validityStr\n\n" +
                             "Thank you for the consistent service you bring to CashDash. We deeply value every contribution you make to our community.\n\n" +
                             "Regards,\nTeam CashDash"
-                        sendAdminInAppNotification(email, notifSubject, notifBody)
+                        notifyTarget(notifSubject, notifBody)
                         logAuditAction("Admin Validity Update", notifSubject, "$actorEmail updated validity for $email to $validityStr", email)
                     }
 
@@ -651,7 +701,7 @@ object AdminPermissionsSheet {
                                     "If you believe this was done in error, please reach out to the CashDash team.\n\n" +
                                     "Thank you for your service and contributions to CashDash. We wish you all the best.\n\n" +
                                     "Regards,\nTeam CashDash"
-                                sendAdminInAppNotification(email, notifSubject, notifBody)
+                                notifyTarget(notifSubject, notifBody)
                                 logAuditAction("REVOKED_ACCESS", email, "Revoked all admin privileges.")
                                 logAuditAction("Admin Revocation", notifSubject, "$actorEmail revoked admin access for $email", email)
                                 ToastHelper.showToast(activity, "Access revoked")
