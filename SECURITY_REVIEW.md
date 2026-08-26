@@ -206,7 +206,7 @@ Previously listed as *"not covered"* in both reviews. Now actually examined agai
 
 `isMinifyEnabled` + `isShrinkResources` on release with `proguard-android-optimize`; release signing read from gitignored `local.properties` with the keystore outside the repo; `allowBackup="false"`, `fullBackupContent="false"` and 10 explicit extraction excludes; `debuggable` never set; `Log.d/v/i/w` stripped via `-assumenosideeffects`; no hardcoded API keys anywhere in `res/`.
 
-**The admin permission cache is genuinely encrypted** — [AdminManager.kt:65](app/src/main/java/com/cash/dash/AdminManager.kt) builds a `MasterKey` (AES256_GCM) and uses `EncryptedSharedPreferences` with `AES256_SIV` keys / `AES256_GCM` values, and `purgeLegacyPlaintextCache()` clears the old plaintext `admin_perms_cache` on every load. `FLAG_SECURE` is applied through [SecureScreen.kt](app/src/main/java/com/cash/dash/SecureScreen.kt) on all 5 admin screens.
+**The admin permission cache is genuinely encrypted** — [AdminManager.kt:65](app/src/main/java/com/cash/dash/AdminManager.kt) builds a `MasterKey` (AES256_GCM) and uses `EncryptedSharedPreferences` with `AES256_SIV` keys / `AES256_GCM` values, and `purgeLegacyPlaintextCache()` clears the old plaintext `admin_perms_cache` on every load. `FLAG_SECURE` is **no longer applied anywhere** — see the note below.
 
 ### Residual gaps
 
@@ -231,7 +231,11 @@ Previously listed as *"not covered"* in both reviews. Now actually examined agai
 6. ~~**Certificate pinning**~~ — **done 2026-08-26, for `cashdash.co.in` only.** The original objection stands for Firebase and that is still unpinned; it does not apply to a domain we control and can re-pin ahead of.
 7. **String encryption — still declined.** Its entire justification was the Gemini keys, and none remain in the client.
 
-Two deliberate calls, unchanged and still correct: `FLAG_SECURE` is *not* applied to wallet/history/payment screens, because plenty of users legitimately screenshot their spending — a product decision. And `Log.e` is *not* stripped, since an app can only read its own logcat since Android 4.1, making the leak require ADB or physical access — marginal security value against a real cost to debugging.
+Two deliberate calls:
+
+**`FLAG_SECURE` removed everywhere, 2026-08-26 — product decision.** It previously covered the 5 admin screens via `SecureScreen.kt`, which is now deleted along with its call sites. Screenshots and screen recording work on every page, as requested. The tradeoff, recorded rather than argued: admin screens display other users' support threads, email addresses and presence, so a screenshot or a recents-list thumbnail can expose people who never consented to it — and recents thumbnails are captured by the OS without the admin doing anything. This does not weaken any server-side control; it only affects what can be captured off an admin's own device. Reinstate by restoring `SecureScreen` from git and calling it from the 5 admin `onCreate`s.
+
+And `Log.e` is *not* stripped, since an app can only read its own logcat since Android 4.1, making the leak require ADB or physical access — marginal security value against a real cost to debugging.
 
 ### Hygiene
 

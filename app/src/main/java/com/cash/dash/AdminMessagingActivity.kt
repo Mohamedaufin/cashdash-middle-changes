@@ -90,8 +90,6 @@ class AdminMessagingActivity : ThemedActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Admin screens show other users' data — block screenshots/recents thumbnail.
-        SecureScreen.apply(this)
         setContentView(R.layout.activity_admin_messaging)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             window.decorView.importantForAutofill = android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
