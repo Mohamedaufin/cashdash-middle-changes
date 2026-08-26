@@ -93,6 +93,32 @@ open class SecurePrefsStore(
         return context.getSharedPreferences(fallbackFileName, Context.MODE_PRIVATE)
     }
 
+    /**
+     * Clears the store completely and drops the cached instance.
+     *
+     * **Account-wipe paths must call this** rather than
+     * `getSharedPreferences(fileName).edit().clear()`.
+     *
+     * Clearing this file as *plain* preferences also deletes the Tink keysets
+     * that live inside it, while a cached [android.content.SharedPreferences]
+     * keeps the old keyset in memory. Subsequent writes then encrypt with a
+     * keyset the file no longer holds, and the next launch — which generates a
+     * fresh keyset — cannot decrypt them. That was the launch crash of
+     * 2026-08-26: `SecurityException: Could not decrypt key` on every start.
+     *
+     * Deleting the files and dropping the cache leaves no way for the two to
+     * disagree.
+     */
+    fun wipe(context: Context) {
+        synchronized(this) {
+            cached = null
+            val ctx = context.applicationContext
+            ctx.deleteSharedPreferences(fileName)
+            ctx.deleteSharedPreferences(fallbackFileName)
+            ctx.deleteSharedPreferences(legacyFileName)
+        }
+    }
+
     private fun buildVerifiedEncrypted(context: Context): SharedPreferences {
         val masterKey = androidx.security.crypto.MasterKey.Builder(context)
             .setKeyScheme(androidx.security.crypto.MasterKey.KeyScheme.AES256_GCM)

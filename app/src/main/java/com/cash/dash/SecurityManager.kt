@@ -113,6 +113,11 @@ object SecurityManager {
         prefsToClear.forEach { name ->
             context.getSharedPreferences(name, Context.MODE_PRIVATE).edit().clear().apply()
         }
+        // Encrypted stores must be wiped through their own API: clearing them as
+        // plain prefs deletes the keysets while a cached instance keeps the old
+        // one in memory. See SecurePrefsStore.wipe.
+        WalletStore.wipe(context)
+        ScanStore.wipe(context)
 
         // 2. Sign out
         CashDashApplication.setOfflineImmediate(context)

@@ -541,6 +541,9 @@ class EntryActivity : ThemedActivity() {
         prefsToPurge.forEach { prefName ->
             getSharedPreferences(prefName, MODE_PRIVATE).edit().clear().apply()
         }
+        // See SecurePrefsStore.wipe — clearing these as plain prefs corrupts them.
+        WalletStore.wipe(this)
+        ScanStore.wipe(this)
 
         // Fully nuke Room SQL Database to destroy lingering transaction logs
         val context = this.applicationContext

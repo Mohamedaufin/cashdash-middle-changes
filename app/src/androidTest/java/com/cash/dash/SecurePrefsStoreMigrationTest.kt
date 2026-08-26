@@ -170,6 +170,50 @@ class SecurePrefsStoreMigrationTest {
         assertEquals(99, recovered.getInt("wallet_balance", -1))
     }
 
+    /**
+     * Reproduces the actual root cause of the 2026-08-26 launch crash.
+     *
+     * The account-wipe paths cleared the encrypted file as *plain* preferences,
+     * which also deletes the Tink keysets stored inside it — while the cached
+     * instance kept the old keyset in memory. The next write encrypted with a
+     * keyset the file no longer had, and the following launch, generating a
+     * fresh keyset, could not decrypt it.
+     *
+     * This is the sequence that produced the crash on the device.
+     */
+    @Test
+    fun plainClearFollowedByWriteDoesNotBreakTheNextLaunch() {
+        val store = newStore()
+        val prefs = store.get(ctx)
+        prefs.edit().putInt("wallet_balance", 4213).commit()
+
+        // What the wipe loops did: clear it as plain prefs, keysets and all.
+        ctx.getSharedPreferences(encryptedName, Context.MODE_PRIVATE).edit().clear().commit()
+
+        // The cached instance is still live and still writes with the old keyset.
+        prefs.edit().putInt("wallet_balance", 99).commit()
+
+        // Next launch: fresh store over the poisoned file must not throw.
+        val nextLaunch = newStore().get(ctx)
+        nextLaunch.edit().putInt("wallet_balance", 7).commit()
+        assertEquals(7, nextLaunch.getInt("wallet_balance", -1))
+    }
+
+    /** [SecurePrefsStore.wipe] is the correct way to clear, and leaves no poison. */
+    @Test
+    fun wipeClearsDataAndDropsTheCache() {
+        val store = newStore()
+        store.get(ctx).edit().putInt("wallet_balance", 4213).commit()
+
+        store.wipe(ctx)
+
+        // Same instance, post-wipe: must be empty and usable, not stale or broken.
+        val after = store.get(ctx)
+        assertEquals(-1, after.getInt("wallet_balance", -1))
+        after.edit().putInt("wallet_balance", 55).commit()
+        assertEquals(55, after.getInt("wallet_balance", -1))
+    }
+
     /** Recovery must not leave the store writing in the clear. */
     @Test
     fun rebuiltStoreIsStillEncrypted() {

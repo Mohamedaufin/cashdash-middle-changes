@@ -199,6 +199,9 @@ class ProfileActivity : ThemedActivity() {
                 prefsToClear.forEach { name ->
                     getSharedPreferences(name, MODE_PRIVATE).edit().clear().apply()
                 }
+                // See SecurePrefsStore.wipe — clearing these as plain prefs corrupts them.
+                WalletStore.wipe(this@ProfileActivity)
+                ScanStore.wipe(this@ProfileActivity)
 
                 // 2. Sign out & mark offline immediately
                 CashDashApplication.setOfflineImmediate(this@ProfileActivity)
@@ -257,6 +260,9 @@ class ProfileActivity : ThemedActivity() {
                     prefsToClear.forEach { name ->
                         getSharedPreferences(name, MODE_PRIVATE).edit().clear().apply()
                     }
+                    // See SecurePrefsStore.wipe — clearing these as plain prefs corrupts them.
+                    WalletStore.wipe(this@ProfileActivity)
+                    ScanStore.wipe(this@ProfileActivity)
                     auth.signOut()
 
                     startActivity(Intent(this@ProfileActivity, EntryActivity::class.java).apply {
