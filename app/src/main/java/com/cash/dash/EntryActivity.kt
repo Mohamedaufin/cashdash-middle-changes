@@ -1,6 +1,7 @@
 package com.cash.dash
 import android.content.Intent
 import android.graphics.Color            // <-- added
+import android.graphics.Typeface
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
@@ -37,6 +38,7 @@ class EntryActivity : ThemedActivity() {
     private val KEY_EMAIL = "user_email"
     private val KEY_PHONE = "user_phone"
     private var selectedDob = ""
+    private var selectedGender = ""
 
     private var isLoginFlow = true
 
@@ -121,6 +123,8 @@ class EntryActivity : ThemedActivity() {
             edtPassword.setSelection(edtPassword.text.length)
         }
 
+        setupGenderChips()
+
         tvDob.setOnClickListener {
             showDobPickerDialog(tvDob)
         }
@@ -152,6 +156,7 @@ class EntryActivity : ThemedActivity() {
             edtPassword.text.clear()
             tvDob.text = ""
             selectedDob = ""
+            clearGenderSelection()
             edtName.clearFocus()
             edtPhone.clearFocus()
             edtEmail.clearFocus()
@@ -243,6 +248,7 @@ class EntryActivity : ThemedActivity() {
             edtName.visibility = View.GONE
             edtPhone.visibility = View.GONE
             tvDob.visibility = View.GONE
+            findViewById<View>(R.id.layoutGender).visibility = View.GONE
             findViewById<View>(R.id.layoutTerms).visibility = View.GONE
             btnAction.text = "Login"
             tvForgot.visibility = View.VISIBLE
@@ -262,6 +268,7 @@ class EntryActivity : ThemedActivity() {
             edtName.visibility = View.VISIBLE
             edtPhone.visibility = View.VISIBLE
             tvDob.visibility = View.VISIBLE
+            findViewById<View>(R.id.layoutGender).visibility = View.VISIBLE
             findViewById<View>(R.id.layoutTerms).visibility = View.VISIBLE
             btnAction.text = "Register"
             tvForgot.visibility = View.GONE
@@ -386,8 +393,8 @@ class EntryActivity : ThemedActivity() {
             return
         }
 
-        if (!isLogin && (name.isEmpty() || phone.isEmpty() || selectedDob.isEmpty())) {
-            tvStatus.text = "Please fill in all 5 details"
+        if (!isLogin && (name.isEmpty() || phone.isEmpty() || selectedDob.isEmpty() || selectedGender.isEmpty())) {
+            tvStatus.text = "Please fill in all details"
             return
         }
 
@@ -714,6 +721,7 @@ class EntryActivity : ThemedActivity() {
             editor.putString(KEY_NAME, name)
             editor.putString(KEY_PHONE, phone)
             editor.putString("user_dob", selectedDob)
+            editor.putString("user_gender", selectedGender)
             editor.putLong("account_creation_time", System.currentTimeMillis())
 
             val themePrefs = getSharedPreferences("ThemePrefs", MODE_PRIVATE)
@@ -797,6 +805,7 @@ class EntryActivity : ThemedActivity() {
                 "phone" to phone,
                 "email" to regEmail,
                 "dob" to selectedDob,
+                "gender" to selectedGender,
                 "setup_complete" to false, // wallet not set up yet
                 "account_status" to "active",
                 "wallet_popup_shown" to false,
@@ -815,6 +824,50 @@ class EntryActivity : ThemedActivity() {
                     startActivity(Intent(this, SplashActivity::class.java))
                     finish()
                 }
+        }
+    }
+
+    /**
+     * Gender is a single choice presented as three chips.
+     *
+     * The chips are plain TextViews on ?attr/inputBackground rather than
+     * Material Chip widgets. That drawable already defines a state_selected
+     * variant in all three themes -- the same purple stroke and glow a focused
+     * input gets -- so selection is expressed through View.isSelected and the
+     * control inherits the form's existing visual language instead of adding a
+     * second one.
+     *
+     * The value stored is a stable key rather than the visible label. Renaming a
+     * chip later should not silently change what is already recorded against
+     * existing accounts.
+     */
+    private fun setupGenderChips() {
+        val male = findViewById<TextView>(R.id.chipGenderMale)
+        val female = findViewById<TextView>(R.id.chipGenderFemale)
+        val unspecified = findViewById<TextView>(R.id.chipGenderUnspecified)
+        val chips = listOf(male, female, unspecified)
+        val values = mapOf(male to "male", female to "female", unspecified to "undisclosed")
+
+        chips.forEach { chip ->
+            chip.setOnClickListener {
+                selectedGender = values[chip] ?: ""
+                chips.forEach { other ->
+                    val isChosen = other === chip
+                    other.isSelected = isChosen
+                    other.setTypeface(null, if (isChosen) Typeface.BOLD else Typeface.NORMAL)
+                }
+            }
+        }
+    }
+
+    /** Resets the chips when the user switches between the Login and Register tabs. */
+    private fun clearGenderSelection() {
+        selectedGender = ""
+        listOf(R.id.chipGenderMale, R.id.chipGenderFemale, R.id.chipGenderUnspecified).forEach { id ->
+            findViewById<TextView>(id).apply {
+                isSelected = false
+                setTypeface(null, Typeface.NORMAL)
+            }
         }
     }
 
