@@ -26,8 +26,10 @@
 
         <!-- Kill the hairline above the navigation bar. Material3 leaves the divider at
              its platform default and lets the system draw a contrast scrim, which shows
-             up as a pale line across the bottom once a dialog dims the window behind it
-             -- most visibly when the Credential Manager sheet opens. -->
+             up as a pale line across the bottom once a dialog dims the window behind it,
+             most visibly when the Credential Manager sheet opens.
+             (Note: a bare double hyphen is illegal inside an XML comment and fails the
+             resource merger, so avoid it here.) -->
         <item name="android:navigationBarDividerColor" tools:targetApi="o_mr1">@android:color/transparent</item>
         <item name="android:enforceNavigationBarContrast" tools:targetApi="q">false</item>
     </style>
