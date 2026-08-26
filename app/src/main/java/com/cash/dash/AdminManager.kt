@@ -58,11 +58,17 @@ object AdminManager {
      * which on a rooted device could be flipped to unlock the admin UI locally.
      * Server-side rules are the real defence — this closes the local tamper path.
      *
-     * Falls back to plain prefs if the Android keystore is unavailable
-     * (some OEM images and older devices fail here). A cache miss is harmless:
-     * permissions simply reload from Firestore, so failing soft is correct.
+     * Returns null if the Android keystore is unavailable (some OEM images and
+     * older devices fail here). Callers then skip the cache entirely rather than
+     * writing plaintext: this used to fall back to plain prefs, which quietly
+     * reopened the exact tamper path the encryption exists to close, on precisely
+     * the devices least likely to be trustworthy.
+     *
+     * Skipping is safe because this cache is disposable — permissions reload from
+     * Firestore on a miss. That is not true of [WalletStore], which holds data
+     * that cannot be refetched and therefore does still fall back.
      */
-    private fun securePrefs(context: Context): SharedPreferences {
+    private fun securePrefs(context: Context): SharedPreferences? {
         return try {
             val masterKey = androidx.security.crypto.MasterKey.Builder(context)
                 .setKeyScheme(androidx.security.crypto.MasterKey.KeyScheme.AES256_GCM)
@@ -75,8 +81,8 @@ object AdminManager {
                 androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
         } catch (e: Exception) {
-            android.util.Log.e("AdminManager", "Encrypted prefs unavailable, falling back: ${e.message}")
-            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            android.util.Log.e("AdminManager", "Encrypted prefs unavailable, skipping permission cache: ${e.message}")
+            null
         }
     }
 
@@ -89,7 +95,8 @@ object AdminManager {
     }
 
     private fun saveToCache(context: Context, email: String, perms: AdminPermissions) {
-        val prefs: SharedPreferences = securePrefs(context)
+        // No encrypted store on this device: skip caching rather than write plaintext.
+        val prefs: SharedPreferences = securePrefs(context) ?: return
         prefs.edit()
             .putString("cached_email", email)
             .putBoolean("isFixedOwner", perms.isFixedOwner)
@@ -108,7 +115,8 @@ object AdminManager {
 
     private fun loadFromCache(context: Context, email: String): AdminPermissions? {
         purgeLegacyPlaintextCache(context)
-        val prefs: SharedPreferences = securePrefs(context)
+        // Treated as a cache miss; permissions reload from Firestore.
+        val prefs: SharedPreferences = securePrefs(context) ?: return null
         val cachedEmail = prefs.getString("cached_email", null) ?: return null
         // Only use cached data for the same email account
         if (!cachedEmail.equals(email, ignoreCase = true)) return null
@@ -128,7 +136,7 @@ object AdminManager {
     }
 
     private fun clearCache(context: Context) {
-        securePrefs(context).edit().clear().apply()
+        securePrefs(context)?.edit()?.clear()?.apply()
         purgeLegacyPlaintextCache(context)
     }
 

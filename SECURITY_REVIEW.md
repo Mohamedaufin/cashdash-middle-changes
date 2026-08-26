@@ -10,7 +10,7 @@
 
 **Status: 24 closed · 1 accepted risk · 3 open · 1 unfixable upstream · 1 area newly assessed.**
 
-Reverse-engineering and tamper posture — carried as *"not covered"* by both earlier reviews — was assessed on 2026-08-26 and now has its own section. It produced two actionable items: plaintext `WalletPrefs`, now fixed and shipping in the next release, and plaintext `LocalScanPrefs` (which holds a UPI address), **still open**.
+Reverse-engineering and tamper posture — carried as *"not covered"* by both earlier reviews — was assessed on 2026-08-26 and now has its own section. Everything actionable it produced has been done: `WalletPrefs` and `LocalScanPrefs` are both encrypted at rest, and the admin cache no longer falls back to plaintext. What remains is either blocked on App Check enforcement or deliberately declined — see that section's recommendations, which record the reasoning rather than leaving them as open to-dos.
 
 Two audits existed with different numbering, which is a hazard in itself — a finding closed in one and open in the other is easy to lose. This is now the single tracker. Where the two overlapped, the older number is shown in brackets.
 
@@ -152,21 +152,23 @@ Previously listed as *"not covered"* in both reviews. Now actually examined agai
 | Gap | Assessment |
 |---|---|
 | ~~**`WalletPrefs` stored plaintext**~~ | **Fixed 2026-08-26.** Now encrypted via [WalletStore.kt](app/src/main/java/com/cash/dash/WalletStore.kt) — same `MasterKey` / `EncryptedSharedPreferences` scheme as the admin cache. 34 call sites across 14 files routed through it, with a one-time migration off the plaintext file. **Ships in the next release; migration is not runtime-tested.** |
-| **`LocalScanPrefs` stores `last_upi` in plaintext** | Still open. A UPI payment address in `MODE_PRIVATE` prefs — [ScannerActivity.kt:669](app/src/main/java/com/cash/dash/ScannerActivity.kt) writes it, three sites read it, and `FirestoreSyncManager` round-trips the whole file through Firestore for undo. Named in the original coverage list; **dropped by mistake when this section was rewritten on 2026-08-26, restored here.** Four call sites — the `WalletStore` pattern applies directly. |
+| ~~**`LocalScanPrefs` stores `last_upi` in plaintext**~~ | **Fixed 2026-08-26.** Now encrypted via `ScanStore`. The Firestore undo round-trip keeps the original wire name, so existing cloud documents stay readable — `prefsByWireName()` in `FirestoreSyncManager` maps the wire name onto the encrypted store. **Ships in the next release; migration not runtime-tested.** |
 | No root / emulator / debugger detection | Nothing present. A UPI payment app runs unmodified under Frida. |
 | No certificate pinning | No `networkSecurityConfig` declared at all. |
 | No string encryption | R8 obfuscates identifiers, never string constants. |
 | `-keep` exposes the data model | `NotificationEntity`, `TransactionEntity`, `NotificationModel` and `@Room.Entity` kept whole — schema fully readable in the DEX. Required for Room/Firestore reflection, so not removable without breaking them. |
-| Encrypted prefs fall back to plaintext | If the Android keystore is unavailable, `securePrefs()` returns plain `SharedPreferences`. Deliberate and documented — a cache miss is harmless because permissions reload from Firestore — but the local tamper path reopens on those devices. |
+| Encrypted prefs fall back to plaintext | **Closed for the admin cache 2026-08-26** — `securePrefs()` now returns null and the cache is skipped rather than written in the clear, which had quietly reopened the exact tamper path the encryption exists to close, on the least trustworthy devices. Safe because permissions reload from Firestore on a miss. **Still applies to `WalletStore` / `ScanStore` by design**: their data cannot be refetched, so losing it is worse than storing it in the clear on the minority of devices with no working keystore. |
 | No standalone integrity check | Play Integrity exists only via App Check, which is not enforced (see B). Effectively zero tamper signal today. |
 
 ### Recommendation
 
 1. ~~**Encrypt `WalletPrefs`**~~ — **done 2026-08-26.** See the implementation note below.
-2. **Encrypt `LocalScanPrefs`** — the same treatment `WalletPrefs` just got, for the same reason. Not yet done. Smaller: four call sites, though `FirestoreSyncManager` syncs the file's contents to Firestore for undo, so check that path still round-trips.
-3. **Root detection — optional.** Trivially bypassed by anyone competent; it raises cost against casual tampering and nothing more. Do it only if you want the signal.
-4. **Certificate pinning — recommended against.** Pinning Firebase SDK traffic is a known operational footgun: Google rotates certificates, and a stale pin bricks the app for every user with no server-side remedy.
-5. **String encryption — now low value.** Its entire justification was the Gemini keys, and none remain in the client.
+2. ~~**Encrypt `LocalScanPrefs`**~~ — **done 2026-08-26.**
+3. **Root detection — recommended against, for now.** Not that it is worthless, but that it is worthless *here*: client-side detection is only meaningful if something consumes the signal, and the natural consumer is App Check, which is not enforced (item B). Until then a detector is code an attacker patches out in minutes, carrying real false-positive risk against users on custom ROMs — a blocking check would deny service to legitimate customers to stop an attacker who is only attacking their own device. **Revisit once B is enforced**, when the signal has somewhere to go.
+4. **Standalone integrity check — blocked on B**, same reasoning. Play Integrity is already wired through App Check; enforcing it is the work, not adding a second path.
+5. **Narrowing the `-keep` rules — recommended against.** In principle some could be tightened, since Room generates its DAOs at compile time and does not need runtime reflection. But the same classes are round-tripped through Firestore's `toObject()`, which does need field names. Getting it wrong silently corrupts data mapping in release builds only — debug builds do not minify, so no local build would catch it. A schema visible in the DEX is a low-severity trade against a data-corruption risk that only surfaces in production.
+6. **Certificate pinning — recommended against.** Pinning Firebase SDK traffic is a known operational footgun: Google rotates certificates, and a stale pin bricks the app for every user with no server-side remedy.
+7. **String encryption — now low value.** Its entire justification was the Gemini keys, and none remain in the client.
 
 Two deliberate calls, unchanged and still correct: `FLAG_SECURE` is *not* applied to wallet/history/payment screens, because plenty of users legitimately screenshot their spending — a product decision. And `Log.e` is *not* stripped, since an app can only read its own logcat since Android 4.1, making the leak require ADB or physical access — marginal security value against a real cost to debugging.
 
@@ -213,7 +215,7 @@ RTDB remains in the US and cannot be relocated in place; presence writes still c
 3. **App Check → Monitor, then Enforce** (B) once adoption climbs.
 4. **Finish the region migration** after adoption.
 5. **Email verification** (A) — the remaining High, alongside Google Sign-In.
-6. ~~Encrypt `WalletPrefs`~~ — done 2026-08-26. Before shipping, **exercise the migration once on an install that already has a balance** — it is the one part that compiles but has not been run against real data.
+6. ~~Encrypt `WalletPrefs` and `LocalScanPrefs`~~ — done 2026-08-26. Before shipping, **exercise both migrations once on an install that already has a balance and a saved UPI** — this is the one part that compiles but has not been run against real data. Check specifically that the balance survives, the scanner still offers the last UPI, and a cloud sync round-trips.
 
 Delete the backup bundle `S:/AndroidStudioProjects/cashdash-backup-20260825-231858.bundle` once satisfied with the history rewrite; it still contains the old APKs and therefore the revoked keys.
 

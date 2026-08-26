@@ -194,7 +194,7 @@ class ProfileActivity : ThemedActivity() {
                 val prefsToClear = listOf(
                     "AppPrefs", "WalletPrefs", "WalletPrefs_v2", "CategoryPrefs",
                     "GraphData", "CategoryWeekData", "MoneySchedulePrefs",
-                    "ScannerHistory", "LocalScanPrefs", "NotificationCache"
+                    "ScannerHistory", "LocalScanPrefs", "LocalScanPrefs_v2", "NotificationCache"
                 )
                 prefsToClear.forEach { name ->
                     getSharedPreferences(name, MODE_PRIVATE).edit().clear().apply()
@@ -252,7 +252,7 @@ class ProfileActivity : ThemedActivity() {
                     val prefsToClear = listOf(
                         "AppPrefs", "WalletPrefs", "WalletPrefs_v2", "CategoryPrefs",
                         "GraphData", "CategoryWeekData", "MoneySchedulePrefs",
-                        "ScannerHistory", "LocalScanPrefs", "ScannerMetadataPrefs", "NotificationCache"
+                        "ScannerHistory", "LocalScanPrefs", "LocalScanPrefs_v2", "ScannerMetadataPrefs", "NotificationCache"
                     )
                     prefsToClear.forEach { name ->
                         getSharedPreferences(name, MODE_PRIVATE).edit().clear().apply()

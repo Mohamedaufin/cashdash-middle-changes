@@ -88,7 +88,7 @@ object FirestoreSyncManager {
                 val userPrefs = appContext.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
                 val categoryWeekPrefs = appContext.getSharedPreferences("CategoryWeekData", Context.MODE_PRIVATE)
                 val scannerHistPrefs = appContext.getSharedPreferences("ScannerHistory", Context.MODE_PRIVATE)
-                val localScanPrefs = appContext.getSharedPreferences("LocalScanPrefs", Context.MODE_PRIVATE)
+                val localScanPrefs = ScanStore.get(appContext)
                 val finminderPrefs = appContext.getSharedPreferences("FinminderPrefs", Context.MODE_PRIVATE)
                 val upiAllocPrefs = appContext.getSharedPreferences("UpiAllocationPrefs", Context.MODE_PRIVATE)
 
@@ -596,7 +596,7 @@ object FirestoreSyncManager {
                         val undoMap = undoDoc.get("LocalScanPrefs") as? Map<String, Any>
                         if (undoMap != null) {
                             isSyncingFromCloud = true
-                            val edit = context.getSharedPreferences("LocalScanPrefs", Context.MODE_PRIVATE).edit()
+                            val edit = ScanStore.get(context).edit()
                             edit.clear().apply()
                             for ((k, v) in undoMap) {
                                 if (v is String) edit.putString(k, v)
@@ -697,7 +697,7 @@ object FirestoreSyncManager {
 
         val prefsToWatch = listOf(
             "AppPrefs", "WalletPrefs", "WalletPrefs_v2", "CategoryPrefs", "GraphData",
-            "CategoryWeekData", "MoneySchedulePrefs", "ScannerHistory", "LocalScanPrefs", "ScannerMetadataPrefs", "FinminderPrefs"
+            "CategoryWeekData", "MoneySchedulePrefs", "ScannerHistory", "LocalScanPrefs", "LocalScanPrefs_v2", "ScannerMetadataPrefs", "FinminderPrefs"
         )
 
         prefsToWatch.forEach { name ->
@@ -952,10 +952,24 @@ object FirestoreSyncManager {
         )
     }
 
+    /**
+     * Resolves a preference file by the name used on the wire.
+     *
+     * Two of these files are encrypted at rest but keep their original names in
+     * Firestore so existing cloud documents stay readable. Opening them with a
+     * plain getSharedPreferences would read ciphertext, so route them through
+     * their store instead.
+     */
+    private fun prefsByWireName(context: Context, prefName: String): android.content.SharedPreferences = when (prefName) {
+        WalletStore.legacyFileName, WalletStore.fileName -> WalletStore.get(context)
+        ScanStore.legacyFileName, ScanStore.fileName -> ScanStore.get(context)
+        else -> context.getSharedPreferences(prefName, Context.MODE_PRIVATE)
+    }
+
     private fun xmlMapToPrefs(context: Context, prefName: String, map: Map<String, Any>?) {
         if (map == null) return
         isSyncingFromCloud = true
-        val edit = context.getSharedPreferences(prefName, Context.MODE_PRIVATE).edit()
+        val edit = prefsByWireName(context, prefName).edit()
         edit.clear().apply()
         for ((k, v) in map) {
             when (v) {

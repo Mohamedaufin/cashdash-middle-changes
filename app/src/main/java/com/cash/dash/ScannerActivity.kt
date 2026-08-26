@@ -322,7 +322,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         btnGallery.setOnClickListener { openGallery() }
 
         btnHistory.setOnClickListener {
-            val localPrefs = getSharedPreferences("LocalScanPrefs", MODE_PRIVATE)
+            val localPrefs = ScanStore.get(this)
             val lastUpi = localPrefs.getString("last_upi", null)
             if (lastUpi != null) {
                 scannedOnce = true
@@ -666,7 +666,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
             val id = (decode(getParam(upi,"pa")) ?: "Unknown").replace("|", "-")
 
             if (upi.contains("upi://pay")) {
-                getSharedPreferences("LocalScanPrefs", MODE_PRIVATE).edit().putString("last_upi", upi).apply()
+                ScanStore.get(this).edit().putString("last_upi", upi).apply()
                 FirestoreSyncManager.pushAllDataToCloud(this)
             }
 
@@ -1236,7 +1236,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         if (pendingAmount > 0) {
             saveExpense(pendingCategory ?: "no choice", pendingAmount, pendingTitle)
         }
-        val lastUpi = getSharedPreferences("LocalScanPrefs", MODE_PRIVATE).getString("last_upi", "") ?: ""
+        val lastUpi = ScanStore.get(this).getString("last_upi", "") ?: ""
         val recipientUpi = (decode(getParam(lastUpi, "pa")) ?: "")
 
         val intent = Intent(this, SuccessActivity::class.java).apply {
@@ -1280,7 +1280,7 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         HistoryDataManager.saveTransaction(this, titleText, amount.toFloat(), category, timestampLong)
 
         // Save Scanner Metadata (UPI and App) for history lookup
-        val lastUpi = getSharedPreferences("LocalScanPrefs", MODE_PRIVATE).getString("last_upi", "") ?: ""
+        val lastUpi = ScanStore.get(this).getString("last_upi", "") ?: ""
         getSharedPreferences("ScannerMetadataPrefs", MODE_PRIVATE).edit()
             .putString("UPI_${timestampLong}", lastUpi)
             .putString("APP_${timestampLong}", selectedPaymentApp)

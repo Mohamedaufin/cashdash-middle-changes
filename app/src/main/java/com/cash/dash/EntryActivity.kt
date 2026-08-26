@@ -534,7 +534,7 @@ class EntryActivity : ThemedActivity() {
         val prefsToPurge = listOf(
             "WalletPrefs", "WalletPrefs_v2", "CategoryPrefs", "GraphData",
             "CategoryWeekData", "MoneySchedulePrefs", "ScannerHistory",
-            "LocalScanPrefs", "ScannerMetadataPrefs", "NotificationCache", "AppPrefs" // Cleared carefully below
+            "LocalScanPrefs", "LocalScanPrefs_v2", "ScannerMetadataPrefs", "NotificationCache", "AppPrefs" // Cleared carefully below
         )
 
         // Capture ThemePrefs if needed? Actually we probably want to keep theme? No, clear state.
