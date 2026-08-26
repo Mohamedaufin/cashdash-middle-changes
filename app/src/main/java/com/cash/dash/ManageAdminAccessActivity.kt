@@ -137,6 +137,17 @@ class ManageAdminAccessActivity : ThemedActivity() {
 
         loadUserStatusList()
         setupAdminAccessListener()
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (findViewById<View>(R.id.layoutEditPermissionsContainer)?.visibility == View.VISIBLE) {
+                    closeEditPermissionsView(withConfirmation = true)
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
+                }
+            }
+        })
 
 
     }
@@ -770,7 +781,7 @@ class ManageAdminAccessActivity : ThemedActivity() {
                                     allocateAdmins = reqDoc.getBoolean("allocateAdmins") ?: false,
                                     validUntil = reqDoc.getLong("validUntil") ?: 0L
                                 )
-                                launchEditPermissionsActivity(email, name, requestedPerms, isNewAdmin = false, isReviewingRequest = true, isExtensionRequest = isExtension)
+                                showEditAdminPermissionsDialog(email, name, requestedPerms, isNewAdmin = false, isReviewingRequest = true, isExtensionRequest = isExtension)
                             }
                         }
                 }
@@ -786,7 +797,7 @@ class ManageAdminAccessActivity : ThemedActivity() {
             btnEdit.visibility = View.VISIBLE
             btnReview?.visibility = View.GONE
             val editAction = View.OnClickListener {
-                launchEditPermissionsActivity(email, name, perms, isNewAdmin = false)
+                showEditAdminPermissionsDialog(email, name, perms, isNewAdmin = false)
             }
             btnEdit.setOnClickListener(editAction)
             view.setOnClickListener(editAction)
@@ -820,7 +831,7 @@ class ManageAdminAccessActivity : ThemedActivity() {
             setBackgroundResource(typedValue.resourceId)
             setOnClickListener {
                 this@ManageAdminAccessActivity.findViewById<EditText>(R.id.etSearchNewAdmin)?.setText("")
-                launchEditPermissionsActivity(user.email, user.name, AdminManager.AdminPermissions(), isNewAdmin = true)
+                showEditAdminPermissionsDialog(user.email, user.name, AdminManager.AdminPermissions(), isNewAdmin = true)
             }
         }
 
@@ -852,21 +863,641 @@ class ManageAdminAccessActivity : ThemedActivity() {
         container.addView(div)
     }
 
-    // Was: build an Intent full of putExtras and startActivity(EditAdminPermissionsActivity).
-    // That activity rendered the controls and then wrote nothing at all -- adding an admin,
-    // editing grants, approving a request and revoking access were all silent no-ops, with
-    // revoke reporting success while every grant stayed in place. It now opens the same
-    // bottom sheet AdminActivity uses, which is the code that actually performs the writes.
-    private fun launchEditPermissionsActivity(
+    // Restored from 4ba9bfb^. That commit ("Restore Force Update and Name Backfill")
+    // deleted 650 lines here and 351 from this screen's layout, replacing the inline
+    // editor -- AI Rephrase on both fields with undo/redo, and the announcement
+    // template -- with a stub activity that wrote nothing. This is the f5e95bd UI.
+
+    private fun showEditAdminPermissionsDialog(
         email: String,
         name: String,
-        perms: AdminManager.AdminPermissions,
+        currentPerms: AdminManager.AdminPermissions,
         isNewAdmin: Boolean = false,
         isReviewingRequest: Boolean = false,
         isExtensionRequest: Boolean = false
-    ) = AdminPermissionsSheet.show(
-        this, email, name, perms, isNewAdmin, isReviewingRequest, isExtensionRequest
-    )
+    ) {
+        findViewById<View>(R.id.layoutMainContent)?.visibility = View.GONE
+        findViewById<View>(R.id.layoutEditPermissionsContainer)?.visibility = View.VISIBLE
+
+        val tvEmail = findViewById<TextView>(R.id.tvAdminEmail) ?: return
+        tvEmail.text = "$name - $email"
+
+        val cbAnnouncements = findViewById<android.widget.CheckBox>(R.id.cbAnnouncements) ?: return
+        val cbPromotions = findViewById<android.widget.CheckBox>(R.id.cbPromotions) ?: return
+        val cbNotifications = findViewById<android.widget.CheckBox>(R.id.cbNotifications) ?: return
+        val cbLastSeen = findViewById<android.widget.CheckBox>(R.id.cbLastSeen) ?: return
+        val cbAdminLogs = findViewById<android.widget.CheckBox>(R.id.cbAdminLogs) ?: return
+        val cbReplyQueries = findViewById<android.widget.CheckBox>(R.id.cbReplyQueries) ?: return
+        val cbAddNewAdmin = findViewById<android.widget.CheckBox>(R.id.cbAddNewAdmin) ?: return
+        val btnSave = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSavePermissions) ?: return
+        val btnRevoke = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnRevokeAccess) ?: return
+        val btnCancelEditTop = findViewById<TextView>(R.id.btnCancelEditTop) ?: return
+
+        btnCancelEditTop.setOnClickListener {
+            closeEditPermissionsView(withConfirmation = true)
+        }
+
+        val cbIncludeNotification = findViewById<android.widget.CheckBox>(R.id.cbIncludeNotification)
+        val layoutNotificationTemplate = findViewById<LinearLayout>(R.id.layoutNotificationTemplate)
+        val actvTitle = findViewById<android.widget.EditText>(R.id.actvNotificationTitle)
+        val actvContent = findViewById<android.widget.EditText>(R.id.actvNotificationContent)
+        val btnAIRephraseTitle = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnAIRephraseTitle)
+        val btnAIRephraseBody = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnAIRephraseBody)
+
+        cbIncludeNotification?.setOnCheckedChangeListener { _, isChecked ->
+            layoutNotificationTemplate?.visibility = if (isChecked) View.VISIBLE else View.GONE
+        }
+        // Match checkbox tick colour to the rest of the page (theme-aware)
+        val notifCbNormalColor = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.parseColor("#1A1A1A") else android.graphics.Color.WHITE
+        val notifCbDisabledColor = android.graphics.Color.parseColor("#44888888")
+        val notifCbTintList = android.content.res.ColorStateList(
+            arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf(android.R.attr.state_enabled)),
+            intArrayOf(notifCbDisabledColor, notifCbNormalColor)
+        )
+        cbIncludeNotification?.buttonTintList = notifCbTintList
+        
+        val tvUndoRephraseTitle = findViewById<android.widget.TextView>(R.id.tvUndoRephraseTitle)
+        val tvRedoRephraseTitle = findViewById<android.widget.TextView>(R.id.tvRedoRephraseTitle)
+        val titleRephraseState = GenerativeAiManager.RephraseState(actvTitle!!, tvUndoRephraseTitle, tvRedoRephraseTitle)
+
+        btnAIRephraseTitle?.setOnClickListener {
+            val originalText = actvTitle?.text?.toString() ?: ""
+            if (originalText.isBlank()) {
+                ToastHelper.showToast(this@ManageAdminAccessActivity, "Please type a title first.")
+                return@setOnClickListener
+            }
+            ToastHelper.showToast(this@ManageAdminAccessActivity, "Rephrasing Title...")
+            @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
+            kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                try {
+                    val result = GenerativeAiManager.rephraseText(originalText, true, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
+                    titleRephraseState.saveState(originalText)
+                    actvTitle?.setText(result)
+                    titleRephraseState.saveState(result)
+                } catch (e: Exception) {
+                    ToastHelper.showErrorDialog(this@ManageAdminAccessActivity, "AI Error", e.message ?: "Unknown Error")
+                }
+            }
+        }
+
+        val tvUndoRephraseBody = findViewById<android.widget.TextView>(R.id.tvUndoRephraseBody)
+        val tvRedoRephraseBody = findViewById<android.widget.TextView>(R.id.tvRedoRephraseBody)
+        val bodyRephraseState = GenerativeAiManager.RephraseState(actvContent!!, tvUndoRephraseBody, tvRedoRephraseBody)
+
+        btnAIRephraseBody?.setOnClickListener {
+            val originalText = actvContent?.text?.toString() ?: ""
+            if (originalText.isBlank()) {
+                ToastHelper.showToast(this@ManageAdminAccessActivity, "Please type some content first.")
+                return@setOnClickListener
+            }
+            ToastHelper.showToast(this@ManageAdminAccessActivity, "Rephrasing Content...")
+            @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
+            kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                try {
+                    val result = GenerativeAiManager.rephraseText(originalText, false, "AQ.Ab8RN6IA4oaqMPLgc4p9LZcFoNJhpokd9RQyM5bSMi2m_JOgVw")
+                    bodyRephraseState.saveState(originalText)
+                    actvContent?.setText(result)
+                    bodyRephraseState.saveState(result)
+                } catch (e: Exception) {
+                    ToastHelper.showErrorDialog(this@ManageAdminAccessActivity, "AI Error", e.message ?: "Unknown Error")
+                }
+            }
+        }
+
+        var selectedValidUntil = currentPerms.validUntil
+        
+        val currentUserPerms = AdminManager.getPermissions()
+        val isCurrentUserOwner = currentUserPerms.isOwner
+        val isCurrentUserSA = !isCurrentUserOwner && currentUserPerms.fullAccess
+        val isCurrentUserAdmin = !isCurrentUserOwner && !isCurrentUserSA
+        val isCurrentUserLifetime = currentUserPerms.validUntil == 0L
+        val canGiveForever = isCurrentUserOwner || (isCurrentUserSA && isCurrentUserLifetime)
+        val tvValidityStatus = findViewById<TextView>(R.id.tvValidityStatus)
+        val btnChangeValidity = findViewById<TextView>(R.id.btnChangeValidity)
+        val btnRequestExtension = findViewById<TextView>(R.id.btnRequestExtension)
+        
+        val updateValidityUI = {
+            if (selectedValidUntil == 0L) {
+                tvValidityStatus?.text = "Forever (No expiry)"
+            } else {
+                val formatted = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault()).format(selectedValidUntil)
+                tvValidityStatus?.text = "Valid until: $formatted"
+            }
+        }
+        updateValidityUI()
+
+        val layoutAdminValidity = findViewById<View>(R.id.layoutAdminValidity)
+
+        btnChangeValidity?.setOnClickListener {
+            val options = if (canGiveForever) {
+                arrayOf("Forever (No expiry)", "Choose Date")
+            } else {
+                arrayOf("Choose Date")
+            }
+
+            AlertDialogHelper.showListDialog(this, "Admin Validity", options) { which ->
+                    val selectedText = options[which]
+                    if (selectedText == "Forever (No expiry)") {
+                        selectedValidUntil = 0L
+                        updateValidityUI()
+                    } else if (selectedText == "Choose Date") {
+                        val cal = java.util.Calendar.getInstance()
+                        if (selectedValidUntil > 0) cal.timeInMillis = selectedValidUntil
+
+                        val dpd = android.app.DatePickerDialog(this, ThemeHelper.getDatePickerTheme(this), { _, y, m, d ->
+                            val newCal = java.util.Calendar.getInstance()
+                            newCal.set(y, m, d, 23, 59, 59)
+                            selectedValidUntil = newCal.timeInMillis
+                            updateValidityUI()
+                        }, cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH), cal.get(java.util.Calendar.DAY_OF_MONTH))
+                        dpd.datePicker.minDate = System.currentTimeMillis() - 1000
+                        if (!isCurrentUserLifetime && currentUserPerms.validUntil > 0L) {
+                            dpd.datePicker.maxDate = currentUserPerms.validUntil
+                        }
+                        dpd.show()
+                    }
+            }
+        }
+
+        btnRequestExtension?.setOnClickListener {
+            val cal = java.util.Calendar.getInstance()
+            if (currentUserPerms.validUntil > 0) cal.timeInMillis = currentUserPerms.validUntil
+
+            val dpd = android.app.DatePickerDialog(this, ThemeHelper.getDatePickerTheme(this), { _, y, m, d ->
+                val newCal = java.util.Calendar.getInstance()
+                newCal.set(y, m, d, 23, 59, 59)
+                val requestedTime = newCal.timeInMillis
+                
+                // Submit extension request
+                val requestData = hashMapOf(
+                    "isFixedOwner" to currentUserPerms.isFixedOwner,
+                    "isPromotedOwner" to currentUserPerms.isPromotedOwner,
+                    "fullAccess" to currentUserPerms.fullAccess,
+                    "sendAnnouncements" to currentUserPerms.sendAnnouncements,
+                    "sendPromotions" to currentUserPerms.sendPromotions,
+                    "sendNotifications" to currentUserPerms.sendNotifications,
+                    "viewLastSeen" to currentUserPerms.viewLastSeen,
+                    "viewAdminLogs" to currentUserPerms.viewAdminLogs,
+                    "replyToQueries" to currentUserPerms.replyToQueries,
+                    "allocateAdmins" to currentUserPerms.allocateAdmins,
+                    "validUntil" to requestedTime,
+                    "isExtensionRequest" to true,
+                    "timestamp" to com.google.firebase.firestore.FieldValue.serverTimestamp()
+                )
+                
+                com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("admin_requests").document(email.lowercase()).set(requestData)
+                    .addOnSuccessListener {
+                        ToastHelper.showToast(this, "Extension request submitted")
+                        closeEditPermissionsView()
+                    }
+                    .addOnFailureListener {
+                        ToastHelper.showToast(this, "Failed to submit request")
+                    }
+            }, cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH), cal.get(java.util.Calendar.DAY_OF_MONTH))
+            dpd.datePicker.minDate = System.currentTimeMillis() - 1000
+            dpd.show()
+        }
+
+        val normalColor = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.parseColor("#1A1A1A") else android.graphics.Color.WHITE
+        val disabledColor = android.graphics.Color.parseColor("#44888888")
+
+        val states = arrayOf(
+            intArrayOf(-android.R.attr.state_enabled),
+            intArrayOf(android.R.attr.state_enabled)
+        )
+        val colors = intArrayOf(
+            disabledColor,
+            normalColor
+        )
+        val checkboxTintList = android.content.res.ColorStateList(states, colors)
+        cbAnnouncements.buttonTintList = checkboxTintList
+        cbPromotions.buttonTintList = checkboxTintList
+        cbNotifications.buttonTintList = checkboxTintList
+        cbLastSeen.buttonTintList = checkboxTintList
+        cbAdminLogs.buttonTintList = checkboxTintList
+        cbReplyQueries.buttonTintList = checkboxTintList
+        cbAddNewAdmin.buttonTintList = checkboxTintList
+
+        val isWhite = ThemeHelper.isWhiteTheme(this)
+        val greyTextColor = if (isWhite) android.graphics.Color.parseColor("#475569") else android.graphics.Color.parseColor("#E2E8F0")
+        val greyBgColor = android.content.res.ColorStateList.valueOf(
+            if (isWhite) android.graphics.Color.parseColor("#F1F5F9") else android.graphics.Color.parseColor("#334155")
+        )
+        
+        btnSave.setTextColor(greyTextColor)
+        btnSave.backgroundTintList = greyBgColor
+        btnSave.strokeWidth = 0
+
+        if (isNewAdmin) {
+            btnRevoke.text = "Cancel"
+            btnRevoke.setTextColor(greyTextColor)
+            btnRevoke.backgroundTintList = greyBgColor
+            btnRevoke.strokeWidth = 0
+            btnRevoke.setOnClickListener { closeEditPermissionsView(withConfirmation = true) }
+        } else if (isReviewingRequest) {
+            btnSave.text = "Approve Request"
+            btnRevoke.text = "Reject"
+            btnRevoke.setTextColor(greyTextColor)
+            btnRevoke.backgroundTintList = greyBgColor
+            btnRevoke.strokeWidth = 0
+        }
+
+        val isFixed = currentPerms.isFixedOwner
+        val isPromotedOwner = currentPerms.isPromotedOwner
+        val isTargetOwner = isFixed || isPromotedOwner
+        val isTargetSA = !isTargetOwner && (currentPerms.fullAccess || (currentPerms.sendAnnouncements && currentPerms.sendPromotions && currentPerms.sendNotifications && currentPerms.viewLastSeen && currentPerms.viewAdminLogs && currentPerms.replyToQueries && currentPerms.allocateAdmins))
+        val isTargetAdmin = !isTargetOwner && !isTargetSA
+
+        val isSelf = email.lowercase() == com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email?.lowercase()
+
+        val canSeeAnnouncements = isCurrentUserOwner || (isNewAdmin && currentUserPerms.canSendAnnouncements()) || (!isNewAdmin && currentPerms.canSendAnnouncements())
+        val canSeePromotions = isCurrentUserOwner || (isNewAdmin && currentUserPerms.canSendPromotions()) || (!isNewAdmin && currentPerms.canSendPromotions())
+        val canSeeNotifications = isCurrentUserOwner || (isNewAdmin && currentUserPerms.canSendNotifications()) || (!isNewAdmin && currentPerms.canSendNotifications())
+        val canSeeLastSeen = isCurrentUserOwner || (isNewAdmin && currentUserPerms.canViewLastSeen()) || (!isNewAdmin && currentPerms.canViewLastSeen())
+        val canSeeAdminLogs = isCurrentUserOwner || (isNewAdmin && currentUserPerms.canViewAdminLogs()) || (!isNewAdmin && currentPerms.canViewAdminLogs())
+        val canSeeReplyQueries = isCurrentUserOwner || (isNewAdmin && currentUserPerms.canReplyToQueries()) || (!isNewAdmin && currentPerms.canReplyToQueries())
+        val canSeeAddNewAdmin = isCurrentUserOwner || (isNewAdmin && currentUserPerms.canAllocateAdmins()) || (!isNewAdmin && currentPerms.canAllocateAdmins())
+
+        cbAnnouncements.visibility = if (canSeeAnnouncements) View.VISIBLE else View.GONE
+        cbPromotions.visibility = if (canSeePromotions) View.VISIBLE else View.GONE
+        cbNotifications.visibility = if (canSeeNotifications) View.VISIBLE else View.GONE
+        cbLastSeen.visibility = if (canSeeLastSeen) View.VISIBLE else View.GONE
+        cbAdminLogs.visibility = if (canSeeAdminLogs) View.VISIBLE else View.GONE
+        cbReplyQueries.visibility = if (canSeeReplyQueries) View.VISIBLE else View.GONE
+        cbAddNewAdmin.visibility = if (canSeeAddNewAdmin) View.VISIBLE else View.GONE
+
+        if (isTargetOwner) {
+            cbAnnouncements.isChecked = true
+            cbPromotions.isChecked = true
+            cbNotifications.isChecked = true
+            cbLastSeen.isChecked = true
+            cbAdminLogs.isChecked = true
+            cbReplyQueries.isChecked = true
+            cbAddNewAdmin.isChecked = true
+        } else if (isNewAdmin) {
+            cbAnnouncements.isChecked = false
+            cbPromotions.isChecked = false
+            cbNotifications.isChecked = false
+            cbLastSeen.isChecked = false
+            cbAdminLogs.isChecked = false
+            cbReplyQueries.isChecked = false
+            cbAddNewAdmin.isChecked = false
+        } else {
+            cbAnnouncements.isChecked = currentPerms.canSendAnnouncements()
+            cbPromotions.isChecked = currentPerms.canSendPromotions()
+            cbNotifications.isChecked = currentPerms.canSendNotifications()
+            cbLastSeen.isChecked = currentPerms.canViewLastSeen()
+            cbAdminLogs.isChecked = currentPerms.canViewAdminLogs()
+            cbReplyQueries.isChecked = currentPerms.canReplyToQueries()
+            cbAddNewAdmin.isChecked = currentPerms.canAllocateAdmins()
+        }
+
+        if (isTargetOwner) {
+            cbAnnouncements.isEnabled = false
+            cbPromotions.isEnabled = false
+            cbNotifications.isEnabled = false
+            cbLastSeen.isEnabled = false
+            cbAdminLogs.isEnabled = false
+            cbReplyQueries.isEnabled = false
+            cbAddNewAdmin.isEnabled = false
+            btnSave.isEnabled = true
+            
+            if (isSelf && !currentPerms.isFixedOwner) {
+                btnRevoke.visibility = View.VISIBLE
+                btnRevoke.text = "Resign as Admin"
+            } else {
+                btnRevoke.visibility = View.GONE
+            }
+            
+            btnChangeValidity?.visibility = View.GONE
+            btnRequestExtension?.visibility = View.GONE
+            layoutAdminValidity?.visibility = View.GONE
+        } else if (isSelf && !isCurrentUserOwner) {
+            cbAnnouncements.isEnabled = false
+            cbPromotions.isEnabled = false
+            cbNotifications.isEnabled = false
+            cbLastSeen.isEnabled = false
+            cbAdminLogs.isEnabled = false
+            cbReplyQueries.isEnabled = false
+            cbAddNewAdmin.isEnabled = false
+            btnSave.isEnabled = true
+            
+            btnRevoke.visibility = View.VISIBLE
+            btnRevoke.text = "Resign as Admin"
+            btnChangeValidity?.visibility = View.GONE
+            
+            if (currentUserPerms.validUntil > 0L) {
+                btnRequestExtension?.visibility = View.VISIBLE
+            } else {
+                btnRequestExtension?.visibility = View.GONE
+            }
+            layoutAdminValidity?.visibility = View.VISIBLE
+        } else {
+            cbAnnouncements.isEnabled = true
+            cbPromotions.isEnabled = true
+            cbNotifications.isEnabled = true
+            cbLastSeen.isEnabled = true
+            cbAdminLogs.isEnabled = true
+            cbReplyQueries.isEnabled = true
+            cbAddNewAdmin.isEnabled = true
+            btnChangeValidity?.visibility = View.VISIBLE
+            btnRequestExtension?.visibility = View.GONE
+            layoutAdminValidity?.visibility = View.VISIBLE
+            if (isSelf) {
+                if (!currentPerms.isFixedOwner) {
+                    btnRevoke.visibility = View.VISIBLE
+                    btnRevoke.text = "Resign as Admin"
+                } else {
+                    btnRevoke.visibility = View.GONE
+                }
+            } else {
+                btnRevoke.visibility = View.VISIBLE
+                btnRevoke.text = "Revoke Access"
+            }
+        }
+
+        val updateAddNewAdminVisibility = {
+            if (cbAnnouncements.isChecked || cbPromotions.isChecked || cbNotifications.isChecked || cbLastSeen.isChecked || cbAdminLogs.isChecked || cbReplyQueries.isChecked) {
+                if (canSeeAddNewAdmin) {
+                    cbAddNewAdmin.visibility = View.VISIBLE
+                }
+            } else {
+                cbAddNewAdmin.isChecked = false
+                cbAddNewAdmin.visibility = View.GONE
+            }
+        }
+        
+        cbAnnouncements.setOnCheckedChangeListener { _, _ -> updateAddNewAdminVisibility() }
+        cbPromotions.setOnCheckedChangeListener { _, _ -> updateAddNewAdminVisibility() }
+        cbNotifications.setOnCheckedChangeListener { _, _ -> updateAddNewAdminVisibility() }
+        cbLastSeen.setOnCheckedChangeListener { _, _ -> updateAddNewAdminVisibility() }
+        cbAdminLogs.setOnCheckedChangeListener { _, _ -> updateAddNewAdminVisibility() }
+        cbReplyQueries.setOnCheckedChangeListener { _, _ -> updateAddNewAdminVisibility() }
+
+        updateAddNewAdminVisibility()
+
+        btnSave.setOnClickListener {
+            if (isSelf) {
+                ToastHelper.showToast(this@ManageAdminAccessActivity, "Permissions saved")
+                closeEditPermissionsView()
+                return@setOnClickListener
+            }
+
+            val db = FirebaseFirestore.getInstance()
+            
+            val hasFeaturePermissions = cbAnnouncements.isChecked || cbPromotions.isChecked || cbNotifications.isChecked || cbLastSeen.isChecked || cbAdminLogs.isChecked || cbReplyQueries.isChecked
+            val hasZeroPermissions = !hasFeaturePermissions
+            
+            if (hasZeroPermissions) {
+                if (isNewAdmin) {
+                    ToastHelper.showToast(this@ManageAdminAccessActivity, "Select at least 1 permission.")
+                    return@setOnClickListener
+                } else if (!isReviewingRequest) {
+                    FirebaseFirestore.getInstance().collection("admins").document(email.lowercase()).delete()
+                        .addOnSuccessListener {
+                            ToastHelper.showToast(this@ManageAdminAccessActivity, "Access revoked")
+                            closeEditPermissionsView()
+                        }
+                    return@setOnClickListener
+                }
+            }
+            
+            val isSuperAdminSave = cbAnnouncements.isChecked && cbPromotions.isChecked && cbNotifications.isChecked && cbLastSeen.isChecked && cbAdminLogs.isChecked && cbReplyQueries.isChecked && cbAddNewAdmin.isChecked
+            val isOwnerSave = currentPerms.isPromotedOwner 
+            
+            var needsRequest = false
+            if (!isCurrentUserOwner) {
+                if (!currentUserPerms.canAllocateAdmins()) {
+                    needsRequest = true
+                } else if (isSuperAdminSave && (!currentPerms.fullAccess || isNewAdmin)) {
+                    needsRequest = true
+                }
+            }
+            
+            if (needsRequest) {
+                val requestData = hashMapOf<String, Any>(
+                    "email" to email.lowercase(),
+                    "name" to name,
+                    "isOwner" to false,
+                    "fullAccess" to isSuperAdminSave,
+                    "sendAnnouncements" to cbAnnouncements.isChecked,
+                    "sendPromotions" to cbPromotions.isChecked,
+                    "sendNotifications" to cbNotifications.isChecked,
+                    "viewLastSeen" to cbLastSeen.isChecked,
+                    "viewAdminLogs" to cbAdminLogs.isChecked,
+                    "replyToQueries" to cbReplyQueries.isChecked,
+                    "allocateAdmins" to cbAddNewAdmin.isChecked,
+                    "validUntil" to selectedValidUntil,
+                    "requestedBy" to (com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: ""),
+                    "timestamp" to System.currentTimeMillis(),
+                    "status" to "pending"
+                )
+                db.collection("admin_requests").document(email.lowercase()).set(requestData)
+                    .addOnSuccessListener {
+                        ToastHelper.showToast(this@ManageAdminAccessActivity, "Request sent to owners for approval")
+                        
+                        // Notify owners
+                        db.collection("admins").whereEqualTo("isOwner", true).get().addOnSuccessListener { snaps ->
+                            val ownerEmails = snaps.documents.map { it.id }.toMutableSet()
+                            ownerEmails.addAll(AdminManager.superAdmins) // Include fixed owners
+                            
+                            val requesterEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "An admin"
+                            for (owner in ownerEmails) {
+                                sendAdminInAppNotification(
+                                    targetEmail = owner,
+                                    subject = "New Admin Request",
+                                    body = "$requesterEmail requested to add/modify $email as an admin. Please review the request."
+                                )
+                            }
+                        }
+                        closeEditPermissionsView()
+                    }
+                    .addOnFailureListener { e -> 
+                        ToastHelper.showToast(this@ManageAdminAccessActivity, "Failed to send request. Firebase Rules might be blocking it: ${e.message}") 
+                    }
+                return@setOnClickListener
+            }
+
+            val data = hashMapOf<String, Any>(
+                "name" to name,
+                "isOwner" to isOwnerSave,
+                "fullAccess" to isSuperAdminSave,
+                "sendAnnouncements" to cbAnnouncements.isChecked,
+                "sendPromotions" to cbPromotions.isChecked,
+                "sendNotifications" to cbNotifications.isChecked,
+                "viewLastSeen" to cbLastSeen.isChecked,
+                "viewAdminLogs" to cbAdminLogs.isChecked,
+                "replyToQueries" to cbReplyQueries.isChecked,
+                "allocateAdmins" to cbAddNewAdmin.isChecked,
+                "validUntil" to selectedValidUntil
+            )
+
+            if (isReviewingRequest) {
+                db.collection("admins").document(email.lowercase()).set(data)
+                    .addOnSuccessListener {
+                        db.collection("admin_requests").document(email.lowercase()).delete()
+                        val approverEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "An administrator"
+                        val validityStr = if (selectedValidUntil == 0L) "Lifetime\n(Note: Your continued access is a reflection of the trust placed in you. It remains subject to review based on your ongoing performance and commitment to the CashDash platform.)" else java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(selectedValidUntil)
+                        val roleStr = if (isSuperAdminSave) "Super Administrator" else "Administrator"
+
+                        if (cbIncludeNotification?.isChecked == true) {
+                            val notifSubject = actvTitle?.text?.toString()?.trim() ?: ""
+                            var notifBody = actvContent?.text?.toString()?.trim() ?: ""
+                            notifBody = notifBody.replace("{Validity}", validityStr)
+                            notifBody += "\n\nRegards,\nTeam CashDash"
+                            
+                            if (notifSubject.isNotEmpty() && notifBody.isNotEmpty()) {
+                                sendAdminInAppNotification(email, notifSubject, notifBody)
+                            }
+                        }
+
+                        if (isExtensionRequest) {
+                            logAdminAction("Admin Extension Approved", actvTitle?.text?.toString() ?: "Extension Approved", "$approverEmail approved extension request for $email. New validity: $validityStr", email)
+                        } else {
+                            logAdminAction("Admin Request Approved", actvTitle?.text?.toString() ?: "Request Approved", "$approverEmail approved admin request for $email as $roleStr. Validity: $validityStr", email)
+                        }
+
+                        logAdminAction("APPROVED_REQUEST", email, "Approved request and granted/updated permissions.")
+                        ToastHelper.showToast(this@ManageAdminAccessActivity, "Request approved")
+                        closeEditPermissionsView()
+                    }
+                    .addOnFailureListener { e ->
+                        ToastHelper.showToast(this@ManageAdminAccessActivity, "Failed: ${e.message}")
+                    }
+                return@setOnClickListener
+            }
+
+            db.collection("admins").document(email.lowercase()).set(data)
+                .addOnSuccessListener {
+                    val action = if (isNewAdmin) "GRANTED_ACCESS" else "UPDATED_PERMISSIONS"
+                    val msg = if (isNewAdmin) "Admin added: $name" else "Permissions updated"
+                    logAdminAction(action, email, msg)
+
+                    val actorEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "An administrator"
+                    val validityStr = if (selectedValidUntil == 0L) "Lifetime\n(Note: Your continued access is a reflection of the trust placed in you. It remains subject to review based on your ongoing performance and commitment to the CashDash platform.)" else java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(selectedValidUntil)
+                    val roleStr = if (isSuperAdminSave) "Super Administrator" else "Administrator"
+
+                    if (isNewAdmin) {
+                        if (cbIncludeNotification?.isChecked == true) {
+                            val notifSubject = actvTitle?.text?.toString()?.trim() ?: ""
+                            var notifBody = actvContent?.text?.toString()?.trim() ?: ""
+                            notifBody = notifBody.replace("{Validity}", validityStr)
+                            notifBody += "\n\nRegards,\nTeam CashDash"
+                            if (notifSubject.isNotEmpty() && notifBody.isNotEmpty()) {
+                                sendAdminInAppNotification(email, notifSubject, notifBody)
+                            }
+                        }
+                        logAdminAction("Admin Promotion", actvTitle?.text?.toString() ?: "Admin Added", "$actorEmail granted $roleStr access to $email. Validity: $validityStr", email)
+                    } else if (true) {
+                        if (cbIncludeNotification?.isChecked == true) {
+                            val notifSubject = actvTitle?.text?.toString()?.trim() ?: ""
+                            var notifBody = actvContent?.text?.toString()?.trim() ?: ""
+                            notifBody = notifBody.replace("{Validity}", validityStr)
+                            notifBody += "\n\nRegards,\nTeam CashDash"
+                            if (notifSubject.isNotEmpty() && notifBody.isNotEmpty()) {
+                                sendAdminInAppNotification(email, notifSubject, notifBody)
+                            }
+                        }
+                        logAdminAction("Admin Validity Update", actvTitle?.text?.toString() ?: "Access Updated", "$actorEmail updated validity for $email to $validityStr", email)
+                    }
+
+                    ToastHelper.showToast(this@ManageAdminAccessActivity, msg)
+                    this@ManageAdminAccessActivity.findViewById<EditText>(R.id.etSearchNewAdmin)?.setText("")
+                    this@ManageAdminAccessActivity.findViewById<LinearLayout>(R.id.layoutAdminSearchResults)?.visibility = View.GONE
+                    closeEditPermissionsView()
+                }
+                .addOnFailureListener { e -> 
+                    ToastHelper.showToast(this@ManageAdminAccessActivity, "Failed to save. Firebase Rules might be blocking it: ${e.message}") 
+                }
+        }
+
+        if (isReviewingRequest) {
+            btnRevoke.setOnClickListener {
+                FirebaseFirestore.getInstance().collection("admin_requests").document(email.lowercase()).delete()
+                    .addOnSuccessListener {
+                        logAdminAction("REJECTED_REQUEST", email, "Rejected admin extension/access request.")
+                        ToastHelper.showToast(this, "Request rejected")
+                        closeEditPermissionsView()
+                    }
+                    .addOnFailureListener { e ->
+                        ToastHelper.showToast(this, "Failed to reject: ${e.message}")
+                    }
+            }
+        } else if (isSelf && !currentPerms.isFixedOwner) {
+            btnRevoke.setOnClickListener {
+                AlertDialogHelper.createFlatDialogBuilder(this)
+                    .setTitle("Resign as Admin")
+                    .setMessage("Are you sure you want to resign? You will lose all administrative privileges immediately.")
+                    .setPositiveButton("Resign") {
+                        FirebaseFirestore.getInstance().collection("admins").document(email.lowercase()).delete()
+                            .addOnSuccessListener {
+                                FirebaseFirestore.getInstance().collection("admin_requests").document(email.lowercase()).delete()
+                                logAdminAction("RESIGNED", email, "User voluntarily resigned from admin privileges.")
+                                ToastHelper.showToast(this, "You have resigned as admin.")
+                                closeEditPermissionsView()
+                                finish()
+                            }
+                            .addOnFailureListener { e ->
+                                ToastHelper.showToast(this, "Failed to resign: ${e.message}")
+                            }
+                    }
+                    .setNegativeButton("Cancel")
+                    .show()
+            }
+        } else if (!isNewAdmin) {
+            btnRevoke.setOnClickListener {
+                AlertDialogHelper.createFlatDialogBuilder(this)
+                    .setTitle("Revoke Access")
+                    .setMessage("Are you sure you want to revoke admin access for $email?")
+                    .setPositiveButton("Revoke") {
+                        FirebaseFirestore.getInstance().collection("admins").document(email.lowercase()).delete()
+                            .addOnSuccessListener {
+                                val actorEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: "An administrator"
+                                if (cbIncludeNotification?.isChecked == true) {
+                                    val notifSubject = actvTitle?.text?.toString()?.trim() ?: ""
+                                    var notifBody = actvContent?.text?.toString()?.trim() ?: ""
+                                    notifBody += "\n\nRegards,\nTeam CashDash"
+                                    
+                                    if (notifSubject.isNotEmpty() && notifBody.isNotEmpty()) {
+                                        sendAdminInAppNotification(email, notifSubject, notifBody)
+                                    }
+                                }
+                                logAdminAction("REVOKED_ACCESS", email, "Revoked all admin privileges.")
+                                logAdminAction("Admin Revocation", "Access Revoked", "$actorEmail revoked admin access for $email", email)
+                                ToastHelper.showToast(this, "Access revoked")
+                                closeEditPermissionsView()
+                            }
+                            .addOnFailureListener { e ->
+                                ToastHelper.showToast(this, "Failed to revoke: ${e.message}")
+                            }
+                    }
+                    .setNegativeButton("Cancel")
+                    .show()
+            }
+        }
+    }
+
+    private fun closeEditPermissionsView(withConfirmation: Boolean = false) {
+        if (withConfirmation) {
+            showCancelConfirmationDialog {
+                findViewById<View>(R.id.layoutEditPermissionsContainer)?.visibility = View.GONE
+                findViewById<View>(R.id.layoutMainContent)?.visibility = View.VISIBLE
+            }
+        } else {
+            findViewById<View>(R.id.layoutEditPermissionsContainer)?.visibility = View.GONE
+            findViewById<View>(R.id.layoutMainContent)?.visibility = View.VISIBLE
+        }
+    }
+
+    private fun showCancelConfirmationDialog(onConfirmed: () -> Unit) {
+        AlertDialogHelper.createFlatDialogBuilder(this)
+            .setTitle("Cancel Edit")
+            .setMessage("Are you sure you want to cancel the action? Unsaved changes will be lost.")
+            .setPositiveButton("Yes") { onConfirmed() }
+            .setNegativeButton("No")
+            .show()
+    }
+
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
