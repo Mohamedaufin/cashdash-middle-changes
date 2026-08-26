@@ -45,16 +45,16 @@ Enforcement is still off, so it protects nothing yet. Gated on 0.5.0 adoption: e
 
 Also outstanding from the earlier audit: restrict the API key in Cloud Console (Android restriction + package + SHA-1, plus an API allowlist).
 
-### C. Both Gemini keys are still the transcript-exposed values — Low
+### C. Both Gemini keys rotated; old values still need revoking at AI Studio — Low
 
 **Corrected 2026-08-26.** This entry previously said only `GEMINI_API_KEY_ADMIN` needed rotating, on the reasoning that `GEMINI_API_KEY` "had already moved to v2". That was wrong, and the error was mine: v2 was **not** a rotation after the transcript exposure — v2 *is* the replacement key that was created in response to the APK leak, and the replacements are precisely what the 2026-08-24 audit recorded as *"both replacement keys are now also compromised, via this chat transcript"*.
 
 So both live values were written to disk in plaintext:
 
-| Secret | Live version | Status |
-|---|---|---|
-| `GEMINI_API_KEY` | v2 | transcript-exposed, **unrotated** |
-| `GEMINI_API_KEY_ADMIN` | v1 | transcript-exposed, **unrotated** |
+| Secret | Exposed version | Live version | Status |
+|---|---|---|---|
+| `GEMINI_API_KEY` | v2 | **v3** | rotated 2026-08-26; v2 DESTROYED, **not yet revoked** |
+| `GEMINI_API_KEY_ADMIN` | v1 | **v2** | rotated 2026-08-26; v1 DESTROYED, **not yet revoked** |
 
 Neither is the key that leaked via the APK — that one returns 401 and is dead. This is materially lower risk: a local transcript is not public, not indexed, and not reachable by the bots that scrape APKs and repos. The two transcript files were deleted on 2026-08-26 and no key material remains under `~/.claude`, but deletion does not invalidate a credential, and copies may survive in File History, a restore point, or folder sync.
 
@@ -68,7 +68,25 @@ firebase deploy --only functions:rephraseSupportText --project cashdash-8cd8b
 
 The redeploy is required, not optional — functions pin a secret version at deploy time, so setting a new version without redeploying leaves the old one serving traffic.
 
-Afterwards, and only after verifying the new versions work, destroy the superseded ones: `GEMINI_API_KEY@1`, `GEMINI_API_KEY@2`, `GEMINI_API_KEY_ADMIN@1`. All three are currently ENABLED.
+**Done 2026-08-26.** Both secrets were rotated and the superseded versions destroyed. Verified end state: `GEMINI_API_KEY` v3 ENABLED (v1, v2 DESTROYED); `GEMINI_API_KEY_ADMIN` v2 ENABLED (v1 DESTROYED).
+
+Rollout, from the Cloud Functions audit log (UTC):
+
+| Time | Event |
+|---|---|
+| 08:26 | Deploy binds `GEMINI_API_KEY=3` **and** `GEMINI_API_KEY_ADMIN=2` in both `us-central1` and `asia-south1` |
+| 08:34:50 | `scope=messaging` served 200 — exercises v3 |
+| 08:35:06 | `scope=admin` served 200 — exercises v2 |
+| 08:37–08:38 | Second deploy, **code only** (`firebase-functions-hash` 62b769a7 → aa36f3cd); secret bindings byte-identical |
+
+Both scopes were verified against the new keys *before* the second deploy, and that deploy changed no bindings — so the 08:35 admin success is valid evidence for v2.
+
+**Still outstanding: revoke the exposed values at Google AI Studio.** Destroying a Secret Manager version deletes Google's stored copy; it does not invalidate the key string. `GEMINI_API_KEY@2` and `GEMINI_API_KEY_ADMIN@1` remain callable by anyone holding the transcript until they are revoked at the provider and confirmed 401 — the same bar applied to the APK-leaked key in the resolved table below.
+
+Two CLI traps found while doing this, both worth remembering:
+
+- **`functions:secrets:prune` silently does nothing for these secrets.** It filters to `labels.firebase-managed=true` (`firebase-tools/lib/functions/secrets.js:164`), and neither secret carries that label — they were created outside the Firebase CLI. It reports *"All secrets are in use. Nothing to prune today"* even with three unused versions sitting there. Don't read that as a clean bill of health.
+- **`functions:secrets:destroy`'s "in use" warning is version-blind.** It calls `inUse(…, sv.secret, e)` (`lib/commands/functions-secrets-destroy.js:32`), which matches on secret *name* only; the version-aware `versionInUse` right beside it is never called. The warning fires identically for the live version, so `-f` carries no protection — verify the version against the deployed bindings by hand before destroying.
 
 ---
 
@@ -246,7 +264,7 @@ RTDB remains in the US and cannot be relocated in place; presence writes still c
 ## Next actions
 
 1. **Ship 0.5.0** (in review) — carries the last client-side fixes.
-2. **Rotate `GEMINI_API_KEY_ADMIN`** (C) — two minutes.
+2. **Revoke the old Gemini keys at AI Studio** (C) — rotation and Secret Manager cleanup are done; the exposed values stay callable until revoked and confirmed 401.
 3. **App Check → Monitor, then Enforce** (B) once adoption climbs.
 4. **Finish the region migration** after adoption.
 5. **Email verification** (A) — the remaining High, alongside Google Sign-In.
