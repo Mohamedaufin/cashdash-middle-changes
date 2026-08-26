@@ -188,7 +188,17 @@ Three things checked before writing any code, each of which would have made this
 
 The instance is cached, because `EncryptedSharedPreferences.create()` does keystore work per call and the wallet is read on widget refreshes and every HomeFragment bind. As on the admin cache, it falls back to plaintext if the keystore is unavailable — but to the *same* filename, so a device that later gains keystore support does not start from an empty wallet.
 
-**Verified:** `:app:assembleDebug` passes. **Not verified:** the migration has not been exercised on a device with real data. Worth one manual check on an install that has a balance set before shipping.
+**Verified on device 2026-08-26.** [SecurePrefsStoreMigrationTest](app/src/androidTest/java/com/cash/dash/SecurePrefsStoreMigrationTest.kt) — 7 instrumented tests, all passing on a physical Galaxy S23 against a real Android keystore:
+
+- every value survives migration with its type intact (int / string / boolean / long / float / string-set)
+- the legacy plaintext file is emptied afterwards
+- **the new file is genuinely encrypted** — reading it with a plain `getSharedPreferences` shows neither the plaintext key names nor the values, which is what catches a silent fallback
+- a fresh install with no legacy file is a no-op, not a wipe
+- a relaunch after migrating does not clobber newer data
+- `WalletStore` / `ScanStore` are pinned to the filenames the wipe and sync lists use
+- the change listener still receives **plaintext** keys, so `Finminder.pushUpdate` keeps firing — previously confirmed only by reading library bytecode, now pinned on-device so a `security-crypto` upgrade cannot regress it unnoticed
+
+The tests construct their own `SecurePrefsStore` over throwaway filenames rather than driving the `WalletStore` singleton. That is deliberate: a test that migrated the *real* `WalletPrefs` file would destroy live data on any device it were ever run against. The class under test is identical; only the filenames differ, and the last test pins those.
 
 ---
 
@@ -215,7 +225,9 @@ RTDB remains in the US and cannot be relocated in place; presence writes still c
 3. **App Check → Monitor, then Enforce** (B) once adoption climbs.
 4. **Finish the region migration** after adoption.
 5. **Email verification** (A) — the remaining High, alongside Google Sign-In.
-6. ~~Encrypt `WalletPrefs` and `LocalScanPrefs`~~ — done 2026-08-26. Before shipping, **exercise both migrations once on an install that already has a balance and a saved UPI** — this is the one part that compiles but has not been run against real data. Check specifically that the balance survives, the scanner still offers the last UPI, and a cloud sync round-trips.
+6. ~~Encrypt `WalletPrefs` and `LocalScanPrefs`~~ — done and **verified on device** 2026-08-26 (7 instrumented tests). One thing the tests deliberately do not cover, worth a manual look when 0.5.0 reaches a real install: that a **cloud sync round-trips** after migration — the tests cover the on-device migration, not `FirestoreSyncManager`'s push/restore against a live project.
+7. **Write rules tests.** `firestore.rules` is 261 lines with 12 helper predicates and has never been executed against a test. It is the control everything else in this document leans on. No emulator block exists in `firebase.json` and there is no test infrastructure in the repo. Start with the four cases the original audit named: the `admin_logs` append rule, an admin holding only `replyToQueries` being denied `users/*/config/wallet`, an expired admin being denied everything, and one end-to-end support reply through a signed link.
+8. **`firebase-functions` 7.2.5 → 7.3.2** — already within the `^7.2.5` range, so a plain `npm update` in `functions/`. Leave `firebase-admin` at 13.x; 14 removes the legacy `admin.*` namespace and breaks 8 call sites.
 
 Delete the backup bundle `S:/AndroidStudioProjects/cashdash-backup-20260825-231858.bundle` once satisfied with the history rewrite; it still contains the old APKs and therefore the revoked keys.
 
