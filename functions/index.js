@@ -38,6 +38,17 @@ const REPHRASE_SCOPES = {
     admin: () => GEMINI_API_KEY_ADMIN.value(),
 };
 
+// The grants each scope's screens are gated on in firestore.rules. `messaging`
+// mirrors canBroadcast() exactly (AdminMessagingActivity writes announcements,
+// global_pushes and user_pushes); `admin` covers AdminPromotionsActivity
+// (sendPromotions) and ManageAdminAccessActivity (allocateAdmins). Any one grant
+// suffices, as in the rules. Without this the callable let an admin holding none
+// of them spend the project's shared Gemini quota.
+const REPHRASE_PERMISSIONS = {
+    messaging: ["sendAnnouncements", "sendPromotions", "sendNotifications"],
+    admin: ["sendPromotions", "allocateAdmins"],
+};
+
 // Every function in this file pays for the module-scope requires above
 // (firebase-admin, nodemailer, busboy), which measured 133-135 MiB at startup.
 // At 128MiB the container failed its readiness probe and never started —
@@ -64,6 +75,48 @@ function esc(value) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
+}
+
+// Buckets this project actually owns. Both names address the same bucket:
+// `firebasestorage.app` is the current default domain, `appspot.com` the legacy
+// one that older attachment URLs still carry — so both have to stay listed or
+// historical attachments stop rendering.
+const OWN_STORAGE_BUCKETS = new Set([
+    "cashdash-8cd8b.firebasestorage.app",
+    "cashdash-8cd8b.appspot.com",
+]);
+
+/** The bucket an attachment URL addresses, or null if it isn't a Storage object URL. */
+function attachmentBucket(url) {
+    let parsed;
+    try {
+        parsed = new URL(String(url));
+    } catch (e) {
+        return null;
+    }
+    if (parsed.protocol !== "https:") return null;
+
+    // https://firebasestorage.googleapis.com/v0/b/<bucket>/o/<encoded path>
+    if (parsed.hostname === "firebasestorage.googleapis.com") {
+        const m = /^\/v0\/b\/([^/]+)\/o\//.exec(parsed.pathname);
+        return m ? decodeURIComponent(m[1]) : null;
+    }
+    // https://storage.googleapis.com/<bucket>/<path>
+    if (parsed.hostname === "storage.googleapis.com") {
+        const m = /^\/([^/]+)\/.+/.exec(parsed.pathname);
+        return m ? decodeURIComponent(m[1]) : null;
+    }
+    return null;
+}
+
+/**
+ * Only render attachment images that live in OUR bucket. This used to match on
+ * host alone, which let any public bucket on storage.googleapis.com through —
+ * a user could put `[Attachment: https://storage.googleapis.com/theirs/x.png]`
+ * in a support message and have the admin's browser fetch it.
+ */
+function isTrustedAttachment(url) {
+    return OWN_STORAGE_BUCKETS.has(attachmentBucket(url));
 }
 
 /**
@@ -111,6 +164,9 @@ function buildReplyUrl(targetUser, id, email) {
  * around the rule, which is exactly what getSupportReplyLink used to be.
  * `isOwner` / `fullAccess` are blanket grants, matching adminHasBlanket() in
  * firestore.rules.
+ *
+ * Pass an array to require ANY ONE of several grants, mirroring the OR arms of
+ * canBroadcast() in firestore.rules.
  */
 async function assertAdmin(request, requiredPermission = null) {
     const email = request.auth && request.auth.token && request.auth.token.email
@@ -129,8 +185,9 @@ async function assertAdmin(request, requiredPermission = null) {
     }
 
     if (requiredPermission) {
+        const needed = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission];
         const hasBlanket = data.isOwner === true || data.fullAccess === true;
-        if (!hasBlanket && data[requiredPermission] !== true) {
+        if (!hasBlanket && !needed.some((p) => data[p] === true)) {
             throw new HttpsError("permission-denied", "Your admin access does not allow this.");
         }
     }
@@ -343,13 +400,14 @@ exports.rephraseSupportText = onCall({
     // error first; this only fires if something pathological gets past it.
     timeoutSeconds: 30
 }, async (request) => {
-    const callerEmail = await assertAdmin(request);
-
     // Which key to bill. The client names a scope; the keys themselves never
     // leave the server. Unknown scopes fall back to messaging rather than erroring.
+    // Resolved before the auth check so the scope decides which grant to require.
     const scope = REPHRASE_SCOPES[String((request.data && request.data.scope) || "")]
         ? String(request.data.scope)
         : "messaging";
+
+    const callerEmail = await assertAdmin(request, REPHRASE_PERMISSIONS[scope]);
 
     // Limited per admin, NOT per scope. This used to be keyed per scope on the
     // premise that the two scopes had separate quotas — they do not (see the note on
@@ -571,10 +629,7 @@ exports.adminReply = onRequest({ cors: false, region: ["us-central1", "asia-sout
             queryText = "Could not load query.";
         }
 
-        // Only render attachment images that live in our own Storage bucket, so a
-        // crafted [Attachment: ...] marker cannot point the page at arbitrary hosts.
-        const isTrustedAttachment = (url) =>
-            /^https:\/\/(storage\.googleapis\.com|firebasestorage\.googleapis\.com)\//.test(url);
+        // Attachment trust check lives at module scope — see isTrustedAttachment.
 
         // Collect which URLs are already referenced via [Attachment:] markers in the query text
         const referencedInText = new Set();

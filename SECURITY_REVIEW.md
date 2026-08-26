@@ -126,7 +126,7 @@ Two CLI traps found while doing this, both worth remembering:
 | `old #5` | Any admin reads every user's financial data | `config/{docId}` owner-only |
 | `old #6` | `validUntil` expiry not enforced server-side | `adminNotExpired()` against `request.time` |
 | `old #7` | `allocateAdmins` self-escalation to owner | Blocked — plus `prev #5` below |
-| `old #10` | XSS in the admin reply page | `esc()` everywhere, attachment host allowlist, CSP |
+| `old #10` | XSS in the admin reply page | `esc()` everywhere, attachment **bucket** allowlist (tightened 2026-08-26, see `F`), CSP |
 | `old #11` | Any user can rewrite `admin_logs` click arrays | Append-own-email only, removals rejected |
 | `old #18` | RTDB: users can't read own presence | Fixed |
 | `old #22` | `audit_logs` forgeable by any admin | `actor_email` must equal caller, server timestamp |
@@ -136,6 +136,8 @@ Two CLI traps found while doing this, both worth remembering:
 | `prev #6` | `user_pushes` readable by every signed-in user | Restricted to broadcasters and the addressed user |
 | `prev #7` / `old #13` | Attachments permanently world-public | Download tokens replace `makePublic()`; **83 legacy public objects revoked, verified 403** |
 | `prev #15` | `viewAdminLogs` / `viewLastSeen` grants unenforced | `admin_logs` gated; `mirrorAdminToRtdb` + RTDB rules now enforce `viewLastSeen` |
+| `F` — found & fixed 2026-08-26 | Attachment allowlist matched **host**, not bucket — any public bucket on `storage.googleapis.com` rendered on the admin reply page | `isTrustedAttachment()` parses the URL and requires one of our own buckets; both URL shapes and the legacy `appspot.com` name accepted, foreign-bucket and suffix-confusion hosts rejected |
+| `G` — found & fixed 2026-08-26 | `rephraseSupportText` called `assertAdmin()` with no grant, so any admin could spend the shared Gemini quota | `assertAdmin` now accepts an any-of array; the requested scope selects the grants, mirroring `canBroadcast()` |
 
 ### Client — shipped in 0.4.9, or pending the 0.5.0 rollout
 

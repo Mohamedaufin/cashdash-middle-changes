@@ -41,3 +41,11 @@ old_*.kt
 old_*.xml
 temp_*.kt
 temp_*.xml
+
+# One-off source-rewriting scripts (see replace.py)
+replace.py
+
+# Stray root lockfile. The real one is functions/package-lock.json; this gets
+# recreated by any npm command run from the repo root and was untracked once
+# already, so ignore it rather than let `git add .` pull it back in.
+/package-lock.json
