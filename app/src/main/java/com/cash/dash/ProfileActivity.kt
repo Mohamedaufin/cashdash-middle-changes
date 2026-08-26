@@ -43,7 +43,7 @@ class ProfileActivity : ThemedActivity() {
             if (!edtPhone.isFocused) edtPhone.setText(originalPhone)
             if (!edtEmail.isFocused) edtEmail.setText(originalEmail)
             selectedDob = originalDob
-            tvDob.text = selectedDob
+            tvDob.text = dobWithAge(selectedDob)
         }
     }
 
@@ -72,7 +72,7 @@ class ProfileActivity : ThemedActivity() {
         edtPhone.setText(originalPhone)
         edtEmail.setText(originalEmail)
         selectedDob = originalDob
-        tvDob.text = selectedDob
+        tvDob.text = dobWithAge(selectedDob)
 
         onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -99,6 +99,9 @@ class ProfileActivity : ThemedActivity() {
             }
         })
 
+        // Display only -- selectedDob keeps the raw "02 Oct 2004" that gets saved and
+        // synced. Appending the age to the field text instead would put it into
+        // user_dob on the next save.
         // Date of birth is set once at registration and is not editable here. The picker
         // sheet says so at the point of entry, so this has to hold or that promise is a
         // lie. Kept tappable on purpose: a field that silently ignores a tap reads as a
@@ -472,6 +475,29 @@ class ProfileActivity : ThemedActivity() {
         super.onPause()
         androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this)
             .unregisterReceiver(syncReceiver)
+    }
+
+    /**
+     * "02 Oct 2004" -> "02 Oct 2004  (21 years old)".
+     *
+     * Locale.ENGLISH is deliberate: the picker writes the month with a hardcoded English
+     * three-letter abbreviation, so parsing under the device locale would fail on a
+     * non-English phone and hide the date entirely.
+     *
+     * Anything that does not parse is returned unchanged, so a stored value in an older
+     * or unexpected format still shows the date rather than an error or a blank field.
+     */
+    private fun dobWithAge(dob: String): String {
+        if (dob.isBlank()) return dob
+        return try {
+            val formatter = java.time.format.DateTimeFormatter
+                .ofPattern("dd MMM yyyy", java.util.Locale.ENGLISH)
+            val birth = java.time.LocalDate.parse(dob.trim(), formatter)
+            val years = java.time.Period.between(birth, java.time.LocalDate.now()).years
+            if (years < 0) dob else "$dob  ($years ${if (years == 1) "year" else "years"} old)"
+        } catch (e: Exception) {
+            dob
+        }
     }
 
     private fun showDobPickerDialog(tvDob: TextView) {
