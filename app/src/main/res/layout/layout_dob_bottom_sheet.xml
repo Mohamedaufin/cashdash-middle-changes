@@ -40,6 +40,19 @@
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="20dp" />
 
+    <!-- Matches the GENDER label below, so the sheet reads as two labelled sections
+         rather than a bare set of wheels followed by a labelled row. -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DATE OF BIRTH"
+        android:textColor="?attr/textPrimaryColor"
+        android:textSize="10sp"
+        android:letterSpacing="0.1"
+        android:alpha="0.5"
+        android:layout_marginStart="4dp"
+        android:layout_marginBottom="8dp" />
+
     <!-- Pickers Row -->
     <LinearLayout
         android:layout_width="match_parent"
