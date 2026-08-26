@@ -352,8 +352,14 @@ class ReportActivity : ThemedActivity() {
                         LinearLayout.LayoutParams.WRAP_CONTENT
                     )
                     this.layoutParams = layoutParams
-                    divider = null
-                    dividerHeight = 0
+                    // Separator between weeks. ?attr/dividerColor is defined by every
+                    // theme against its own surface (#1AFFFFFF on the dark themes,
+                    // #20000000 on White), so this reads correctly in all three rather
+                    // than needing a hardcoded translucent white.
+                    divider = android.graphics.drawable.ColorDrawable(
+                        ThemeHelper.resolveColorAttr(this@ReportActivity, R.attr.dividerColor)
+                    )
+                    dividerHeight = resources.displayMetrics.density.toInt().coerceAtLeast(1)
                 }
                 container.addView(listView)
 

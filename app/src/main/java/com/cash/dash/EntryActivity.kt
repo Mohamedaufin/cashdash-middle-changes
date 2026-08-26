@@ -824,11 +824,20 @@ class EntryActivity : ThemedActivity() {
     }
 
     /** Display text for a stored gender key. The key is what persists; this is only shown. */
-    private fun genderLabel(key: String): String = when (key) {
-        "male" -> "Male"
-        "female" -> "Female"
-        "undisclosed" -> "Prefer not to say"
-        else -> ""
+    private fun genderLabel(key: String): String = Companion.genderLabel(key)
+
+    companion object {
+        /**
+         * Stored key -> display label. Lives here because registration writes user_gender,
+         * but ProfileActivity has to render the same value; one mapping means the two
+         * screens cannot disagree about what "undisclosed" reads as.
+         */
+        fun genderLabel(key: String): String = when (key) {
+            "male" -> "Male"
+            "female" -> "Female"
+            "undisclosed" -> "Prefer not to say"
+            else -> ""
+        }
     }
 
     private fun showDobPickerDialog(tvDob: TextView) {

@@ -43,7 +43,7 @@ class ProfileActivity : ThemedActivity() {
             if (!edtPhone.isFocused) edtPhone.setText(originalPhone)
             if (!edtEmail.isFocused) edtEmail.setText(originalEmail)
             selectedDob = originalDob
-            tvDob.text = dobWithAge(selectedDob)
+            tvDob.text = dobLine(selectedDob)
         }
     }
 
@@ -72,7 +72,7 @@ class ProfileActivity : ThemedActivity() {
         edtPhone.setText(originalPhone)
         edtEmail.setText(originalEmail)
         selectedDob = originalDob
-        tvDob.text = dobWithAge(selectedDob)
+        tvDob.text = dobLine(selectedDob)
 
         onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -487,6 +487,25 @@ class ProfileActivity : ThemedActivity() {
      * Anything that does not parse is returned unchanged, so a stored value in an older
      * or unexpected format still shows the date rather than an error or a blank field.
      */
+    /**
+     * "02 Oct 2004  ·  Male  (21 years old)".
+     *
+     * Same date + dot + gender shape the register sheet writes, with the age appended.
+     * Each part is dropped independently: no gender recorded (accounts created before the
+     * field existed) loses the dot, and an unparseable date loses only the age.
+     */
+    private fun dobLine(dob: String): String {
+        val gender = EntryActivity.genderLabel(
+            getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_gender", "") ?: ""
+        )
+        val withAge = dobWithAge(dob)
+        if (dob.isBlank() || gender.isEmpty()) return withAge
+
+        // Age is appended by dobWithAge, so splice the gender in ahead of it.
+        val agePart = withAge.removePrefix(dob)
+        return "$dob  ·  $gender$agePart"
+    }
+
     private fun dobWithAge(dob: String): String {
         if (dob.isBlank()) return dob
         return try {
