@@ -8,7 +8,7 @@
 | **Scope** | Android client, Cloud Functions, Firestore / RTDB / Storage rules, dependencies, build config, repo hygiene |
 | **Supersedes** | `CASHDASH_SECURITY_AUDIT.md` (2026-08-24, 22 findings, at `525a302`) and the earlier 15-finding review. Both are merged here. |
 
-**Status: 24 closed · 1 accepted risk · 3 open · 1 unfixable upstream · 1 area newly assessed.**
+**Status: 27 closed · 1 accepted risk · 2 open · 1 unfixable upstream · 1 area newly assessed.**
 
 Reverse-engineering and tamper posture — carried as *"not covered"* by both earlier reviews — was assessed on 2026-08-26 and now has its own section. Everything actionable it produced has been done: `WalletPrefs` and `LocalScanPrefs` are both encrypted at rest, and the admin cache no longer falls back to plaintext. What remains is either blocked on App Check enforcement or deliberately declined — see that section's recommendations, which record the reasoning rather than leaving them as open to-dos.
 
@@ -45,7 +45,13 @@ Enforcement is still off, so it protects nothing yet. Gated on 0.5.0 adoption: e
 
 Also outstanding from the earlier audit: restrict the API key in Cloud Console (Android restriction + package + SHA-1, plus an API allowlist).
 
-### C. Both Gemini keys rotated; old values still need revoking at AI Studio — Low
+---
+
+## Recently resolved
+
+### C. Both Gemini keys rotated and the old values revoked — **resolved 2026-08-26**
+
+*Kept in full below rather than compressed into the closed table: the rollout evidence and the two firebase-tools traps are the reusable part.*
 
 **Corrected 2026-08-26.** This entry previously said only `GEMINI_API_KEY_ADMIN` needed rotating, on the reasoning that `GEMINI_API_KEY` "had already moved to v2". That was wrong, and the error was mine: v2 was **not** a rotation after the transcript exposure — v2 *is* the replacement key that was created in response to the APK leak, and the replacements are precisely what the 2026-08-24 audit recorded as *"both replacement keys are now also compromised, via this chat transcript"*.
 
@@ -81,7 +87,9 @@ Rollout, from the Cloud Functions audit log (UTC):
 
 Both scopes were verified against the new keys *before* the second deploy, and that deploy changed no bindings — so the 08:35 admin success is valid evidence for v2.
 
-**Still outstanding: revoke the exposed values at Google AI Studio.** Destroying a Secret Manager version deletes Google's stored copy; it does not invalidate the key string. `GEMINI_API_KEY@2` and `GEMINI_API_KEY_ADMIN@1` remain callable by anyone holding the transcript until they are revoked at the provider and confirmed 401 — the same bar applied to the APK-leaked key in the resolved table below.
+**Revoked at Google AI Studio on 2026-08-26**, closing the finding. Destroying a Secret Manager version only deletes Google's stored copy; revocation at the provider is what actually invalidates the string, and until it happened the exposed values stayed callable by anyone holding the transcript.
+
+Note the evidence standard differs from the APK-leaked key in the resolved table below, which was confirmed dead with a 401 probe. That is not reproducible here: the exposed values are gone from our side too — Secret Manager versions destroyed, transcripts deleted — so there is no string left to probe with. This entry rests on the AI Studio console state rather than an observed 401. If a copy of either value does resurface, probe it then.
 
 Two CLI traps found while doing this, both worth remembering:
 
@@ -266,7 +274,7 @@ RTDB remains in the US and cannot be relocated in place; presence writes still c
 ## Next actions
 
 1. **Ship 0.5.0** (in review) — carries the last client-side fixes.
-2. **Revoke the old Gemini keys at AI Studio** (C) — rotation and Secret Manager cleanup are done; the exposed values stay callable until revoked and confirmed 401.
+2. ~~**Revoke the old Gemini keys at AI Studio**~~ (C) — done 2026-08-26; rotation, Secret Manager cleanup and revocation all complete.
 3. **App Check → Monitor, then Enforce** (B) once adoption climbs.
 4. **Finish the region migration** after adoption.
 5. **Email verification** (A) — the remaining High, alongside Google Sign-In.
