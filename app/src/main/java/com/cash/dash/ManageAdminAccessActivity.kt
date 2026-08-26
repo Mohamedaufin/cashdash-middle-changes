@@ -918,6 +918,13 @@ class ManageAdminAccessActivity : ThemedActivity() {
         cbIncludeNotification?.setOnCheckedChangeListener { _, isChecked ->
             layoutNotificationTemplate?.visibility = if (isChecked) View.VISIBLE else View.GONE
         }
+
+        // Off by default, every time the editor opens. The XML default alone is not enough:
+        // this editor is an inline view that is shown and hidden rather than re-inflated, so
+        // a tick left over from the previous admin would otherwise carry into the next one
+        // and quietly send them a notification nobody asked for.
+        cbIncludeNotification?.isChecked = false
+        layoutNotificationTemplate?.visibility = View.GONE
         // Match checkbox tick colour to the rest of the page (theme-aware)
         val notifCbNormalColor = if (ThemeHelper.isWhiteTheme(this)) android.graphics.Color.parseColor("#1A1A1A") else android.graphics.Color.WHITE
         val notifCbDisabledColor = android.graphics.Color.parseColor("#44888888")
