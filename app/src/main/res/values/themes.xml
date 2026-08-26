@@ -18,6 +18,7 @@
         <item name="colorOnPrimary">@color/white</item>
         <item name="colorSurface">@color/surface</item>
         <item name="android:windowBackground">@color/app_bg</item>
+        <item name="checkboxTickColor">@color/app_bg</item>
         <item name="textPrimaryColor">@color/text_primary</item>
         <item name="textMutedColor">@color/text_muted</item>
         <item name="navActiveColor">#FFFFFF</item>
@@ -97,9 +98,9 @@
              up the same colour and the tick vanishes into a solid block. buttonTint
              colours the box, buttonIconTint colours the tick. -->
         <item name="buttonTint">@color/selector_checkbox_tint</item>
-        <!-- The tick itself. The checked box is filled with the accent in every
-             theme, so a fixed white glyph keeps contrast without a per-theme rule. -->
-        <item name="buttonIconTint">@color/white</item>
+        <!-- The tick. The box is filled with textPrimaryColor, so the glyph has to be
+             its inverse or it vanishes into the fill. -->
+        <item name="buttonIconTint">?attr/checkboxTickColor</item>
     </style>
 
     <style name="Theme.Cashdash" parent="Base.Theme.Cashdash">
@@ -205,6 +206,7 @@
         <item name="calendarTheme">@style/CalendarTheme</item>
         <item name="colorSurface">@color/surface_white</item>
         <item name="android:windowBackground">#F8FAFC</item>
+        <item name="checkboxTickColor">#F8FAFC</item>
         <item name="textPrimaryColor">#1A1A1A</item> <!-- Dark charcoal for primary text -->
         <item name="textSecondaryColor">#475569</item>
         <item name="textMutedColor">#5F6D7E</item>   <!-- Muted gray for secondary text -->

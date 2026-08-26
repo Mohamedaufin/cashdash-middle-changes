@@ -33,5 +33,8 @@
     <attr name="dividerColor" format="color" />
     <attr name="textRedColor" format="color" />
     <attr name="textGreenColor" format="color" />
+    <!-- The tick inside a checked box. Must be the inverse of textPrimaryColor,
+         since that is what fills the box. -->
+    <attr name="checkboxTickColor" format="color" />
     <item name="focus_clearer_tag" type="id" />
 </resources>

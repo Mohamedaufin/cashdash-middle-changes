@@ -47,7 +47,7 @@ object ThemeHelper {
      */
     fun compoundButtonTint(context: Context): android.content.res.ColorStateList {
         val disabled = android.graphics.Color.parseColor("#44888888")
-        val checked = androidx.core.content.ContextCompat.getColor(context, R.color.primary_purple)
+        val checked = resolveColorAttr(context, R.attr.textPrimaryColor)
         val unchecked = resolveColorAttr(context, R.attr.textMutedColor)
         return android.content.res.ColorStateList(
             arrayOf(

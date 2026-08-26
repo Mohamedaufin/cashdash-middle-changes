@@ -2,8 +2,10 @@
 <!--
   Box tint for check boxes and radio buttons.
 
-  Checked uses the app accent, which is a fixed colour rather than a theme
-  attribute, so the checked state reads identically on Black, Blue and White.
+  Checked uses ?attr/textPrimaryColor, which self-inverts: near-white on Black and
+  Blue, near-black on White. A literal white would disappear against the White
+  theme's #F8FAFC background. The tick is ?attr/checkboxTickColor, defined as the
+  inverse, so it always reads against the filled box.
   Unchecked uses ?attr/textMutedColor, which each theme already defines against
   its own background (#7E7D96 on the dark themes, #5F6D7E on White), so the
   outline stays legible without a per-theme override.
@@ -13,6 +15,6 @@
   breaking.
 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_checked="true" android:color="@color/primary_purple" />
+    <item android:state_checked="true" android:color="?attr/textPrimaryColor" />
     <item android:color="?attr/textMutedColor" />
 </selector>
