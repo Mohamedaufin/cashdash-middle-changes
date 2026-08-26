@@ -151,8 +151,8 @@ Previously listed as *"not covered"* in both reviews. Now actually examined agai
 
 | Gap | Assessment |
 |---|---|
-| ~~**`WalletPrefs` stored plaintext**~~ | **Fixed 2026-08-26.** Now encrypted via [WalletStore.kt](app/src/main/java/com/cash/dash/WalletStore.kt) — same `MasterKey` / `EncryptedSharedPreferences` scheme as the admin cache. 34 call sites across 14 files routed through it, with a one-time migration off the plaintext file. **Ships in the next release; migration is not runtime-tested.** |
-| ~~**`LocalScanPrefs` stores `last_upi` in plaintext**~~ | **Fixed 2026-08-26.** Now encrypted via `ScanStore`. The Firestore undo round-trip keeps the original wire name, so existing cloud documents stay readable — `prefsByWireName()` in `FirestoreSyncManager` maps the wire name onto the encrypted store. **Ships in the next release; migration not runtime-tested.** |
+| ~~**`WalletPrefs` stored plaintext**~~ | **Fixed 2026-08-26.** Now encrypted via [SecurePrefsStore.kt](app/src/main/java/com/cash/dash/SecurePrefsStore.kt) — same `MasterKey` / `EncryptedSharedPreferences` scheme as the admin cache, with a one-time migration off the plaintext file. **Migration verified on a physical device** (7 instrumented tests). Ships in the next release. |
+| ~~**`LocalScanPrefs` stores `last_upi` in plaintext**~~ | **Fixed 2026-08-26.** Now encrypted via `ScanStore`, sharing the same base class. The Firestore undo round-trip keeps the original wire name, so existing cloud documents stay readable — `prefsByWireName()` in `FirestoreSyncManager` maps the wire name onto the encrypted store. **Migration verified on device.** Ships in the next release. |
 | No root / emulator / debugger detection | Nothing present. A UPI payment app runs unmodified under Frida. |
 | No certificate pinning | No `networkSecurityConfig` declared at all. |
 | No string encryption | R8 obfuscates identifiers, never string constants. |
@@ -176,7 +176,9 @@ Two deliberate calls, unchanged and still correct: `FLAG_SECURE` is *not* applie
 
 ~~`app/src/main/res/xml/accessibility_service_config.xml` exists but no accessibility service is declared in the manifest.~~ **Deleted 2026-08-26** after confirming nothing referenced it.
 
-### Implementation note — `WalletStore` (2026-08-26)
+### Implementation note — `SecurePrefsStore` (2026-08-26)
+
+`WalletStore` and `ScanStore` are both `object`s extending one `SecurePrefsStore` base class (42 call sites across the two), so the migration and caching logic exists once and the two cannot drift apart.
 
 Encryption is applied to a **new file** (`WalletPrefs_v2`) rather than in place, because `EncryptedSharedPreferences` cannot read a plaintext file. The old contents are copied once and the old file is then cleared, using `commit()` rather than `apply()` so the new file is durable *before* the old one is emptied — a crash between the two would otherwise lose a user's balance. If the write fails the legacy file is left intact and the copy retries next launch.
 
