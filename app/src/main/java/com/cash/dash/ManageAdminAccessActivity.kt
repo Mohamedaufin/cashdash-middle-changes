@@ -886,7 +886,15 @@ class ManageAdminAccessActivity : ThemedActivity() {
         findViewById<View>(R.id.layoutMainContent)?.visibility = View.GONE
         findViewById<View>(R.id.layoutEditPermissionsContainer)?.visibility = View.VISIBLE
 
-        val tvEmail = findViewById<TextView>(R.id.tvAdminEmail) ?: return
+        // Scoped to the editor container on purpose. item_admin_access.xml -- the row
+        // inflated for every admin in the list -- also declares tvAdminEmail, and those
+        // rows live in layoutAdminAccess, which sits ABOVE this container in the layout.
+        // A plain findViewById on the Activity walks the whole tree and returns the first
+        // match, so it handed back a list row's TextView: the header here was never
+        // written (it showed the layout placeholder, then nothing once that was removed)
+        // and the first admin row's address got quietly overwritten instead.
+        val editContainer = findViewById<View>(R.id.layoutEditPermissionsContainer)
+        val tvEmail = editContainer?.findViewById<TextView>(R.id.tvAdminEmail) ?: return
         // Fall back to the local part when the name has not loaded yet, so the header
         // reads "Name - email" rather than " - user@gmail.com".
         val headerName = name.trim().takeIf { it.isNotEmpty() && it != "Unknown" }
