@@ -10,7 +10,7 @@
 
 **Status: 24 closed · 1 accepted risk · 3 open · 1 unfixable upstream · 1 area newly assessed.**
 
-Reverse-engineering and tamper posture — carried as *"not covered"* by both earlier reviews — was assessed on 2026-08-26 and now has its own section. The one actionable item it produced, plaintext `WalletPrefs`, has since been fixed and ships in the next release.
+Reverse-engineering and tamper posture — carried as *"not covered"* by both earlier reviews — was assessed on 2026-08-26 and now has its own section. It produced two actionable items: plaintext `WalletPrefs`, now fixed and shipping in the next release, and plaintext `LocalScanPrefs` (which holds a UPI address), **still open**.
 
 Two audits existed with different numbering, which is a hazard in itself — a finding closed in one and open in the other is easy to lose. This is now the single tracker. Where the two overlapped, the older number is shown in brackets.
 
@@ -152,6 +152,7 @@ Previously listed as *"not covered"* in both reviews. Now actually examined agai
 | Gap | Assessment |
 |---|---|
 | ~~**`WalletPrefs` stored plaintext**~~ | **Fixed 2026-08-26.** Now encrypted via [WalletStore.kt](app/src/main/java/com/cash/dash/WalletStore.kt) — same `MasterKey` / `EncryptedSharedPreferences` scheme as the admin cache. 34 call sites across 14 files routed through it, with a one-time migration off the plaintext file. **Ships in the next release; migration is not runtime-tested.** |
+| **`LocalScanPrefs` stores `last_upi` in plaintext** | Still open. A UPI payment address in `MODE_PRIVATE` prefs — [ScannerActivity.kt:669](app/src/main/java/com/cash/dash/ScannerActivity.kt) writes it, three sites read it, and `FirestoreSyncManager` round-trips the whole file through Firestore for undo. Named in the original coverage list; **dropped by mistake when this section was rewritten on 2026-08-26, restored here.** Four call sites — the `WalletStore` pattern applies directly. |
 | No root / emulator / debugger detection | Nothing present. A UPI payment app runs unmodified under Frida. |
 | No certificate pinning | No `networkSecurityConfig` declared at all. |
 | No string encryption | R8 obfuscates identifiers, never string constants. |
@@ -162,9 +163,10 @@ Previously listed as *"not covered"* in both reviews. Now actually examined agai
 ### Recommendation
 
 1. ~~**Encrypt `WalletPrefs`**~~ — **done 2026-08-26.** See the implementation note below.
-2. **Root detection — optional.** Trivially bypassed by anyone competent; it raises cost against casual tampering and nothing more. Do it only if you want the signal.
-3. **Certificate pinning — recommended against.** Pinning Firebase SDK traffic is a known operational footgun: Google rotates certificates, and a stale pin bricks the app for every user with no server-side remedy.
-4. **String encryption — now low value.** Its entire justification was the Gemini keys, and none remain in the client.
+2. **Encrypt `LocalScanPrefs`** — the same treatment `WalletPrefs` just got, for the same reason. Not yet done. Smaller: four call sites, though `FirestoreSyncManager` syncs the file's contents to Firestore for undo, so check that path still round-trips.
+3. **Root detection — optional.** Trivially bypassed by anyone competent; it raises cost against casual tampering and nothing more. Do it only if you want the signal.
+4. **Certificate pinning — recommended against.** Pinning Firebase SDK traffic is a known operational footgun: Google rotates certificates, and a stale pin bricks the app for every user with no server-side remedy.
+5. **String encryption — now low value.** Its entire justification was the Gemini keys, and none remain in the client.
 
 Two deliberate calls, unchanged and still correct: `FLAG_SECURE` is *not* applied to wallet/history/payment screens, because plenty of users legitimately screenshot their spending — a product decision. And `Log.e` is *not* stripped, since an app can only read its own logcat since Android 4.1, making the leak require ADB or physical access — marginal security value against a real cost to debugging.
 
