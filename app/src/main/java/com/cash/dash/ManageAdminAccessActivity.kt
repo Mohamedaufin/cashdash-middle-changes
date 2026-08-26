@@ -603,8 +603,18 @@ class ManageAdminAccessActivity : ThemedActivity() {
                 val sendPromotions = doc.getBoolean("sendPromotions") ?: false
                 val sendNotifications = doc.getBoolean("sendNotifications") ?: false
                 val viewLastSeen = doc.getBoolean("viewLastSeen") ?: false
+                // viewAdminLogs, replyToQueries and validUntil used to be left out here, so the
+                // AdminPermissions handed to the editor carried their defaults: both grants false
+                // and validUntil 0. The editor seeds itself from exactly this object, so opening
+                // any admin showed those two boxes unticked and the validity as "Forever", and
+                // saving wrote that back -- silently revoking two grants and converting a
+                // time-limited admin into a permanent one. The request-review path below always
+                // read all eleven fields; this path simply never caught up.
+                val viewAdminLogs = doc.getBoolean("viewAdminLogs") ?: false
+                val replyToQueries = doc.getBoolean("replyToQueries") ?: false
                 val allocateAdmins = doc.getBoolean("allocateAdmins") ?: false
-                
+                val validUntil = doc.getLong("validUntil") ?: 0L
+
                 val perms = AdminManager.AdminPermissions(
                     isFixedOwner = false,
                     isPromotedOwner = isPromotedOwner,
@@ -613,10 +623,16 @@ class ManageAdminAccessActivity : ThemedActivity() {
                     sendPromotions = sendPromotions,
                     sendNotifications = sendNotifications,
                     viewLastSeen = viewLastSeen,
-                    allocateAdmins = allocateAdmins
+                    viewAdminLogs = viewAdminLogs,
+                    replyToQueries = replyToQueries,
+                    allocateAdmins = allocateAdmins,
+                    validUntil = validUntil
                 )
-                
-                val isSuperAdmin = fullAccess || (sendAnnouncements && sendPromotions && sendNotifications && viewLastSeen && allocateAdmins)
+
+                // All seven grants, matching isTargetSA in AdminPermissionsSheet. It used to test
+                // five, so an admin missing only viewAdminLogs and replyToQueries was still
+                // labelled "Super Administrator" here while the editor disagreed.
+                val isSuperAdmin = fullAccess || (sendAnnouncements && sendPromotions && sendNotifications && viewLastSeen && viewAdminLogs && replyToQueries && allocateAdmins)
                 var roleStr = if (isPromotedOwner) "Owner" else if (isSuperAdmin) "Super Administrator" else "Admin"
                 
                 if (pendingAdminRequests.containsKey(emailLower)) {
@@ -693,7 +709,9 @@ class ManageAdminAccessActivity : ThemedActivity() {
         val currentUserIsAdmin = !currentUserIsOwner && !currentUserIsSA
 
         val targetIsOwner = perms.isFixedOwner || perms.isPromotedOwner
-        val targetIsSA = !targetIsOwner && (perms.fullAccess || (perms.sendAnnouncements && perms.sendPromotions && perms.sendNotifications && perms.viewLastSeen && perms.allocateAdmins))
+        // Same seven-grant test as isTargetSA in AdminPermissionsSheet. Testing five here let an
+        // admin who was one grant short of SA be treated as SA for the edit-visibility rules.
+        val targetIsSA = !targetIsOwner && (perms.fullAccess || (perms.sendAnnouncements && perms.sendPromotions && perms.sendNotifications && perms.viewLastSeen && perms.viewAdminLogs && perms.replyToQueries && perms.allocateAdmins))
         val targetIsAdmin = !targetIsOwner && !targetIsSA
 
         var canSeeEdit = false
@@ -718,7 +736,8 @@ class ManageAdminAccessActivity : ThemedActivity() {
                 btnReview?.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#f87171")) // Red tone
                 
                 val cancelAction = View.OnClickListener {
-                    FirebaseFirestore.getInstance().collection("admin_requests").document(email).delete()
+                    // Requests are written under the lowercased address, so look them up that way.
+                    FirebaseFirestore.getInstance().collection("admin_requests").document(email.lowercase()).delete()
                         .addOnSuccessListener {
                             ToastHelper.showToast(this@ManageAdminAccessActivity, "Request cancelled")
                         }
@@ -733,7 +752,7 @@ class ManageAdminAccessActivity : ThemedActivity() {
                 btnReview?.backgroundTintList = android.content.res.ColorStateList.valueOf(ThemeHelper.resolveColorAttr(this, androidx.appcompat.R.attr.colorPrimary))
                 
                 val reviewAction = View.OnClickListener {
-                    FirebaseFirestore.getInstance().collection("admin_requests").document(email).get()
+                    FirebaseFirestore.getInstance().collection("admin_requests").document(email.lowercase()).get()
                         .addOnSuccessListener { reqDoc ->
                             val isPending = reqDoc.exists() && reqDoc.getString("status") == "pending"
                             val isExtension = reqDoc.exists() && reqDoc.getBoolean("isExtensionRequest") == true
