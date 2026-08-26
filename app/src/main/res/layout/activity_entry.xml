@@ -212,6 +212,73 @@
             android:elevation="0dp"
             android:textColor="#FFFFFF" />
 
+        <!-- Login only. showAuthForm() hides this whole block on the Register tab, since
+             Google sign-in here opens an existing account and never creates one. -->
+        <LinearLayout
+            android:id="@+id/layoutGoogleSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="20dp">
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"
+                    android:background="@color/border" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="or"
+                    android:textColor="?attr/textMutedColor"
+                    android:textSize="@dimen/text_body"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"
+                    android:background="@color/border" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/btnGoogleSignIn"
+                android:layout_width="match_parent"
+                android:layout_height="65dp"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="16dp"
+                android:background="?attr/cardBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_marginEnd="12dp"
+                    android:src="@drawable/ic_google_logo"
+                    android:contentDescription="Google" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Continue with Google"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textStyle="bold"
+                    android:textAllCaps="false"
+                    android:textSize="@dimen/text_subhead" />
+            </LinearLayout>
+        </LinearLayout>
+
         <TextView
             android:id="@+id/tvBackToSelection"
             android:layout_width="wrap_content"

@@ -98,6 +98,14 @@ dependencies {
     implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.0")
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
 
+    // Google Sign-In. Credential Manager is the supported path -- the GoogleSignInClient
+    // API in play-services-auth is deprecated. serverClientId comes from
+    // R.string.default_web_client_id, which the google-services plugin generates from the
+    // type 3 OAuth client in google-services.json.
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
     implementation("com.google.firebase:firebase-analytics")

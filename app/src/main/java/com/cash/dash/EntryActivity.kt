@@ -10,6 +10,8 @@ import android.widget.TextView
 import android.view.View
 import android.view.MotionEvent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import androidx.core.text.HtmlCompat
@@ -162,6 +164,12 @@ class EntryActivity : ThemedActivity() {
             }
         }
 
+        findViewById<View>(R.id.btnGoogleSignIn)?.setOnClickListener { googleBtn ->
+            animateAndStart(googleBtn) {
+                startGoogleSignIn(prefs, btnAction, tvForgotPassword, progressBar, tvStatus, googleBtn)
+            }
+        }
+
         tvForgotPassword.setOnTouchListener { view, event ->
             when (event.action) {
                 android.view.MotionEvent.ACTION_DOWN -> {
@@ -238,6 +246,9 @@ class EntryActivity : ThemedActivity() {
             findViewById<View>(R.id.layoutTerms).visibility = View.GONE
             btnAction.text = "Login"
             tvForgot.visibility = View.VISIBLE
+            // Login only. On Register the Google button would be a lie: it opens an
+            // existing account and never creates one.
+            findViewById<View>(R.id.layoutGoogleSection)?.visibility = View.VISIBLE
 
             // 🟢 Proper Login Autofill hints
             edtEmail.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
@@ -254,6 +265,7 @@ class EntryActivity : ThemedActivity() {
             findViewById<View>(R.id.layoutTerms).visibility = View.VISIBLE
             btnAction.text = "Register"
             tvForgot.visibility = View.GONE
+            findViewById<View>(R.id.layoutGoogleSection)?.visibility = View.GONE
 
             val service = android.provider.Settings.Secure.getString(contentResolver, "autofill_service")
             val isSamsung = service?.contains("samsung", ignoreCase = true) == true
@@ -510,6 +522,142 @@ class EntryActivity : ThemedActivity() {
                     }
                 }
         }
+    }
+
+    /**
+     * "Continue with Google" on the login form.
+     *
+     * Sign-in only: it opens an existing account and never creates one. Firebase does not
+     * offer that directly -- signInWithCredential registers the user if the address is
+     * unknown -- so an unknown address is detected through additionalUserInfo.isNewUser
+     * and the account Firebase just created is deleted again before anything is written.
+     * Nothing else runs in between, so no profile document or local state is left behind.
+     *
+     * Linking an existing password account is handled by Firebase, not here. The console
+     * is set to "Link accounts that use the same email", and Google verifies the address,
+     * so signing in with Google on an address that already has a password attaches the
+     * provider to that same account: same uid, same users/{email} document, same admin
+     * grants, and isNewUser comes back false.
+     */
+    private fun startGoogleSignIn(
+        prefs: android.content.SharedPreferences,
+        btnAction: Button,
+        tvForgotPassword: TextView,
+        progressBar: ProgressBar,
+        tvStatus: TextView,
+        googleBtn: View
+    ) {
+        if (isLockedOut) {
+            tvStatus.text = "Too many failed attempts. Please wait 30 seconds."
+            return
+        }
+
+        googleBtn.isEnabled = false
+        btnAction.isEnabled = false
+        progressBar.visibility = View.VISIBLE
+        tvStatus.setTextColor(Color.parseColor("#FF6B6B"))
+        tvStatus.text = ""
+
+        val restore = {
+            googleBtn.isEnabled = true
+            btnAction.isEnabled = true
+            tvForgotPassword.isEnabled = true
+            progressBar.visibility = View.GONE
+        }
+
+        val request = androidx.credentials.GetCredentialRequest.Builder()
+            .addCredentialOption(
+                com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
+                    .Builder(getString(R.string.default_web_client_id))
+                    .build()
+            )
+            .build()
+
+        lifecycleScope.launch {
+            try {
+                val result = androidx.credentials.CredentialManager.create(this@EntryActivity)
+                    .getCredential(this@EntryActivity, request)
+                val credential = result.credential
+
+                val isGoogleToken = credential is androidx.credentials.CustomCredential &&
+                    credential.type == com.google.android.libraries.identity.googleid
+                        .GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+
+                if (!isGoogleToken) {
+                    restore()
+                    tvStatus.text = "Could not read the Google account. Please try again."
+                    return@launch
+                }
+
+                val idToken = com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+                    .createFrom((credential as androidx.credentials.CustomCredential).data).idToken
+
+                finishGoogleSignIn(idToken, prefs, btnAction, tvForgotPassword, progressBar, tvStatus, restore)
+            } catch (e: androidx.credentials.exceptions.GetCredentialCancellationException) {
+                // Dismissed the sheet. Deliberate, so say nothing.
+                restore()
+            } catch (e: androidx.credentials.exceptions.NoCredentialException) {
+                restore()
+                tvStatus.text = "No Google account on this device. Add one in Settings and try again."
+            } catch (e: Exception) {
+                restore()
+                tvStatus.text = "Google sign-in failed. Please try again."
+                android.util.Log.e("EntryActivity", "Google sign-in failed: ${e.message}")
+            }
+        }
+    }
+
+    private fun finishGoogleSignIn(
+        idToken: String,
+        prefs: android.content.SharedPreferences,
+        btnAction: Button,
+        tvForgotPassword: TextView,
+        progressBar: ProgressBar,
+        tvStatus: TextView,
+        restore: () -> Unit
+    ) {
+        val firebaseCredential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null)
+        auth.signInWithCredential(firebaseCredential)
+            .addOnCompleteListener(this) { task ->
+                if (!task.isSuccessful) {
+                    restore()
+                    tvStatus.text = "Google sign-in failed. Please try again."
+                    android.util.Log.e("EntryActivity", "signInWithCredential: ${task.exception?.message}")
+                    return@addOnCompleteListener
+                }
+
+                val user = task.result?.user
+                val email = user?.email?.trim()?.lowercase()
+
+                if (user == null || email.isNullOrEmpty()) {
+                    auth.signOut()
+                    restore()
+                    tvStatus.text = "Google did not return an email address for this account."
+                    return@addOnCompleteListener
+                }
+
+                if (task.result?.additionalUserInfo?.isNewUser == true) {
+                    // Unknown address. Undo the account Firebase implicitly created, so a
+                    // failed login leaves nothing behind, then report it as not found.
+                    user.delete().addOnCompleteListener {
+                        auth.signOut()
+                        restore()
+                        tvStatus.text = "No account found! Please register first."
+                    }
+                    return@addOnCompleteListener
+                }
+
+                failedLoginAttempts = 0
+                savePrefsAndContinue(
+                    prefs,
+                    name = user.displayName ?: "",
+                    phone = "",
+                    email = email,
+                    pass = "",
+                    isLogin = true,
+                    btnAction, tvForgotPassword, progressBar, tvStatus
+                )
+            }
     }
 
     private fun resetUIAfterFailure(btn: Button, tvForgot: TextView, pb: ProgressBar, tvStatus: TextView, message: String, btnText: String) {
