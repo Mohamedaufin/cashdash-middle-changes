@@ -42,7 +42,7 @@
             android:layout_height="54dp"
             android:text="Cancel"
             android:textAllCaps="false"
-            android:textColor="#FFFFFF"
+            android:textColor="?attr/textPrimaryColor"
             android:textStyle="bold"
             android:background="?attr/cardBackground"
             android:backgroundTint="@null"

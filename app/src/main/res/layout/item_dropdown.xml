@@ -5,5 +5,5 @@
     android:layout_height="wrap_content"
     android:minWidth="180dp"
     android:padding="16dp"
-    android:textColor="#FFFFFF"
+    android:textColor="?attr/textPrimaryColor"
     android:textSize="@dimen/text_subhead" />
