@@ -35,7 +35,7 @@ Deployed and probe-tested in production:
 > **Two things outside these 22 are open and are not tracked anywhere in this file** — see `SECURITY_REVIEW.md`:
 >
 > 1. **`firestore.rules` has never been executed against a test.** 261 lines, 12 helper predicates, no emulator config, no test infrastructure. This document itself flagged it twice — under #11 (*"the one rule here whose exact semantics I could not execute"*) and in Remaining steps → 5 — and it was never done. It is the control every other finding here leans on.
-> 2. **`GEMINI_API_KEY_ADMIN` is still on v1**, the transcript-exposed version. See Remaining steps → 1.
+> 2. **Both Gemini secrets still hold their transcript-exposed values** — `GEMINI_API_KEY` v2 and `GEMINI_API_KEY_ADMIN` v1. Neither has been rotated since. See Remaining steps → 1.
 
 ---
 
@@ -532,7 +532,9 @@ firebase functions:secrets:set GEMINI_API_KEY_ADMIN --project cashdash-8cd8b --d
 firebase deploy --only functions:rephraseSupportText --project cashdash-8cd8b
 ```
 
-*(`GEMINI_API_KEY` is dropped from this block — already rotated to v2.)* The redeploy is **required**, not optional: functions pin a secret version at deploy time, so setting a new version without redeploying leaves the old one live.
+> **Correction 2026-08-26.** An earlier annotation dropped `GEMINI_API_KEY` from this block, claiming it was "already rotated to v2". That was wrong. v2 is the *replacement* key created after the APK leak — and the replacements are exactly what this section records as transcript-exposed. **Both secrets are still the exposed values and both need rotating.** The block above is correct as originally written.
+
+The redeploy is **required**, not optional: functions pin a secret version at deploy time, so setting a new version without redeploying leaves the old one live.
 
 Paste the key then Ctrl+Z + Enter (Windows). Piping via `--data-file=-` keeps the value out of shell history and out of chat. No app rebuild needed — scope names are unchanged, only which secret they resolve to.
 

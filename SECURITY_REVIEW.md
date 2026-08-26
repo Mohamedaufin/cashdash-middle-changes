@@ -45,19 +45,30 @@ Enforcement is still off, so it protects nothing yet. Gated on 0.5.0 adoption: e
 
 Also outstanding from the earlier audit: restrict the API key in Cloud Console (Android restriction + package + SHA-1, plus an API allowlist).
 
-### C. `GEMINI_API_KEY_ADMIN` has never been rotated — Low
+### C. Both Gemini keys are still the transcript-exposed values — Low
 
-Deployed binding is `GEMINI_API_KEY_ADMIN = v1`, and v1 is the only version that has ever existed. The 2026-08-24 audit recorded that the then-current replacement keys were exposed in a Claude Code chat transcript, and it names exactly this version. `GEMINI_API_KEY` has since moved to v2; this one has not.
+**Corrected 2026-08-26.** This entry previously said only `GEMINI_API_KEY_ADMIN` needed rotating, on the reasoning that `GEMINI_API_KEY` "had already moved to v2". That was wrong, and the error was mine: v2 was **not** a rotation after the transcript exposure — v2 *is* the replacement key that was created in response to the APK leak, and the replacements are precisely what the 2026-08-24 audit recorded as *"both replacement keys are now also compromised, via this chat transcript"*.
 
-Verified **not** the key that leaked via the APK (that one returns 401, dead). So this is lower risk — a transcript isn't indexed or scanned by bots — but it is unrotated, and you already created a replacement in AI Studio that never reached Secret Manager.
+So both live values were written to disk in plaintext:
+
+| Secret | Live version | Status |
+|---|---|---|
+| `GEMINI_API_KEY` | v2 | transcript-exposed, **unrotated** |
+| `GEMINI_API_KEY_ADMIN` | v1 | transcript-exposed, **unrotated** |
+
+Neither is the key that leaked via the APK — that one returns 401 and is dead. This is materially lower risk: a local transcript is not public, not indexed, and not reachable by the bots that scrape APKs and repos. The two transcript files were deleted on 2026-08-26 and no key material remains under `~/.claude`, but deletion does not invalidate a credential, and copies may survive in File History, a restore point, or folder sync.
+
+Rotate both. One redeploy covers both secrets:
 
 ```bash
+firebase functions:secrets:set GEMINI_API_KEY --project cashdash-8cd8b --data-file=-
 firebase functions:secrets:set GEMINI_API_KEY_ADMIN --project cashdash-8cd8b --data-file=-
 firebase deploy --only functions:rephraseSupportText --project cashdash-8cd8b
 ```
-The redeploy is required — functions pin a secret version at deploy time.
 
-Also worth destroying `GEMINI_API_KEY` v1, still ENABLED and superseded.
+The redeploy is required, not optional — functions pin a secret version at deploy time, so setting a new version without redeploying leaves the old one serving traffic.
+
+Afterwards, and only after verifying the new versions work, destroy the superseded ones: `GEMINI_API_KEY@1`, `GEMINI_API_KEY@2`, `GEMINI_API_KEY_ADMIN@1`. All three are currently ENABLED.
 
 ---
 
