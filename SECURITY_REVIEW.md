@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Date** | 2026-08-26 |
-| **HEAD** | `b8f4268` on `main` |
+| **HEAD** | `4e180b4` on `main` |
 | **App version** | 0.5.0 (versionCode 23) — in Play review |
 | **Scope** | Android client, Cloud Functions, Firestore / RTDB / Storage rules, dependencies, build config, repo hygiene |
 | **Supersedes** | `CASHDASH_SECURITY_AUDIT.md` (2026-08-24, 22 findings, at `525a302`) and the earlier 15-finding review. Both are merged here. |
@@ -143,7 +143,7 @@ Previously listed as *"not covered"* in both reviews. Now actually examined agai
 
 ### Verified sound
 
-`isMinifyEnabled` + `isShrinkResources` on release with `proguard-android-optimize`; release signing read from gitignored `local.properties` with the keystore outside the repo; `allowBackup="false"`, `fullBackupContent="false"` and 12 explicit extraction excludes; `debuggable` never set; `Log.d/v/i/w` stripped via `-assumenosideeffects`; no hardcoded API keys anywhere in `res/`.
+`isMinifyEnabled` + `isShrinkResources` on release with `proguard-android-optimize`; release signing read from gitignored `local.properties` with the keystore outside the repo; `allowBackup="false"`, `fullBackupContent="false"` and 10 explicit extraction excludes; `debuggable` never set; `Log.d/v/i/w` stripped via `-assumenosideeffects`; no hardcoded API keys anywhere in `res/`.
 
 **The admin permission cache is genuinely encrypted** — [AdminManager.kt:65](app/src/main/java/com/cash/dash/AdminManager.kt) builds a `MasterKey` (AES256_GCM) and uses `EncryptedSharedPreferences` with `AES256_SIV` keys / `AES256_GCM` values, and `purgeLegacyPlaintextCache()` clears the old plaintext `admin_perms_cache` on every load. `FLAG_SECURE` is applied through [SecureScreen.kt](app/src/main/java/com/cash/dash/SecureScreen.kt) on all 5 admin screens.
 
