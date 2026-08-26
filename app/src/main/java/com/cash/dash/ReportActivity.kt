@@ -296,7 +296,10 @@ class ReportActivity : ThemedActivity() {
 
         val btnOk = Button(this).apply {
             text = "OK"
-            setTextColor(Color.WHITE)
+            // The button is transparent over `container`, whose background comes from
+            // setBackgroundResource(bgResId) and is therefore theme-swapped. A fixed white
+            // here disappeared against the light drawable on the White theme.
+            setTextColor(ThemeHelper.resolveColorAttr(this@ReportActivity, R.attr.textPrimaryColor))
             setBackgroundColor(Color.TRANSPARENT)
             setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
             setTypeface(null, android.graphics.Typeface.BOLD)
