@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Box tint for check boxes and radio buttons.
+
+  Checked uses the app accent, which is a fixed colour rather than a theme
+  attribute, so the checked state reads identically on Black, Blue and White.
+  Unchecked uses ?attr/textMutedColor, which each theme already defines against
+  its own background (#7E7D96 on the dark themes, #5F6D7E on White), so the
+  outline stays legible without a per-theme override.
+
+  Nothing here is night-qualified. The control therefore looks the same whatever
+  the phone's system theme is doing, which is the cross-theme case that was
+  breaking.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true" android:color="@color/primary_purple" />
+    <item android:color="?attr/textMutedColor" />
+</selector>

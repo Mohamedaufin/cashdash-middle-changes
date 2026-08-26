@@ -7,24 +7,12 @@
         <item name="buttonStyle">@style/Widget.AppCompat.Button</item>
         <item name="materialButtonStyle">@style/Widget.Cashdash.Button</item>
         <item name="textAppearanceButton">@style/Widget.Cashdash.Button.TextAppearance</item>
-        <!-- checkboxStyle / radioButtonStyle are deliberately NOT set.
-
-             Widget.Cashdash.CheckBox and .RadioButton descend from
-             Widget.AppCompat.CompoundButton.*, which is the odd one out in a
-             Theme.Material3 app: the AppCompat check box has a smaller intrinsic
-             width than the Material3 one, so the -12dp start margin the terms
-             row uses (activity_entry.xml) clipped its left edge and it drew as a
-             half-square.
-
-             This only showed up once the night theme stopped dropping attributes.
-             Before that, checkboxStyle was one of the 18 attributes missing from
-             values-night, so the dark themes silently fell back to the Material3
-             check box and looked correct; restoring the attribute is what exposed
-             the mismatch. Leaving it unset keeps every theme on the Material3
-             widget, which is what the base theme is built on.
-
-             Tinting is unaffected: colorControlActivated is set per theme
-             (#FFFFFF on the dark themes, #1A1A1A on White). -->
+        <!-- Both styles are Material3-parented and tint themselves from the app's
+             own tokens. Leaving these unset fell back to the stock M3 check box,
+             which colours itself from M3 roles this project never defines, and
+             rendered as a solid white block on the Blue theme. -->
+        <item name="radioButtonStyle">@style/Widget.Cashdash.RadioButton</item>
+        <item name="checkboxStyle">@style/Widget.Cashdash.CheckBox</item>
 
         <item name="colorPrimary">@color/primary_purple</item>
         <item name="colorOnPrimary">@color/white</item>
@@ -91,14 +79,25 @@
         <item name="textAllCaps">false</item>
     </style>
 
-    <style name="Widget.Cashdash.RadioButton" parent="Widget.AppCompat.CompoundButton.RadioButton">
-        <item name="android:buttonTint">@color/selector_chooser_tint</item>
-        <item name="buttonTint">@color/selector_chooser_tint</item>
+    <!-- Material3 parents, not AppCompat. The base theme is Theme.Material3, so the
+         Material widgets are the right size and shape here; the AppCompat ones are
+         narrower, which is what clipped the terms check box against its -12dp start
+         margin. useMaterialThemeColors is off so the tint comes from the app's own
+         tokens rather than the M3 colour roles this project never customised —
+         those defaults are what rendered as a solid white block on the Blue theme. -->
+    <style name="Widget.Cashdash.RadioButton" parent="Widget.Material3.CompoundButton.RadioButton">
+        <item name="useMaterialThemeColors">false</item>
+        <item name="android:buttonTint">@color/selector_checkbox_tint</item>
+        <item name="buttonTint">@color/selector_checkbox_tint</item>
     </style>
 
-    <style name="Widget.Cashdash.CheckBox" parent="Widget.AppCompat.CompoundButton.CheckBox">
-        <item name="android:buttonTint">@color/selector_chooser_tint</item>
-        <item name="buttonTint">@color/selector_chooser_tint</item>
+    <style name="Widget.Cashdash.CheckBox" parent="Widget.Material3.CompoundButton.CheckBox">
+        <item name="useMaterialThemeColors">false</item>
+        <item name="android:buttonTint">@color/selector_checkbox_tint</item>
+        <item name="buttonTint">@color/selector_checkbox_tint</item>
+        <!-- The tick itself. The checked box is filled with the accent in every
+             theme, so a fixed white glyph keeps contrast without a per-theme rule. -->
+        <item name="buttonIconTint">@color/white</item>
     </style>
 
     <style name="Theme.Cashdash" parent="Base.Theme.Cashdash">

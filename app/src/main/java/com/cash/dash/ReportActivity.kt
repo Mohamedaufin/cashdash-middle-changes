@@ -84,6 +84,23 @@ class ReportActivity : ThemedActivity() {
         tvCustomStart = findViewById(R.id.tvCustomStart)
         tvCustomEnd = findViewById(R.id.tvCustomEnd)
 
+        // Prefill the custom range, matching Generate Statement, which opens on
+        // the current month to date rather than an empty "Select..." placeholder.
+        // This also means the existing "Select start and end dates first" guard in
+        // generateDownload() can no longer be hit from a fresh screen.
+        customStartMillis = Calendar.getInstance().apply {
+            set(Calendar.DAY_OF_MONTH, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        customEndMillis = System.currentTimeMillis()
+        SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).let { fmt ->
+            tvCustomStart.text = fmt.format(Date(customStartMillis))
+            tvCustomEnd.text = fmt.format(Date(customEndMillis))
+        }
+
         // White Theme UI Refinement
         if (ThemeHelper.isWhiteTheme(this)) {
             btnPeriodSelect.compoundDrawableTintList = android.content.res.ColorStateList.valueOf(Color.BLACK)
