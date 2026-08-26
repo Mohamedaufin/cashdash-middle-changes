@@ -1110,17 +1110,18 @@ class ManageAdminAccessActivity : ThemedActivity() {
             if (isWhite) android.graphics.Color.parseColor("#F1F5F9") else android.graphics.Color.parseColor("#334155")
         )
         
-        // Save is the primary action, so it keeps the blue the layout declares
-        // (#4E5DFF on white). It used to be tinted grey here unconditionally, which
-        // overrode that and left the main button looking disabled. Grey is still used
-        // below for Cancel and Reject, which are genuinely secondary.
-        btnSave.setTextColor(android.graphics.Color.WHITE)
-        btnSave.backgroundTintList =
-            android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4E5DFF"))
+        // Save is theme-aware grey, as it has been since f5e95bd. The layout's
+        // android:backgroundTint="#4E5DFF" never actually rendered -- this override ran
+        // first, and MaterialButton reads app:backgroundTint rather than the android: one
+        // anyway. Grey Save against red Revoke is the original pairing; do not "fix" the
+        // layout value without changing this too, or the two will disagree again.
+        btnSave.setTextColor(greyTextColor)
+        btnSave.backgroundTintList = greyBgColor
         btnSave.strokeWidth = 0
 
-        // Revoke Access stays red; the layout sets it, restated here so the secondary
-        // states below can flip it to grey and back without the colour going stale.
+        // Revoke Access is red. The layout sets it via app:backgroundTint, restated here
+        // so the secondary states below can flip it to grey and back without the colour
+        // going stale on a reopen -- this editor is reused, not re-inflated.
         btnRevoke.setTextColor(android.graphics.Color.WHITE)
         btnRevoke.backgroundTintList =
             android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF3B30"))
