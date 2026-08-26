@@ -709,7 +709,9 @@ class ManageAdminAccessActivity : ThemedActivity() {
         val btnEdit = view.findViewById<ImageButton>(R.id.btnEditAdmin)
         val btnReview = view.findViewById<TextView>(R.id.btnReviewAdmin)
 
-        tvName.text = "$name - ${if (role == "Admin") "Administrator" else role}"
+        val rowName = name.trim().takeIf { it.isNotEmpty() && it != "Unknown" }
+            ?: email.substringBefore("@")
+        tvName.text = "$rowName - ${if (role == "Admin") "Administrator" else role}"
         tvEmail.text = email
 
         val currentUserPerms = AdminManager.getPermissions()
@@ -828,7 +830,14 @@ class ManageAdminAccessActivity : ThemedActivity() {
             context.theme.resolveAttribute(android.R.attr.selectableItemBackground, typedValue, true)
             setBackgroundResource(typedValue.resourceId)
             setOnClickListener {
-                this@ManageAdminAccessActivity.findViewById<EditText>(R.id.etSearchNewAdmin)?.setText("")
+                // Collapse the search panel before opening the editor, so this reads as a
+                // page change and closing the editor returns to the admin list rather than
+                // to a half-open search. Clearing the field first would re-run the
+                // TextWatcher and rebuild every result row on the way out.
+                val act = this@ManageAdminAccessActivity
+                act.findViewById<EditText>(R.id.etSearchNewAdmin)?.setText("")
+                act.findViewById<View>(R.id.layoutSearchWrapper)?.visibility = View.GONE
+                act.findViewById<View>(R.id.layoutAdminSearchResults)?.visibility = View.GONE
                 showEditAdminPermissionsDialog(user.email, user.name, AdminManager.AdminPermissions(), isNewAdmin = true)
             }
         }
@@ -878,7 +887,11 @@ class ManageAdminAccessActivity : ThemedActivity() {
         findViewById<View>(R.id.layoutEditPermissionsContainer)?.visibility = View.VISIBLE
 
         val tvEmail = findViewById<TextView>(R.id.tvAdminEmail) ?: return
-        tvEmail.text = "$name - $email"
+        // Fall back to the local part when the name has not loaded yet, so the header
+        // reads "Name - email" rather than " - user@gmail.com".
+        val headerName = name.trim().takeIf { it.isNotEmpty() && it != "Unknown" }
+            ?: email.substringBefore("@")
+        tvEmail.text = "$headerName - $email"
 
         val cbAnnouncements = findViewById<android.widget.CheckBox>(R.id.cbAnnouncements) ?: return
         val cbPromotions = findViewById<android.widget.CheckBox>(R.id.cbPromotions) ?: return
@@ -1082,9 +1095,21 @@ class ManageAdminAccessActivity : ThemedActivity() {
             if (isWhite) android.graphics.Color.parseColor("#F1F5F9") else android.graphics.Color.parseColor("#334155")
         )
         
-        btnSave.setTextColor(greyTextColor)
-        btnSave.backgroundTintList = greyBgColor
+        // Save is the primary action, so it keeps the blue the layout declares
+        // (#4E5DFF on white). It used to be tinted grey here unconditionally, which
+        // overrode that and left the main button looking disabled. Grey is still used
+        // below for Cancel and Reject, which are genuinely secondary.
+        btnSave.setTextColor(android.graphics.Color.WHITE)
+        btnSave.backgroundTintList =
+            android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4E5DFF"))
         btnSave.strokeWidth = 0
+
+        // Revoke Access stays red; the layout sets it, restated here so the secondary
+        // states below can flip it to grey and back without the colour going stale.
+        btnRevoke.setTextColor(android.graphics.Color.WHITE)
+        btnRevoke.backgroundTintList =
+            android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF3B30"))
+        btnRevoke.strokeWidth = 0
 
         if (isNewAdmin) {
             btnRevoke.text = "Cancel"
