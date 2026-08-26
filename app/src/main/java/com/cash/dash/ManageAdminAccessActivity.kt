@@ -1242,16 +1242,22 @@ class ManageAdminAccessActivity : ThemedActivity() {
             btnChangeValidity?.visibility = View.VISIBLE
             btnRequestExtension?.visibility = View.GONE
             layoutAdminValidity?.visibility = View.VISIBLE
+            // isNewAdmin ("Cancel") and isReviewingRequest ("Reject") set this button's
+            // label and its grey tint further up. This block runs afterwards and used to
+            // relabel it unconditionally, which is why adding an admin showed a grey
+            // button reading "Revoke Access" for someone who was not an admin yet -- and
+            // tapping it only cancelled. Those two modes own the label; leave it alone.
+            val ownsRevokeLabel = !isNewAdmin && !isReviewingRequest
             if (isSelf) {
                 if (!currentPerms.isFixedOwner) {
                     btnRevoke.visibility = View.VISIBLE
-                    btnRevoke.text = "Resign as Admin"
+                    if (ownsRevokeLabel) btnRevoke.text = "Resign as Admin"
                 } else {
                     btnRevoke.visibility = View.GONE
                 }
             } else {
                 btnRevoke.visibility = View.VISIBLE
-                btnRevoke.text = "Revoke Access"
+                if (ownsRevokeLabel) btnRevoke.text = "Revoke Access"
             }
         }
 
