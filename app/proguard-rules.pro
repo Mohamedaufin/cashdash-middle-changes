@@ -20,14 +20,30 @@
     @androidx.annotation.Keep *;
 }
 
-# 🔒 CashDash Custom Models (Firestore serialization)
--keep class com.cash.dash.NotificationModel { *; }
-
-# 🗄 Room Entities (must NOT be mangled by R8)
--keep class com.cash.dash.NotificationEntity { *; }
--keep class com.cash.dash.TransactionEntity { *; }
+# 🗄 Room database class — this keep IS required.
+# Room.databaseBuilder resolves the generated implementation by name at runtime
+# (Class.forName("<YourDatabase>_Impl")), so the database class name must survive.
 -keep class * extends androidx.room.RoomDatabase { *; }
--keep @androidx.room.Entity class * { *; }
+
+# 🔒 Data model — deliberately NOT kept, so R8 obfuscates the schema.
+#
+# These used to carry -keep ... { *; }, which left every field name and the class
+# structure readable in classes.dex. The comment justifying it said "Firestore
+# serialization", but the codebase does no reflective mapping at all:
+#
+#   - toObject() / toObjects() are never called; Firestore documents are read
+#     field by field with getString()/getLong()
+#   - entities are built through explicit constructors, e.g. TransactionEntity(...)
+#   - RTDB getValue() is only used with String::class.java and Long::class.java
+#   - there is no Gson, Moshi, kotlinx.serialization or Jackson in the project
+#
+# Room needs no keep for entities either: its DAOs are generated at compile time
+# and R8 renames the generated code and the entity consistently. Column names come
+# from annotations and are baked into the generated SQL, so renaming a Kotlin field
+# does not change the database schema.
+#
+# If reflective mapping is ever introduced — a toObject() call, or adding Gson —
+# these keeps must come back, or fields will silently map to obfuscated names.
 
 # 🖼 Glide
 -keep public class * implements com.bumptech.glide.module.GlideModule

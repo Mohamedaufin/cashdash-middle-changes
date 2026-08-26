@@ -40,8 +40,41 @@ open class ThemedActivity : AppCompatActivity() {
         
         // Make status bar icons light/dark
         androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = isWhite
-        
+
         addStatusBarMask(theme)
+
+        reportDeviceIntegrityOnce()
+    }
+
+    /**
+     * Records device integrity signals once per process.
+     *
+     * Deliberately does NOT block or alter behaviour here. Every screen extends
+     * this class, so gating on it would take the whole app down on a device that
+     * merely looks unusual — and root is not, by itself, evidence of an attack
+     * on anyone but the device's own owner. The payment path in ScannerActivity
+     * is where this signal is actually acted on.
+     *
+     * Uses Log.e because Log.d/v/i/w are stripped from release builds, and a
+     * signal that only exists in debug is no signal at all.
+     */
+    private fun reportDeviceIntegrityOnce() {
+        if (integrityReported) return
+        integrityReported = true
+
+        val result = TamperCheck.evaluate(this)
+        if (result.signals.isNotEmpty()) {
+            android.util.Log.e(
+                "TamperCheck",
+                "device integrity signals: ${result.signals.joinToString()} " +
+                    "(compromised=${result.isCompromised})"
+            )
+        }
+    }
+
+    companion object {
+        @Volatile
+        private var integrityReported = false
     }
 
     private fun addStatusBarMask(theme: String) {

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network policy for CashDash.
+
+  base-config forbids cleartext everywhere. Verified before enabling: the only
+  http:// strings in the project are XML namespace URIs, which are not traffic.
+  The last real cleartext path went away with the cashdashWebhook removal.
+
+  PINNING SCOPE — cashdash.co.in only, deliberately.
+
+  Firebase endpoints are NOT pinned. Google rotates those certificates on its
+  own schedule, and a stale pin would brick Auth, Firestore and Storage for
+  every user with no server-side remedy. Pinning is applied only to the domain
+  we control and can re-pin ahead of.
+
+  WHICH CERTIFICATE IS PINNED — the intermediate and root, not the leaf.
+
+  The leaf for www.cashdash.co.in expires 2026-09-28; Google Trust Services
+  issues leaves on a ~90-day cycle, so pinning it would fail within weeks of
+  the next renewal. The pins below are:
+
+    kIdp… = C=US, O=Google Trust Services, CN=WE1        (intermediate, exp 2029-02-20)
+    mEfl… = C=US, O=Google Trust Services LLC, GTS Root R4 (root, exp 2028-01-28)
+
+  Both were computed from the live chain on 2026-08-26:
+    openssl s_client -connect www.cashdash.co.in:443 -servername www.cashdash.co.in -showcerts
+
+  EXPIRATION is a safety valve, not decoration. After this date Android stops
+  enforcing the pin set rather than failing the connection, so a forgotten
+  rotation degrades to normal CA validation instead of an outage. Re-verify the
+  pins and push the date out before then.
+-->
+<network-security-config>
+
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <domain-config>
+        <domain includeSubdomains="true">cashdash.co.in</domain>
+        <pin-set expiration="2027-06-01">
+            <!-- Google Trust Services WE1 — issuing intermediate -->
+            <pin digest="SHA-256">kIdp6NNEd8wsugYyyIYFsi1ylMCED3hZbSR8ZFsa/A4=</pin>
+            <!-- GTS Root R4 — backup, so an intermediate change does not break us -->
+            <pin digest="SHA-256">mEflZT5enoR1FuXLgYYGqnVEoZvmf9c2bVBpiOjYQ0c=</pin>
+        </pin-set>
+    </domain-config>
+
+</network-security-config>

@@ -54,6 +54,12 @@ import kotlinx.coroutines.withContext
 @androidx.annotation.OptIn(androidx.camera.core.ExperimentalGetImage::class)
 class ScannerActivity : ThemedActivity(), SensorEventListener {
 
+    private companion object {
+        /** Warn once per process, not once per scan — see [warnIfDeviceCompromised]. */
+        @Volatile
+        var tamperWarningShown = false
+    }
+
     private val CAMERA_REQUEST = 101
     private val GALLERY_PICK = 102
     private val PAYMENT_REQ = 500
@@ -181,6 +187,51 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
     }
 
 
+    /**
+     * Warns before letting a payment proceed on a device that looks compromised.
+     *
+     * This is the one screen where the [TamperCheck] signal is acted on, because
+     * it is the one that moves money. Elsewhere the signal is only recorded.
+     *
+     * It warns rather than blocks, deliberately. Root is not evidence of an
+     * attack on anybody but the device's own owner, and a hard block would deny
+     * a payment feature to customers running a custom ROM in order to stop an
+     * attacker who is only attacking themselves. The user is told plainly and
+     * decides.
+     *
+     * To escalate to a hard block, replace the "Continue" button with `finish()`
+     * and set `setCancelable(false)` — the detection side needs no changes.
+     *
+     * Shown once per process: repeating it on every scan would train people to
+     * dismiss it without reading, which is worse than not showing it.
+     */
+    private fun warnIfDeviceCompromised() {
+        if (tamperWarningShown) return
+
+        val result = TamperCheck.evaluate(this)
+        if (!result.isCompromised) return
+
+        tamperWarningShown = true
+
+        val reason = when {
+            result.rooted -> "This device appears to be rooted."
+            result.debuggerAttached -> "A debugger is attached to this app."
+            else -> "This build of the app has been modified."
+        }
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Security warning")
+            .setMessage(
+                "$reason\n\nOn a device in this state, another app may be able to " +
+                    "read or alter payment details before you confirm them. Your " +
+                    "account data on our servers is unaffected.\n\n" +
+                    "Continue only if you set this device up yourself."
+            )
+            .setPositiveButton("Continue") { d, _ -> d.dismiss() }
+            .setNegativeButton("Go back") { _, _ -> finish() }
+            .show()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -196,6 +247,8 @@ class ScannerActivity : ThemedActivity(), SensorEventListener {
         }
 
         setContentView(R.layout.activity_scanner)
+
+        warnIfDeviceCompromised()
 
         // Set root background dynamically to match status bar background
         findViewById<FrameLayout>(R.id.scannerRoot)?.setBackgroundColor(
