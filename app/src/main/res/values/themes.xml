@@ -87,13 +87,15 @@
          those defaults are what rendered as a solid white block on the Blue theme. -->
     <style name="Widget.Cashdash.RadioButton" parent="Widget.Material3.CompoundButton.RadioButton">
         <item name="useMaterialThemeColors">false</item>
-        <item name="android:buttonTint">@color/selector_checkbox_tint</item>
         <item name="buttonTint">@color/selector_checkbox_tint</item>
     </style>
 
     <style name="Widget.Cashdash.CheckBox" parent="Widget.Material3.CompoundButton.CheckBox">
         <item name="useMaterialThemeColors">false</item>
-        <item name="android:buttonTint">@color/selector_checkbox_tint</item>
+        <!-- Only the Material attribute, never android:buttonTint. The platform one
+             tints the whole drawable as a single layer, so the box and the tick end
+             up the same colour and the tick vanishes into a solid block. buttonTint
+             colours the box, buttonIconTint colours the tick. -->
         <item name="buttonTint">@color/selector_checkbox_tint</item>
         <!-- The tick itself. The checked box is filled with the accent in every
              theme, so a fixed white glyph keeps contrast without a per-theme rule. -->
