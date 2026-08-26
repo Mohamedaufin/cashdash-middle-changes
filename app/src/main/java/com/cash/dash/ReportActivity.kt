@@ -28,8 +28,10 @@ class ReportActivity : ThemedActivity() {
     private lateinit var btnPeriodSelect: Button
     private lateinit var toggleMode: MaterialButtonToggleGroup
     private lateinit var layoutCustomDates: View
-    private lateinit var btnCustomStart: Button
-    private lateinit var btnCustomEnd: Button
+    private lateinit var btnCustomStart: View
+    private lateinit var btnCustomEnd: View
+    private lateinit var tvCustomStart: TextView
+    private lateinit var tvCustomEnd: TextView
 
     private var currentMonth = Calendar.getInstance().get(Calendar.MONTH)
     private var currentYear = Calendar.getInstance().get(Calendar.YEAR)
@@ -79,6 +81,8 @@ class ReportActivity : ThemedActivity() {
         layoutCustomDates = findViewById(R.id.layoutCustomDates)
         btnCustomStart = findViewById(R.id.btnCustomStart)
         btnCustomEnd = findViewById(R.id.btnCustomEnd)
+        tvCustomStart = findViewById(R.id.tvCustomStart)
+        tvCustomEnd = findViewById(R.id.tvCustomEnd)
 
         // White Theme UI Refinement
         if (ThemeHelper.isWhiteTheme(this)) {
@@ -150,14 +154,14 @@ class ReportActivity : ThemedActivity() {
                     return@DatePickerDialog
                 }
                 customStartMillis = sel
-                btnCustomStart.text = SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(sel))
+                tvCustomStart.text = SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(sel))
             } else {
                 if (customStartMillis > 0 && sel < customStartMillis) {
                     ToastHelper.showToast(this, "End date cannot be before start date")
                     return@DatePickerDialog
                 }
                 customEndMillis = sel
-                btnCustomEnd.text = SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(sel))
+                tvCustomEnd.text = SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(sel))
             }
             
             if (customStartMillis > 0 && customEndMillis > 0) {
