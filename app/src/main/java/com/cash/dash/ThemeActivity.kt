@@ -232,6 +232,16 @@ class ThemeActivity : ThemedActivity() {
         btnBack.setBackgroundResource(getResIdFromAttr(wrapper, R.attr.roundBackground))
         previewContainer.setBackgroundResource(getResIdFromAttr(wrapper, R.attr.panelBackground))
         
+        // The preview swaps backgrounds on the live view tree instead of recreating, so
+        // the status bar has to be repainted by hand or it keeps the colour of the theme
+        // that was active when this screen opened.
+        // Icon tint is derived from the colour rather than the theme name, so "System"
+        // resolves correctly whichever way the phone is set without repeating the
+        // night-mode lookup getThemeResId already did.
+        val barColor = ThemeHelper.resolveColorAttr(wrapper, R.attr.pageTopColor)
+        val barIsLight = androidx.core.graphics.ColorUtils.calculateLuminance(barColor) > 0.5
+        applyStatusBarColor(barColor, isLight = barIsLight)
+
         val primaryCol = ThemeHelper.resolveColorAttr(wrapper, R.attr.textPrimaryColor)
         val mutedCol = ThemeHelper.resolveColorAttr(wrapper, R.attr.textMutedColor)
         
@@ -336,9 +346,18 @@ class ThemeActivity : ThemedActivity() {
     }
 
     private fun navigateToHome() {
-        // Just finish — activities in the back stack will detect the theme
-        // change in their own onResume() and call recreate() themselves,
-        // properly saving state first via onSaveInstanceState.
+        // Go to Home rather than back to whatever opened this. Applying a theme is a
+        // whole-app change, and returning to a half-recreated Menu underneath makes it
+        // look like it only partly took effect.
+        //
+        // CLEAR_TOP plus SINGLE_TOP reuses the existing MainActivity and drops everything
+        // above it, so the back stack is not stacked up with a second Home. Screens that
+        // survive still recreate themselves: ThemedActivity.onResume compares the saved
+        // theme against the one it was built with.
+        val intent = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+        startActivity(intent)
         finish()
     }
 

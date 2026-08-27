@@ -79,9 +79,29 @@ open class ThemedActivity : AppCompatActivity() {
         private var integrityReported = false
     }
 
+    /** Kept so a live theme preview can recolour the bar without recreating. */
+    private var statusBarMask: android.view.View? = null
+
+    /**
+     * Repaints the status bar to [color], matching the top of the page.
+     *
+     * ThemeActivity previews a theme by swapping backgrounds on the live view tree rather
+     * than recreating, so the bar would otherwise keep the colour of whatever theme was
+     * active when the screen opened. That is the black strip above a blue page.
+     *
+     * [isLight] controls the icon tint: dark icons on a light bar, and the reverse.
+     */
+    fun applyStatusBarColor(color: Int, isLight: Boolean) {
+        statusBarMask?.setBackgroundColor(color)
+        androidx.core.view.WindowCompat
+            .getInsetsController(window, window.decorView)
+            .isAppearanceLightStatusBars = isLight
+    }
+
     /** [color] is ?attr/pageTopColor, so the mask always matches the top of the page. */
     private fun addStatusBarMask(color: Int) {
         val maskView = android.view.View(this)
+        statusBarMask = maskView
         maskView.setBackgroundColor(color)
         
         val layoutParams = android.widget.FrameLayout.LayoutParams(
