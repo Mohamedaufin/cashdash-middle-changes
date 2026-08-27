@@ -5,10 +5,10 @@
 
     <!-- NEW DESIGN SYSTEM: Purple & Slate -->
     <!-- Background & Surface -->
-    <color name="app_bg">#0C0C0F</color>
-    <color name="surface">#131318</color>
-    <color name="surface_2">#1C1C24</color>
-    <color name="border">#2A2A36</color>
+    <color name="app_bg">#0D0F12</color>
+    <color name="surface">#161A20</color>
+    <color name="surface_2">#1F242C</color>
+    <color name="border">#2C323C</color>
     <color name="border_white">#CBD5E1</color>
     <color name="surface_white">#F8FAFC</color>
 

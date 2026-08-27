@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#1A1B1F"/> <!-- Premium Matte Black -->
+    <!-- Sits one step above @color/surface so a card reads as lifted rather than
+         painted on. Was #1A1B1F, which was both violet-tinted and too close to the
+         old background to separate from it. -->
+    <solid android:color="#171C23"/>
     <corners android:radius="20dp"/>
+    <!-- 20% white, down from 33%. Stacked white strokes over a near-black surface
+         are what gave the dark theme its milky, washed-out edge. -->
     <stroke
         android:width="1dp"
-        android:color="#33FFFFFF"/> <!-- Subtle light border -->
+        android:color="#21FFFFFF"/>
 </shape>

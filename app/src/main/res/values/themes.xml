@@ -166,6 +166,10 @@
         <item name="rigorCalendarBackground">@drawable/bg_glass_panel_blue</item>
         <item name="calendarTheme">@style/CalendarThemeDark</item>
         <item name="colorSurface">#000520</item>
+        <!-- Pinned to the value Blue resolved to before the Black ramp was retuned.
+             Base sets windowBackground to @color/app_bg and Blue inherited it, so
+             changing that token for the Black theme would have shifted Blue too. -->
+        <item name="android:windowBackground">#0C0C0F</item>
         <item name="textPrimaryColor">@color/text_primary</item>
         <item name="textSecondaryColor">#A0AAB2</item>
         <item name="textMutedColor">@color/text_muted</item>
