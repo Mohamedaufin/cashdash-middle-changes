@@ -112,11 +112,15 @@ class ReportActivity : ThemedActivity() {
         btnCustomStart.setOnClickListener { showDatePicker(true) }
         btnCustomEnd.setOnClickListener { showDatePicker(false) }
 
+        // Once, at setup. The lists it installs answer for state_checked, so they follow
+        // the group from here on; it used to run only from the listener below, which left
+        // the initially checked tab on Material's own violet until something was tapped.
+        styleToggleTabs()
+
         toggleMode.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) {
                 isMonthlyMode = (checkedId == R.id.btnMonthly)
                 isCustomMode = (checkedId == R.id.btnCustom)
-                updateToggleHighlight(checkedId)
                 
                 val targetPage = when (checkedId) {
                     R.id.btnWeekly -> 0
@@ -746,8 +750,26 @@ class ReportActivity : ThemedActivity() {
         }
     }
 
-    /** Applies a strong active-tab highlight to the selected toggle button, matching FinMinder aesthetics. */
-    private fun updateToggleHighlight(checkedId: Int) {
+    /**
+     * Styles the period tabs once. Called at setup, not per selection.
+     *
+     * Three separate things were painting these buttons violet, and fixing one at a time
+     * kept leaving a flash:
+     *
+     *  1. the checked state, which Material fills from colorPrimary
+     *  2. the ripple, which Widget.MaterialComponents.Button.OutlinedButton also derives
+     *     from colorPrimary, and which backgroundTintList does not touch
+     *  3. nothing running until the first tap, so the tab checked in XML kept Material's
+     *     default until the user changed it
+     *
+     * colorPrimary is @color/primary_purple on Black. Blue and White override it, which is
+     * why the violet only ever showed on Black.
+     *
+     * Everything here is a ColorStateList keyed on state_checked, so it is installed once
+     * and then tracks the group. Assigning flat colours per selection was what left
+     * Material's default underneath to show through first.
+     */
+    private fun styleToggleTabs() {
         // State lists, not flat colours per button.
         //
         // These are MaterialButtons inside a MaterialButtonToggleGroup, so Material owns
@@ -768,13 +790,18 @@ class ReportActivity : ThemedActivity() {
             checkedStates, intArrayOf(activeTextColor, inactiveTextColor)
         )
 
-        // checkedId is deliberately unused now. MaterialButtonToggleGroup already holds
-        // the checked state and the lists above resolve from it, so assigning isChecked
-        // here would re-enter addOnButtonCheckedListener, which is what calls this.
+        // The ripple. Outlined buttons take theirs from colorPrimary, so on Black it was a
+        // violet splash on every tap, independent of the background tint. A low-alpha
+        // neutral keeps the press feedback without introducing a hue.
+        val rippleTint = android.content.res.ColorStateList.valueOf(
+            (activeColor and 0x00FFFFFF) or 0x33000000
+        )
+
         for (id in listOf(R.id.btnWeekly, R.id.btnMonthly, R.id.btnCustom)) {
             val btn = findViewById<com.google.android.material.button.MaterialButton>(id)
             btn.backgroundTintList = bgTint
             btn.setTextColor(textTint)
+            btn.rippleColor = rippleTint
         }
     }
 
