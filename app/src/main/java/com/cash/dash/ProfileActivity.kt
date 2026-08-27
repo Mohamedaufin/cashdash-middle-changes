@@ -102,13 +102,14 @@ class ProfileActivity : ThemedActivity() {
         // Display only -- selectedDob keeps the raw "02 Oct 2004" that gets saved and
         // synced. Appending the age to the field text instead would put it into
         // user_dob on the next save.
-        // Date of birth is set once at registration and is not editable here. The picker
-        // sheet says so at the point of entry, so this has to hold or that promise is a
-        // lie. Kept tappable on purpose: a field that silently ignores a tap reads as a
-        // bug, so explain instead. Dimmed to signal it is not an input.
+        // Date of birth and gender are set once, at registration or via the lock sheet,
+        // and neither is editable here. The picker sheet says "These are permanent and
+        // cannot be changed" at the point of entry, so this has to hold or that promise
+        // is a lie. Kept tappable on purpose: a field that silently ignores a tap reads
+        // as a bug, so explain instead. Dimmed to signal it is not an input.
         tvDob.alpha = 0.6f
         tvDob.setOnClickListener {
-            ToastHelper.showToast(this, "Date of birth cannot be changed.")
+            ToastHelper.showToast(this, "Date of birth and gender are permanent and cannot be changed.")
         }
 
         findViewById<View>(R.id.btnBack)?.setOnClickListener {
