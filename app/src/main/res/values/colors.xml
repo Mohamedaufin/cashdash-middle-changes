@@ -20,6 +20,12 @@
          active here (current-week bar, flashlight on), appears nowhere in the categorical
          palette, and lifts the ring from 3.56:1 to 9.54:1 against the field. -->
     <color name="focus_ring">#4DE1C1</color>
+    <!-- Resting border for input fields on the Black theme. Separate from @color/border,
+         which is a hairline for dividers and card edges and is deliberately faint: at
+         #2C323C it sat at 1.21:1 against the field fill, so an unfocused input had no
+         visible edge and read as a floating block rather than a control. This clears the
+         3:1 that WCAG 1.4.11 asks of non-text UI without making dividers loud. -->
+    <color name="input_border">#6A7485</color>
     <color name="primary_light">#A48AFD</color>
     <color name="primary_dark">#5B3FCC</color>
 

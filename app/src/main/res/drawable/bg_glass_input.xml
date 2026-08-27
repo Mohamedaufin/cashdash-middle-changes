@@ -1,78 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Black theme input / chip background.
+
+  Flat shapes, one layer per state, matching bg_glass_input_blue. This used to be a
+  layer-list per state with a white gradient laid over the base to fake a lit bevel,
+  plus a coloured inner glow on focus. The glow existed to compensate for the fill
+  never changing: the border was the only thing that moved, so it needed help.
+
+  Focus now moves two things at once, as Blue and White already did - the fill drops
+  away from the resting tone and the stroke comes up in the focus colour. With both
+  cues present the glow is redundant, and dropping it removes the plastic bevel look
+  along with it.
+-->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- FOCUSED / SELECTED STATE -->
+
+    <!-- FOCUSED -->
     <item android:state_focused="true">
-        <layer-list>
-            <!-- Base: Surface 2 -->
-            <item>
-                <shape android:shape="rectangle">
-                    <solid android:color="@color/surface_2" />
-                    <corners android:radius="16dp" />
-                    <stroke
-                        android:width="2dp"
-                        android:color="@color/focus_ring" />
-                </shape>
-            </item>
-            <!-- Subtle Inner Glow for focus -->
-            <item android:top="2dp" android:left="2dp" android:right="2dp" android:bottom="20dp">
-                <shape android:shape="rectangle">
-                    <gradient
-                        android:startColor="#154DE1C1"
-                        android:endColor="#00000000"
-                        android:angle="270" />
-                    <corners android:radius="14dp" />
-                </shape>
-            </item>
-        </layer-list>
+        <shape android:shape="rectangle">
+            <corners android:radius="16dp" />
+            <solid android:color="#191E25" />
+            <stroke
+                android:width="2dp"
+                android:color="@color/focus_ring" />
+        </shape>
     </item>
 
+    <!-- SELECTED (chips) -->
     <item android:state_selected="true">
-        <layer-list>
-            <!-- Base: Surface 2 -->
-            <item>
-                <shape android:shape="rectangle">
-                    <solid android:color="@color/surface_2" />
-                    <corners android:radius="16dp" />
-                    <stroke
-                        android:width="2.5dp"
-                        android:color="@color/focus_ring" />
-                </shape>
-            </item>
-            <!-- Vibrant Inner Glow for selection -->
-            <item android:top="2dp" android:left="2dp" android:right="2dp" android:bottom="20dp">
-                <shape android:shape="rectangle">
-                    <gradient
-                        android:startColor="#254DE1C1"
-                        android:endColor="#00000000"
-                        android:angle="270" />
-                    <corners android:radius="14dp" />
-                </shape>
-            </item>
-        </layer-list>
+        <shape android:shape="rectangle">
+            <corners android:radius="16dp" />
+            <solid android:color="#191E25" />
+            <stroke
+                android:width="2.5dp"
+                android:color="@color/focus_ring" />
+        </shape>
     </item>
 
-    <!-- DEFAULT STATE -->
+    <!-- DEFAULT -->
     <item>
-        <layer-list>
-            <!-- Base: Surface 2 (Input fields, chips) -->
-            <item>
-                <shape android:shape="rectangle">
-                    <solid android:color="@color/surface_2" />
-                    <corners android:radius="16dp" />
-                    <stroke
-                        android:width="1.2dp"
-                        android:color="@color/border" />
-                </shape>
-            </item>
-            <!-- Subdued inner glow -->
-            <item>
-                <shape android:shape="rectangle">
-                    <gradient
-                        android:startColor="#0AFFFFFF"
-                        android:endColor="#00FFFFFF"
-                        android:angle="270" />
-                    <corners android:radius="16dp" />
-                </shape>
-            </item>
-        </layer-list>
+        <shape android:shape="rectangle">
+            <corners android:radius="16dp" />
+            <solid android:color="@color/surface_2" />
+            <stroke
+                android:width="1.2dp"
+                android:color="@color/input_border" />
+        </shape>
     </item>
 </selector>
