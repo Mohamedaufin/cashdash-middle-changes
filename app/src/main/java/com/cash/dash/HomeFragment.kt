@@ -280,7 +280,22 @@ class HomeFragment : Fragment() {
         val btnSave = sheetView.findViewById<android.widget.Button>(R.id.btnSaveDate)
         
         sheetView.findViewById<View>(R.id.dragHandle)?.visibility = View.GONE
-        sheetView.findViewById<TextView>(R.id.tvSheetTitle)?.text = "Select Date of Birth and Gender to continue"
+        // Ask only for what is actually missing. An existing user with a date but no
+        // gender should not be made to re-pick a date they already gave, and vice versa.
+        val lockPrefs = requireContext().getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+        val needDob = (lockPrefs.getString("user_dob", "") ?: "").isEmpty()
+        val needGender = (lockPrefs.getString("user_gender", "") ?: "").isEmpty()
+
+        sheetView.findViewById<View>(R.id.tvDobLabel)?.visibility = if (needDob) View.VISIBLE else View.GONE
+        sheetView.findViewById<View>(R.id.layoutDobPickers)?.visibility = if (needDob) View.VISIBLE else View.GONE
+        sheetView.findViewById<View>(R.id.tvGenderLabel)?.visibility = if (needGender) View.VISIBLE else View.GONE
+        sheetView.findViewById<View>(R.id.layoutGenderChips)?.visibility = if (needGender) View.VISIBLE else View.GONE
+
+        sheetView.findViewById<TextView>(R.id.tvSheetTitle)?.text = when {
+            needDob && needGender -> "Select Date of Birth and Gender to continue"
+            needDob -> "Select Date of Birth to continue"
+            else -> "Select Gender to continue"
+        }
         sheetView.findViewById<View>(R.id.btnSaveDate)?.setOnClickListener(null) // Reset default listener if any
 
         // Setup Pickers
@@ -353,16 +368,23 @@ class HomeFragment : Fragment() {
         paintGenderChips()
 
         btnSave.setOnClickListener {
-            if (lockSelectedGender.isEmpty()) {
+            // Only require a choice for the part that was actually asked for.
+            if (needGender && lockSelectedGender.isEmpty()) {
                 ToastHelper.showToast(requireContext(), "Please select your gender.")
                 return@setOnClickListener
             }
-            val formattedDate = String.format("%02d %s %d", pickerDay.value, monthNames[pickerMonth.value - 1].substring(0, 3), pickerYear.value)
             val prefs = requireContext().getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
-            prefs.edit()
-                .putString("user_dob", formattedDate)
-                .putString("user_gender", lockSelectedGender)
-                .apply()
+            val editor = prefs.edit()
+            // Write only what was asked. Writing the hidden field back would push a value
+            // read off pickers the user never saw.
+            if (needDob) {
+                val formattedDate = String.format("%02d %s %d", pickerDay.value, monthNames[pickerMonth.value - 1].substring(0, 3), pickerYear.value)
+                editor.putString("user_dob", formattedDate)
+            }
+            if (needGender) {
+                editor.putString("user_gender", lockSelectedGender)
+            }
+            editor.apply()
 
             // Sync up immediately. FirestoreSyncManager carries gender alongside dob, so
             // this is what actually creates the field on the cloud profile for accounts
