@@ -5,7 +5,9 @@
     <item android:state_focused="true">
         <shape android:shape="rectangle">
             <corners android:radius="16dp" />
-            <solid android:color="#132268" /> <!-- Slightly darker/distinct for focus -->
+            <!-- Same fill as resting. Focus is carried by the stroke alone; a shifted
+                 fill was tried both lighter and darker and read as a pale slab. -->
+            <solid android:color="#0A1340" />
         <!-- Lifted from #6E9BFF. Same azure family the theme is built on, but with
              enough presence to read as a state change rather than a shade of the
              navy around it. 4.81:1 -> 6.81:1 against the focused fill. -->
@@ -18,7 +20,7 @@
     <item android:state_selected="true">
         <shape android:shape="rectangle">
             <corners android:radius="16dp" />
-            <solid android:color="#132268" />
+            <solid android:color="#0A1340" />
             <stroke
                 android:width="2.5dp"
                 android:color="#6E9BFF" />

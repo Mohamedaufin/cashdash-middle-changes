@@ -2,15 +2,15 @@
 <!--
   Black theme input / chip background.
 
-  Flat shapes, one layer per state, matching bg_glass_input_blue. This used to be a
-  layer-list per state with a white gradient laid over the base to fake a lit bevel,
-  plus a coloured inner glow on focus. The glow existed to compensate for the fill
-  never changing: the border was the only thing that moved, so it needed help.
+  Flat shapes, one layer per state. This used to be a layer-list per state with a white
+  gradient laid over the base to fake a lit bevel, plus a coloured inner glow on focus.
+  Both are gone; they are what made the field look like moulded plastic.
 
-  Focus now moves two things at once, as Blue and White already did - the fill drops
-  away from the resting tone and the stroke comes up in the focus colour. With both
-  cues present the glow is redundant, and dropping it removes the plastic bevel look
-  along with it.
+  Focus is carried by the stroke alone. The fill is identical in all three states on
+  purpose. Shifting it was tried in both directions and neither worked: darkening ran
+  out of room against the page, and lightening turned the focused field into a pale
+  slab. Ring-only is also the common pattern (Material outlined, Primer, Polaris,
+  Stripe), and at 10.45:1 against the fill the ring needs no help.
 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
 
@@ -18,7 +18,7 @@
     <item android:state_focused="true">
         <shape android:shape="rectangle">
             <corners android:radius="16dp" />
-            <solid android:color="#2F3742" />
+            <solid android:color="@color/surface_2" />
             <stroke
                 android:width="2dp"
                 android:color="@color/focus_ring" />
@@ -29,7 +29,7 @@
     <item android:state_selected="true">
         <shape android:shape="rectangle">
             <corners android:radius="16dp" />
-            <solid android:color="#2F3742" />
+            <solid android:color="@color/surface_2" />
             <stroke
                 android:width="2.5dp"
                 android:color="@color/focus_ring" />
