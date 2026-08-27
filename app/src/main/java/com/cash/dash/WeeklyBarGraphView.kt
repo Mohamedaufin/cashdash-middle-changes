@@ -175,7 +175,11 @@ class WeeklyBarGraphView(context: Context, attrs: AttributeSet?) : View(context,
                 if (i == currentWeekIndex && value > 0f) {
                     intArrayOf(Color.parseColor("#8BF7E6"), Color.parseColor("#4DE1C1"))
                 } else {
-                    intArrayOf(Color.parseColor("#FFFFFF"), Color.parseColor("#FFFFFF"))
+                    // Off-white with a slight falloff rather than flat #FFFFFF. Pure white
+                    // at full value against a near-black page halates -- the bar blooms and
+                    // reads harsh. This keeps it the brightest thing on screen without the
+                    // glare, and matches the treatment the inactive bars already use.
+                    intArrayOf(Color.parseColor("#EDEFF3"), Color.parseColor("#D5DAE2"))
                 }
             }
 
