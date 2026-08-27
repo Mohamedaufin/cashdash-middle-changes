@@ -19,9 +19,11 @@
          chart, so a focused field read as "brand" rather than "this one is live", and
          could sit beside a slice of the same colour.
          Not a coloured accent either: the Black theme is essentially monochrome, and it
-         already says "active" in off-white -- the wallet ring, the current-day bars, the
+         already says "active" in off-white: the wallet ring, the current-day bars, the
          selected report tab. This is the same off-white the bars use, so focus speaks the
          language the theme already has instead of importing a hue from outside it.
+         (A bare double hyphen is illegal inside an XML comment and fails the resource
+         merger, so avoid it here.)
          Off-white rather than #FFFFFF because pure white on a near-black field halates. -->
     <color name="focus_ring">#EDEFF3</color>
     <color name="primary_light">#A48AFD</color>
