@@ -488,11 +488,12 @@ class ProfileActivity : ThemedActivity() {
      * or unexpected format still shows the date rather than an error or a blank field.
      */
     /**
-     * "02 Oct 2004  ·  Male  (21 years old)".
+     * "02 Oct 2004  (21 years old)  ·  Male".
      *
-     * Same date + dot + gender shape the register sheet writes, with the age appended.
-     * Each part is dropped independently: no gender recorded (accounts created before the
-     * field existed) loses the dot, and an unparseable date loses only the age.
+     * The dot separates the date block from the gender, as the register sheet does; the
+     * age travels with the date because it is derived from it. Each part is dropped
+     * independently: no gender recorded loses the dot and the label, and an unparseable
+     * date loses only the age.
      */
     private fun dobLine(dob: String): String {
         val gender = EntryActivity.genderLabel(
@@ -500,10 +501,7 @@ class ProfileActivity : ThemedActivity() {
         )
         val withAge = dobWithAge(dob)
         if (dob.isBlank() || gender.isEmpty()) return withAge
-
-        // Age is appended by dobWithAge, so splice the gender in ahead of it.
-        val agePart = withAge.removePrefix(dob)
-        return "$dob  ·  $gender$agePart"
+        return "$withAge  ·  $gender"
     }
 
     private fun dobWithAge(dob: String): String {

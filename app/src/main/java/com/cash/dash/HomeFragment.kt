@@ -41,6 +41,9 @@ class HomeFragment : Fragment() {
     private var reminderRunnable: Runnable? = null
     private var dobLockDialog: com.google.android.material.bottomsheet.BottomSheetDialog? = null
 
+    /** Gender chosen in the lock sheet. Held until Save so dismissing cannot half-apply it. */
+    private var lockSelectedGender: String = ""
+
     private val syncReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
             refreshUI()
@@ -250,7 +253,12 @@ class HomeFragment : Fragment() {
     private fun checkDobLock() {
         val prefs = requireContext().getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
         val dob = prefs.getString("user_dob", "") ?: ""
-        if (dob.isEmpty()) {
+        // Gender counts as missing too. Accounts created before the field existed have a
+        // date but no gender, and nothing else in the app ever asks for one -- so without
+        // this they could never have it, and Profile had nothing to show. The same sheet
+        // collects both, so one prompt fills whichever is absent.
+        val gender = prefs.getString("user_gender", "") ?: ""
+        if (dob.isEmpty() || gender.isEmpty()) {
             if (dobLockDialog == null || dobLockDialog?.isShowing == false) {
                 showDobLockDialog()
             }
@@ -272,7 +280,7 @@ class HomeFragment : Fragment() {
         val btnSave = sheetView.findViewById<android.widget.Button>(R.id.btnSaveDate)
         
         sheetView.findViewById<View>(R.id.dragHandle)?.visibility = View.GONE
-        sheetView.findViewById<TextView>(R.id.tvSheetTitle)?.text = "Select Date of Birth to continue"
+        sheetView.findViewById<TextView>(R.id.tvSheetTitle)?.text = "Select Date of Birth and Gender to continue"
         sheetView.findViewById<View>(R.id.btnSaveDate)?.setOnClickListener(null) // Reset default listener if any
 
         // Setup Pickers
@@ -315,14 +323,52 @@ class HomeFragment : Fragment() {
         customizePicker(pickerMonth)
         customizePicker(pickerDay)
 
+        // Same chips and the same keys the register sheet writes, so a gender captured
+        // here is indistinguishable from one captured at sign-up.
+        val chipMale = sheetView.findViewById<TextView>(R.id.chipGenderMale)
+        val chipFemale = sheetView.findViewById<TextView>(R.id.chipGenderFemale)
+        val chipUnspecified = sheetView.findViewById<TextView>(R.id.chipGenderUnspecified)
+        val genderChips = listOfNotNull(chipMale, chipFemale, chipUnspecified)
+        val genderKeys = mapOf(chipMale to "male", chipFemale to "female", chipUnspecified to "undisclosed")
+
+        // Pre-select whatever is already stored, so a user prompted only for a missing
+        // date does not have to re-pick a gender they already gave.
+        lockSelectedGender = requireContext()
+            .getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+            .getString("user_gender", "") ?: ""
+
+        fun paintGenderChips() {
+            genderChips.forEach { chip ->
+                val isChosen = genderKeys[chip] == lockSelectedGender
+                chip.isSelected = isChosen
+                chip.setTypeface(null, if (isChosen) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+            }
+        }
+        genderChips.forEach { chip ->
+            chip.setOnClickListener {
+                lockSelectedGender = genderKeys[chip] ?: ""
+                paintGenderChips()
+            }
+        }
+        paintGenderChips()
+
         btnSave.setOnClickListener {
+            if (lockSelectedGender.isEmpty()) {
+                ToastHelper.showToast(requireContext(), "Please select your gender.")
+                return@setOnClickListener
+            }
             val formattedDate = String.format("%02d %s %d", pickerDay.value, monthNames[pickerMonth.value - 1].substring(0, 3), pickerYear.value)
             val prefs = requireContext().getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
-            prefs.edit().putString("user_dob", formattedDate).apply()
-            
-            // Sync up immediately
+            prefs.edit()
+                .putString("user_dob", formattedDate)
+                .putString("user_gender", lockSelectedGender)
+                .apply()
+
+            // Sync up immediately. FirestoreSyncManager carries gender alongside dob, so
+            // this is what actually creates the field on the cloud profile for accounts
+            // that predate it.
             FirestoreSyncManager.pushAllDataToCloud(requireContext())
-            
+
             dialog.dismiss()
             dobLockDialog = null
         }
