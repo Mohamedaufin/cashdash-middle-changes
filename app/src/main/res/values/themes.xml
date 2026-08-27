@@ -133,6 +133,7 @@
         <item name="finminderIcon">@drawable/ic_finminder</item>
         <item name="primaryActionBackground">#EDEFF3</item>
         <item name="primaryActionText">#0D0F12</item>
+        <item name="pageTopColor">#0D0F12</item>
         <item name="dividerColor">#1AFFFFFF</item>
         <item name="textRedColor">#FF4D4D</item>
         <item name="textGreenColor">#4CAF50</item>
@@ -181,6 +182,7 @@
         <item name="finminderIcon">@drawable/ic_finminder</item>
         <item name="primaryActionBackground">#EDEFF3</item>
         <item name="primaryActionText">#08103A</item>
+        <item name="pageTopColor">#0D1B6E</item>
         <item name="progressTrackColor">#08123A</item>
         <item name="dividerColor">#1AFFFFFF</item>
         <item name="textRedColor">#FF4D4D</item>
@@ -226,6 +228,7 @@
         <item name="finminderIcon">@drawable/ic_finminder_white</item>
         <item name="primaryActionBackground">#1A1A1A</item>
         <item name="primaryActionText">#FFFFFF</item>
+        <item name="pageTopColor">#F7F9FB</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="O">true</item>
         <item name="progressTrackColor">#E2E8F0</item>

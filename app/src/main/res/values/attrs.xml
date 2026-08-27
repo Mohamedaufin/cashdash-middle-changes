@@ -36,6 +36,12 @@
          button on a dark app, and it keeps the CTA from competing with the accent. -->
     <attr name="primaryActionBackground" format="color" />
     <attr name="primaryActionText" format="color" />
+    <!-- The exact colour the page starts with at the top, used to paint the status bar
+         behind it. Held as an attribute so the bar and the page cannot drift apart: they
+         were being set in three places with three different values, which is why a seam
+         appeared under the status bar when the page ramps were retuned. If a
+         bg_main_gradient_* start colour changes, change this with it. -->
+    <attr name="pageTopColor" format="color" />
     <attr name="healthGreen" format="color" />
     <attr name="healthYellow" format="color" />
     <attr name="healthRed" format="color" />

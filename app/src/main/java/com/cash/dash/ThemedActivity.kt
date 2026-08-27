@@ -20,28 +20,30 @@ open class ThemedActivity : AppCompatActivity() {
         val theme = ThemeHelper.getCurrentTheme(this)
         val isWhite = theme == "White"
         
-        val statusBarStyle = when (theme) {
-            "White" -> androidx.activity.SystemBarStyle.light(
-                android.graphics.Color.parseColor("#F8FAFC"),
-                android.graphics.Color.parseColor("#F8FAFC")
-            )
-            "Blue" -> androidx.activity.SystemBarStyle.dark(
-                android.graphics.Color.parseColor("#070B1D") // Dark blue for the top of the gradient
-            )
-            else -> androidx.activity.SystemBarStyle.dark(
-                android.graphics.Color.parseColor("#0C0C0F") // App bg for black theme
-            )
+        // One value for the bar and the page. applyTheme() above has already called
+        // setTheme, so the attribute resolves here.
+        //
+        // These used to be three hardcoded lists in two places and they had drifted: on
+        // White the mask painted #FFFFFF, the system bar said #F8FAFC and the page began
+        // #F7F9FB, which is the seam under the status bar. Black was stale in the same
+        // way, still on #0C0C0F after app_bg moved to #0D0F12.
+        val pageTop = ThemeHelper.resolveColorAttr(this, R.attr.pageTopColor)
+
+        val statusBarStyle = if (isWhite) {
+            androidx.activity.SystemBarStyle.light(pageTop, pageTop)
+        } else {
+            androidx.activity.SystemBarStyle.dark(pageTop)
         }
-        
+
         // Android 15 SDK 35 standard: Force Edge-to-Edge correctly
         enableEdgeToEdge(statusBarStyle = statusBarStyle)
-        
+
         super.onCreate(savedInstanceState)
-        
+
         // Make status bar icons light/dark
         androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = isWhite
 
-        addStatusBarMask(theme)
+        addStatusBarMask(pageTop)
 
         reportDeviceIntegrityOnce()
     }
@@ -77,13 +79,9 @@ open class ThemedActivity : AppCompatActivity() {
         private var integrityReported = false
     }
 
-    private fun addStatusBarMask(theme: String) {
+    /** [color] is ?attr/pageTopColor, so the mask always matches the top of the page. */
+    private fun addStatusBarMask(color: Int) {
         val maskView = android.view.View(this)
-        val color = when (theme) {
-            "White" -> android.graphics.Color.parseColor("#FFFFFF")
-            "Blue" -> android.graphics.Color.parseColor("#0D1B6E")
-            else -> android.graphics.Color.parseColor("#0C0C0F")
-        }
         maskView.setBackgroundColor(color)
         
         val layoutParams = android.widget.FrameLayout.LayoutParams(
