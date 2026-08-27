@@ -117,6 +117,11 @@ object FirestoreSyncManager {
                     "email" to email,
                     "phone" to (userPrefs.getString("user_phone", "") ?: ""),
                     "dob" to (userPrefs.getString("user_dob", "") ?: ""),
+                    // Gender rides with dob. It used to be written only at registration,
+                    // so any later push dropped it from the cloud profile and any pull
+                    // rebuilt prefs without it -- which is why existing accounts showed
+                    // no gender in Profile.
+                    "gender" to (userPrefs.getString("user_gender", "") ?: ""),
                     "setup_complete" to !userPrefs.getBoolean("isFirstLaunch", true),
                     "wallet_popup_shown" to userPrefs.getBoolean("WalletPopupShown", false),
                     "account_creation_time" to userPrefs.getLong("account_creation_time", 0L),
@@ -135,6 +140,7 @@ object FirestoreSyncManager {
                     "email" to email,
                     "name" to name,
                     "dob" to dobString,
+                    "gender" to (userPrefs.getString("user_gender", "") ?: ""),
                     "activeDates" to com.google.firebase.firestore.FieldValue.arrayUnion(todayStr)
                     // lastActiveTime and status live in RTDB only
                 )
@@ -396,6 +402,7 @@ object FirestoreSyncManager {
                     profileDoc.getString("name")?.let { editor.putString("user_name", it) }
                     profileDoc.getString("phone")?.let { editor.putString("user_phone", it) }
                     profileDoc.getString("dob")?.let { editor.putString("user_dob", it) }
+                    profileDoc.getString("gender")?.let { editor.putString("user_gender", it) }
                     profileDoc.getString("email")?.let { editor.putString("user_email", it) }
 
                     // WalletPopupShown: use cloud value if set, otherwise keep local
@@ -733,6 +740,7 @@ object FirestoreSyncManager {
             snapshot.getString("name")?.let { editor.putString("user_name", it) }
             snapshot.getString("phone")?.let { editor.putString("user_phone", it) }
             snapshot.getString("dob")?.let { editor.putString("user_dob", it) }
+            snapshot.getString("gender")?.let { editor.putString("user_gender", it) }
             snapshot.getString("email")?.let { editor.putString("user_email", it) }
             editor.apply()
             isSyncingFromCloud = false

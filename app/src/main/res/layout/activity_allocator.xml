@@ -40,7 +40,7 @@
         android:layout_height="135dp"
         android:orientation="horizontal"
         android:gravity="center"
-        android:background="@drawable/bg_3d_bottom_nav"
+        android:background="?attr/bottomNavBackground"
         android:elevation="32dp"
         android:translationZ="20dp"
         app:layout_constraintBottom_toBottomOf="parent"

@@ -130,6 +130,7 @@
         <item name="navActiveColor">#FFFFFF</item>
         <item name="navInactiveColor">#D0E0FF</item>
         <item name="infoIconBackground">@drawable/bg_white_circle</item>
+        <item name="finminderIcon">@drawable/ic_finminder</item>
         <item name="dividerColor">#1AFFFFFF</item>
         <item name="textRedColor">#FF4D4D</item>
         <item name="textGreenColor">#4CAF50</item>
@@ -171,6 +172,7 @@
         <item name="navActiveColor">#FFFFFF</item>
         <item name="navInactiveColor">#D0E0FF</item>
         <item name="infoIconBackground">@drawable/bg_white_circle</item>
+        <item name="finminderIcon">@drawable/ic_finminder</item>
         <item name="progressTrackColor">#08123A</item>
         <item name="dividerColor">#1AFFFFFF</item>
         <item name="textRedColor">#FF4D4D</item>
@@ -213,6 +215,7 @@
         <item name="navActiveColor">#1A1A1A</item>
         <item name="navInactiveColor">#5F6D7E</item>
         <item name="infoIconBackground">@drawable/bg_white_circle_bordered_white</item>
+        <item name="finminderIcon">@drawable/ic_finminder_white</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="O">true</item>
         <item name="progressTrackColor">#E2E8F0</item>

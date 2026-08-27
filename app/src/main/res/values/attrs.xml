@@ -26,6 +26,10 @@
     <attr name="navActiveColor" format="color" />
     <attr name="navInactiveColor" format="color" />
     <attr name="infoIconBackground" format="reference" />
+    <!-- ic_finminder_white existed on disk but was reachable from nowhere: absent from
+         ThemeHelper.getDrawable, not a theme attribute, never set in code. fragment_home
+         referenced the dark asset directly, so the icon stayed dark on the White theme. -->
+    <attr name="finminderIcon" format="reference" />
     <attr name="healthGreen" format="color" />
     <attr name="healthYellow" format="color" />
     <attr name="healthRed" format="color" />
