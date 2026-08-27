@@ -1,40 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  White theme dropdown / popup menu.
+
+  Was a gradient ending at #F8FAFC with a #40FFFFFF gloss layer over the top. Both push
+  toward white, so the popup landed lighter than the page it opened on and read as a
+  different material from every other surface. The gloss is a leftover from the dark
+  theme, where a white overlay is how you lift a surface; on a light theme it just
+  bleaches it.
+
+  Flat surface tone now, same as nav and search.
+-->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <padding android:left="3dp" android:top="3dp" android:right="3dp" android:bottom="3dp" />
-
-    <!-- 1. Silky-White Glass Base -->
     <item>
         <shape android:shape="rectangle">
-            <gradient
-                android:startColor="#ECEFF4"
-                android:endColor="#F8FAFC"
-                android:angle="135"
-                android:type="linear"/>
+            <solid android:color="#ECEFF4"/>
             <corners android:radius="16dp"/>
             <stroke
                 android:width="1.2dp"
                 android:color="@color/border_white"/>
         </shape>
     </item>
-
-    <!-- 2. Subtle Top Bevel Highlight (Gloss effect) -->
-    <item
-        android:bottom="20dp"
-        android:right="0dp"
-        android:left="0dp"
-        android:top="0dp">
-        <shape android:shape="rectangle">
-            <gradient
-                android:startColor="#40FFFFFF"
-                android:endColor="#00FFFFFF"
-                android:angle="270"
-                android:type="linear"/>
-            <corners
-                android:topLeftRadius="16dp"
-                android:topRightRadius="16dp"
-                android:bottomLeftRadius="0dp"
-                android:bottomRightRadius="0dp"/>
-        </shape>
-    </item>
-
 </layer-list>

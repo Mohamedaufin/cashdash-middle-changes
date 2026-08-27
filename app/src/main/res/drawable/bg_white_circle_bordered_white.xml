@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="oval">
-    <solid android:color="#FFFFFF"/>
+    <solid android:color="#ECEFF4"/>
     <stroke
         android:width="1dp"
         android:color="#CCD4DF"/> <!-- Soft gray border for white theme -->

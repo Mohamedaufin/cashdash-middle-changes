@@ -5,8 +5,8 @@
     <item>
         <shape android:shape="oval">
             <gradient
-                android:startColor="#F1F5F9"
-                android:endColor="#E2E8F0"
+                android:startColor="#ECEFF4"
+                android:endColor="#ECEFF4"
                 android:angle="270"
                 android:type="linear"/>
             <stroke
@@ -30,7 +30,7 @@
         android:top="0dp">
         <shape android:shape="oval">
             <gradient
-                android:startColor="#15FFFFFF" 
+                android:startColor="#00FFFFFF" 
                 android:endColor="#00FFFFFF"
                 android:angle="270"
                 android:type="linear"/>
