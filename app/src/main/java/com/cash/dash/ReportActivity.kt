@@ -748,19 +748,33 @@ class ReportActivity : ThemedActivity() {
 
     /** Applies a strong active-tab highlight to the selected toggle button, matching FinMinder aesthetics. */
     private fun updateToggleHighlight(checkedId: Int) {
-        val isWhite = ThemeHelper.isWhiteTheme(this)
-        val activeColor = if (isWhite) Color.parseColor("#1A1A1A") else Color.WHITE
-        val activeTextColor = if (isWhite) Color.WHITE else Color.BLACK
-        val inactiveTextColor = ThemeHelper.resolveColorAttr(this, android.R.attr.textColorPrimary)
+        // State lists, not flat colours per button.
+        //
+        // These are MaterialButtons inside a MaterialButtonToggleGroup, so Material owns
+        // the checked state and paints it from colorPrimary. Assigning a flat
+        // ColorStateList.valueOf() per button left that default in place underneath and
+        // then covered it, so switching tabs showed the violet checked state first and
+        // the intended colour a frame later. Handing Material a list that answers for
+        // state_checked replaces the default outright, so there is nothing to flash.
+        val activeColor = ThemeHelper.resolveColorAttr(this, R.attr.primaryActionBackground)
+        val activeTextColor = ThemeHelper.resolveColorAttr(this, R.attr.primaryActionText)
+        val inactiveTextColor = ThemeHelper.resolveColorAttr(this, R.attr.textPrimaryColor)
 
-        val ids = listOf(R.id.btnWeekly, R.id.btnMonthly, R.id.btnCustom)
-        for (id in ids) {
+        val checkedStates = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
+        val bgTint = android.content.res.ColorStateList(
+            checkedStates, intArrayOf(activeColor, Color.TRANSPARENT)
+        )
+        val textTint = android.content.res.ColorStateList(
+            checkedStates, intArrayOf(activeTextColor, inactiveTextColor)
+        )
+
+        // checkedId is deliberately unused now. MaterialButtonToggleGroup already holds
+        // the checked state and the lists above resolve from it, so assigning isChecked
+        // here would re-enter addOnButtonCheckedListener, which is what calls this.
+        for (id in listOf(R.id.btnWeekly, R.id.btnMonthly, R.id.btnCustom)) {
             val btn = findViewById<com.google.android.material.button.MaterialButton>(id)
-            val isActive = (id == checkedId)
-            btn.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                if (isActive) activeColor else Color.TRANSPARENT
-            )
-            btn.setTextColor(if (isActive) activeTextColor else inactiveTextColor)
+            btn.backgroundTintList = bgTint
+            btn.setTextColor(textTint)
         }
     }
 

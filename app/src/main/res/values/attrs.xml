@@ -30,6 +30,12 @@
          ThemeHelper.getDrawable, not a theme attribute, never set in code. fragment_home
          referenced the dark asset directly, so the icon stayed dark on the White theme. -->
     <attr name="finminderIcon" format="reference" />
+    <!-- Primary call to action, and the selected tab. Each theme fills these with maximum
+         contrast against its own page rather than a shared brand colour: off-white on the
+         dark themes, near-black on White. That is the pattern behind a white primary
+         button on a dark app, and it keeps the CTA from competing with the accent. -->
+    <attr name="primaryActionBackground" format="color" />
+    <attr name="primaryActionText" format="color" />
     <attr name="healthGreen" format="color" />
     <attr name="healthYellow" format="color" />
     <attr name="healthRed" format="color" />
