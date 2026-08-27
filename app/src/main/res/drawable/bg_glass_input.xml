@@ -18,7 +18,7 @@
     <item android:state_focused="true">
         <shape android:shape="rectangle">
             <corners android:radius="16dp" />
-            <solid android:color="#191E25" />
+            <solid android:color="#2F3742" />
             <stroke
                 android:width="2dp"
                 android:color="@color/focus_ring" />
@@ -29,7 +29,7 @@
     <item android:state_selected="true">
         <shape android:shape="rectangle">
             <corners android:radius="16dp" />
-            <solid android:color="#191E25" />
+            <solid android:color="#2F3742" />
             <stroke
                 android:width="2.5dp"
                 android:color="@color/focus_ring" />
