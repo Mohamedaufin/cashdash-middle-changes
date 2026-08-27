@@ -2,12 +2,14 @@
 <!--
   White theme card.
 
-  Was a #E8ECF0 fill with an opaque #000000 1dp stroke. Two problems at once: the fill
-  was darker than the page it sat on, and a hard black outline on a light card is the
-  single most dated thing in a light UI. It reads as a wireframe rather than a surface.
+  Black outline, deliberately. It is the app's look on this theme, not an oversight, so
+  do not "soften" it to a grey hairline.
 
-  Now white on the grey page, with a soft border. The card is defined by being lighter
-  than its surroundings, and the border only finishes the edge.
+  The fill is the part that changed. It was #E8ECF0, darker than the page it sat on
+  (1.08:1), which left the outline doing all the work of separating the card from the
+  background - take the border away and the card disappeared. Now white on the grey page
+  from bg_main_gradient_white, so the card is already a raised surface and the outline is
+  a style choice on top of that rather than the only thing holding it together.
 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
@@ -15,5 +17,5 @@
     <corners android:radius="20dp"/>
     <stroke
         android:width="1dp"
-        android:color="#DFE4EB"/>
+        android:color="#000000"/>
 </shape>
