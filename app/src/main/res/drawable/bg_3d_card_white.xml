@@ -2,20 +2,23 @@
 <!--
   White theme card.
 
-  Black outline, deliberately. It is the app's look on this theme, not an oversight, so
-  do not "soften" it to a grey hairline.
+  Part of a single tonal family, mirroring how the Black theme is built. There, every
+  surface sits within 1.49:1 of the page and nothing has a hard edge, which is what makes
+  it read as one material. White was doing the opposite: an opaque #000000 outline at
+  19.2:1 against the page, so each card was a separate cut-out rather than part of a
+  system.
 
-  The fill is the part that changed. It was #E8ECF0, darker than the page it sat on
-  (1.08:1), which left the outline doing all the work of separating the card from the
-  background - take the border away and the card disappeared. Now white on the grey page
-  from bg_main_gradient_white, so the card is already a raised surface and the outline is
-  a style choice on top of that rather than the only thing holding it together.
+  The card is now one step off the page (1.10:1) with a border at 1.42:1, the same
+  relationships Black uses, inverted for light: the page is the lightest thing and
+  surfaces step down from it.
+
+  Do not reintroduce a black stroke here without changing the rest of the theme with it.
 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#FFFFFF"/>
+    <solid android:color="#EAEEF3"/>
     <corners android:radius="20dp"/>
     <stroke
         android:width="1dp"
-        android:color="#000000"/>
+        android:color="@color/border_white"/>
 </shape>

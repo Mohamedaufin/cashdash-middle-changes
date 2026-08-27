@@ -3,11 +3,11 @@
     <!-- Base: Silky White Surface (Standard Layered 2D) -->
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="#F8FAFC" />
+            <solid android:color="#ECEFF4" />
             <corners android:radius="14dp" />
             <stroke
                 android:width="1.2dp"
-                android:color="#CBD5E1" />
+                android:color="#CCD4DF" />
         </shape>
     </item>
 </layer-list>

@@ -2,12 +2,12 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <gradient
-        android:startColor="#FFFFFF"
-        android:endColor="#F8FAFC"
+        android:startColor="#EAEEF3"
+        android:endColor="#EAEEF3"
         android:angle="135"
         android:type="linear"/>
     <corners android:radius="16dp"/>
     <stroke
         android:width="1dp"
-        android:color="#CBD5E1"/> <!-- Soft gray border for transactions -->
+        android:color="#CCD4DF"/> <!-- Soft gray border for transactions -->
 </shape>

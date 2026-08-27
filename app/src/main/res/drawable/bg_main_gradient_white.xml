@@ -1,20 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  White theme page background.
+  White theme page background, and the anchor for the whole theme's tonal scale.
 
-  Was #FFFFFF at the top falling to #E2E8F0. Starting at pure white inverted the
-  hierarchy: white cards vanished into the page at the top of a screen, and the grey
-  cards (#E8ECF0) read as holes punched into it rather than as raised surfaces.
+  The page is the lightest surface and everything else steps down from it, which is the
+  Black theme's arrangement inverted: there the page is the darkest thing and surfaces
+  step up. Keeping the direction consistent is what makes the two themes feel like the
+  same app rather than two designs.
 
-  The page is now grey throughout and never reaches white, so a white card always sits
-  above it. That is the standard light-mode arrangement - grey canvas, white cards - and
-  it is what lets the card border be soft instead of doing all the work.
+  Scale, all measured against this page:
+
+    page    #F7F9FB   1.00
+    surface #ECEFF4   1.09   nav, dropdowns, search
+    card    #EAEEF3   1.10   cards, transactions, keypad
+    input   #DDE3EB   1.22   fields, icon tiles
+    border  #CCD4DF   1.42   every stroke
+
+  Widest step is 1.42:1; Black's is 1.49:1. Was 19.2:1 when cards carried a black
+  outline. Keep new surfaces inside that band.
+
+  The gradient is almost flat on purpose. The previous one ran #FFFFFF to #E2E8F0, a
+  range wide enough that a card could be lighter than the page at the top of a screen and
+  darker at the bottom, so the hierarchy inverted as you scrolled.
 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <gradient
-        android:startColor="#F7F8FA"
-        android:centerColor="#F3F5F8"
-        android:endColor="#EFF2F6"
+        android:startColor="#F7F9FB"
+        android:centerColor="#F5F7FA"
+        android:endColor="#F2F5F8"
         android:angle="270"
         android:type="linear"/>
 </shape>
