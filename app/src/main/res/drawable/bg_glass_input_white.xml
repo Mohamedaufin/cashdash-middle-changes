@@ -6,9 +6,13 @@
         <shape android:shape="rectangle">
             <corners android:radius="16dp" />
             <solid android:color="#FFFFFF" />
+        <!-- Was #1A73E8, a neutral slate: focus read as "the border got darker and
+             thicker" rather than "this field is live", and a dark grey edge does not
+             stand out on a light page already full of dark text. #1A73E8 is this
+             theme's own link colour, so it introduces nothing new. -->
             <stroke
                 android:width="2dp"
-                android:color="#475569" />
+                android:color="#1A73E8" />
         </shape>
     </item>
 
@@ -18,7 +22,7 @@
             <solid android:color="#FFFFFF" />
             <stroke
                 android:width="2.5dp"
-                android:color="#475569" />
+                android:color="#1A73E8" />
         </shape>
     </item>
 
