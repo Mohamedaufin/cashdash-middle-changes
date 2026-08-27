@@ -167,9 +167,17 @@ class WeeklyBarGraphView(context: Context, attrs: AttributeSet?) : View(context,
                 )
             } else if (isWhiteTheme) {
                 if (i == currentWeekIndex && value > 0f) {
-                    intArrayOf(Color.parseColor("#8BF7E6"), Color.parseColor("#4DE1C1"))
+                    // A light-theme teal. #8BF7E6/#4DE1C1 are dark-theme mints and sat at
+                    // 1.49:1 against this page, so the current week was the least visible
+                    // bar rather than the most.
+                    intArrayOf(Color.parseColor("#0E9384"), Color.parseColor("#0B7A6E"))
                 } else {
-                    intArrayOf(Color.parseColor("#D9D9D9"), Color.parseColor("#BDBDBD"))
+                    // Was #D9D9D9/#BDBDBD, 1.71:1 against the page: the bars were nearly
+                    // invisible on the screen whose whole point is the bars. Slate, ending
+                    // on the theme's own textSecondaryColor, reads clearly without going
+                    // full black. Mirrors the dark theme, where the bar is off-white for
+                    // the same reason.
+                    intArrayOf(Color.parseColor("#64748B"), Color.parseColor("#475569"))
                 }
             } else {
                 if (i == currentWeekIndex && value > 0f) {

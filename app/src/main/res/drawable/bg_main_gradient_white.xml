@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Silky silvery white main background for White Theme -->
+<!--
+  White theme page background.
+
+  Was #FFFFFF at the top falling to #E2E8F0. Starting at pure white inverted the
+  hierarchy: white cards vanished into the page at the top of a screen, and the grey
+  cards (#E8ECF0) read as holes punched into it rather than as raised surfaces.
+
+  The page is now grey throughout and never reaches white, so a white card always sits
+  above it. That is the standard light-mode arrangement - grey canvas, white cards - and
+  it is what lets the card border be soft instead of doing all the work.
+-->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <gradient
-        android:startColor="#FFFFFF"
-        android:centerColor="#F1F5F9"
-        android:endColor="#E2E8F0"
+        android:startColor="#F7F8FA"
+        android:centerColor="#F3F5F8"
+        android:endColor="#EFF2F6"
         android:angle="270"
         android:type="linear"/>
 </shape>
