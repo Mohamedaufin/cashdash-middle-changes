@@ -9,5 +9,5 @@
     <corners android:radius="14dp"/>
     <stroke
         android:width="1dp"
-        android:color="#CCD4DF"/>
+        android:color="@color/border_white"/>
 </shape>

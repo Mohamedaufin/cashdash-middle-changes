@@ -7,7 +7,7 @@
             <solid android:color="#E6ECEFF4"/> <!-- 90% White base -->
             <stroke
                 android:width="1dp"
-                android:color="#20000000"/> <!-- Subdued soft dark rim for visibility -->
+                android:color="@color/border_white"/> <!-- Subdued soft dark rim for visibility -->
         </shape>
     </item>
 

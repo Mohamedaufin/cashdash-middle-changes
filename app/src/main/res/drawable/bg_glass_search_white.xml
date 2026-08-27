@@ -7,7 +7,7 @@
             <corners android:radius="14dp" />
             <stroke
                 android:width="1.2dp"
-                android:color="#CCD4DF" />
+                android:color="@color/border_white" />
         </shape>
     </item>
 </layer-list>
