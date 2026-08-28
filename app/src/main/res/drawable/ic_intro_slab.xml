@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Scene two, middle of the stack: a ledger seen slightly from the left, with a receipt
+     torn off inside it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <!-- Spine. -->
+    <path
+        android:pathData="M 92,24 L 104,32 L 104,104 L 92,96 Z"
+        android:fillColor="?attr/introSurfaceDeep"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="2.6"
+        android:strokeLineJoin="round" />
+
+    <path
+        android:pathData="M 18,24 L 92,24 L 92,96 L 18,96 Z"
+        android:fillColor="?attr/introSurface"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="3"
+        android:strokeLineJoin="round" />
+
+    <!-- Receipt, with the torn edge along the bottom. -->
+    <path
+        android:pathData="M 42,42 L 68,42 L 68,80 L 63.6,75.6 L 59.2,80 L 54.8,75.6 L 50.4,80 L 46,75.6 L 42,80 Z"
+        android:fillColor="@color/intro_accent_start"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="2.2"
+        android:strokeLineJoin="round" />
+
+    <!-- Folded corner. -->
+    <path
+        android:pathData="M 60,42 L 68,42 L 68,50 Z"
+        android:fillColor="@color/intro_accent_end" />
+</vector>

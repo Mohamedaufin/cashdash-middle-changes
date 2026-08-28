@@ -10,7 +10,7 @@
 
 **Scope:** Android app (`app/src/main`), Firebase Cloud Functions (`functions/index.js`), Firestore rules, RTDB rules, Gradle/ProGuard config, repo hygiene.
 **Date of audit:** 2026-08-24 · **Audited at:** `525a302` on `main` · **App version then:** 0.4.8 (versionCode 21)
-**Re-verified:** 2026-08-26 · **App version now:** 0.5.0 (versionCode 23, in Play review)
+**Re-verified:** 2026-08-26 · **App version now:** 0.5.1 (versionCode 24, in Play review)
 
 **Status as re-verified: 18 of 22 closed · 1 withdrawn (#12 — never applied) · 1 deferred by request (#8) · 1 open (#9) · 1 assessed area (#15).**
 
@@ -28,7 +28,7 @@ Deployed and probe-tested in production:
 
 > **Two ways a fix reaches users.** Backend changes (Cloud Functions, Firestore/Storage/RTDB rules) go live the moment `firebase deploy` runs — they protect every user immediately, old app version or not. App-side changes (key removal, App Check, exported components, WebView allowlist, encrypted cache, backup rules) live inside the APK and only reach a user when they **update the app**. Nine findings were in the second category.
 >
-> **Update 2026-08-26:** of those nine, six shipped in 0.4.9 (#14, #16, #17, #19, #20, #21). The rest are in 0.5.0, currently in Play review.
+> **Update 2026-08-26:** of those nine, six shipped in 0.4.9 (#14, #16, #17, #19, #20, #21). The rest are in 0.5.1, currently in Play review.
 
 **Still outstanding of these 22, as of 2026-08-26:** exactly one — **App Check enforcement (#9)**, console-only, stage via Monitor first. #8 remains deferred at your request pending Google Sign-In. #15 is assessed, and what remains under it is either blocked on #9 or a recorded decision. ~~the git history purge (#12, destructive force-push)~~ — **withdrawn, the premise was false; see #12.** ~~#13~~ — **closed 2026-08-25.**
 
@@ -51,7 +51,7 @@ Deployed and probe-tested in production:
 | 6 | 🟠 High | `validUntil` expiry not enforced server-side | 🟢 **LIVE** — backend rules |
 | 7 | 🟠 High | `allocateAdmins` self-escalation to owner | 🟢 **LIVE** — backend rules |
 | 8 | 🟠 High | Authorization on unverified email | ⏸️ **Deferred by request** — all verification logic removed from the app; you are implementing this with Google Sign-In |
-| 9 | 🟠 High | Firebase App Check not enabled | ⚠️ **Still open** — SDK proven working (Play builds log `app: VALID`); **enforcement still off**, gated on 0.5.0 adoption |
+| 9 | 🟠 High | Firebase App Check not enabled | ⚠️ **Still open** — SDK proven working (Play builds log `app: VALID`); **enforcement still off**, gated on 0.5.1 adoption |
 | 10 | 🟠 High | XSS in the admin reply page | 🟢 **LIVE** — backend; escaping + allowlist + CSP |
 | 11 | 🟡 Medium | Any user can rewrite `admin_logs` click arrays | 🟢 **LIVE** — backend rules; append-own-email only |
 | 12 | 🟡 Medium | Logcat/crash dumps with user emails in git | ❎ **Withdrawn** — premise false; the files were never committed (verified 2026-08-26) |
@@ -112,7 +112,7 @@ Deployed functions confirmed: `adminReply`, `getSupportReplyLink`, `onGlobalPush
 
 | # | Re-verified state | Evidence (2026-08-26) |
 |---|---|---|
-| 9 | **Open.** SDK proven working — Play builds log `app: VALID`; sideloaded builds show `INVALID`, which is expected. Enforcement still off. | Gated on 0.5.0 adoption; enforcing now would lock out users on older builds |
+| 9 | **Open.** SDK proven working — Play builds log `app: VALID`; sideloaded builds show `INVALID`, which is expected. Enforcement still off. | Gated on 0.5.1 adoption; enforcing now would lock out users on older builds |
 | 12 | **Withdrawn.** `git log --all` over all six named files returns nothing — they were never committed, so nothing was ever exposed and there is nothing to purge. | Files exist untracked on disk only |
 | 13 | **Closed 2026-08-25.** `makePublic()` replaced with per-object `firebaseStorageDownloadTokens`; 83 of 85 legacy public objects revoked, 2 already on the token scheme. | [functions/index.js:954](functions/index.js) — `crypto.randomUUID()`; revocation verified by a live `403` |
 | 15 | **Assessed 2026-08-26** — no longer a coverage gap. Live status deliberately **not** restated here. | `SECURITY_REVIEW.md` → *Reverse-engineering and tamper posture* |
@@ -368,7 +368,7 @@ Enforcement is what actually closes this. The SDK alone does nothing until step 
 
 As of 2026-08-24: Storage 0% · RTDB 11% · Firestore 20% · Auth 10% verified.
 
-> **Update 2026-08-26.** The percentage reading below was the right call, and there is now direct evidence rather than inference: Play-distributed builds log `{"verifications":{"app":"VALID"}}`. Sideloaded debug builds log `INVALID` unless the registered debug token is in use — **expected, not a regression**, and worth knowing before you read your own test results as a failure. Enforcement is still off and still gated on 0.5.0 adoption.
+> **Update 2026-08-26.** The percentage reading below was the right call, and there is now direct evidence rather than inference: Play-distributed builds log `{"verifications":{"app":"VALID"}}`. Sideloaded debug builds log `INVALID` unless the registered debug token is in use — **expected, not a regression**, and worth knowing before you read your own test results as a failure. Enforcement is still off and still gated on 0.5.1 adoption.
 
 **This is healthy, not broken.** The numbers moved off zero, which proves the SDK is issuing tokens. They are low because the column is a rolling window across *all* traffic:
 
@@ -542,11 +542,11 @@ Paste the key then Ctrl+Z + Enter (Windows). Piping via `--data-file=-` keeps th
 
 Register `com.cash.dash` with Play Integrity, add your debug token, set Firestore / Storage / Auth / Functions to **Monitor**, then switch to **Enforce** once metrics look clean.
 
-### 🔶 3. Ship the app build — **0.5.0 (versionCode 23) is in Play review**
+### 🔶 3. Ship the app build — **0.5.1 (versionCode 24) is in Play review**
 
 Admins need it for "Open Reply Page"; all users need it for the App Check attestation and the WebView allowlist.
 
-> **Update 2026-08-26.** 0.4.9 shipped and carried #14, #16, #17, #19, #20, #21. 0.5.0 is in review and carries the remaining client-side work: the `strings.xml` key removal, the widget-toggle fix, delete-account, internal camera cache, and the 8-char registration minimum. Until it rolls out, those protect nobody — and App Check enforcement (#9) stays gated on its adoption.
+> **Update 2026-08-26.** 0.4.9 shipped and carried #14, #16, #17, #19, #20, #21. 0.5.1 is in review and carries the remaining client-side work: the `strings.xml` key removal, the widget-toggle fix, delete-account, internal camera cache, and the 8-char registration minimum. Until it rolls out, those protect nobody — and App Check enforcement (#9) stays gated on its adoption.
 
 ### ⬜ 4. Two warnings surfaced during deploy (pre-existing, not from these changes)
 
@@ -577,7 +577,7 @@ Worth explicitly testing: the `admin_logs` append rule (#11), an admin with only
 
 The four critical findings are closed in code, which removes the anonymous-attacker paths entirely. What remains is a materially smaller problem.
 
-> **Correction 2026-08-26.** This section used to say "two items still matter on a clock." Both have since been resolved or withdrawn — see the strikethroughs below. **Nothing here is on a clock any more.** The one item that still genuinely matters is App Check enforcement, and it is gated on 0.5.0 adoption rather than on time.
+> **Correction 2026-08-26.** This section used to say "two items still matter on a clock." Both have since been resolved or withdrawn — see the strikethroughs below. **Nothing here is on a clock any more.** The one item that still genuinely matters is App Check enforcement, and it is gated on 0.5.1 adoption rather than on time.
 
 ~~**The Gemini keys are the live one.**~~ — **RESOLVED 2026-08-24, this no longer applies.** Both exposed keys were revoked and independently verified dead (`401 UNAUTHENTICATED` as `?key=` and as `x-goog-api-key`, against a deliberately-invalid control). The APKs that carried them have since been purged from git history. The project-suspension scenario described below is no longer on a clock.
 

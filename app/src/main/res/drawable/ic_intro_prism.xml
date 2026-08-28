@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Scene two, bottom of the stack. A tetrahedron read from a corner: the outer triangle
+     plus three edges meeting at (84,92), which is what stops it reading as a flat wedge. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <path
+        android:pathData="M 60,16 L 110,104 L 10,104 Z"
+        android:fillColor="?attr/introSurface"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="3"
+        android:strokeLineJoin="round" />
+
+    <!-- The far face, a shade back so the corner reads. -->
+    <path
+        android:pathData="M 60,16 L 84,94 L 110,104 Z"
+        android:fillColor="?attr/introSurfaceDeep"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="2.4"
+        android:strokeLineJoin="round" />
+
+    <path
+        android:pathData="M 84,94 L 10,104"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round" />
+
+    <!-- Wallet mark. -->
+    <path
+        android:pathData="M 47,60 L 69,60 A 5,5 0 0 1 74,65 L 74,81 A 5,5 0 0 1 69,86 L 47,86 A 5,5 0 0 1 42,81 L 42,65 A 5,5 0 0 1 47,60 Z"
+        android:fillColor="@color/intro_indigo" />
+    <path
+        android:pathData="M 66,73 A 4,4 0 1 1 74,73 A 4,4 0 1 1 66,73 Z"
+        android:fillColor="?attr/introSurface" />
+</vector>

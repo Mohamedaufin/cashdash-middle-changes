@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Drifting satellite, scene one. The percent sign is geometry, not a glyph: two rings and
+     a slash, so it needs no font and scales with the rest of the line work. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <path
+        android:pathData="M 24,58 L 58,24 Q 61,21 65,21 L 92,21 Q 99,21 99,28 L 99,55 Q 99,59 96,62 L 62,96 Q 58,100 54,96 L 24,66 Q 20,62 24,58 Z"
+        android:fillColor="?attr/introSurface"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="2.8"
+        android:strokeLineJoin="round" />
+
+    <!-- Eyelet. -->
+    <path
+        android:pathData="M 81,37 A 6,6 0 1 1 93,37 A 6,6 0 1 1 81,37 Z"
+        android:fillColor="?attr/introSurfaceDeep"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="2.2" />
+
+    <path
+        android:pathData="M 47,49 A 6,6 0 1 1 59,49 A 6,6 0 1 1 47,49 Z"
+        android:strokeColor="@color/intro_accent_end"
+        android:strokeWidth="3" />
+    <path
+        android:pathData="M 65,67 A 6,6 0 1 1 77,67 A 6,6 0 1 1 65,67 Z"
+        android:strokeColor="@color/intro_accent_end"
+        android:strokeWidth="3" />
+    <path
+        android:pathData="M 74,44 L 50,72"
+        android:strokeColor="@color/intro_accent_end"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+</vector>

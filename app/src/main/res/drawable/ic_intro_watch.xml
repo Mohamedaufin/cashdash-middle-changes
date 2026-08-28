@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Scene three orbiter. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <path
+        android:pathData="M 48,42 L 50,16 L 70,16 L 72,42 Z"
+        android:fillColor="?attr/introSurfaceDeep"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="2.6"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M 48,78 L 50,104 L 70,104 L 72,78 Z"
+        android:fillColor="?attr/introSurfaceDeep"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="2.6"
+        android:strokeLineJoin="round" />
+
+    <path
+        android:pathData="M 46,36 L 74,36 A 10,10 0 0 1 84,46 L 84,74 A 10,10 0 0 1 74,84 L 46,84 A 10,10 0 0 1 36,74 L 36,46 A 10,10 0 0 1 46,36 Z"
+        android:fillColor="?attr/introSurface"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="3"
+        android:strokeLineJoin="round" />
+
+    <path
+        android:pathData="M 44,44 L 76,44 L 76,58 L 44,58 Z"
+        android:fillColor="@color/intro_amber" />
+</vector>

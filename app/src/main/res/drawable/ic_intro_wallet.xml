@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Drifting satellite, scene one. Every satellite is drawn on the same 120x120 box so the
+     layout can size them all the same way. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <!-- The fold of notes standing behind the wallet. -->
+    <path
+        android:pathData="M 30,40 L 30,30 Q 30,26 34,26 L 86,26 Q 90,26 90,30 L 90,40 Z"
+        android:fillColor="?attr/introSurfaceDeep"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="2.6"
+        android:strokeLineJoin="round" />
+
+    <path
+        android:pathData="M 28,38 L 92,38 A 8,8 0 0 1 100,46 L 100,80 A 8,8 0 0 1 92,88 L 28,88 A 8,8 0 0 1 20,80 L 20,46 A 8,8 0 0 1 28,38 Z"
+        android:fillColor="?attr/introSurface"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="2.8"
+        android:strokeLineJoin="round" />
+
+    <path
+        android:pathData="M 20,52 L 100,52"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="2.2" />
+
+    <!-- Clasp. -->
+    <path
+        android:pathData="M 74,60 L 96,60 A 4,4 0 0 1 100,64 L 100,72 A 4,4 0 0 1 96,76 L 74,76 A 4,4 0 0 1 70,72 L 70,64 A 4,4 0 0 1 74,60 Z"
+        android:fillColor="@color/intro_accent_start"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="2.2"
+        android:strokeLineJoin="round" />
+</vector>

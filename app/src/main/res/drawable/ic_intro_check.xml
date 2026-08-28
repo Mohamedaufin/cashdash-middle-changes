@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Scene two's payoff. Built the same way as the chevron sticker but from stroked
+     polylines rather than a filled outline, because it carries a flat colour and does not
+     need a gradient: ink at the wider width is the outline, accent at the narrower width
+     is the fill. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <path
+        android:pathData="M 24,64 L 46,86 L 90,36"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="23"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M 24,64 L 46,86 L 90,36"
+        android:strokeColor="?attr/introSurface"
+        android:strokeWidth="17"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+
+    <path
+        android:pathData="M 30,58 L 52,80 L 96,30"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="23"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M 30,58 L 52,80 L 96,30"
+        android:strokeColor="@color/intro_accent_start"
+        android:strokeWidth="17"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

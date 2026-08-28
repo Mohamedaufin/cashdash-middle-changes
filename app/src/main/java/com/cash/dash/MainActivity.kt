@@ -79,7 +79,7 @@ class MainActivity : ThemedActivity() {
             if (currentUser == null && !isFirstLaunch) {
                 appPrefs.edit().putBoolean("isFirstLaunch", true).apply()
             }
-            startActivity(Intent(this, EntryActivity::class.java))
+            startActivity(Intent(this, IntroActivity::class.java))
             finish()
             return
         }

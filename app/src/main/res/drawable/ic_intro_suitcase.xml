@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Scene three orbiter. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <path
+        android:pathData="M 48,38 L 48,20 L 72,20 L 72,38"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="3"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round" />
+
+    <path
+        android:pathData="M 30,36 L 90,36 A 7,7 0 0 1 97,43 L 97,93 A 7,7 0 0 1 90,100 L 30,100 A 7,7 0 0 1 23,93 L 23,43 A 7,7 0 0 1 30,36 Z"
+        android:fillColor="?attr/introSurface"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="3"
+        android:strokeLineJoin="round" />
+
+    <path
+        android:pathData="M 42,48 L 42,88"
+        android:strokeColor="@color/intro_indigo"
+        android:strokeWidth="4"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M 60,48 L 60,88"
+        android:strokeColor="@color/intro_indigo"
+        android:strokeWidth="4"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M 78,48 L 78,88"
+        android:strokeColor="@color/intro_indigo"
+        android:strokeWidth="4"
+        android:strokeLineCap="round" />
+
+    <path
+        android:pathData="M 34,100 L 34,108"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="3.4"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M 86,100 L 86,108"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="3.4"
+        android:strokeLineCap="round" />
+</vector>

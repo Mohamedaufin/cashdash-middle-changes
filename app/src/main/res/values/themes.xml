@@ -134,6 +134,12 @@
         <item name="primaryActionBackground">#EDEFF3</item>
         <item name="primaryActionText">#0D0F12</item>
         <item name="pageTopColor">#0D0F12</item>
+        <!-- Intro art, stepping UP from the #0D0F12 page: surface is the existing
+             surface_2, deep sits between the page and it. -->
+        <item name="introInk">#EDEFF3</item>
+        <item name="introSurface">#1F242C</item>
+        <item name="introSurfaceDeep">#141920</item>
+        <item name="introMuted">#39404B</item>
         <item name="dividerColor">#1AFFFFFF</item>
         <item name="textRedColor">#FF4D4D</item>
         <item name="textGreenColor">#4CAF50</item>
@@ -183,6 +189,13 @@
         <item name="primaryActionBackground">#EDEFF3</item>
         <item name="primaryActionText">#08103A</item>
         <item name="pageTopColor">#0D1B6E</item>
+        <!-- Intro art. The blue page runs #0D1B6E to #000520 and the illustration lives
+             in the top two thirds of it, so these step up from the LIGHT end of that
+             ramp rather than from the window background. -->
+        <item name="introInk">#E8EEFF</item>
+        <item name="introSurface">#1B2C86</item>
+        <item name="introSurfaceDeep">#0A1352</item>
+        <item name="introMuted">#33459C</item>
         <item name="progressTrackColor">#08123A</item>
         <item name="dividerColor">#1AFFFFFF</item>
         <item name="textRedColor">#FF4D4D</item>
@@ -229,6 +242,16 @@
         <item name="primaryActionBackground">#1A1A1A</item>
         <item name="primaryActionText">#FFFFFF</item>
         <item name="pageTopColor">#F7F9FB</item>
+        <!-- Intro art, stepping DOWN from the #F7F9FB page, which is the direction every
+             other White surface already steps. The reference this was drawn from puts
+             white shapes on off-white paper; going the other way here would make the
+             illustration the one thing on the theme that inverts its own hierarchy.
+             The ink outline is what gives each shape its edge, so it still reads raised.
+             These are the existing surface and input tones from the White ramp. -->
+        <item name="introInk">#1A1A1A</item>
+        <item name="introSurface">#ECEFF4</item>
+        <item name="introSurfaceDeep">#DDE3EB</item>
+        <item name="introMuted">#B9C3D0</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="O">true</item>
         <item name="progressTrackColor">#E2E8F0</item>

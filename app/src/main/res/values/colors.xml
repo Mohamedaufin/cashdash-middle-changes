@@ -40,4 +40,18 @@
     <color name="accent_primary">@color/primary_purple</color>
     <color name="text_secondary">@color/text_muted</color>
     <color name="theme_blue">#1A73E8</color>
+
+    <!-- Intro animation accents. These are the only colours in the intro that do not
+         change with the theme: the illustration reads as one brand mark across Black,
+         Blue and White, and every one of them was picked to clear 3:1 against all three
+         page colours so nothing has to be restated per theme.
+         Deliberately green rather than primary_purple: violet is the report pie's own
+         palette and reads as "a category" instead of "the brand". -->
+    <color name="intro_accent_start">#B7F04A</color>
+    <color name="intro_accent_end">#39A845</color>
+    <!-- Sits on top of the accent, so it is dark on all three themes. -->
+    <color name="intro_on_accent">#0F2408</color>
+    <color name="intro_pink">#F5365C</color>
+    <color name="intro_indigo">#5A6BF0</color>
+    <color name="intro_amber">#C9A70A</color>
 </resources>

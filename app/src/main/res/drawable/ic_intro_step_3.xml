@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Third step. Narrower than the one below it because the recess arch is already
+     curving in at this height. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="130dp"
+    android:height="150dp"
+    android:viewportWidth="130"
+    android:viewportHeight="150">
+    <path
+        android:pathData="M 56,74 L 92,74 L 92,88 L 56,88 Z"
+        android:fillColor="?attr/introInk" />
+</vector>

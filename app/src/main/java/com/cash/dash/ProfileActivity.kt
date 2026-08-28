@@ -217,7 +217,7 @@ class ProfileActivity : ThemedActivity() {
                 FirebaseAuth.getInstance().signOut()
 
                 // 3. Navigate back to login
-                val i = Intent(this@ProfileActivity, EntryActivity::class.java)
+                val i = Intent(this@ProfileActivity, IntroActivity::class.java)
                 i.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 startActivity(i)
             }
@@ -274,7 +274,7 @@ class ProfileActivity : ThemedActivity() {
                     ScanStore.wipe(this@ProfileActivity)
                     auth.signOut()
 
-                    startActivity(Intent(this@ProfileActivity, EntryActivity::class.java).apply {
+                    startActivity(Intent(this@ProfileActivity, IntroActivity::class.java).apply {
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     })
                     finish()

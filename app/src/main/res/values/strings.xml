@@ -5,4 +5,17 @@
          trivially extracted, so credentials live in Cloud Functions secrets and
          are reached through the rephraseSupportText callable. -->
 
+    <!-- Pre-login intro. Each headline is split into a lead and a rest so the two halves
+         can be coloured differently without hardcoding a character offset: the lead takes
+         the page's primary text colour, the rest takes the theme's green. A lead of ""
+         gives a headline that is green throughout. -->
+    <string name="intro_one_lead">Welcome to</string>
+    <string name="intro_one_rest">your world of financial clarity</string>
+    <string name="intro_two_lead"></string>
+    <string name="intro_two_rest">Effortless money management</string>
+    <string name="intro_three_lead"></string>
+    <string name="intro_three_rest">Track, plan and grow, all in one place</string>
+
+    <string name="intro_brand_arc">CASHDASH</string>
+    <string name="intro_continue">Get started</string>
 </resources>

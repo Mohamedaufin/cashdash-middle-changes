@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Host for the pre-login intro.
+
+  The three scenes are all inflated up front and stacked in sceneHost, with only one visible
+  at a time. That is deliberate: the loop runs continuously, so inflating on every change
+  would drop frames on the transition, every time round, forever.
+
+  sceneHost stops at the headline rather than filling the screen, so a scene's bias values
+  are measured against the space the artwork actually gets rather than against the whole
+  window, and the copy can never be overlapped by a drifting illustration.
+
+  Root padding for the system bars is applied in IntroActivity, not here: the activity is
+  edge to edge, and a fixed padding would either float the copy above the gesture bar on one
+  device or tuck it underneath on another.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/introRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/mainBackground"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <com.cash.dash.IntroParticlesView
+        android:id="@+id/introParticles"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <FrameLayout
+        android:id="@+id/introSceneHost"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        app:layout_constraintBottom_toTopOf="@id/introHeadline"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <include layout="@layout/view_intro_scene_one" />
+
+        <include layout="@layout/view_intro_scene_two" />
+
+        <include layout="@layout/view_intro_scene_three" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/introHeadline"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="26dp"
+        android:layout_marginEnd="40dp"
+        android:layout_marginBottom="30dp"
+        android:lineSpacingMultiplier="1.12"
+        android:textColor="?attr/textPrimaryColor"
+        android:textSize="29sp"
+        app:layout_constraintBottom_toTopOf="@id/introDots"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:text="Welcome to your world of financial clarity" />
+
+    <LinearLayout
+        android:id="@+id/introDots"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="26dp"
+        android:layout_marginBottom="34dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <View
+            android:id="@+id/introDot1"
+            android:layout_width="11dp"
+            android:layout_height="11dp"
+            android:layout_marginEnd="9dp"
+            android:background="@drawable/bg_intro_dot" />
+
+        <View
+            android:id="@+id/introDot2"
+            android:layout_width="11dp"
+            android:layout_height="11dp"
+            android:layout_marginEnd="9dp"
+            android:background="@drawable/bg_intro_dot" />
+
+        <View
+            android:id="@+id/introDot3"
+            android:layout_width="11dp"
+            android:layout_height="11dp"
+            android:background="@drawable/bg_intro_dot" />
+    </LinearLayout>
+
+    <!-- Hidden until the animation has run all the way to the end of the third scene. Not
+         GONE: it keeps its slot in the layout so nothing shifts when it arrives. -->
+    <ImageView
+        android:id="@+id/introNext"
+        android:layout_width="62dp"
+        android:layout_height="62dp"
+        android:layout_marginEnd="22dp"
+        android:layout_marginBottom="14dp"
+        android:background="@drawable/bg_intro_next"
+        android:clickable="true"
+        android:contentDescription="@string/intro_continue"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:padding="17dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_intro_next_arrow"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

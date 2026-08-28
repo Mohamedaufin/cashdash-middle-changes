@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Second step. See ic_intro_step_1 for why the viewport is 130x150. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="130dp"
+    android:height="150dp"
+    android:viewportWidth="130"
+    android:viewportHeight="150">
+    <path
+        android:pathData="M 44,90 L 94,90 L 94,104 L 44,104 Z"
+        android:fillColor="?attr/introInk" />
+</vector>

@@ -52,5 +52,32 @@
     <!-- The tick inside a checked box. Must be the inverse of textPrimaryColor,
          since that is what fills the box. -->
     <attr name="checkboxTickColor" format="color" />
+
+    <!-- Palette for the pre-login intro animation. The artwork is flat line work, so it
+         needs exactly three tones: the stroke, the surface a shape is filled with, and a
+         recessed surface for anything that reads as behind or inside another shape.
+         Each theme fills them from its own ramp so the illustration inverts with the app
+         rather than sitting on a white card in the middle of a black page. -->
+    <attr name="introInk" format="color" />
+    <attr name="introSurface" format="color" />
+    <attr name="introSurfaceDeep" format="color" />
+    <!-- Drifting particles and the inactive page dots: present, never competing. -->
+    <attr name="introMuted" format="color" />
+
+    <declare-styleable name="ArcTextView">
+        <attr name="arcText" format="string" />
+        <attr name="arcTextSize" format="dimension" />
+        <attr name="arcTextColor" format="color" />
+        <!-- Centre of the circle the text rides on, as a fraction of the view box. -->
+        <attr name="arcCenterX" format="float" />
+        <attr name="arcCenterY" format="float" />
+        <!-- Radius as a fraction of the view's width, so the arc keeps its shape
+             whatever the view's aspect turns out to be. -->
+        <attr name="arcRadius" format="float" />
+        <!-- Degrees of arc the text is centred within, measured about twelve o'clock. -->
+        <attr name="arcSweep" format="float" />
+        <attr name="arcLetterSpacing" format="float" />
+    </declare-styleable>
+
     <item name="focus_clearer_tag" type="id" />
 </resources>

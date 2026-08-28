@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The intro's continue button. Carries the same ink outline as the illustration so the
+     control reads as part of the same drawing rather than a stock floating action button
+     dropped on top of it. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <gradient
+        android:type="linear"
+        android:angle="315"
+        android:startColor="@color/intro_accent_start"
+        android:endColor="@color/intro_accent_end" />
+    <stroke
+        android:width="2dp"
+        android:color="?attr/introInk" />
+</shape>

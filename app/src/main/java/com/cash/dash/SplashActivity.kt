@@ -25,8 +25,8 @@ class SplashActivity : ThemedActivity() {
         val firebaseUser = FirebaseAuth.getInstance().currentUser
 
         if (isFirstLaunch || firebaseUser == null) {
-            // Not logged in -> Go straight to Entry form immediately, no splash needed
-            startActivity(Intent(this, EntryActivity::class.java))
+            // Not logged in -> Go straight to Intro sequence immediately
+            startActivity(Intent(this, IntroActivity::class.java))
             finish()
             return
         }

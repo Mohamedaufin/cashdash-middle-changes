@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Scene one's centrepiece: a doorway with a staircase climbing away inside it.
+
+  Three paths of the same arch, all semicircles of radius 49 over vertical sides:
+    - the accent spine, the whole arch shifted 9 to the right and drawn first, so all that
+      shows of it is a band down the right edge and over the top right shoulder
+    - the door itself
+    - the recess, a smaller arch stopping 18 short of the bottom so the door keeps a plinth
+
+  The stairs are NOT in this file. They are four separate drawables on the same 130x150
+  viewport, so an ImageView pinned to this one's bounds lines them up exactly and each step
+  can be animated on its own without any positioning arithmetic in the layout.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="130dp"
+    android:height="150dp"
+    android:viewportWidth="130"
+    android:viewportHeight="150">
+
+    <path
+        android:pathData="M 23,138 L 23,60 A 49,49 0 0 1 121,60 L 121,138 Z"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="3"
+        android:strokeLineJoin="round">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="23"
+                android:startY="11"
+                android:endX="121"
+                android:endY="138"
+                android:startColor="@color/intro_accent_start"
+                android:endColor="@color/intro_accent_end" />
+        </aapt:attr>
+    </path>
+
+    <path
+        android:pathData="M 14,138 L 14,60 A 49,49 0 0 1 112,60 L 112,138 Z"
+        android:fillColor="?attr/introSurface"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="3"
+        android:strokeLineJoin="round" />
+
+    <path
+        android:pathData="M 30,120 L 30,72 A 33,33 0 0 1 96,72 L 96,120 Z"
+        android:fillColor="?attr/introSurfaceDeep"
+        android:strokeColor="?attr/introInk"
+        android:strokeWidth="2.4"
+        android:strokeLineJoin="round" />
+</vector>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Top step. Clears the recess arch, which at y=58 spans x 33 to 93. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="130dp"
+    android:height="150dp"
+    android:viewportWidth="130"
+    android:viewportHeight="150">
+    <path
+        android:pathData="M 68,58 L 90,58 L 90,72 L 68,72 Z"
+        android:fillColor="?attr/introInk" />
+</vector>

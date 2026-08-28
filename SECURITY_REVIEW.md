@@ -4,7 +4,7 @@
 |---|---|
 | **Date** | 2026-08-26 |
 | **HEAD** | `4e180b4` on `main` |
-| **App version** | 0.5.0 (versionCode 23) — in Play review |
+| **App version** | 0.5.1 (versionCode 24) — in Play review |
 | **Scope** | Android client, Cloud Functions, Firestore / RTDB / Storage rules, dependencies, build config, repo hygiene |
 | **Supersedes** | `CASHDASH_SECURITY_AUDIT.md` (2026-08-24, 22 findings, at `525a302`) and the earlier 15-finding review. Both are merged here. |
 
@@ -41,7 +41,7 @@ Three things to carry into that work:
 
 SDK is wired and **proven working**: Play-distributed builds log `{"verifications":{"app":"VALID"}}`. Sideloaded debug builds show `INVALID` unless using the registered debug token — expected, not a regression.
 
-Enforcement is still off, so it protects nothing yet. Gated on 0.5.0 adoption: enforcing while most traffic is on older builds would lock those users out. Enable **Monitor** first, watch the verified percentage climb, then **Enforce** one product at a time.
+Enforcement is still off, so it protects nothing yet. Gated on 0.5.1 adoption: enforcing while most traffic is on older builds would lock those users out. Enable **Monitor** first, watch the verified percentage climb, then **Enforce** one product at a time.
 
 Also outstanding from the earlier audit: restrict the API key in Cloud Console (Android restriction + package + SHA-1, plus an API allowlist).
 
@@ -65,7 +65,7 @@ Not a rules problem — `firestore.rules` was never consulted, because no write 
 
 **Fix:** the working editor already existed as a private method on `AdminActivity` (the bottom sheet at `AdminActivity.kt:1220`), which writes `admins`, deletes the doc when grants drop to zero, routes non-owners through `admin_requests`, and guards self-edits. It is now extracted to `AdminPermissionsSheet` and called by both screens; the stub activity, its layout and its manifest entry are deleted. One code path writes admin permissions, so the two cannot diverge again.
 
-**Still open because it is not in anyone's hands yet.** The fix is client-side and needs a release; 0.5.0 is in Play review, so this rides on the next build. Until then, use the Admin screen's own bottom sheet — that path always worked. Anyone "revoked" through Manage Admin Access before this ships is still an admin and should be re-checked against the `admins` collection.
+**Still open because it is not in anyone's hands yet.** The fix is client-side and needs a release; 0.5.1 is in Play review, so this rides on the next build. Until then, use the Admin screen's own bottom sheet — that path always worked. Anyone "revoked" through Manage Admin Access before this ships is still an admin and should be re-checked against the `admins` collection.
 
 ---
 
@@ -169,20 +169,20 @@ Two CLI traps found while doing this, both worth remembering:
 | `F` — found & fixed 2026-08-26 | Attachment allowlist matched **host**, not bucket — any public bucket on `storage.googleapis.com` rendered on the admin reply page | `isTrustedAttachment()` parses the URL and requires one of our own buckets; both URL shapes and the legacy `appspot.com` name accepted, foreign-bucket and suffix-confusion hosts rejected |
 | `G` — found & fixed 2026-08-26 | `rephraseSupportText` called `assertAdmin()` with no grant, so any admin could spend the shared Gemini quota | `assertAdmin` now accepts an any-of array; the requested scope selects the grants, mirroring `canBroadcast()` |
 
-### Client — shipped in 0.4.9, or pending the 0.5.0 rollout
+### Client — shipped in 0.4.9, or pending the 0.5.1 rollout
 
 | # | Finding | Ships in |
 |---|---|---|
-| `old #3` / `prev #1` | Hardcoded Gemini keys in the APK | Keys revoked (verified 401); resource removed — 0.5.0 |
+| `old #3` / `prev #1` | Hardcoded Gemini keys in the APK | Keys revoked (verified 401); resource removed — 0.5.1 |
 | `old #14` | Dead `fcmTokens` write retried forever | 0.4.9 |
-| `old #16` / `prev #10` | Unnecessary exported components | 0.4.9 + widget toggle in 0.5.0 |
+| `old #16` / `prev #10` | Unnecessary exported components | 0.4.9 + widget toggle in 0.5.1 |
 | `old #17` | WebView: JS enabled, arbitrary URL | 0.4.9 |
 | `old #19` | `data_extraction_rules.xml` stock template | 0.4.9 — 10 explicit excludes |
 | `old #20` | Zombie-account recovery could delete a real account | 0.4.9 — `isZombie` requires `account_status == "admin_deleted"` |
 | `old #21` | `GlobalScope.launch` for AI calls | 0.4.9 |
-| `prev #8` | "Delete Account" silently failed to delete cloud data | 0.5.0 |
-| `prev #12` | Camera attachments in external cache | 0.5.0 |
-| `prev #13` | Login lockout client-side only | 0.5.0 — 8-char registration minimum |
+| `prev #8` | "Delete Account" silently failed to delete cloud data | 0.5.1 |
+| `prev #12` | Camera attachments in external cache | 0.5.1 |
+| `prev #13` | Login lockout client-side only | 0.5.1 — 8-char registration minimum |
 
 ### Repo and dependencies
 
@@ -291,7 +291,7 @@ Backend fully co-located with Firestore in `asia-south1` (2026-08-25 migration):
 | `rephraseSupportText`, `getSupportReplyLink`, `adminReply` | asia-south1 + us-central1 *(dual during rollout)* |
 | `onAuthUserDeleted` | us-east1 *(v1 auth trigger, left deliberately)* |
 
-Dual-region is transitional: installed builds have `getInstance("us-central1")` compiled in. After 0.5.0 adoption — switch `buildReplyUrl` to the asia-south1 URL, wait 7 days for outstanding reply links to expire, then drop `us-central1`. See [MIGRATION_ASIA_SOUTH1.md](MIGRATION_ASIA_SOUTH1.md).
+Dual-region is transitional: installed builds have `getInstance("us-central1")` compiled in. After 0.5.1 adoption — switch `buildReplyUrl` to the asia-south1 URL, wait 7 days for outstanding reply links to expire, then drop `us-central1`. See [MIGRATION_ASIA_SOUTH1.md](MIGRATION_ASIA_SOUTH1.md).
 
 RTDB remains in the US and cannot be relocated in place; presence writes still cross regions. Storage bucket location unverified — no CLI access.
 
@@ -299,12 +299,12 @@ RTDB remains in the US and cannot be relocated in place; presence writes still c
 
 ## Next actions
 
-1. **Ship 0.5.0** (in review) — carries the last client-side fixes.
+1. **Ship 0.5.1** (in review) — carries the last client-side fixes.
 2. ~~**Revoke the old Gemini keys at AI Studio**~~ (C) — done 2026-08-26; rotation, Secret Manager cleanup and revocation all complete.
 3. **App Check → Monitor, then Enforce** (B) once adoption climbs.
 4. **Finish the region migration** after adoption.
 5. **Email verification** (A) — the remaining High, alongside Google Sign-In.
-6. ~~Encrypt `WalletPrefs` and `LocalScanPrefs`~~ — done and **verified on device** 2026-08-26 (7 instrumented tests). One thing the tests deliberately do not cover, worth a manual look when 0.5.0 reaches a real install: that a **cloud sync round-trips** after migration — the tests cover the on-device migration, not `FirestoreSyncManager`'s push/restore against a live project.
+6. ~~Encrypt `WalletPrefs` and `LocalScanPrefs`~~ — done and **verified on device** 2026-08-26 (7 instrumented tests). One thing the tests deliberately do not cover, worth a manual look when 0.5.1 reaches a real install: that a **cloud sync round-trips** after migration — the tests cover the on-device migration, not `FirestoreSyncManager`'s push/restore against a live project.
 7. **Write rules tests.** `firestore.rules` is 261 lines with 12 helper predicates and has never been executed against a test. It is the control everything else in this document leans on. No emulator block exists in `firebase.json` and there is no test infrastructure in the repo. Start with the four cases the original audit named: the `admin_logs` append rule, an admin holding only `replyToQueries` being denied `users/*/config/wallet`, an expired admin being denied everything, and one end-to-end support reply through a signed link.
 8. **`firebase-functions` 7.2.5 → 7.3.2** — already within the `^7.2.5` range, so a plain `npm update` in `functions/`. Leave `firebase-admin` at 13.x; 14 removes the legacy `admin.*` namespace and breaks 8 call sites.
 

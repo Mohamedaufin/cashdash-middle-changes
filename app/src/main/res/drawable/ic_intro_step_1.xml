@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bottom step. Shares ic_intro_arch's 130x150 viewport so it lands inside the recess
+     when pinned to the same bounds. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="130dp"
+    android:height="150dp"
+    android:viewportWidth="130"
+    android:viewportHeight="150">
+    <path
+        android:pathData="M 32,106 L 94,106 L 94,120 L 32,120 Z"
+        android:fillColor="?attr/introInk" />
+</vector>
