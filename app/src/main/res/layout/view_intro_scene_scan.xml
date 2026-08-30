@@ -207,13 +207,13 @@
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:background="@drawable/bg_intro_glass_progress_outer" />
+                            android:background="@drawable/bg_glass_progress_outer" />
                         <!-- Purple Fill (approx 55%) -->
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:layout_marginEnd="50dp"
-                            android:background="@drawable/bg_intro_glass_progress_fill_purple" />
+                            android:background="@drawable/bg_glass_progress_fill" />
                     </FrameLayout>
 
                     <!-- Bottom: Spent / Limit -->
@@ -266,14 +266,14 @@
                                 android:layout_width="10dp"
                                 android:layout_height="10dp"
                                 android:layout_gravity="center"
-                                android:src="@drawable/ic_pencil"
+                                android:src="@drawable/ic_category_shopping"
                                 android:tint="?attr/textPrimaryColor"
                                 android:contentDescription="@null" />
                         </FrameLayout>
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Lottu losuku"
+                            android:text="Shopping"
                             android:textColor="?attr/textPrimaryColor"
                             android:textSize="9sp"
                             android:textStyle="bold" />
@@ -287,12 +287,12 @@
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:background="@drawable/bg_intro_glass_progress_outer" />
+                            android:background="@drawable/bg_glass_progress_outer" />
                         <!-- Red Fill (100% Exceeded) -->
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:background="@drawable/bg_intro_glass_progress_fill_red" />
+                            android:background="@drawable/bg_glass_progress_fill_red" />
                     </FrameLayout>
 
                     <RelativeLayout
@@ -309,7 +309,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
-                            android:text="Limit: ₹2"
+                            android:text="Limit: ₹200"
                             android:textColor="?attr/textPrimaryColor"
                             android:textSize="7sp" />
                     </RelativeLayout>
@@ -319,9 +319,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="6dp" />
 
-                <!-- Shopping row (Empty) -->
+                <!-- Travel row (Empty) -->
                 <LinearLayout
-                    android:id="@+id/introScanAllocShopping"
+                    android:id="@+id/introScanAllocTravel"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_intro_mini_card"
@@ -345,14 +345,14 @@
                                 android:layout_width="10dp"
                                 android:layout_height="10dp"
                                 android:layout_gravity="center"
-                                android:src="@drawable/ic_category_shopping"
+                                android:src="@drawable/ic_category_transport"
                                 android:tint="?attr/textPrimaryColor"
                                 android:contentDescription="@null" />
                         </FrameLayout>
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Shopping"
+                            android:text="Travel"
                             android:textColor="?attr/textPrimaryColor"
                             android:textSize="9sp"
                             android:textStyle="bold" />
@@ -366,7 +366,7 @@
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:background="@drawable/bg_intro_glass_progress_outer" />
+                            android:background="@drawable/bg_glass_progress_outer" />
                     </FrameLayout>
 
                     <RelativeLayout
@@ -560,16 +560,7 @@
                 </LinearLayout>
             </FrameLayout>
 
-            <!-- 3D Glare effect -->
-            <View
-                android:id="@+id/introScanGlare"
-                android:layout_width="600dp"
-                android:layout_height="200dp"
-                android:layout_gravity="center"
-                android:rotation="45"
-                android:translationY="-400dp"
-                android:background="@drawable/bg_intro_glare"
-                android:alpha="0" />
+            
         </FrameLayout>
             
     </LinearLayout>

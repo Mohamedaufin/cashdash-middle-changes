@@ -24,7 +24,6 @@ class IntroScanScene @JvmOverloads constructor(
 
     private val frame: IntroScannerFrameView
     private val phoneContainer: View
-    private val glare: View
 
     private val amountGroup: View
     private val amountField: TextView
@@ -32,7 +31,7 @@ class IntroScanScene @JvmOverloads constructor(
 
     private val allocGroup: View
     private val allocFood: View
-    private val allocShopping: View
+    private val allocTravel: View
 
     private val confirmGroup: View
     private val finalPayNowBtn: View
@@ -62,7 +61,6 @@ class IntroScanScene @JvmOverloads constructor(
         LayoutInflater.from(context).inflate(R.layout.view_intro_scene_scan, this, true)
         frame = findViewById(R.id.introScanFrame)
         phoneContainer = findViewById(R.id.introScanPhone)
-        glare = findViewById(R.id.introScanGlare)
 
         amountGroup = findViewById(R.id.introScanAmountGroup)
         amountField = findViewById(R.id.introScanAmountField)
@@ -70,7 +68,7 @@ class IntroScanScene @JvmOverloads constructor(
 
         allocGroup = findViewById(R.id.introScanAllocGroup)
         allocFood = findViewById(R.id.introScanAllocFood)
-        allocShopping = findViewById(R.id.introScanAllocShopping)
+        allocTravel = findViewById(R.id.introScanAllocTravel)
 
         confirmGroup = findViewById(R.id.introScanConfirmGroup)
         finalPayNowBtn = findViewById(R.id.introScanFinalPayNow)
@@ -93,8 +91,8 @@ class IntroScanScene @JvmOverloads constructor(
         ringAnim?.cancel(); ringAnim = null
 
         // Cancel every in-flight ViewPropertyAnimator
-        val all = listOf(phoneContainer, glare, frame, amountGroup, amountField, payBtn,
-            allocGroup, allocFood, allocShopping, confirmGroup, finalPayNowBtn, successGroup, ringGroup)
+        val all = listOf(phoneContainer, frame, amountGroup, amountField, payBtn,
+            allocGroup, allocFood, allocTravel, confirmGroup, finalPayNowBtn, successGroup, ringGroup)
         for (v in all) v.animate().cancel()
 
         // Scanner
@@ -106,8 +104,6 @@ class IntroScanScene @JvmOverloads constructor(
         phoneContainer.rotationY = 0f
         phoneContainer.translationY = 0f
         phoneContainer.translationZ = 0f
-        glare.alpha = 0f
-        glare.translationY = -400f.dp
         phoneContainer.scaleX = 1f
         phoneContainer.scaleY = 1f
         frame.bracketProgress = 0f
@@ -129,8 +125,8 @@ class IntroScanScene @JvmOverloads constructor(
         allocGroup.translationY = RISE_DP.dp
         allocFood.alpha = 0f
         allocFood.translationY = RISE_DP.dp
-        allocShopping.alpha = 0f
-        allocShopping.translationY = RISE_DP.dp
+        allocTravel.alpha = 0f
+        allocTravel.translationY = RISE_DP.dp
 
         // Confirm
         confirmGroup.alpha = 0f
@@ -178,13 +174,9 @@ class IntroScanScene @JvmOverloads constructor(
         // ── Beat 2: Amount entry (Starts at 2500) ─────────────────────────────────────────
         val beat2Start = 2500L
         schedule(beat2Start) {
-            phoneContainer.animate().scaleX(1.12f).scaleY(1.12f).rotationX(16f).rotationY(-5f).translationY(-15f.dp).translationZ(60f.dp)
-                .setDuration(1200).setInterpolator(OVERSHOOT).start()
+//             phoneContainer.animate().scaleX(1.12f).scaleY(1.12f).rotationX(16f).rotationY(-5f).translationY(-15f.dp).translationZ(60f.dp)
+//                 .setDuration(1200).setInterpolator(OVERSHOOT).start()
             
-            // Sweep glare
-            glare.translationY = -400f.dp
-            glare.animate().alpha(1f).translationY(100f.dp).setDuration(1000).setInterpolator(IntroTourActivity.EASE_OUT)
-                .withEndAction { glare.animate().alpha(0f).setDuration(200).start() }.start()
 
             // Parallax children slightly
             amountGroup.animate().translationY(-8f.dp).setDuration(1200).setInterpolator(OVERSHOOT).start()
@@ -235,12 +227,9 @@ class IntroScanScene @JvmOverloads constructor(
         val beat3Start = typeStart + KEYPRESS_MS * AMOUNT_DIGITS.size + RISE_MS + 2500L
 
         schedule(beat3Start) {
-            phoneContainer.animate().scaleX(1.22f).scaleY(1.22f).rotationX(8f).rotationY(4f).translationY(-50f.dp).translationZ(80f.dp)
-                .setDuration(1400).setInterpolator(OVERSHOOT).start()
+//             phoneContainer.animate().scaleX(1.22f).scaleY(1.22f).rotationX(8f).rotationY(4f).translationY(-50f.dp).translationZ(80f.dp)
+//                 .setDuration(1400).setInterpolator(OVERSHOOT).start()
                 
-            glare.translationY = -400f.dp
-            glare.animate().alpha(1f).translationY(200f.dp).setDuration(1200).setInterpolator(IntroTourActivity.EASE_OUT)
-                .withEndAction { glare.animate().alpha(0f).setDuration(200).start() }.start()
 
             // Reverse parallax
             allocGroup.animate().translationY(10f.dp).setDuration(1400).setInterpolator(OVERSHOOT).start()
@@ -277,7 +266,7 @@ class IntroScanScene @JvmOverloads constructor(
         }
         
         schedule(beat3Start + FADE_MS + 400) {
-            allocShopping.animate().alpha(1f).translationY(0f)
+            allocTravel.animate().alpha(1f).translationY(0f)
                 .setStartDelay(0).setDuration(RISE_MS)
                 .setInterpolator(IntroTourActivity.EASE_OUT).start()
         }
@@ -299,12 +288,9 @@ class IntroScanScene @JvmOverloads constructor(
         val beat4Start = clickStart + 300 + 1000L
 
         schedule(beat4Start) {
-            phoneContainer.animate().scaleX(1.05f).scaleY(1.05f).rotationX(4f).rotationY(-2f).translationY(-20f.dp).translationZ(30f.dp)
-                .setDuration(1200).setInterpolator(OVERSHOOT).start()
+//             phoneContainer.animate().scaleX(1.05f).scaleY(1.05f).rotationX(4f).rotationY(-2f).translationY(-20f.dp).translationZ(30f.dp)
+//                 .setDuration(1200).setInterpolator(OVERSHOOT).start()
                 
-            glare.translationY = -400f.dp
-            glare.animate().alpha(0.6f).translationY(50f.dp).setDuration(1000).setInterpolator(IntroTourActivity.EASE_OUT)
-                .withEndAction { glare.animate().alpha(0f).setDuration(200).start() }.start()
         }
 
         schedule(beat4Start) {
@@ -342,8 +328,8 @@ class IntroScanScene @JvmOverloads constructor(
         val beat5Start = payClickStart + 300 + 700L
 
         schedule(beat5Start) {
-            phoneContainer.animate().scaleX(1f).scaleY(1f).rotationX(0f).rotationY(0f).translationY(0f).translationZ(0f)
-                .setDuration(1000).setInterpolator(OVERSHOOT).start()
+//             phoneContainer.animate().scaleX(1f).scaleY(1f).rotationX(0f).rotationY(0f).translationY(0f).translationZ(0f)
+//                 .setDuration(1000).setInterpolator(OVERSHOOT).start()
         }
         
         schedule(beat5Start) {
