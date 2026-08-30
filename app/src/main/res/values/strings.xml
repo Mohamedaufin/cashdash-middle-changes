@@ -33,9 +33,9 @@
     <string name="intro_tour_one_title">Start with what you have</string>
     <string name="intro_tour_one_body">Set your wallet balance once. Everything CashDash does is measured against that number.</string>
 
-    <string name="intro_tour_two_eyebrow">02 — Scan &amp; Allocate</string>
+    <string name="intro_tour_two_eyebrow">02 — Scan and allocate QR payments inside CashDash</string>
     <string name="intro_tour_two_title">Categorize right before you pay</string>
-    <string name="intro_tour_two_body">Pick your allocation in the moment — saving you the hassle of manually tracking expenses later.</string>
+    <string name="intro_tour_two_body">Pick your allocation right before you pay — saving you the hassle of manually tracking expenses later.</string>
 
     <string name="intro_tour_three_eyebrow">03 — TapTrack</string>
     <string name="intro_tour_three_title">Track outside the app</string>

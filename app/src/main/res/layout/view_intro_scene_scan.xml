@@ -164,7 +164,7 @@
 
                 <Space android:layout_width="match_parent" android:layout_height="6dp" />
 
-                <!-- Food row -->
+                <!-- Food row (OVERLIMIT - RED) -->
                 <LinearLayout
                     android:id="@+id/introScanAllocFood"
                     android:layout_width="match_parent"
@@ -217,8 +217,7 @@
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:layout_marginEnd="50dp"
-                            android:background="@drawable/bg_glass_progress_fill" />
+                            android:background="@drawable/bg_glass_progress_fill_red" />
                     </FrameLayout>
 
                     <RelativeLayout
@@ -235,7 +234,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
-                            android:text="Limit: ₹650"
+                            android:text="Limit: ₹250"
                             android:textColor="?attr/textPrimaryColor"
                             android:textSize="7sp" />
                     </RelativeLayout>
@@ -245,7 +244,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="6dp" />
 
-                <!-- Shopping row (RED) -->
+                <!-- Travel row (IN LIMIT - NORMAL) -->
                 <LinearLayout
                     android:id="@+id/introScanAllocShopping"
                     android:layout_width="match_parent"
@@ -296,7 +295,8 @@
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:background="@drawable/bg_glass_progress_fill_red" />
+                            android:layout_marginEnd="50dp"
+                            android:background="@drawable/bg_glass_progress_fill" />
                     </FrameLayout>
 
                     <RelativeLayout
@@ -306,14 +306,14 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentStart="true"
-                            android:text="Spent: ₹350"
+                            android:text="Spent: ₹150"
                             android:textColor="?attr/textPrimaryColor"
                             android:textSize="7sp" />
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
-                            android:text="Limit: ₹200"
+                            android:text="Limit: ₹500"
                             android:textColor="?attr/textPrimaryColor"
                             android:textSize="7sp" />
                     </RelativeLayout>

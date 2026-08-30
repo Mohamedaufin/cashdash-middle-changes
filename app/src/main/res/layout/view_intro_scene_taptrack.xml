@@ -311,7 +311,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Shopping — ₹350 / ₹200"
+                            android:text="Shopping — ₹150 / ₹500"
                             android:textColor="?attr/textPrimaryColor"
                             android:textSize="8sp" />
 
@@ -338,26 +338,33 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- ========= Saved Successfully Toast ========= -->
+                <!-- ========= Beautiful Expense Recorded Pill ========= -->
                 <LinearLayout
                     android:id="@+id/introTapTrackToast"
                     android:layout_width="wrap_content"
                     android:layout_height="24dp"
                     android:layout_gravity="center_horizontal|bottom"
                     android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_intro_cta"
-                    android:backgroundTint="#2E7D32"
+                    android:background="@drawable/bg_intro_chip"
+                    android:backgroundTint="#162E1C"
                     android:elevation="10dp"
-                    android:gravity="center"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:paddingStart="10dp"
-                    android:paddingEnd="10dp">
+                    android:paddingStart="9dp"
+                    android:paddingEnd="11dp">
+
+                    <ImageView
+                        android:layout_width="11dp"
+                        android:layout_height="11dp"
+                        android:layout_marginEnd="5dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_check_green" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="✓ Saved Successfully!"
-                        android:textColor="#FFFFFF"
+                        android:text="Expense recorded"
+                        android:textColor="#81C784"
                         android:textSize="8sp"
                         android:textStyle="bold" />
                 </LinearLayout>
