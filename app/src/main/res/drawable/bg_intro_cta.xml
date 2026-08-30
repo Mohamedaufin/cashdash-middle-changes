@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The aurora intro's primary button.
+
+  Fills from ?attr/primaryActionBackground, the same token the app's own call to action
+  uses: off-white on the dark themes, near-black on White. Deliberately NOT the intro accent
+  gradient — the accent is the colour of data on this screen (the balance line, the ring,
+  the active dot), and a button wearing it would read as one more chart element.
+
+  A ripple rather than ?attr/selectableItemBackground applied as a foreground: the button is
+  a 30dp pill, and the platform's selectable background carries a rectangular mask that
+  would spill past the rounded ends.
+
+  The ripple colour is a neutral grey at 20% rather than a themed one, so a single value
+  works in both directions — over the off-white fill it darkens, over the near-black fill it
+  lightens. A themed opaque colour here would flash at full strength on press.
+-->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="#33808080">
+
+    <item android:id="@android:id/mask">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/white" />
+            <corners android:radius="30dp" />
+        </shape>
+    </item>
+
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="?attr/primaryActionBackground" />
+            <corners android:radius="30dp" />
+        </shape>
+    </item>
+</ripple>

@@ -58,7 +58,7 @@ class HomeFragment : Fragment() {
 
     private val walletListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == KEY_BALANCE || key == "initial_balance" || key == "balance_bar_mode" || key == "balance_bar_type") {
-            view?.let { loadBalance(it) }
+            view?.post { view?.let { loadBalance(it) } }
         }
     }
 

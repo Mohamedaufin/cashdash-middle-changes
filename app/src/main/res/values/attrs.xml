@@ -80,4 +80,8 @@
     </declare-styleable>
 
     <item name="focus_clearer_tag" type="id" />
+    <!-- Which fill drawable an intro limit bar is currently wearing. Held as a tag so the
+         bar's per-frame update can skip setBackgroundResource on every frame but the one
+         where the bar actually crosses its limit. -->
+    <item name="intro_bar_state_tag" type="id" />
 </resources>

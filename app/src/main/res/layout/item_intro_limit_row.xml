@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  One allocation row on the intro's limits page. Included three times and filled in by
+  IntroLimitsScene, so the icon, name, figures and bar fraction are all set in code.
+
+  A shorter build of item_rigor_category: same icon tile on ?attr/iconBackground, same
+  card background, same progress track and fill. The real row runs to a 110dp minimum
+  height and three of those do not fit the intro's stage.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/cardBackground"
+    android:orientation="vertical"
+    android:paddingStart="16dp"
+    android:paddingTop="14dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="14dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_marginEnd="14dp"
+            android:background="?attr/iconBackground"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/introLimitIcon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@null"
+                app:tint="?attr/textPrimaryColor"
+                tools:src="@drawable/ic_category_food" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/introLimitName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="@dimen/text_subhead"
+            android:textStyle="bold"
+            tools:text="Food" />
+
+        <TextView
+            android:id="@+id/introLimitFigures"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="?attr/textMutedColor"
+            android:textSize="@dimen/text_caption"
+            tools:text="₹610 / ₹650" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/introLimitTrack"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_glass_progress_outer">
+
+        <View
+            android:id="@+id/introLimitFill"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_glass_progress_fill" />
+    </FrameLayout>
+</LinearLayout>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Reports, on the intro's features page. No asset existed: Reports is reached from
+     History and has never had an icon of its own. Drawn in ic_taptrack_icon's language —
+     one weight, flat paths, 48 viewport — as a sheet with an arrow leaving it, because what
+     the feature produces is a PDF in your Downloads. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Sheet -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M10,4 H28 L38,14 V27 H34 V17 H25 V8 H14 V40 H23 V44 H10 Z" />
+    <!-- Ruled lines -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M17,20 H27 V23 H17 Z M17,27 H24 V30 H17 Z" />
+    <!-- Arrow leaving the sheet -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,30 H37 V38 L41,34 L43,36.5 L35.5,44 L28,36.5 L30,34 L34,38 Z" />
+</vector>

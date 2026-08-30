@@ -83,6 +83,10 @@ android {
 dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
+    // Declared explicitly rather than inherited through Material, which is where it was
+    // coming from. The intro's four pages depend on it for their swipe behaviour, and a
+    // future Material bump could drop the transitive edge without warning.
+    implementation("androidx.viewpager2:viewpager2:1.0.0")
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.activity:activity-ktx:1.9.3")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")

@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Page 4: the three features that do not fit on a page of their own.
+
+  Built in the Menu screen's language — icon tile, label, one line under — because that is
+  where a list of features belongs in this app, and a reader who reaches the Menu later should
+  recognise these rows.
+
+  Each tile holds a second view that IntroFeaturesScene animates once after the row lands: a
+  dot rising into the TapTrack tile, the Finminder bell tilting, the report arrow dropping.
+  They are laid out here and left invisible; nothing loops.
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:orientation="vertical">
+
+        <!-- TapTrack -->
+        <LinearLayout
+            android:id="@+id/introFeatureRow1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/cardBackground"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingTop="15dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="15dp">
+
+            <FrameLayout
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_marginEnd="16dp"
+                android:background="?attr/iconBackground"
+                android:clipChildren="false">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_taptrack_icon" />
+
+                <!-- The bubble TapTrack floats over another app. Rises into place once. -->
+                <View
+                    android:id="@+id/introFeatureBubble"
+                    android:layout_width="7dp"
+                    android:layout_height="7dp"
+                    android:layout_gravity="center_horizontal|top"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_intro_bubble_dot" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/intro_feature_taptrack"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textSize="@dimen/text_subhead"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="@string/intro_feature_taptrack_sub"
+                    android:textColor="?attr/textMutedColor"
+                    android:textSize="@dimen/text_caption" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="12dp" />
+
+        <!-- Finminder -->
+        <LinearLayout
+            android:id="@+id/introFeatureRow2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/cardBackground"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingTop="15dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="15dp">
+
+            <FrameLayout
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_marginEnd="16dp"
+                android:background="?attr/iconBackground">
+
+                <ImageView
+                    android:id="@+id/introFeatureBell"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="?attr/finminderIcon" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/intro_feature_finminder"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textSize="@dimen/text_subhead"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="@string/intro_feature_finminder_sub"
+                    android:textColor="?attr/textMutedColor"
+                    android:textSize="@dimen/text_caption" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="12dp" />
+
+        <!-- Reports -->
+        <LinearLayout
+            android:id="@+id/introFeatureRow3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/cardBackground"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingTop="15dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="15dp">
+
+            <FrameLayout
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_marginEnd="16dp"
+                android:background="?attr/iconBackground"
+                android:clipChildren="false">
+
+                <ImageView
+                    android:id="@+id/introFeatureDoc"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_intro_report"
+                    app:tint="?attr/textPrimaryColor" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/intro_feature_report"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textSize="@dimen/text_subhead"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="@string/intro_feature_report_sub"
+                    android:textColor="?attr/textMutedColor"
+                    android:textSize="@dimen/text_caption" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</merge>

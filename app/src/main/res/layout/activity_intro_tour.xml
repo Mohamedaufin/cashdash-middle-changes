@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Host for the pre-login intro.
+
+  The page is ?attr/mainBackground and nothing else — no wash, no glow, no gradient behind the
+  artwork. Every screen in this app is content on a flat page with colour kept for the places
+  it carries meaning, and an intro with a lit background would be advertising a different app
+  to the one behind the button.
+
+  The stage is a fixed height rather than a stretch between the wordmark and the copy. The four
+  pages are different shapes — a ring, a viewfinder, two lists — and a stage that sized itself
+  to its contents would change height as they swap, taking the headline with it. It is centred
+  in what is left, because anchoring it to the copy puts the whole of the slack under the
+  wordmark, which on a tall phone is a third of the screen of nothing.
+
+  Root padding for the system bars is applied in IntroTourActivity, not here: the window is
+  edge to edge, and a fixed padding would float the button above the gesture bar on one device
+  and tuck it underneath on another.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/introTourRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/mainBackground">
+
+    <TextView
+        android:id="@+id/introTourBrand"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:letterSpacing="0.26"
+        android:text="@string/intro_tour_brand"
+        android:textColor="?attr/textMutedColor"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- The pager itself carries the swipe rules. It is not circular, so it physically
+         cannot scroll before page one or past page four; the auto-advance loop calls
+         setCurrentItem directly and is not bound by that limit. -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/introTourPager"
+        android:layout_width="0dp"
+        android:layout_height="340dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="40dp"
+        app:layout_constraintBottom_toTopOf="@id/introTourEyebrow"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/introTourBrand" />
+
+    <!-- Numbered like a spec sheet. It gives each page an identity beyond its headline and
+         tells you where you are without counting dots. -->
+    <TextView
+        android:id="@+id/introTourEyebrow"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="36dp"
+        android:layout_marginBottom="12dp"
+        android:letterSpacing="0.20"
+        android:textAllCaps="true"
+        android:textColor="?attr/textMutedColor"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/introTourTitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:text="01 — WALLET" />
+
+    <TextView
+        android:id="@+id/introTourTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="36dp"
+        android:layout_marginBottom="10dp"
+        android:lineSpacingMultiplier="1.10"
+        android:textColor="?attr/textPrimaryColor"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/introTourBody"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:text="Start with what you have" />
+
+    <TextView
+        android:id="@+id/introTourBody"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="36dp"
+        android:layout_marginBottom="24dp"
+        android:lineSpacingMultiplier="1.25"
+        android:minLines="2"
+        android:textColor="?attr/textMutedColor"
+        android:textSize="@dimen/text_body"
+        app:layout_constraintBottom_toTopOf="@id/introTourDots"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:text="Tell CashDash what is in your wallet and it holds the number for you." />
+
+    <LinearLayout
+        android:id="@+id/introTourDots"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginBottom="22dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@id/introTourCta"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <View
+            android:id="@+id/introTourDot1"
+            android:layout_width="9dp"
+            android:layout_height="9dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_intro_dot" />
+
+        <View
+            android:id="@+id/introTourDot2"
+            android:layout_width="9dp"
+            android:layout_height="9dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_intro_dot" />
+
+        <View
+            android:id="@+id/introTourDot3"
+            android:layout_width="9dp"
+            android:layout_height="9dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_intro_dot" />
+
+        <View
+            android:id="@+id/introTourDot4"
+            android:layout_width="9dp"
+            android:layout_height="9dp"
+            android:background="@drawable/bg_intro_dot" />
+    </LinearLayout>
+
+    <!-- Hidden until the last page has been reached once. INVISIBLE rather than GONE: it
+         keeps its slot, so nothing on the page shifts when it arrives. -->
+    <TextView
+        android:id="@+id/introTourCta"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/bg_intro_cta"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:text="@string/intro_tour_cta"
+        android:textColor="?attr/primaryActionText"
+        android:textSize="@dimen/text_subhead"
+        android:textStyle="bold"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

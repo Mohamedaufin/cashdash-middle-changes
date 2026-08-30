@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Page 3: what the payment costs you, shown before it leaves.
+
+  This is ScannerActivity's allocation chooser, not an illustration of a budget screen. Same
+  rows as item_rigor_category, same bg_glass_progress_outer track and bg_glass_progress_fill
+  bar, and the same bg_glass_progress_fill_red the chooser swaps to once spent reaches the
+  limit. The figures are made up; every colour and threshold is the app's.
+
+  The chip at the top carries the amount from the previous page. Without it these are three
+  budget bars on a screen of their own; with it they are three answers to "can I afford this".
+
+  Each fill is laid out at FULL width and revealed with scaleX from a pivot of zero. The real
+  chooser animates layoutParams.width, which is fine for a list built once, but this runs on a
+  loop for as long as the intro is open.
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/introLimitsChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="18dp"
+            android:background="@drawable/bg_intro_chip"
+            android:letterSpacing="0.10"
+            android:paddingStart="14dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="6dp"
+            android:text="@string/intro_limits_chip"
+            android:textAllCaps="true"
+            android:textColor="?attr/textMutedColor"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <include
+            android:id="@+id/introLimitsRow1"
+            layout="@layout/item_intro_limit_row" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="12dp" />
+
+        <include
+            android:id="@+id/introLimitsRow2"
+            layout="@layout/item_intro_limit_row" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="12dp" />
+
+        <include
+            android:id="@+id/introLimitsRow3"
+            layout="@layout/item_intro_limit_row" />
+    </LinearLayout>
+</merge>

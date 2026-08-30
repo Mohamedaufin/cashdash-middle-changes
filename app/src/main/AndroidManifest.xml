@@ -88,6 +88,14 @@
             android:configChanges="uiMode"
             android:exported="false" />
 
+        <!-- The intro SplashActivity currently launches. IntroActivity above is the earlier
+             illustrated version, kept registered so switching back is a one line change in
+             SplashActivity rather than a manifest edit as well. -->
+        <activity
+            android:name=".IntroTourActivity"
+            android:configChanges="uiMode"
+            android:exported="true" />
+
         <activity android:configChanges="uiMode"
             android:name=".AdminMessagingActivity"
             android:exported="false" />

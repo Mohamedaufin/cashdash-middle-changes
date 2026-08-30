@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Page 1: the wallet balance you set on your first run.
+
+  Home's ring, with the figure typed into it a digit at a time the way BalanceSetupActivity's
+  numpad enters it. The ring finishes full rather than part way round, and that is the point:
+  the moment you finish setup you are holding all of your budget, so the one state this ring
+  can honestly be in is closed.
+
+  A merge root: IntroWalletScene inflates this into itself, so the scene view IS the frame
+  rather than wrapping one.
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <com.cash.dash.IntroWalletRingView
+        android:id="@+id/introWalletRing"
+        android:layout_width="216dp"
+        android:layout_height="216dp"
+        android:layout_gravity="center" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/introWalletAmount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="7dp"
+            android:includeFontPadding="false"
+            android:text="@string/intro_wallet_zero"
+            android:textColor="?attr/textPrimaryColor"
+            android:textSize="@dimen/text_headline"
+            android:textStyle="bold"
+            tools:text="₹2,000" />
+
+        <TextView
+            android:id="@+id/introWalletLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/intro_wallet_label"
+            android:textColor="?attr/textMutedColor"
+            android:textSize="@dimen/text_body"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Sits under the ring rather than inside it: the cycle is a fact about the balance,
+         not part of the figure. -->
+    <TextView
+        android:id="@+id/introWalletCycle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|bottom"
+        android:letterSpacing="0.14"
+        android:text="@string/intro_wallet_cycle"
+        android:textAllCaps="true"
+        android:textColor="?attr/textMutedColor"
+        android:textSize="10sp" />
+</merge>

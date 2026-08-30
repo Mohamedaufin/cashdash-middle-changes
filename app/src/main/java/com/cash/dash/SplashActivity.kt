@@ -25,8 +25,11 @@ class SplashActivity : ThemedActivity() {
         val firebaseUser = FirebaseAuth.getInstance().currentUser
 
         if (isFirstLaunch || firebaseUser == null) {
-            // Not logged in -> Go straight to Intro sequence immediately
-            startActivity(Intent(this, IntroActivity::class.java))
+            // Not logged in -> Go straight to Intro sequence immediately.
+            // IntroTourActivity is the current intro; IntroActivity is the earlier
+            // illustrated one and is still registered in the manifest, so swapping the
+            // class here is the whole of switching between them.
+            startActivity(Intent(this, IntroTourActivity::class.java))
             finish()
             return
         }

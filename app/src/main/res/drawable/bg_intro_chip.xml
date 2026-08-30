@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The "paying ₹420" chip on the limits page. One step off the page rather than off a
+     card, because unlike everything else on that page it does not sit on one. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="?attr/progressTrackColor" />
+    <corners android:radius="14dp" />
+</shape>

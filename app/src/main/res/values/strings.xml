@@ -18,4 +18,66 @@
 
     <string name="intro_brand_arc">CASHDASH</string>
     <string name="intro_continue">Get started</string>
+
+    <!-- Intro tour (IntroTourActivity). Four pages in the order the product works: set what
+         you have, pay from inside the app, see what the payment costs you, then the rest.
+         Each page names a real feature and borrows that feature's own vocabulary, because the
+         artwork behind the words is that feature's own screen. -->
+    <string name="intro_tour_brand">CASHDASH</string>
+    <string name="intro_tour_cta">Get started</string>
+    <!-- The symbol is separated from the digits so grouping can come from an en-IN
+         NumberFormat rather than a hardcoded pattern. -->
+    <string name="intro_tour_amount">₹%1$s</string>
+
+    <string name="intro_tour_one_eyebrow">01 — Wallet</string>
+    <string name="intro_tour_one_title">Start with what you have</string>
+    <string name="intro_tour_one_body">Set your wallet balance once. Everything CashDash does is measured against that number.</string>
+
+    <string name="intro_tour_two_eyebrow">02 — Scan</string>
+    <string name="intro_tour_two_title">Pay from inside the app</string>
+    <string name="intro_tour_two_body">Scan any UPI QR here, and the payment becomes something CashDash can see and act on.</string>
+
+    <string name="intro_tour_three_eyebrow">03 — Limits</string>
+    <string name="intro_tour_three_title">Know it before you send it</string>
+    <string name="intro_tour_three_body">Pick an allocation and see what is left in it. Over the limit turns red — while you can still stop.</string>
+
+    <string name="intro_tour_four_eyebrow">04 — And more</string>
+    <string name="intro_tour_four_title">It catches the rest too</string>
+    <string name="intro_tour_four_body">Spending in other apps, money due in or out, and any date range you need on paper.</string>
+
+    <!-- Page 1. Sample figures, not anyone's data. -->
+    <string name="intro_wallet_zero">₹0</string>
+    <string name="intro_wallet_label">Wallet balance</string>
+    <string name="intro_wallet_cycle">Renews every 7 days</string>
+
+    <!-- Page 2. A placeholder payee, deliberately not a real merchant. -->
+    <string name="intro_scan_payee">Person X</string>
+    <string name="intro_scan_upi">personx@upi</string>
+    <string name="intro_scan_amount">₹420</string>
+    <string name="intro_scan_pay">Pay ₹420</string>
+    <string name="intro_scan_receiver_label">Receiver: Person X\nUPI ID: personx@upi</string>
+    <string name="intro_scan_wallet_balance">Wallet Balance: ₹2,000</string>
+    <string name="intro_scan_pay_amount">Pay ₹100</string>
+    <string name="intro_scan_choose_alloc">Choose Expense Allocation</string>
+    <string name="intro_scan_food_limit">Limit: ₹650</string>
+    <string name="intro_scan_shop_limit">Limit: ₹500</string>
+    <string name="intro_scan_allocated_to">Allocated to: Food</string>
+    <string name="intro_scan_change">Change</string>
+    <string name="intro_scan_cred">Cred</string>
+    <string name="intro_scan_other_upi">Other UPI</string>
+
+    <!-- Page 3. Two allocations inside their limit, one over it. -->
+    <string name="intro_limits_chip">Paying ₹420</string>
+    <string name="intro_limits_figures">₹%1$d / ₹%2$d</string>
+    <string name="intro_limits_one">Food</string>
+    <string name="intro_limits_two">Travel</string>
+    <string name="intro_limits_three">Shopping</string>
+
+    <!-- Page 4. -->
+    <string name="intro_feature_taptrack">TapTrack</string>
+    <string name="intro_feature_taptrack_sub">A bubble over Swiggy, Amazon and 14 more</string>
+    <string name="intro_feature_finminder">Finminder</string>
+    <string name="intro_feature_finminder_sub">Reminders for money due in or out</string>
+    <string name="intro_feature_report">Reports</string>
+    <string name="intro_feature_report_sub">Any two dates, saved as a PDF</string>
 </resources>

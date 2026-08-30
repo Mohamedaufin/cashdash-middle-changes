@@ -123,8 +123,8 @@ object SecurityManager {
         CashDashApplication.setOfflineImmediate(context)
         FirebaseAuth.getInstance().signOut()
 
-        // 3. Redirect to IntroActivity with security notice
-        val intent = Intent(context, IntroActivity::class.java).apply {
+        // 3. Redirect to IntroTourActivity with security notice
+        val intent = Intent(context, IntroTourActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             if (reason != null) {
                 putExtra("reason", reason)
