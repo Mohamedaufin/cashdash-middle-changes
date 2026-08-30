@@ -40,7 +40,7 @@ class IntroPageAdapter : RecyclerView.Adapter<IntroPageAdapter.PageHolder>() {
         val scene: View = when (viewType) {
             PAGE_WALLET -> IntroWalletScene(context)
             PAGE_SCAN -> IntroScanScene(context)
-            PAGE_LIMITS -> IntroLimitsScene(context)
+            PAGE_TAPTRACK -> IntroTapTrackScene(context)
             else -> IntroFeaturesScene(context)
         }
         scene.layoutParams = RecyclerView.LayoutParams(
@@ -59,7 +59,7 @@ class IntroPageAdapter : RecyclerView.Adapter<IntroPageAdapter.PageHolder>() {
     companion object {
         const val PAGE_WALLET = 0
         const val PAGE_SCAN = 1
-        const val PAGE_LIMITS = 2
+        const val PAGE_TAPTRACK = 2
         const val PAGE_FEATURES = 3
         const val PAGE_COUNT = 4
     }

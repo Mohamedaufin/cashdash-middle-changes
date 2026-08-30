@@ -37,13 +37,13 @@
     <string name="intro_tour_two_title">Pay from inside the app</string>
     <string name="intro_tour_two_body">Scan any UPI QR here, and the payment becomes something CashDash can see and act on.</string>
 
-    <string name="intro_tour_three_eyebrow">03 — Limits</string>
-    <string name="intro_tour_three_title">Know it before you send it</string>
-    <string name="intro_tour_three_body">Pick an allocation and see what is left in it. Over the limit turns red — while you can still stop.</string>
+    <string name="intro_tour_three_eyebrow">03 — TapTrack</string>
+    <string name="intro_tour_three_title">Track outside the app</string>
+    <string name="intro_tour_three_body">Whenever you open Swiggy, Amazon or other apps, a floating bubble appears so you can log spends with 1 tap.</string>
 
     <string name="intro_tour_four_eyebrow">04 — And more</string>
-    <string name="intro_tour_four_title">It catches the rest too</string>
-    <string name="intro_tour_four_body">Spending in other apps, money due in or out, and any date range you need on paper.</string>
+    <string name="intro_tour_four_title">Catches every other rupee</string>
+    <string name="intro_tour_four_body">From budget limits, to bill alerts and instant PDF statements.</string>
 
     <!-- Page 1. Sample figures, not anyone's data. -->
     <string name="intro_wallet_zero">₹0</string>
@@ -66,7 +66,9 @@
     <string name="intro_scan_cred">Cred</string>
     <string name="intro_scan_other_upi">Other UPI</string>
 
-    <!-- Page 3. Two allocations inside their limit, one over it. -->
+    <!-- Page 3. TapTrack placeholder text. -->
+    <string name="intro_taptrack_app_name">Amazon</string>
+    <string name="intro_taptrack_amount">350</string>
     <string name="intro_limits_chip">Paying ₹420</string>
     <string name="intro_limits_figures">₹%1$d / ₹%2$d</string>
     <string name="intro_limits_one">Food</string>
@@ -74,10 +76,10 @@
     <string name="intro_limits_three">Shopping</string>
 
     <!-- Page 4. -->
-    <string name="intro_feature_taptrack">TapTrack</string>
-    <string name="intro_feature_taptrack_sub">A bubble over Swiggy, Amazon and 14 more</string>
+    <string name="intro_feature_limits">Limits &amp; Rigor</string>
+    <string name="intro_feature_limits_sub">Know before you spend, over-limit turns red</string>
     <string name="intro_feature_finminder">Finminder</string>
-    <string name="intro_feature_finminder_sub">Reminders for money due in or out</string>
-    <string name="intro_feature_report">Reports</string>
-    <string name="intro_feature_report_sub">Any two dates, saved as a PDF</string>
+    <string name="intro_feature_finminder_sub">Never miss due dates, subscriptions, or lent money</string>
+    <string name="intro_feature_report">Reports &amp; Statements</string>
+    <string name="intro_feature_report_sub">Export clean PDF summaries for any date range</string>
 </resources>

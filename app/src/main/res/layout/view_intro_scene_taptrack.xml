@@ -1,0 +1,446 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Page 3: TapTrack — The floating digital assistant that tracks expenses in external apps.
+  Simulates opening Amazon with the floating CashDash bubble and quick logging.
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <!-- Outer Phone Frame Bezel -->
+        <FrameLayout
+            android:id="@+id/introTapTrackPhone"
+            android:layout_width="190dp"
+            android:layout_height="340dp"
+            android:background="@drawable/bg_intro_phone_frame"
+            android:padding="3dp">
+
+            <!-- Inner Screen Canvas -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_intro_phone_inner"
+                android:clipToOutline="true">
+
+                <!-- ========= Background App Mock (Amazon-like Shopping Screen) ========= -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#F2F3F7"
+                    android:orientation="vertical">
+
+                    <!-- Mock App Top Bar / Search -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="36dp"
+                        android:background="#232F3E"
+                        android:gravity="center_vertical"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="amazon"
+                            android:textColor="#FF9900"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="22dp"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_intro_chip"
+                            android:backgroundTint="#FFFFFF" />
+                    </LinearLayout>
+
+                    <!-- Mock Deliver To bar -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="18dp"
+                        android:background="#37475A"
+                        android:gravity="center_vertical"
+                        android:paddingStart="8dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="📍 Deliver to John - 638004"
+                            android:textColor="#CCCCCC"
+                            android:textSize="7sp" />
+                    </LinearLayout>
+
+                    <!-- Mock Category Badges -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="6dp">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="22dp"
+                            android:layout_weight="1"
+                            android:layout_margin="2dp"
+                            android:background="@drawable/bg_intro_chip"
+                            android:backgroundTint="#FFD814"
+                            android:gravity="center"
+                            android:text="Pay"
+                            android:textColor="#111111"
+                            android:textSize="7sp"
+                            android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="22dp"
+                            android:layout_weight="1"
+                            android:layout_margin="2dp"
+                            android:background="@drawable/bg_intro_chip"
+                            android:backgroundTint="#E3E6E6"
+                            android:gravity="center"
+                            android:text="Fresh"
+                            android:textColor="#111111"
+                            android:textSize="7sp" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="22dp"
+                            android:layout_weight="1"
+                            android:layout_margin="2dp"
+                            android:background="@drawable/bg_intro_chip"
+                            android:backgroundTint="#E3E6E6"
+                            android:gravity="center"
+                            android:text="Bazaar"
+                            android:textColor="#111111"
+                            android:textSize="7sp" />
+                    </LinearLayout>
+
+                    <!-- Mock Product Promo Card -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:layout_margin="6dp"
+                        android:background="@drawable/bg_intro_feature_card"
+                        android:backgroundTint="#FFFFFF"
+                        android:orientation="vertical"
+                        android:padding="8dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Min. 65% off"
+                            android:textColor="#111111"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Ethnic week • Kurtas, sets &amp; more"
+                            android:textColor="#666666"
+                            android:textSize="7sp" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
+                            android:layout_marginTop="6dp"
+                            android:background="@drawable/bg_intro_chip"
+                            android:backgroundTint="#E8E8EE" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- ========= Dim Overlay when Dialog is Open ========= -->
+                <View
+                    android:id="@+id/introTapTrackDim"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0"
+                    android:background="#80000000" />
+
+                <!-- ========= Floating Bubble (TapTrack Bubble) ========= -->
+                <FrameLayout
+                    android:id="@+id/introTapTrackBubble"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_gravity="start|top"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="60dp"
+                    android:background="@drawable/bg_intro_bubble_dot"
+                    android:backgroundTint="#16181F"
+                    android:elevation="6dp">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_taptrack_icon"
+                        app:tint="#00E5FF"
+                        android:contentDescription="@null" />
+                </FrameLayout>
+
+                <!-- ========= Floating Tracker Dialog Card ========= -->
+                <LinearLayout
+                    android:id="@+id/introTapTrackCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_margin="8dp"
+                    android:background="@drawable/bg_intro_bottom_sheet"
+                    android:backgroundTint="#181B22"
+                    android:elevation="8dp"
+                    android:orientation="vertical"
+                    android:padding="10dp">
+
+                    <!-- Header -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:src="@drawable/ic_taptrack_icon"
+                            app:tint="#00E5FF"
+                            android:contentDescription="@null" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:text="CashDash Tracker"
+                            android:textColor="?attr/textPrimaryColor"
+                            android:textSize="9sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:background="@drawable/bg_intro_chip"
+                            android:gravity="center"
+                            android:text="✕"
+                            android:textColor="?attr/textMutedColor"
+                            android:textSize="8sp" />
+                    </LinearLayout>
+
+                    <!-- Toggle Section -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="22dp"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_intro_mini_card"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="TapTrack"
+                            android:textColor="?attr/textPrimaryColor"
+                            android:textSize="8sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="22dp"
+                            android:layout_height="12dp"
+                            android:background="@drawable/bg_intro_chip"
+                            android:backgroundTint="#4CAF50"
+                            android:gravity="center"
+                            android:text="ON"
+                            android:textColor="#FFFFFF"
+                            android:textSize="6sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end"
+                        android:layout_marginTop="4dp"
+                        android:text="Wallet: ₹2000 / ₹2000"
+                        android:textColor="?attr/textMutedColor"
+                        android:textSize="7sp" />
+
+                    <!-- Title Field (Amazon prefilled) -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="24dp"
+                        android:layout_marginTop="4dp"
+                        android:background="?attr/inputBackground"
+                        android:gravity="center_vertical"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:text="Amazon"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textSize="8sp" />
+
+                    <!-- Amount Field (Types 350) -->
+                    <TextView
+                        android:id="@+id/introTapTrackAmount"
+                        android:layout_width="match_parent"
+                        android:layout_height="24dp"
+                        android:layout_marginTop="4dp"
+                        android:background="?attr/inputBackground"
+                        android:gravity="center_vertical"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:hint="Amount"
+                        android:textColorHint="?attr/textMutedColor"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textSize="8sp" />
+
+                    <!-- Allocation Dropdown Field -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Allocation"
+                        android:textColor="?attr/textMutedColor"
+                        android:textSize="7sp" />
+
+                    <LinearLayout
+                        android:id="@+id/introTapTrackAllocBtn"
+                        android:layout_width="match_parent"
+                        android:layout_height="24dp"
+                        android:layout_marginTop="2dp"
+                        android:background="?attr/inputBackground"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp">
+
+                        <TextView
+                            android:id="@+id/introTapTrackAllocText"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Select Allocation"
+                            android:textColor="?attr/textPrimaryColor"
+                            android:textSize="8sp" />
+
+                        <TextView
+                            android:id="@+id/introTapTrackDropdownArrow"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="▼"
+                            android:textColor="?attr/textMutedColor"
+                            android:textSize="7sp" />
+                    </LinearLayout>
+
+                    <!-- Save Expense Button -->
+                    <TextView
+                        android:id="@+id/introTapTrackSaveBtn"
+                        android:layout_width="match_parent"
+                        android:layout_height="26dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_intro_cta"
+                        android:gravity="center"
+                        android:text="Save Expense"
+                        android:textColor="?attr/primaryActionText"
+                        android:textSize="9sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- ========= Dropdown Options Overlay ========= -->
+                <LinearLayout
+                    android:id="@+id/introTapTrackDropdownList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginTop="42dp"
+                    android:background="@drawable/bg_intro_feature_card"
+                    android:backgroundTint="#1F232B"
+                    android:elevation="12dp"
+                    android:orientation="vertical"
+                    android:padding="6dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/introTapTrackOptFood"
+                        android:layout_width="match_parent"
+                        android:layout_height="20dp"
+                        android:gravity="center_vertical"
+                        android:paddingStart="6dp"
+                        android:text="Food — ₹402 / ₹650"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textSize="7sp" />
+
+                    <TextView
+                        android:id="@+id/introTapTrackOptShopping"
+                        android:layout_width="match_parent"
+                        android:layout_height="20dp"
+                        android:background="@drawable/bg_intro_chip"
+                        android:backgroundTint="#2D323E"
+                        android:gravity="center_vertical"
+                        android:paddingStart="6dp"
+                        android:text="Shopping — ₹780 / ₹500"
+                        android:textColor="#FF6B6B"
+                        android:textSize="7sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/introTapTrackOptTravel"
+                        android:layout_width="match_parent"
+                        android:layout_height="20dp"
+                        android:gravity="center_vertical"
+                        android:paddingStart="6dp"
+                        android:text="Travel — ₹386 / ₹250"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textSize="7sp" />
+                </LinearLayout>
+
+                <!-- ========= Saved Successfully Toast ========= -->
+                <LinearLayout
+                    android:id="@+id/introTapTrackToast"
+                    android:layout_width="wrap_content"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center_horizontal|bottom"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/bg_intro_cta"
+                    android:backgroundTint="#2E7D32"
+                    android:elevation="10dp"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="✓ Saved Successfully!"
+                        android:textColor="#FFFFFF"
+                        android:textSize="8sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- ========= Desktop Mouse Cursor ========= -->
+                <ImageView
+                    android:id="@+id/introTapTrackCursor"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:alpha="0"
+                    android:contentDescription="@null"
+                    android:elevation="20dp"
+                    android:src="@drawable/ic_desktop_cursor" />
+
+            </FrameLayout>
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+</merge>
