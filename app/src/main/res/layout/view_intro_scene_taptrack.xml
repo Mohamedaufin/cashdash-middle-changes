@@ -63,21 +63,6 @@
                             android:backgroundTint="#FFFFFF" />
                     </LinearLayout>
 
-                    <!-- Mock Deliver To bar -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="18dp"
-                        android:background="#37475A"
-                        android:gravity="center_vertical"
-                        android:paddingStart="8dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="📍 Deliver to John - 638004"
-                            android:textColor="#CCCCCC"
-                            android:textSize="7sp" />
-                    </LinearLayout>
-
                     <!-- Mock Category Badges -->
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -171,7 +156,7 @@
                     android:layout_height="32dp"
                     android:layout_gravity="start|top"
                     android:layout_marginStart="8dp"
-                    android:layout_marginTop="60dp"
+                    android:layout_marginTop="50dp"
                     android:background="@drawable/bg_intro_bubble_dot"
                     android:backgroundTint="#16181F"
                     android:elevation="6dp">
@@ -301,7 +286,7 @@
                         android:textColor="?attr/textPrimaryColor"
                         android:textSize="8sp" />
 
-                    <!-- Allocation Dropdown Field -->
+                    <!-- Allocation Field (Prefilled Shopping) -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -326,7 +311,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Select Allocation"
+                            android:text="Shopping — ₹350 / ₹200"
                             android:textColor="?attr/textPrimaryColor"
                             android:textSize="8sp" />
 
@@ -351,56 +336,6 @@
                         android:textColor="?attr/primaryActionText"
                         android:textSize="9sp"
                         android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- ========= Dropdown Options Overlay ========= -->
-                <LinearLayout
-                    android:id="@+id/introTapTrackDropdownList"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginStart="16dp"
-                    android:layout_marginEnd="16dp"
-                    android:layout_marginTop="42dp"
-                    android:background="@drawable/bg_intro_feature_card"
-                    android:backgroundTint="#1F232B"
-                    android:elevation="12dp"
-                    android:orientation="vertical"
-                    android:padding="6dp"
-                    android:visibility="gone">
-
-                    <TextView
-                        android:id="@+id/introTapTrackOptFood"
-                        android:layout_width="match_parent"
-                        android:layout_height="20dp"
-                        android:gravity="center_vertical"
-                        android:paddingStart="6dp"
-                        android:text="Food — ₹402 / ₹650"
-                        android:textColor="?attr/textPrimaryColor"
-                        android:textSize="7sp" />
-
-                    <TextView
-                        android:id="@+id/introTapTrackOptShopping"
-                        android:layout_width="match_parent"
-                        android:layout_height="20dp"
-                        android:background="@drawable/bg_intro_chip"
-                        android:backgroundTint="#2D323E"
-                        android:gravity="center_vertical"
-                        android:paddingStart="6dp"
-                        android:text="Shopping — ₹780 / ₹500"
-                        android:textColor="#FF6B6B"
-                        android:textSize="7sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/introTapTrackOptTravel"
-                        android:layout_width="match_parent"
-                        android:layout_height="20dp"
-                        android:gravity="center_vertical"
-                        android:paddingStart="6dp"
-                        android:text="Travel — ₹386 / ₹250"
-                        android:textColor="?attr/textPrimaryColor"
-                        android:textSize="7sp" />
                 </LinearLayout>
 
                 <!-- ========= Saved Successfully Toast ========= -->

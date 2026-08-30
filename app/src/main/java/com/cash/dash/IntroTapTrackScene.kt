@@ -12,11 +12,10 @@ import android.widget.ImageView
 import android.widget.TextView
 
 /**
- * Page 3: TapTrack — Digital Finance Assistant in other apps.
- *
- * Choreographs the exact workflow of opening an external shopping app (Amazon),
- * opening the floating CashDash TapTrack bubble, selecting an allocation category,
- * typing the amount, and saving the expense with 1 tap.
+ * Page 3: TapTrack — Fast 3-Step Flow:
+ * 1. Open TapTrack floating bubble
+ * 2. Amount typed (with prefilled Shopping allocation)
+ * 3. Save Expense clicked -> Success badge
  */
 class IntroTapTrackScene @JvmOverloads constructor(
     context: Context,
@@ -29,10 +28,6 @@ class IntroTapTrackScene @JvmOverloads constructor(
     private val dimOverlay: View
     private val card: View
     private val amountText: TextView
-    private val allocBtn: View
-    private val allocText: TextView
-    private val dropdownList: View
-    private val optShopping: View
     private val saveBtn: TextView
     private val toast: View
     private val cursor: ImageView
@@ -53,10 +48,6 @@ class IntroTapTrackScene @JvmOverloads constructor(
         dimOverlay = findViewById(R.id.introTapTrackDim)
         card = findViewById(R.id.introTapTrackCard)
         amountText = findViewById(R.id.introTapTrackAmount)
-        allocBtn = findViewById(R.id.introTapTrackAllocBtn)
-        allocText = findViewById(R.id.introTapTrackAllocText)
-        dropdownList = findViewById(R.id.introTapTrackDropdownList)
-        optShopping = findViewById(R.id.introTapTrackOptShopping)
         saveBtn = findViewById(R.id.introTapTrackSaveBtn)
         toast = findViewById(R.id.introTapTrackToast)
         cursor = findViewById(R.id.introTapTrackCursor)
@@ -68,7 +59,7 @@ class IntroTapTrackScene @JvmOverloads constructor(
         typeAnim?.cancel()
         typeAnim = null
 
-        val all = listOf(bubble, dimOverlay, card, dropdownList, toast, cursor, saveBtn, optShopping)
+        val all = listOf(bubble, dimOverlay, card, toast, cursor, saveBtn)
         for (v in all) v.animate().cancel()
 
         bubble.alpha = 1f
@@ -87,11 +78,6 @@ class IntroTapTrackScene @JvmOverloads constructor(
 
         amountText.text = ""
         shownDigits = -1
-        allocText.text = "Select Allocation"
-
-        dropdownList.alpha = 0f
-        dropdownList.scaleY = 0f
-        dropdownList.visibility = View.GONE
 
         toast.alpha = 0f
         toast.scaleX = 0.8f
@@ -152,7 +138,7 @@ class IntroTapTrackScene @JvmOverloads constructor(
     }
 
     override fun playScene() {
-        // ── Step 1: Floating bubble pulses in on top-left ──────────────────────────
+        // ── 1. Floating bubble pulses in on top-left ──────────────────────────
         bubble.alpha = 0f
         bubble.scaleX = 0.4f
         bubble.scaleY = 0.4f
@@ -164,8 +150,8 @@ class IntroTapTrackScene @JvmOverloads constructor(
             .setInterpolator(OVERSHOOT)
             .start()
 
-        // ── Step 2: Cursor taps Floating Bubble -> Tracker Card Expands ───────────
-        schedule(1200L) {
+        // ── 2. Cursor taps Floating Bubble -> Tracker Card Expands ───────────
+        schedule(1000L) {
             simulateCursorTap(bubble) {
                 bubble.animate().scaleX(0.7f).scaleY(0.7f).alpha(0f).setDuration(200).start()
                 dimOverlay.animate().alpha(0.6f).setDuration(250).start()
@@ -182,46 +168,13 @@ class IntroTapTrackScene @JvmOverloads constructor(
             }
         }
 
-        // ── Step 3: Cursor taps Allocation Dropdown -> Opens list ──────────────────
-        val dropdownStart = 2800L
-        schedule(dropdownStart) {
-            simulateCursorTap(allocBtn) {
-                dropdownList.visibility = View.VISIBLE
-                dropdownList.pivotY = 0f
-                dropdownList.scaleY = 0f
-                dropdownList.alpha = 0f
-                dropdownList.animate()
-                    .alpha(1f)
-                    .scaleY(1f)
-                    .setDuration(240)
-                    .setInterpolator(IntroTourActivity.EASE_OUT)
-                    .start()
-            }
-        }
-
-        // ── Step 4: Cursor selects "Shopping — ₹780 / ₹500" ─────────────────────────
-        val selectAllocStart = dropdownStart + 1600L
-        schedule(selectAllocStart) {
-            simulateCursorTap(optShopping) {
-                optShopping.animate().scaleX(0.95f).scaleY(0.95f).setDuration(80)
-                    .withEndAction {
-                        allocText.text = "Shopping — ₹780 / ₹500"
-                        allocText.setTextColor(0xFFFF6B6B.toInt())
-                        dropdownList.animate().alpha(0f).scaleY(0.7f).setDuration(180)
-                            .withEndAction { dropdownList.visibility = View.GONE }
-                            .start()
-                    }
-                    .start()
-            }
-        }
-
-        // ── Step 5: Cursor taps Amount field & types 350 ────────────────────────────
-        val typeAmountStart = selectAllocStart + 1600L
+        // ── 3. Cursor taps Amount field & types 350 ────────────────────────────
+        val typeAmountStart = 2400L
         schedule(typeAmountStart) {
             simulateCursorTap(amountText) {
                 val digits = arrayOf("3", "35", "350")
                 typeAnim = ValueAnimator.ofFloat(0f, digits.size.toFloat()).apply {
-                    duration = 200L * digits.size
+                    duration = 180L * digits.size
                     addUpdateListener { a ->
                         val n = (a.animatedValue as Float).toInt().coerceIn(0, digits.size)
                         if (n == shownDigits) return@addUpdateListener
@@ -234,8 +187,8 @@ class IntroTapTrackScene @JvmOverloads constructor(
             }
         }
 
-        // ── Step 6: Cursor clicks "Save Expense" ────────────────────────────────────
-        val saveClickStart = typeAmountStart + 1800L
+        // ── 4. Cursor clicks "Save Expense" ────────────────────────────────────
+        val saveClickStart = typeAmountStart + 1600L
         schedule(saveClickStart) {
             simulateCursorTap(saveBtn) {
                 saveBtn.animate().scaleX(0.95f).scaleY(0.95f).setDuration(80)
@@ -285,7 +238,7 @@ class IntroTapTrackScene @JvmOverloads constructor(
     }
 
     override fun sceneDurationMs(): Long {
-        return 13500L
+        return 7000L
     }
 
     private val Float.dp: Float get() = this * resources.displayMetrics.density
