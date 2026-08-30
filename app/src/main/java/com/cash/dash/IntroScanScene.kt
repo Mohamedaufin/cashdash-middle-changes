@@ -23,6 +23,7 @@ class IntroScanScene @JvmOverloads constructor(
 ) : FrameLayout(context, attrs, defStyleAttr), IntroScene {
 
     private val frame: IntroScannerFrameView
+    private val phoneContainer: View
 
     private val amountGroup: View
     private val amountField: TextView
@@ -55,8 +56,11 @@ class IntroScanScene @JvmOverloads constructor(
     private var generation = 0
 
     init {
+        clipChildren = false
+        clipToPadding = false
         LayoutInflater.from(context).inflate(R.layout.view_intro_scene_scan, this, true)
         frame = findViewById(R.id.introScanFrame)
+        phoneContainer = findViewById(R.id.introScanPhone)
 
         amountGroup = findViewById(R.id.introScanAmountGroup)
         amountField = findViewById(R.id.introScanAmountField)
@@ -87,7 +91,7 @@ class IntroScanScene @JvmOverloads constructor(
         ringAnim?.cancel(); ringAnim = null
 
         // Cancel every in-flight ViewPropertyAnimator
-        val all = listOf(frame, amountGroup, amountField, payBtn,
+        val all = listOf(phoneContainer, frame, amountGroup, amountField, payBtn,
             allocGroup, allocFood, allocShopping, confirmGroup, finalPayNowBtn, successGroup, ringGroup)
         for (v in all) v.animate().cancel()
 
@@ -95,6 +99,12 @@ class IntroScanScene @JvmOverloads constructor(
         frame.alpha = 1f
         frame.scaleX = 1f
         frame.scaleY = 1f
+        phoneContainer.cameraDistance = 8000f * resources.displayMetrics.density
+        phoneContainer.rotationX = 0f
+        phoneContainer.rotationY = 0f
+        phoneContainer.translationY = 0f
+        phoneContainer.scaleX = 1f
+        phoneContainer.scaleY = 1f
         frame.bracketProgress = 0f
         frame.moduleProgress = 0f
         frame.lockProgress = 0f
@@ -163,6 +173,11 @@ class IntroScanScene @JvmOverloads constructor(
         // ── Beat 2: Amount entry (Starts at 2500) ─────────────────────────────────────────
         val beat2Start = 2500L
         schedule(beat2Start) {
+            phoneContainer.animate().scaleX(1.1f).scaleY(1.1f).rotationX(12f).rotationY(-3f).translationY(-10f.dp)
+                .setDuration(1200).setInterpolator(IntroTourActivity.EASE_OUT).start()
+        }
+
+        schedule(beat2Start) {
             frame.animate().alpha(0f).scaleX(0.86f).scaleY(0.86f)
                 .setStartDelay(0).setDuration(400)
                 .setInterpolator(IntroTourActivity.EASE_IN).start()
@@ -205,6 +220,11 @@ class IntroScanScene @JvmOverloads constructor(
 
         // ── Beat 3: Allocation chooser (Starts at 8250) ─────────────────────────────────────────
         val beat3Start = typeStart + KEYPRESS_MS * AMOUNT_DIGITS.size + RISE_MS + 2500L
+
+        schedule(beat3Start) {
+            phoneContainer.animate().scaleX(1.25f).scaleY(1.25f).rotationX(5f).rotationY(4f).translationY(-40f.dp)
+                .setDuration(1400).setInterpolator(IntroTourActivity.EASE_OUT).start()
+        }
 
         val payBtnClickStart = beat3Start - 600L
         schedule(payBtnClickStart) {
@@ -259,6 +279,11 @@ class IntroScanScene @JvmOverloads constructor(
         val beat4Start = clickStart + 300 + 1000L
 
         schedule(beat4Start) {
+            phoneContainer.animate().scaleX(1.05f).scaleY(1.05f).rotationX(8f).rotationY(-2f).translationY(-20f.dp)
+                .setDuration(1200).setInterpolator(IntroTourActivity.EASE_OUT).start()
+        }
+
+        schedule(beat4Start) {
             allocGroup.animate().alpha(0f)
                 .setStartDelay(0).setDuration(FADE_MS)
                 .setInterpolator(IntroTourActivity.EASE_IN).start()
@@ -291,6 +316,11 @@ class IntroScanScene @JvmOverloads constructor(
         
         // ── Beat 5: Success ─────────────────────────────────────────
         val beat5Start = payClickStart + 300 + 700L
+
+        schedule(beat5Start) {
+            phoneContainer.animate().scaleX(1f).scaleY(1f).rotationX(0f).rotationY(0f).translationY(0f)
+                .setDuration(1000).setInterpolator(IntroTourActivity.EASE_OUT).start()
+        }
         
         schedule(beat5Start) {
             confirmGroup.animate().alpha(0f)

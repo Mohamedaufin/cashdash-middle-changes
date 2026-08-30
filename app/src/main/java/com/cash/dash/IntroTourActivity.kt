@@ -75,6 +75,21 @@ class IntroTourActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_intro_tour)
 
+        val rootV = findViewById<android.view.ViewGroup>(R.id.introTourRoot)
+        rootV.clipChildren = false
+        rootV.clipToPadding = false
+
+        val pagerV = findViewById<androidx.viewpager2.widget.ViewPager2>(R.id.introTourPager)
+        pagerV.clipChildren = false
+        pagerV.clipToPadding = false
+        
+        pagerV.post {
+            val rv = pagerV.getChildAt(0) as? androidx.recyclerview.widget.RecyclerView
+            rv?.clipChildren = false
+            rv?.clipToPadding = false
+        }
+
+
         root = findViewById(R.id.introTourRoot)
         pager = findViewById(R.id.introTourPager)
         brand = findViewById(R.id.introTourBrand)

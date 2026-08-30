@@ -13,10 +13,13 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:gravity="center">
+        android:gravity="center"
+        android:clipChildren="false"
+        android:clipToPadding="false">
 
         <!-- The Phone Frame -->
         <FrameLayout
+            android:id="@+id/introScanPhone"
             android:layout_width="190dp"
             android:layout_height="340dp"
             android:background="@drawable/bg_intro_phone_frame"
