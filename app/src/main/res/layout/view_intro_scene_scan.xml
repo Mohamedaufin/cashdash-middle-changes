@@ -560,6 +560,16 @@
                 </LinearLayout>
             </FrameLayout>
 
+            <!-- 3D Glare effect -->
+            <View
+                android:id="@+id/introScanGlare"
+                android:layout_width="600dp"
+                android:layout_height="200dp"
+                android:layout_gravity="center"
+                android:rotation="45"
+                android:translationY="-400dp"
+                android:background="@drawable/bg_intro_glare"
+                android:alpha="0" />
         </FrameLayout>
             
     </LinearLayout>
