@@ -24,6 +24,7 @@ class IntroScanScene @JvmOverloads constructor(
 
     private val frame: IntroScannerFrameView
     private val phoneContainer: View
+    private val touchPointer: View
 
     private val amountGroup: View
     private val amountField: TextView
@@ -46,9 +47,6 @@ class IntroScanScene @JvmOverloads constructor(
     private var typeAnim: ValueAnimator? = null
     private var ringAnim: ValueAnimator? = null
 
-    /** Every group that participates in the cross-fade, for easy iteration. */
-    private val allGroups: List<View>
-
     /** Tracks which digits of "100" have been typed. */
     private var shownDigits = -1
     
@@ -61,6 +59,7 @@ class IntroScanScene @JvmOverloads constructor(
         LayoutInflater.from(context).inflate(R.layout.view_intro_scene_scan, this, true)
         frame = findViewById(R.id.introScanFrame)
         phoneContainer = findViewById(R.id.introScanPhone)
+        touchPointer = findViewById(R.id.introScanTouchPointer)
 
         amountGroup = findViewById(R.id.introScanAmountGroup)
         amountField = findViewById(R.id.introScanAmountField)
@@ -78,8 +77,6 @@ class IntroScanScene @JvmOverloads constructor(
         ringGroup = findViewById(R.id.introScanRingGroup)
         ringView = findViewById(R.id.introScanRing)
         ringAmount = findViewById(R.id.introScanRingAmount)
-
-        allGroups = listOf(amountGroup, allocGroup, confirmGroup, successGroup, ringGroup)
     }
 
     override fun resetScene() {
@@ -91,11 +88,11 @@ class IntroScanScene @JvmOverloads constructor(
         ringAnim?.cancel(); ringAnim = null
 
         // Cancel every in-flight ViewPropertyAnimator
-        val all = listOf(phoneContainer, frame, amountGroup, amountField, payBtn,
+        val all = listOf(phoneContainer, frame, touchPointer, amountGroup, amountField, payBtn,
             allocGroup, allocFood, allocShopping, confirmGroup, finalPayNowBtn, successGroup, ringGroup)
         for (v in all) v.animate().cancel()
 
-        // Scanner
+        // Scanner (Centered)
         frame.alpha = 1f
         frame.scaleX = 1f
         frame.scaleY = 1f
@@ -111,38 +108,43 @@ class IntroScanScene @JvmOverloads constructor(
         frame.lockProgress = 0f
         frame.scanLineProgress = 0f
 
-        // Amount Entry (Sheet starting off bottom)
+        // Touch pointer
+        touchPointer.alpha = 0f
+        touchPointer.scaleX = 1f
+        touchPointer.scaleY = 1f
+
+        // Sheet 1: Amount Entry (starts off-screen below bottom edge)
         amountGroup.alpha = 1f
         amountGroup.translationY = SHEET_SLIDE_DP.dp
         amountField.text = ""
         shownDigits = -1
         payBtn.alpha = 1f
-        payBtn.translationY = 0f
         payBtn.text = "Pay"
 
-        // Allocation (Sheet starting off bottom)
+        // Sheet 2: Allocation Chooser (starts off-screen below bottom edge)
         allocGroup.alpha = 1f
         allocGroup.translationY = SHEET_SLIDE_DP.dp
         allocFood.alpha = 1f
-        allocFood.translationY = 0f
+        allocFood.scaleX = 1f
+        allocFood.scaleY = 1f
         allocShopping.alpha = 1f
-        allocShopping.translationY = 0f
 
-        // Confirm (Sheet ready to be revealed underneath)
+        // Sheet 3: Confirm State (starts off-screen below bottom edge)
         confirmGroup.alpha = 0f
-        confirmGroup.translationY = 0f
+        confirmGroup.translationY = SHEET_SLIDE_DP.dp
         finalPayNowBtn.alpha = 1f
-        finalPayNowBtn.translationY = 0f
+        finalPayNowBtn.scaleX = 1f
+        finalPayNowBtn.scaleY = 1f
         
         // Success
         successGroup.alpha = 0f
         successGroup.scaleX = 0.8f
         successGroup.scaleY = 0.8f
-        successGroup.translationY = 0f
         
         // Ring
         ringGroup.alpha = 0f
-        ringGroup.translationY = RISE_DP.dp
+        ringGroup.scaleX = 0.85f
+        ringGroup.scaleY = 0.85f
         ringView.progress = 1f
         ringAmount.text = "₹2000"
     }
@@ -152,6 +154,53 @@ class IntroScanScene @JvmOverloads constructor(
         handler.postDelayed({
             if (gen == generation) action()
         }, delayMs)
+    }
+
+    private fun simulateTap(targetView: View, onTapped: () -> Unit) {
+        targetView.post {
+            val targetLoc = IntArray(2)
+            targetView.getLocationInWindow(targetLoc)
+            val parentLoc = IntArray(2)
+            phoneContainer.getLocationInWindow(parentLoc)
+
+            // Tip of the desktop arrow cursor aims at the button
+            val targetTipX = (targetLoc[0] - parentLoc[0]) + (targetView.width * 0.45f)
+            val targetTipY = (targetLoc[1] - parentLoc[1]) + (targetView.height * 0.45f)
+
+            touchPointer.pivotX = 0f
+            touchPointer.pivotY = 0f
+            touchPointer.translationX = targetTipX + 16f.dp
+            touchPointer.translationY = targetTipY + 16f.dp
+            touchPointer.scaleX = 1f
+            touchPointer.scaleY = 1f
+            touchPointer.alpha = 0f
+
+            // 1. Desktop cursor glides smoothly into place
+            touchPointer.animate()
+                .alpha(1f)
+                .translationX(targetTipX)
+                .translationY(targetTipY)
+                .setDuration(260)
+                .setInterpolator(IntroTourActivity.EASE_OUT)
+                .withEndAction {
+                    // 2. Click down (tactile tip press)
+                    touchPointer.animate().scaleX(0.85f).scaleY(0.85f)
+                        .setDuration(80)
+                        .withEndAction {
+                            // Trigger target button action
+                            onTapped()
+                            // 3. Click release & fade
+                            touchPointer.animate().scaleX(1f).scaleY(1f)
+                                .setDuration(120)
+                                .withEndAction {
+                                    touchPointer.animate().alpha(0f).setDuration(240).start()
+                                }
+                                .start()
+                        }
+                        .start()
+                }
+                .start()
+        }
     }
 
     override fun playScene() {
@@ -173,24 +222,16 @@ class IntroScanScene @JvmOverloads constructor(
             start()
         }
 
-        // ── Beat 2: Amount entry (Starts at 2300) ─────────────────────────────────────────
-        val beat2Start = 2300L
+        // ── Beat 2: Sheet 1 (Amount) slides UP from bottom edge ──────────────────
+        val beat2Start = 2500L
 
         schedule(beat2Start) {
-            frame.animate().alpha(0f).scaleX(0.85f).scaleY(0.85f)
-                .setDuration(250)
-                .setInterpolator(IntroTourActivity.EASE_IN).start()
-        }
-
-        // Slide amount sheet up ONLY after scanner is completely gone
-        schedule(beat2Start + 280) {
-            amountGroup.alpha = 1f
             amountGroup.animate().translationY(0f)
                 .setDuration(450)
                 .setInterpolator(IntroTourActivity.EASE_OUT).start()
         }
 
-        val typeStart = beat2Start + 280 + 450 + 600L
+        val typeStart = beat2Start + 450 + 600L
         schedule(typeStart) {
             typeAnim = ValueAnimator.ofFloat(0f, AMOUNT_DIGITS.size.toFloat()).apply {
                 duration = KEYPRESS_MS * AMOUNT_DIGITS.size
@@ -214,111 +255,119 @@ class IntroScanScene @JvmOverloads constructor(
             }
         }
 
-        // ── Beat 3: Allocation chooser (Starts after typing) ─────────────────────────────────────────
-        val payBtnClickStart = typeStart + KEYPRESS_MS * AMOUNT_DIGITS.size + 1500L
+        // ── Beat 3: Touch Cursor taps Pay Button -> Sheet 2 (Allocation) slides UP ────
+        val payBtnClickStart = typeStart + KEYPRESS_MS * AMOUNT_DIGITS.size + 2200L
         schedule(payBtnClickStart) {
-            payBtn.animate().scaleX(0.95f).scaleY(0.95f)
-                .setStartDelay(0).setDuration(100)
-                .withEndAction {
-                    payBtn.animate().scaleX(1f).scaleY(1f)
-                        .setStartDelay(0).setDuration(100)
-                        .setInterpolator(IntroTourActivity.EASE_OUT).start()
-                }
-                .setInterpolator(IntroTourActivity.EASE_IN).start()
+            simulateTap(payBtn) {
+                payBtn.animate().scaleX(0.94f).scaleY(0.94f)
+                    .setDuration(100)
+                    .withEndAction {
+                        payBtn.animate().scaleX(1f).scaleY(1f)
+                            .setDuration(100)
+                            .setInterpolator(IntroTourActivity.EASE_OUT).start()
+                    }
+                    .setInterpolator(IntroTourActivity.EASE_IN).start()
+            }
         }
 
-        val beat3Start = payBtnClickStart + 300L
+        val beat3Start = payBtnClickStart + 500L
 
-        // Slide allocation sheet up over amount sheet
+        // Smooth physical slide-up of Allocation Sheet over Amount Sheet
         schedule(beat3Start) {
-            allocGroup.alpha = 1f
             allocGroup.animate().translationY(0f)
-                .setDuration(420)
-                .setInterpolator(IntroTourActivity.EASE_OUT).start()
-
-            amountGroup.animate().alpha(0f)
-                .setStartDelay(0).setDuration(120).start()
-        }
-        
-        // ── Click Simulation on Food ─────────────────────────────────────────
-        val clickStart = beat3Start + 420 + 1800L
-        schedule(clickStart) {
-            allocFood.animate().cancel()
-            allocFood.animate().scaleX(0.92f).scaleY(0.92f).alpha(0.6f)
-                .setDuration(100).setInterpolator(IntroTourActivity.EASE_OUT)
+                .setDuration(450)
+                .setInterpolator(IntroTourActivity.EASE_OUT)
                 .withEndAction {
-                    allocFood.animate().scaleX(1f).scaleY(1f).alpha(1f)
-                        .setDuration(150).setInterpolator(IntroTourActivity.EASE_OUT).start()
+                    // Once alloc sheet is fully covering, put amount sheet safely away
+                    amountGroup.translationY = SHEET_SLIDE_DP.dp
+                    amountGroup.alpha = 0f
                 }
                 .start()
         }
+        
+        // ── Beat 4: Touch Cursor taps Food Card -> Sheet 2 slides DOWN ───────────
+        val clickStart = beat3Start + 450 + 2600L
+        schedule(clickStart) {
+            simulateTap(allocFood) {
+                allocFood.animate().cancel()
+                allocFood.animate().scaleX(0.94f).scaleY(0.94f).alpha(0.6f)
+                    .setDuration(100).setInterpolator(IntroTourActivity.EASE_OUT)
+                    .withEndAction {
+                        allocFood.animate().scaleX(1f).scaleY(1f).alpha(1f)
+                            .setDuration(150).setInterpolator(IntroTourActivity.EASE_OUT).start()
+                    }
+                    .start()
+            }
+        }
 
-        // ── Beat 4: Allocation slides down, THEN Confirmation reveals cleanly ─────────────────────────
-        val beat4Start = clickStart + 250 + 350L
+        val beat4Start = clickStart + 500L
 
         schedule(beat4Start) {
-            // Alloc group slides DOWN off the bottom edge
-            allocGroup.animate().translationY(SHEET_SLIDE_DP.dp).alpha(0f)
-                .setDuration(350)
+            // Confirm sheet is resting ready underneath
+            confirmGroup.alpha = 1f
+            confirmGroup.translationY = 0f
+
+            // Allocation sheet slides down off the bottom edge
+            allocGroup.animate().translationY(SHEET_SLIDE_DP.dp)
+                .setDuration(400)
                 .setInterpolator(IntroTourActivity.EASE_IN).start()
         }
-
-        // Reveal confirm group after alloc group has cleared the screen
-        schedule(beat4Start + 320) {
-            confirmGroup.translationY = 0f
-            confirmGroup.alpha = 0f
-            confirmGroup.animate().alpha(1f)
-                .setDuration(220)
-                .setInterpolator(IntroTourActivity.EASE_OUT).start()
-        }
         
-        // ── Click Simulation on Pay Now ─────────────────────────────────────────
-        val payClickStart = beat4Start + 320 + 220 + 1600L
+        // ── Beat 5: Touch Cursor taps Pay Now -> Sheet 3 slides DOWN ───────────
+        val payClickStart = beat4Start + 400 + 2200L
         schedule(payClickStart) {
-            finalPayNowBtn.animate().cancel()
-            finalPayNowBtn.animate().scaleX(0.92f).scaleY(0.92f).alpha(0.6f)
-                .setDuration(100).setInterpolator(IntroTourActivity.EASE_OUT)
-                .withEndAction {
-                    finalPayNowBtn.animate().scaleX(1f).scaleY(1f).alpha(1f)
-                        .setDuration(150).setInterpolator(IntroTourActivity.EASE_OUT).start()
-                }
-                .start()
+            simulateTap(finalPayNowBtn) {
+                finalPayNowBtn.animate().cancel()
+                finalPayNowBtn.animate().scaleX(0.94f).scaleY(0.94f).alpha(0.6f)
+                    .setDuration(100).setInterpolator(IntroTourActivity.EASE_OUT)
+                    .withEndAction {
+                        finalPayNowBtn.animate().scaleX(1f).scaleY(1f).alpha(1f)
+                            .setDuration(150).setInterpolator(IntroTourActivity.EASE_OUT).start()
+                    }
+                    .start()
+            }
         }
         
-        // ── Beat 5: Confirm slides down, Success pops in ─────────────────────────────────────────
-        val beat5Start = payClickStart + 250 + 350L
+        val beat5Start = payClickStart + 500L
 
         schedule(beat5Start) {
+            amountGroup.translationY = SHEET_SLIDE_DP.dp
+            amountGroup.alpha = 0f
+            allocGroup.translationY = SHEET_SLIDE_DP.dp
+            allocGroup.alpha = 0f
+
             confirmGroup.animate().translationY(SHEET_SLIDE_DP.dp).alpha(0f)
-                .setDuration(300)
+                .setDuration(380)
                 .setInterpolator(IntroTourActivity.EASE_IN).start()
+
+            frame.animate().alpha(0f).setDuration(250).start()
         }
         
-        schedule(beat5Start + 200) {
+        schedule(beat5Start + 250) {
             successGroup.animate().alpha(1f).scaleX(1f).scaleY(1f)
                 .setDuration(350)
                 .setInterpolator(OVERSHOOT).start()
         }
         
-        // ── Beat 6: Ring deduction ─────────────────────────────────────────
-        val beat6Start = beat5Start + 200 + 350 + 1800L
+        // ── Beat 6: Success transitions to Wallet Ring deduction ──────────────
+        val beat6Start = beat5Start + 250 + 350 + 2500L
         
         schedule(beat6Start) {
             successGroup.animate().alpha(0f)
-                .setStartDelay(0).setDuration(250)
+                .setDuration(250)
                 .setInterpolator(IntroTourActivity.EASE_IN).start()
         }
         
         schedule(beat6Start + 250) {
-            ringGroup.animate().alpha(1f).translationY(0f)
-                .setStartDelay(0).setDuration(RISE_MS)
+            ringGroup.animate().alpha(1f).scaleX(1f).scaleY(1f)
+                .setDuration(350)
                 .setInterpolator(IntroTourActivity.EASE_OUT).start()
         }
         
-        // Deduct from 2000 to 1900 over 1000ms
-        schedule(beat6Start + 250 + RISE_MS + 800L) {
+        // Deduct from 2000 to 1900 over 1200ms
+        schedule(beat6Start + 250 + 350 + 1000L) {
             ringAnim = ValueAnimator.ofFloat(2000f, 1900f).apply {
-                duration = 1000L
+                duration = 1200L
                 interpolator = IntroTourActivity.EASE_OUT
                 addUpdateListener { a ->
                     val v = a.animatedValue as Float
@@ -331,7 +380,7 @@ class IntroScanScene @JvmOverloads constructor(
     }
 
     override fun sceneDurationMs(): Long {
-        return 25500L // Vastly extended for comfortable reading pacing (25.5 seconds)
+        return 25500L // 25.5 seconds spacious, comfortable reading pacing
     }
 
     /** Maps [t] onto 0..1 across [from]..[to], clamped, optionally eased. */
@@ -346,10 +395,6 @@ class IntroScanScene @JvmOverloads constructor(
         val OVERSHOOT = android.view.animation.OvershootInterpolator(1.2f)
         const val SHEET_SLIDE_DP = 360f
         const val SCAN_MS = 2000L
-        const val BEAT_HOLD_MS = 1200L
-        const val FADE_MS = 400L
-        const val RISE_MS = 600L
-        const val RISE_DP = 16f
         const val KEYPRESS_MS = 250L
         val AMOUNT_DIGITS = arrayOf("1", "10", "100")
     }

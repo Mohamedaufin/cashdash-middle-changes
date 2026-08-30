@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Subtle drop shadow -->
+    <path
+        android:pathData="M 4.5,2.5 L 4.5,19.5 L 8.8,15.5 L 12.8,23.5 L 15.8,22 L 11.8,14.5 L 18.5,14.5 Z"
+        android:fillColor="#55000000" />
+    <!-- Classic Desktop Cursor Arrow -->
+    <path
+        android:pathData="M 3,1 L 3,18 L 7.3,14 L 11.3,22 L 14.3,20.5 L 10.3,13 L 17,13 Z"
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FF181A20"
+        android:strokeWidth="1.5"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round" />
+</vector>
