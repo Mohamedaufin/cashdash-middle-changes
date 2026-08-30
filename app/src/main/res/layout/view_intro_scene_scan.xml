@@ -105,10 +105,12 @@
                 android:id="@+id/introScanAllocGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
+                android:layout_gravity="top"
                 android:orientation="vertical"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp">
+                android:paddingStart="10dp"
+                android:paddingTop="16dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="16dp">
 
                 <!-- Drag handle mimic -->
                 <View
@@ -121,7 +123,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
+                    android:layout_marginBottom="10dp"
                     android:text="Choose Expense Allocation"
                     android:textColor="?attr/textPrimaryColor"
                     android:textSize="10sp"
@@ -130,31 +132,28 @@
                 <!-- + Create New Allocation Button -->
                 <TextView
                     android:layout_width="match_parent"
-                    android:layout_height="24dp"
+                    android:layout_height="26dp"
                     android:background="@drawable/bg_intro_mini_card"
                     android:gravity="center"
                     android:text="+ Create New Allocation"
                     android:textColor="?attr/textPrimaryColor"
                     android:textSize="8sp" />
 
-                <Space android:layout_width="match_parent" android:layout_height="4dp" />
+                <Space android:layout_width="match_parent" android:layout_height="6dp" />
 
-                <!-- Skip allocation Button -->
                 <!-- Skip allocation Button -->
                 <TextView
                     android:layout_width="match_parent"
-                    android:layout_height="24dp"
+                    android:layout_height="26dp"
                     android:background="@drawable/bg_intro_mini_card"
                     android:backgroundTint="#40FF0000"
-
                     android:gravity="center"
                     android:text="Skip allocation"
                     android:textColor="#FFCCCC"
                     android:textSize="8sp"
                     android:textStyle="bold" />
 
-
-                <Space android:layout_width="match_parent" android:layout_height="8dp" />
+                <Space android:layout_width="match_parent" android:layout_height="12dp" />
 
                 <!-- Food row -->
                 <LinearLayout
@@ -163,10 +162,10 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_intro_mini_card"
                     android:orientation="vertical"
-                    android:paddingStart="10dp"
-                    android:paddingTop="8dp"
-                    android:paddingEnd="10dp"
-                    android:paddingBottom="8dp">
+                    android:paddingStart="12dp"
+                    android:paddingTop="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="12dp">
 
                     <!-- Top: Icon & Title -->
                     <LinearLayout
@@ -176,13 +175,13 @@
                         android:orientation="horizontal">
 
                         <FrameLayout
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
                             android:layout_marginEnd="8dp"
                             android:background="?attr/iconBackground">
                             <ImageView
-                                android:layout_width="10dp"
-                                android:layout_height="10dp"
+                                android:layout_width="12dp"
+                                android:layout_height="12dp"
                                 android:layout_gravity="center"
                                 android:src="@drawable/ic_category_food"
                                 android:tint="?attr/textPrimaryColor"
@@ -194,16 +193,16 @@
                             android:layout_height="wrap_content"
                             android:text="Food"
                             android:textColor="?attr/textPrimaryColor"
-                            android:textSize="9sp"
+                            android:textSize="10sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
                     <!-- Middle: Progress Bar Mimic -->
                     <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="12dp"
-                        android:layout_marginTop="8dp"
-                        android:layout_marginBottom="6dp">
+                        android:layout_height="14dp"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginBottom="8dp">
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
@@ -226,31 +225,32 @@
                             android:layout_alignParentStart="true"
                             android:text="Spent: ₹350"
                             android:textColor="?attr/textPrimaryColor"
-                            android:textSize="7sp" />
+                            android:textSize="8sp" />
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
                             android:text="Limit: ₹650"
                             android:textColor="?attr/textPrimaryColor"
-                            android:textSize="7sp" />
+                            android:textSize="8sp" />
                     </RelativeLayout>
                 </LinearLayout>
 
                 <Space
                     android:layout_width="match_parent"
-                    android:layout_height="6dp" />
+                    android:layout_height="12dp" />
 
                 <!-- Shopping row (RED) -->
                 <LinearLayout
+                    android:id="@+id/introScanAllocShopping"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_intro_mini_card"
                     android:orientation="vertical"
-                    android:paddingStart="10dp"
-                    android:paddingTop="8dp"
-                    android:paddingEnd="10dp"
-                    android:paddingBottom="8dp">
+                    android:paddingStart="12dp"
+                    android:paddingTop="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="12dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -258,13 +258,13 @@
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
                         <FrameLayout
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
                             android:layout_marginEnd="8dp"
                             android:background="?attr/iconBackground">
                             <ImageView
-                                android:layout_width="10dp"
-                                android:layout_height="10dp"
+                                android:layout_width="12dp"
+                                android:layout_height="12dp"
                                 android:layout_gravity="center"
                                 android:src="@drawable/ic_category_shopping"
                                 android:tint="?attr/textPrimaryColor"
@@ -275,15 +275,15 @@
                             android:layout_height="wrap_content"
                             android:text="Shopping"
                             android:textColor="?attr/textPrimaryColor"
-                            android:textSize="9sp"
+                            android:textSize="10sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
                     <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="12dp"
-                        android:layout_marginTop="8dp"
-                        android:layout_marginBottom="6dp">
+                        android:layout_height="14dp"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginBottom="8dp">
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
@@ -304,88 +304,14 @@
                             android:layout_alignParentStart="true"
                             android:text="Spent: ₹350"
                             android:textColor="?attr/textPrimaryColor"
-                            android:textSize="7sp" />
+                            android:textSize="8sp" />
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
                             android:text="Limit: ₹200"
                             android:textColor="?attr/textPrimaryColor"
-                            android:textSize="7sp" />
-                    </RelativeLayout>
-                </LinearLayout>
-
-                <Space
-                    android:layout_width="match_parent"
-                    android:layout_height="6dp" />
-
-                <!-- Travel row (Empty) -->
-                <LinearLayout
-                    android:id="@+id/introScanAllocTravel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_intro_mini_card"
-                    android:orientation="vertical"
-                    android:paddingStart="10dp"
-                    android:paddingTop="8dp"
-                    android:paddingEnd="10dp"
-                    android:paddingBottom="8dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-                        <FrameLayout
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_marginEnd="8dp"
-                            android:background="?attr/iconBackground">
-                            <ImageView
-                                android:layout_width="10dp"
-                                android:layout_height="10dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_category_transport"
-                                android:tint="?attr/textPrimaryColor"
-                                android:contentDescription="@null" />
-                        </FrameLayout>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Travel"
-                            android:textColor="?attr/textPrimaryColor"
-                            android:textSize="9sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <FrameLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="12dp"
-                        android:layout_marginTop="8dp"
-                        android:layout_marginBottom="6dp">
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="@drawable/bg_glass_progress_outer" />
-                    </FrameLayout>
-
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentStart="true"
-                            android:text="Spent: ₹0"
-                            android:textColor="?attr/textPrimaryColor"
-                            android:textSize="7sp" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:text="Limit: ₹500"
-                            android:textColor="?attr/textPrimaryColor"
-                            android:textSize="7sp" />
+                            android:textSize="8sp" />
                     </RelativeLayout>
                 </LinearLayout>
             </LinearLayout>

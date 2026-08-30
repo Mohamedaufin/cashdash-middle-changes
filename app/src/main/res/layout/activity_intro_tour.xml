@@ -30,12 +30,7 @@
         android:id="@+id/introTourBrand"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:letterSpacing="0.26"
-        android:text="@string/intro_tour_brand"
-        android:textColor="?attr/textMutedColor"
-        android:textSize="11sp"
-        android:textStyle="bold"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -47,12 +42,12 @@
         android:id="@+id/introTourPager"
         android:layout_width="0dp"
         android:layout_height="340dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="28dp"
         android:layout_marginBottom="40dp"
         app:layout_constraintBottom_toTopOf="@id/introTourEyebrow"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/introTourBrand" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <!-- Numbered like a spec sheet. It gives each page an identity beyond its headline and
          tells you where you are without counting dots. -->
