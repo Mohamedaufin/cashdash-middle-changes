@@ -18,6 +18,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import androidx.core.text.HtmlCompat
 import android.widget.CheckBox
 import android.widget.LinearLayout
+import androidx.activity.OnBackPressedCallback
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.method.LinkMovementMethod
@@ -160,6 +161,17 @@ class EntryActivity : ThemedActivity() {
             edtEmail.clearFocus()
             edtPassword.clearFocus()
         }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (layoutAuthForm.visibility == View.VISIBLE) {
+                    tvBack.performClick()
+                } else {
+                    finish()
+                    overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
+                }
+            }
+        })
 
         btnAction.setOnClickListener {
             animateAndStart(btnAction) {

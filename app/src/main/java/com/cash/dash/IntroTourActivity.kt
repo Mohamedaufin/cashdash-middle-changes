@@ -142,6 +142,7 @@ class IntroTourActivity : ThemedActivity() {
 
     override fun onResume() {
         super.onResume()
+        navigated = false
         if (!introduced) {
             introduced = true
             val chrome = mutableListOf(brand, eyebrow, title, body, dotsRow)
@@ -356,8 +357,6 @@ class IntroTourActivity : ThemedActivity() {
             entryIntent.putExtras(intent.extras!!)
         }
         startActivity(entryIntent)
-        finish()
-
         overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
     }
 
