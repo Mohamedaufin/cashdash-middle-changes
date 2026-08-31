@@ -13,11 +13,10 @@ import android.widget.TextView
 /**
  * Page 2: In-app payment flow:
  * 1. Scan happening
- * 2. Amount already prefilled (₹100)
- * 3. Pay button clicked -> Choose Allocation sheet slides up
- * 4. Cursor clicks 1st allocation (Food)
- * 5. Confirm sheet slides up -> Cursor clicks "Pay Now"
- * 6. Payment Successful view appears
+ * 2. Amount already prefilled (₹100) -> Sheet 1 slides up
+ * 3. Pay button clicked -> Sheet 1 slides down, Sheet 2 (Allocation) slides up
+ * 4. Cursor clicks 1st allocation (Food) -> Sheet 2 slides down, Sheet 3 (Confirm) slides up
+ * 5. Cursor clicks "Pay Now" -> Sheet 3 slides down, Payment Successful appears cleanly
  */
 class IntroScanScene @JvmOverloads constructor(
     context: Context,
@@ -97,14 +96,14 @@ class IntroScanScene @JvmOverloads constructor(
         touchPointer.scaleY = 1f
 
         // Sheet 1: Amount Entry (starts off-screen, prefilled ₹100)
-        amountGroup.alpha = 1f
+        amountGroup.alpha = 0f
         amountGroup.translationY = SHEET_SLIDE_DP.dp
         amountField.text = "100"
         payBtn.alpha = 1f
         payBtn.text = "Pay ₹100"
 
         // Sheet 2: Allocation Chooser (starts off-screen)
-        allocGroup.alpha = 1f
+        allocGroup.alpha = 0f
         allocGroup.translationY = SHEET_SLIDE_DP.dp
         allocFood.alpha = 1f
         allocFood.scaleX = 1f
@@ -112,15 +111,15 @@ class IntroScanScene @JvmOverloads constructor(
         allocShopping.alpha = 1f
 
         // Sheet 3: Confirm & Pay (starts off-screen)
-        confirmGroup.alpha = 1f
+        confirmGroup.alpha = 0f
         confirmGroup.translationY = SHEET_SLIDE_DP.dp
         finalPayNowBtn.scaleX = 1f
         finalPayNowBtn.scaleY = 1f
 
         // Payment Success
         successGroup.alpha = 0f
-        successGroup.scaleX = 0.8f
-        successGroup.scaleY = 0.8f
+        successGroup.scaleX = 0.85f
+        successGroup.scaleY = 0.85f
     }
 
     private fun schedule(delayMs: Long, action: () -> Unit) {
@@ -153,19 +152,19 @@ class IntroScanScene @JvmOverloads constructor(
                 .alpha(1f)
                 .translationX(targetTipX)
                 .translationY(targetTipY)
-                .setDuration(260)
+                .setDuration(240)
                 .setInterpolator(IntroTourActivity.EASE_OUT)
                 .withEndAction {
                     // Click down
                     touchPointer.animate().scaleX(0.85f).scaleY(0.85f)
-                        .setDuration(80)
+                        .setDuration(70)
                         .withEndAction {
                             onTapped()
                             // Release & fade
                             touchPointer.animate().scaleX(1f).scaleY(1f)
-                                .setDuration(120)
+                                .setDuration(100)
                                 .withEndAction {
-                                    touchPointer.animate().alpha(0f).setDuration(240).start()
+                                    touchPointer.animate().alpha(0f).setDuration(200).start()
                                 }
                                 .start()
                         }
@@ -195,88 +194,103 @@ class IntroScanScene @JvmOverloads constructor(
         }
 
         // ── 2. Amount sheet slides UP (prefilled ₹100) ───────────────────────────
-        val sheet1Start = 1800L
+        val sheet1Start = 1700L
         schedule(sheet1Start) {
-            frame.animate().alpha(0f).setDuration(300).start()
-            amountGroup.animate().translationY(0f)
-                .setDuration(400)
-                .setInterpolator(IntroTourActivity.EASE_OUT).start()
-        }
-
-        // ── 3. Pay button clicked by cursor -> Sheet 2 (Allocation) slides UP ────
-        val payClickStart = sheet1Start + 400 + 800L
-        schedule(payClickStart) {
-            simulateTap(payBtn) {
-                payBtn.animate().scaleX(0.94f).scaleY(0.94f)
-                    .setDuration(100)
-                    .withEndAction {
-                        payBtn.animate().scaleX(1f).scaleY(1f)
-                            .setDuration(100)
-                            .setInterpolator(IntroTourActivity.EASE_OUT).start()
-                    }
-                    .setInterpolator(IntroTourActivity.EASE_IN).start()
-            }
-        }
-
-        val allocStart = payClickStart + 350L
-        schedule(allocStart) {
-            allocGroup.animate().translationY(0f)
-                .setDuration(420)
+            frame.animate().alpha(0f).setDuration(260).start()
+            amountGroup.alpha = 1f
+            amountGroup.animate()
+                .translationY(0f)
+                .setDuration(350)
                 .setInterpolator(IntroTourActivity.EASE_OUT)
-                .withEndAction {
-                    amountGroup.translationY = SHEET_SLIDE_DP.dp
-                    amountGroup.alpha = 0f
-                }
                 .start()
         }
 
-        // ── 4. Cursor clicks 1st allocation (Food) -> Sheet 3 (Confirm) slides UP ──
-        val selectFoodStart = allocStart + 420 + 900L
-        schedule(selectFoodStart) {
-            simulateTap(allocFood) {
-                allocFood.animate().scaleX(0.96f).scaleY(0.96f).setDuration(80)
+        // ── 3. Pay button clicked by cursor -> Sheet 1 exits, Sheet 2 enters ────
+        val payClickStart = sheet1Start + 350 + 800L
+        schedule(payClickStart) {
+            simulateTap(payBtn) {
+                payBtn.animate().scaleX(0.94f).scaleY(0.94f).setDuration(80)
                     .withEndAction {
-                        allocFood.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                        payBtn.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
+
+                        // Dismiss Sheet 1 down cleanly
+                        amountGroup.animate()
+                            .translationY(SHEET_SLIDE_DP.dp)
+                            .alpha(0f)
+                            .setDuration(240)
+                            .setInterpolator(IntroTourActivity.EASE_IN)
+                            .withEndAction {
+                                // Slide up Sheet 2 (Allocation) cleanly
+                                allocGroup.alpha = 1f
+                                allocGroup.translationY = SHEET_SLIDE_DP.dp
+                                allocGroup.animate()
+                                    .translationY(0f)
+                                    .setDuration(320)
+                                    .setInterpolator(IntroTourActivity.EASE_OUT)
+                                    .start()
+                            }
+                            .start()
                     }
                     .start()
             }
         }
 
-        val confirmStart = selectFoodStart + 350L
-        schedule(confirmStart) {
-            confirmGroup.animate().translationY(0f)
-                .setDuration(420)
-                .setInterpolator(IntroTourActivity.EASE_OUT)
-                .withEndAction {
-                    allocGroup.translationY = SHEET_SLIDE_DP.dp
-                    allocGroup.alpha = 0f
-                }
-                .start()
+        // ── 4. Cursor clicks 1st allocation (Food) -> Sheet 2 exits, Sheet 3 enters ──
+        // payClickStart (2850) + tap (410) + exit (240) + enter (320) + hold (800) = ~4620ms
+        val selectFoodStart = payClickStart + 410 + 240 + 320 + 800L
+        schedule(selectFoodStart) {
+            simulateTap(allocFood) {
+                allocFood.animate().scaleX(0.95f).scaleY(0.95f).setDuration(80)
+                    .withEndAction {
+                        allocFood.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
+
+                        // Dismiss Sheet 2 down cleanly
+                        allocGroup.animate()
+                            .translationY(SHEET_SLIDE_DP.dp)
+                            .alpha(0f)
+                            .setDuration(240)
+                            .setInterpolator(IntroTourActivity.EASE_IN)
+                            .withEndAction {
+                                // Slide up Sheet 3 (Confirm & Pay) cleanly
+                                confirmGroup.alpha = 1f
+                                confirmGroup.translationY = SHEET_SLIDE_DP.dp
+                                confirmGroup.animate()
+                                    .translationY(0f)
+                                    .setDuration(320)
+                                    .setInterpolator(IntroTourActivity.EASE_OUT)
+                                    .start()
+                            }
+                            .start()
+                    }
+                    .start()
+            }
         }
 
-        // ── 5. Cursor clicks "Pay Now" -> Sheet 3 exits & Payment Successful appears
-        val finalPayClickStart = confirmStart + 420 + 900L
+        // ── 5. Cursor clicks "Pay Now" -> Sheet 3 exits & Payment Successful appears ──
+        // selectFoodStart (4620) + tap (410) + exit (240) + enter (320) + hold (800) = ~6390ms
+        val finalPayClickStart = selectFoodStart + 410 + 240 + 320 + 800L
         schedule(finalPayClickStart) {
             simulateTap(finalPayNowBtn) {
                 finalPayNowBtn.animate().scaleX(0.94f).scaleY(0.94f).setDuration(80)
                     .withEndAction {
-                        finalPayNowBtn.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                        finalPayNowBtn.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
 
-                        // Dismiss confirm sheet
+                        // Dismiss Sheet 3 down cleanly
                         confirmGroup.animate()
                             .translationY(SHEET_SLIDE_DP.dp)
-                            .setDuration(350)
+                            .alpha(0f)
+                            .setDuration(260)
                             .setInterpolator(IntroTourActivity.EASE_IN)
-                            .start()
-
-                        // Animate Payment Successful
-                        successGroup.animate()
-                            .alpha(1f)
-                            .scaleX(1f)
-                            .scaleY(1f)
-                            .setStartDelay(200)
-                            .setDuration(350)
-                            .setInterpolator(IntroTourActivity.EASE_OUT)
+                            .withEndAction {
+                                // Animate Payment Successful cleanly into the center
+                                successGroup.animate()
+                                    .alpha(1f)
+                                    .scaleX(1f)
+                                    .scaleY(1f)
+                                    .setDuration(320)
+                                    .setInterpolator(IntroTourActivity.EASE_OUT)
+                                    .start()
+                            }
                             .start()
                     }
                     .start()
