@@ -4,7 +4,6 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.util.AttributeSet
 import android.view.LayoutInflater
-import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
 import java.text.NumberFormat
@@ -13,14 +12,8 @@ import java.util.Locale
 /**
  * Page 1: the wallet balance you set the first time you open the app.
  *
- * The figure is typed in a digit at a time — 2, 20, 200, 2000 — the way BalanceSetupActivity's
- * numpad enters it, then the ring closes around it. Typing rather than counting up is the
- * point of difference from every other balance animation: this number is not being measured,
- * it is being **declared**. You are telling the app what you have.
- *
- * The ring finishes closed. Immediately after setup the balance IS the budget, so full is the
- * only honest state for it, and it gives the page a different silhouette from a partial ring
- * anyone will meet later on Home.
+ * The figure is typed in digit-by-digit — 2, 20, 200, 2000 — with clear, readable pacing.
+ * The ring then smoothly sweeps around it at a relaxed, premium pace.
  */
 class IntroWalletScene @JvmOverloads constructor(
     context: Context,
@@ -59,6 +52,7 @@ class IntroWalletScene @JvmOverloads constructor(
         amount.scaleY = 1f
         label.alpha = 0f
         cycle.alpha = 0f
+        cycle.translationY = 8f.dp
         ring.progress = 0f
     }
 
@@ -68,10 +62,10 @@ class IntroWalletScene @JvmOverloads constructor(
         label.animate().alpha(1f).setStartDelay(120).setDuration(300)
             .setInterpolator(IntroTourActivity.EASE_OUT).start()
 
-        // One keypress per digit. Linear on purpose: someone entering a number does not
-        // accelerate, and easing this would read as the figure counting itself up.
+        // Deliberate, clear digit typing (2 -> 20 -> 200 -> 2,000)
+        val typeStart = 260L
         typeAnimator = ValueAnimator.ofFloat(0f, DIGITS.size.toFloat()).apply {
-            startDelay = 220
+            startDelay = typeStart
             duration = KEYPRESS_MS * DIGITS.size
             addUpdateListener { a ->
                 val n = (a.animatedValue as Float).toInt().coerceIn(0, DIGITS.size)
@@ -79,31 +73,47 @@ class IntroWalletScene @JvmOverloads constructor(
                 shownDigits = n
                 if (n == 0) return@addUpdateListener
                 amount.text = context.getString(R.string.intro_tour_amount, money.format(DIGITS[n - 1]))
-                // The nudge a key gives back. Small enough to feel rather than watch.
+                
+                // Subtle tactile nudge on each key entry
                 amount.animate().cancel()
-                amount.scaleX = 1.045f
-                amount.scaleY = 1.045f
+                amount.scaleX = 1.05f
+                amount.scaleY = 1.05f
                 amount.animate().scaleX(1f).scaleY(1f).setDuration(160)
                     .setInterpolator(IntroTourActivity.EASE_OUT).start()
             }
             start()
         }
 
-        // Starts as the last digit lands, so the ring reads as a consequence of the figure.
+        // Smooth, relaxed circular ring loading (sweeps calmly over 1500ms)
+        val ringStart = typeStart + (KEYPRESS_MS * DIGITS.size) + 120L
         ringAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
-            startDelay = 220 + KEYPRESS_MS * (DIGITS.size - 1)
-            duration = 880
+            startDelay = ringStart
+            duration = RING_DURATION_MS
             interpolator = IntroTourActivity.EASE_OUT
             addUpdateListener { a -> ring.progress = a.animatedValue as Float }
             start()
         }
 
-        cycle.animate().alpha(1f).setStartDelay(1180).setDuration(360)
-            .setInterpolator(IntroTourActivity.EASE_OUT).start()
+        // "Renews every 7 days" badge floats in as the ring completes
+        val cycleStart = ringStart + RING_DURATION_MS - 400L
+        cycle.animate()
+            .alpha(1f)
+            .translationY(0f)
+            .setStartDelay(cycleStart)
+            .setDuration(400)
+            .setInterpolator(IntroTourActivity.EASE_OUT)
+            .start()
     }
 
+    override fun sceneDurationMs(): Long {
+        return 5200L
+    }
+
+    private val Float.dp: Float get() = this * resources.displayMetrics.density
+
     private companion object {
-        const val KEYPRESS_MS = 150L
+        const val KEYPRESS_MS = 280L
+        const val RING_DURATION_MS = 1500L
         /** What the amount reads after each keypress, as BalanceSetupActivity's pad builds it. */
         val DIGITS = intArrayOf(2, 20, 200, 2000)
     }
