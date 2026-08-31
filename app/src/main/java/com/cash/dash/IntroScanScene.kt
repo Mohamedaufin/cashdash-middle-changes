@@ -11,11 +11,13 @@ import android.widget.FrameLayout
 import android.widget.TextView
 
 /**
- * Page 2: Simple in-app payment flow:
+ * Page 2: In-app payment flow:
  * 1. Scan happening
  * 2. Amount already prefilled (₹100)
- * 3. Pay button clicked
- * 4. Choose Allocation sheet slides up
+ * 3. Pay button clicked -> Choose Allocation sheet slides up
+ * 4. Cursor clicks 1st allocation (Food)
+ * 5. Confirm sheet slides up -> Cursor clicks "Pay Now"
+ * 6. Payment Successful view appears
  */
 class IntroScanScene @JvmOverloads constructor(
     context: Context,
@@ -34,6 +36,11 @@ class IntroScanScene @JvmOverloads constructor(
     private val allocGroup: View
     private val allocFood: View
     private val allocShopping: View
+
+    private val confirmGroup: View
+    private val finalPayNowBtn: View
+
+    private val successGroup: View
 
     private var timeline: ValueAnimator? = null
 
@@ -55,6 +62,11 @@ class IntroScanScene @JvmOverloads constructor(
         allocGroup = findViewById(R.id.introScanAllocGroup)
         allocFood = findViewById(R.id.introScanAllocFood)
         allocShopping = findViewById(R.id.introScanAllocShopping)
+
+        confirmGroup = findViewById(R.id.introScanConfirmGroup)
+        finalPayNowBtn = findViewById(R.id.introScanFinalPayNow)
+
+        successGroup = findViewById(R.id.introScanSuccess)
     }
 
     override fun resetScene() {
@@ -62,7 +74,12 @@ class IntroScanScene @JvmOverloads constructor(
         handler.removeCallbacksAndMessages(null)
         timeline?.cancel(); timeline = null
 
-        val all = listOf(phoneContainer, frame, touchPointer, amountGroup, amountField, payBtn, allocGroup, allocFood, allocShopping)
+        val all = listOf(
+            phoneContainer, frame, touchPointer,
+            amountGroup, amountField, payBtn,
+            allocGroup, allocFood, allocShopping,
+            confirmGroup, finalPayNowBtn, successGroup
+        )
         for (v in all) v.animate().cancel()
 
         // Scanner (Centered)
@@ -79,18 +96,31 @@ class IntroScanScene @JvmOverloads constructor(
         touchPointer.scaleX = 1f
         touchPointer.scaleY = 1f
 
-        // Sheet 1: Amount Entry (starts off-screen below bottom edge, with prefilled ₹100)
+        // Sheet 1: Amount Entry (starts off-screen, prefilled ₹100)
         amountGroup.alpha = 1f
         amountGroup.translationY = SHEET_SLIDE_DP.dp
         amountField.text = "100"
         payBtn.alpha = 1f
         payBtn.text = "Pay ₹100"
 
-        // Sheet 2: Allocation Chooser (starts off-screen below bottom edge)
+        // Sheet 2: Allocation Chooser (starts off-screen)
         allocGroup.alpha = 1f
         allocGroup.translationY = SHEET_SLIDE_DP.dp
         allocFood.alpha = 1f
+        allocFood.scaleX = 1f
+        allocFood.scaleY = 1f
         allocShopping.alpha = 1f
+
+        // Sheet 3: Confirm & Pay (starts off-screen)
+        confirmGroup.alpha = 1f
+        confirmGroup.translationY = SHEET_SLIDE_DP.dp
+        finalPayNowBtn.scaleX = 1f
+        finalPayNowBtn.scaleY = 1f
+
+        // Payment Success
+        successGroup.alpha = 0f
+        successGroup.scaleX = 0.8f
+        successGroup.scaleY = 0.8f
     }
 
     private fun schedule(delayMs: Long, action: () -> Unit) {
@@ -164,7 +194,7 @@ class IntroScanScene @JvmOverloads constructor(
             start()
         }
 
-        // ── 2. Amount sheet slides UP (already prefilled ₹100) ───────────────────
+        // ── 2. Amount sheet slides UP (prefilled ₹100) ───────────────────────────
         val sheet1Start = 1800L
         schedule(sheet1Start) {
             amountGroup.animate().translationY(0f)
@@ -172,7 +202,7 @@ class IntroScanScene @JvmOverloads constructor(
                 .setInterpolator(IntroTourActivity.EASE_OUT).start()
         }
 
-        // ── 3. Pay button clicked by cursor ─────────────────────────────────────
+        // ── 3. Pay button clicked by cursor -> Sheet 2 (Allocation) slides UP ────
         val payClickStart = sheet1Start + 400 + 800L
         schedule(payClickStart) {
             simulateTap(payBtn) {
@@ -187,7 +217,6 @@ class IntroScanScene @JvmOverloads constructor(
             }
         }
 
-        // ── 4. Choose Allocation sheet slides UP ─────────────────────────────────
         val allocStart = payClickStart + 350L
         schedule(allocStart) {
             allocGroup.animate().translationY(0f)
@@ -199,10 +228,63 @@ class IntroScanScene @JvmOverloads constructor(
                 }
                 .start()
         }
+
+        // ── 4. Cursor clicks 1st allocation (Food) -> Sheet 3 (Confirm) slides UP ──
+        val selectFoodStart = allocStart + 420 + 900L
+        schedule(selectFoodStart) {
+            simulateTap(allocFood) {
+                allocFood.animate().scaleX(0.96f).scaleY(0.96f).setDuration(80)
+                    .withEndAction {
+                        allocFood.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                    }
+                    .start()
+            }
+        }
+
+        val confirmStart = selectFoodStart + 350L
+        schedule(confirmStart) {
+            confirmGroup.animate().translationY(0f)
+                .setDuration(420)
+                .setInterpolator(IntroTourActivity.EASE_OUT)
+                .withEndAction {
+                    allocGroup.translationY = SHEET_SLIDE_DP.dp
+                    allocGroup.alpha = 0f
+                }
+                .start()
+        }
+
+        // ── 5. Cursor clicks "Pay Now" -> Sheet 3 exits & Payment Successful appears
+        val finalPayClickStart = confirmStart + 420 + 900L
+        schedule(finalPayClickStart) {
+            simulateTap(finalPayNowBtn) {
+                finalPayNowBtn.animate().scaleX(0.94f).scaleY(0.94f).setDuration(80)
+                    .withEndAction {
+                        finalPayNowBtn.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+
+                        // Dismiss confirm sheet
+                        confirmGroup.animate()
+                            .translationY(SHEET_SLIDE_DP.dp)
+                            .setDuration(350)
+                            .setInterpolator(IntroTourActivity.EASE_IN)
+                            .start()
+
+                        // Animate Payment Successful
+                        successGroup.animate()
+                            .alpha(1f)
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .setStartDelay(200)
+                            .setDuration(350)
+                            .setInterpolator(IntroTourActivity.EASE_OUT)
+                            .start()
+                    }
+                    .start()
+            }
+        }
     }
 
     override fun sceneDurationMs(): Long {
-        return 7500L
+        return 9800L
     }
 
     /** Maps [t] onto 0..1 across [from]..[to], clamped, optionally eased. */

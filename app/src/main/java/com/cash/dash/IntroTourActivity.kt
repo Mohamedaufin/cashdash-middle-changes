@@ -2,9 +2,11 @@ package com.cash.dash
 
 import android.animation.ValueAnimator
 import android.content.Intent
+import android.graphics.Rect
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.MotionEvent
 import android.view.View
 import android.view.animation.OvershootInterpolator
 import android.view.animation.PathInterpolator
@@ -310,6 +312,37 @@ class IntroTourActivity : ThemedActivity() {
             .setStartDelay(220).setDuration(460)
             .setInterpolator(OvershootInterpolator(1.1f))
             .start()
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        // Allow direct clicks on the Get Started button if visible
+        if (::cta.isInitialized && cta.visibility == View.VISIBLE) {
+            val ctaRect = Rect()
+            cta.getGlobalVisibleRect(ctaRect)
+            if (ctaRect.contains(ev.rawX.toInt(), ev.rawY.toInt())) {
+                return super.dispatchTouchEvent(ev)
+            }
+        }
+
+        // Allow swiping anywhere across the entire screen by forwarding touches to the ViewPager2
+        if (::pager.isInitialized) {
+            val pagerRect = Rect()
+            pager.getGlobalVisibleRect(pagerRect)
+            if (!pagerRect.contains(ev.rawX.toInt(), ev.rawY.toInt())) {
+                val pagerLoc = IntArray(2)
+                pager.getLocationOnScreen(pagerLoc)
+                val clonedEvent = MotionEvent.obtain(ev)
+                clonedEvent.setLocation(
+                    ev.rawX - pagerLoc[0],
+                    pager.height / 2f
+                )
+                val handled = pager.dispatchTouchEvent(clonedEvent)
+                clonedEvent.recycle()
+                if (handled) return true
+            }
+        }
+
+        return super.dispatchTouchEvent(ev)
     }
 
     @Suppress("DEPRECATION")
