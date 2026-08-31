@@ -1,63 +1,206 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Page 1: the wallet balance you set on your first run.
-
-  Home's ring, with the figure typed into it a digit at a time the way BalanceSetupActivity's
-  numpad enters it. The ring finishes full rather than part way round, and that is the point:
-  the moment you finish setup you are holding all of your budget, so the one state this ring
-  can honestly be in is closed.
-
-  A merge root: IntroWalletScene inflates this into itself, so the scene view IS the frame
-  rather than wrapping one.
+  Page 1: Enter wallet balance and tentative date setup flow:
+  1. Card appears: "Setup Your Wallet" / "Allocate what you want to spend"
+  2. Types ₹2000 into wallet balance box
+  3. Tentative date box populates: "25 Oct (7 Days)"
+  4. Desktop cursor clicks "Save Balance"
+  5. Card dissolves, and the Wallet Ring smoothly loads with:
+     "This money is tentatively till 25 Oct" at the top!
 -->
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <com.cash.dash.IntroWalletRingView
-        android:id="@+id/introWalletRing"
-        android:layout_width="216dp"
-        android:layout_height="216dp"
-        android:layout_gravity="center" />
+    <!-- Container Frame -->
+    <FrameLayout
+        android:id="@+id/introWalletCanvas"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipChildren="false"
+        android:clipToPadding="false">
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:gravity="center"
-        android:orientation="vertical">
-
-        <TextView
-            android:id="@+id/introWalletAmount"
-            android:layout_width="wrap_content"
+        <!-- ================= Beat 1: Setup Card ================= -->
+        <LinearLayout
+            android:id="@+id/introWalletSetupCard"
+            android:layout_width="260dp"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="7dp"
-            android:includeFontPadding="false"
-            android:text="@string/intro_wallet_zero"
-            android:textColor="?attr/textPrimaryColor"
-            android:textSize="@dimen/text_headline"
-            android:textStyle="bold"
-            tools:text="₹2,000" />
+            android:layout_gravity="center"
+            android:background="@drawable/bg_intro_feature_card"
+            android:elevation="6dp"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="16dp">
 
-        <TextView
-            android:id="@+id/introWalletLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/intro_wallet_label"
-            android:textColor="?attr/textMutedColor"
-            android:textSize="@dimen/text_body"
-            android:textStyle="bold" />
-    </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Setup Your Wallet"
+                android:textColor="?attr/textPrimaryColor"
+                android:textSize="13sp"
+                android:textStyle="bold" />
 
-    <!-- Sits under the ring rather than inside it: the cycle is a fact about the balance,
-         not part of the figure. -->
-    <TextView
-        android:id="@+id/introWalletCycle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal|bottom"
-        android:letterSpacing="0.14"
-        android:text="@string/intro_wallet_cycle"
-        android:textAllCaps="true"
-        android:textColor="?attr/textMutedColor"
-        android:textSize="10sp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Allocate what you want to spend"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="9sp" />
+
+            <!-- Field 1: Amount Box -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Wallet balance"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="8sp" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:layout_marginTop="4dp"
+                android:background="?attr/inputBackground"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp">
+
+                <TextView
+                    android:id="@+id/introWalletInputField"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical|start"
+                    android:includeFontPadding="false"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    tools:text="₹2,000" />
+            </FrameLayout>
+
+            <!-- Field 2: Tentative Date Box -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Tentatively till"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="8sp" />
+
+            <LinearLayout
+                android:id="@+id/introWalletDateFieldBox"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:layout_marginTop="4dp"
+                android:background="?attr/inputBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginEnd="8dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_calendar_vector"
+                    android:tint="?attr/textPrimaryColor" />
+
+                <TextView
+                    android:id="@+id/introWalletDateField"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:includeFontPadding="false"
+                    android:text="25 Oct (7 Days)"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Save Button -->
+            <TextView
+                android:id="@+id/introWalletSaveBtn"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_intro_cta"
+                android:gravity="center"
+                android:text="Save Balance"
+                android:textColor="?attr/primaryActionText"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- ================= Beat 2: Wallet Ring Group ================= -->
+        <LinearLayout
+            android:id="@+id/introWalletRingGroup"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:alpha="0">
+
+            <!-- Top Tentative Date Text -->
+            <TextView
+                android:id="@+id/introWalletTentativeTop"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:layout_marginBottom="12dp"
+                android:letterSpacing="0.04"
+                android:text="This money is tentatively till 25 Oct"
+                android:textColor="?attr/textMutedColor"
+                android:textSize="11sp" />
+
+            <FrameLayout
+                android:layout_width="210dp"
+                android:layout_height="210dp"
+                android:layout_gravity="center_horizontal">
+
+                <com.cash.dash.IntroWalletRingView
+                    android:id="@+id/introWalletRing"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/introWalletAmount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="6dp"
+                        android:includeFontPadding="false"
+                        android:text="₹2,000"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textSize="@dimen/text_headline"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/introWalletLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/intro_wallet_label"
+                        android:textColor="?attr/textMutedColor"
+                        android:textSize="@dimen/text_body"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- ================= Desktop Cursor ================= -->
+        <ImageView
+            android:id="@+id/introWalletCursor"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:alpha="0"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_desktop_cursor" />
+
+    </FrameLayout>
 </merge>
