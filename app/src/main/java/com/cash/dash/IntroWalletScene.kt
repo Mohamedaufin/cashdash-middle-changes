@@ -2,6 +2,7 @@ package com.cash.dash
 
 import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
@@ -13,12 +14,13 @@ import java.text.NumberFormat
 import java.util.Locale
 
 /**
- * Page 1: Enter wallet balance and tentative date setup flow:
+ * Page 1: Enter wallet balance and choose tentative date setup flow:
  * 1. Card appears: "Setup Your Wallet" / "Allocate what you want to spend"
  * 2. Types ₹2000 into wallet balance box
- * 3. Tentative date box populates: "25 Oct (7 Days)"
- * 4. Desktop cursor clicks "Save Balance"
- * 5. Card dissolves, and the Wallet Ring smoothly loads with:
+ * 3. Tentative date options appear (25 Oct / 1 Nov / 17 Nov)
+ * 4. Desktop cursor clicks to choose "25 Oct (7 Days)" -> Chip lights up as selected
+ * 5. Desktop cursor clicks "Save Balance"
+ * 6. Card dissolves, and the Wallet Ring smoothly loads with:
  *    "This money is tentatively till 25 Oct" at the top!
  */
 class IntroWalletScene @JvmOverloads constructor(
@@ -30,7 +32,14 @@ class IntroWalletScene @JvmOverloads constructor(
     private val canvas: View
     private val setupCard: View
     private val inputField: TextView
-    private val dateFieldBox: View
+
+    private val option1: View
+    private val option1Title: TextView
+    private val option1Sub: TextView
+
+    private val option2: View
+    private val option3: View
+
     private val saveBtn: View
     private val cursor: View
 
@@ -56,7 +65,14 @@ class IntroWalletScene @JvmOverloads constructor(
         canvas = findViewById(R.id.introWalletCanvas)
         setupCard = findViewById(R.id.introWalletSetupCard)
         inputField = findViewById(R.id.introWalletInputField)
-        dateFieldBox = findViewById(R.id.introWalletDateFieldBox)
+
+        option1 = findViewById(R.id.introWalletOption1)
+        option1Title = findViewById(R.id.introWalletOption1Title)
+        option1Sub = findViewById(R.id.introWalletOption1Sub)
+
+        option2 = findViewById(R.id.introWalletOption2)
+        option3 = findViewById(R.id.introWalletOption3)
+
         saveBtn = findViewById(R.id.introWalletSaveBtn)
         cursor = findViewById(R.id.introWalletCursor)
 
@@ -74,7 +90,10 @@ class IntroWalletScene @JvmOverloads constructor(
         typeAnimator?.cancel(); typeAnimator = null
         ringAnimator?.cancel(); ringAnimator = null
 
-        val all = listOf(setupCard, inputField, dateFieldBox, saveBtn, cursor, ringGroup, tentativeTop, ring, amount, label)
+        val all = listOf(
+            setupCard, inputField, option1, option2, option3,
+            saveBtn, cursor, ringGroup, tentativeTop, ring, amount, label
+        )
         for (v in all) v.animate().cancel()
 
         shownDigits = -1
@@ -85,7 +104,20 @@ class IntroWalletScene @JvmOverloads constructor(
         setupCard.scaleY = 0.94f
         setupCard.translationY = 12f.dp
         inputField.text = "₹ "
-        dateFieldBox.alpha = 0.6f
+
+        // Reset option 1 selection styling
+        option1.setBackgroundResource(R.drawable.bg_intro_chip)
+        option1.backgroundTintList = null
+        option1.scaleX = 1f
+        option1.scaleY = 1f
+        option1Title.setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+        option1Sub.setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor))
+
+        option2.scaleX = 1f
+        option2.scaleY = 1f
+        option3.scaleX = 1f
+        option3.scaleY = 1f
+
         saveBtn.scaleX = 1f
         saveBtn.scaleY = 1f
 
@@ -168,7 +200,7 @@ class IntroWalletScene @JvmOverloads constructor(
             .start()
 
         // ── 2. Digit typing (2 -> 20 -> 200 -> 2,000) ────────────────────────────
-        val typeStart = 450L
+        val typeStart = 420L
         typeAnimator = ValueAnimator.ofFloat(0f, DIGITS.size.toFloat()).apply {
             startDelay = typeStart
             duration = KEYPRESS_MS * DIGITS.size
@@ -189,14 +221,26 @@ class IntroWalletScene @JvmOverloads constructor(
             start()
         }
 
-        // ── 3. Date field highlights ─────────────────────────────────────────────
-        val dateHighlightStart = typeStart + (KEYPRESS_MS * DIGITS.size) + 150L
-        schedule(dateHighlightStart) {
-            dateFieldBox.animate().alpha(1f).setDuration(200).start()
+        // ── 3. Cursor chooses 1st date option (25 Oct / 7 Days) ──────────────────
+        val dateClickStart = typeStart + (KEYPRESS_MS * DIGITS.size) + 300L
+        schedule(dateClickStart) {
+            simulateTap(option1) {
+                option1.animate().scaleX(0.95f).scaleY(0.95f).setDuration(70)
+                    .withEndAction {
+                        option1.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
+
+                        // Highlight selected option
+                        option1.setBackgroundResource(R.drawable.bg_intro_cta)
+                        val primaryText = ThemeHelper.resolveColorAttr(context, R.attr.primaryActionText)
+                        option1Title.setTextColor(primaryText)
+                        option1Sub.setTextColor(primaryText)
+                    }
+                    .start()
+            }
         }
 
         // ── 4. Cursor clicks "Save Balance" ──────────────────────────────────────
-        val saveClickStart = dateHighlightStart + 450L
+        val saveClickStart = dateClickStart + 600L
         schedule(saveClickStart) {
             simulateTap(saveBtn) {
                 saveBtn.animate().scaleX(0.94f).scaleY(0.94f).setDuration(80)
@@ -243,7 +287,7 @@ class IntroWalletScene @JvmOverloads constructor(
     }
 
     override fun sceneDurationMs(): Long {
-        return 7000L
+        return 7400L
     }
 
     private val Float.dp: Float get() = this * resources.displayMetrics.density

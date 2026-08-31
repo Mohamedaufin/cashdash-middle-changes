@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Page 1: Enter wallet balance and tentative date setup flow:
+  Page 1: Enter wallet balance and choose tentative date setup flow:
   1. Card appears: "Setup Your Wallet" / "Allocate what you want to spend"
   2. Types ₹2000 into wallet balance box
-  3. Tentative date box populates: "25 Oct (7 Days)"
-  4. Desktop cursor clicks "Save Balance"
-  5. Card dissolves, and the Wallet Ring smoothly loads with:
+  3. Tentative date options appear (25 Oct / 1 Nov / 17 Nov)
+  4. Desktop cursor clicks to choose "25 Oct (7 Days)"
+  5. Desktop cursor clicks "Save Balance"
+  6. Card dissolves, and the Wallet Ring smoothly loads with:
      "This money is tentatively till 25 Oct" at the top!
 -->
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
@@ -22,7 +23,7 @@
         <!-- ================= Beat 1: Setup Card ================= -->
         <LinearLayout
             android:id="@+id/introWalletSetupCard"
-            android:layout_width="260dp"
+            android:layout_width="268dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:background="@drawable/bg_intro_feature_card"
@@ -78,43 +79,107 @@
                     tools:text="₹2,000" />
             </FrameLayout>
 
-            <!-- Field 2: Tentative Date Box -->
+            <!-- Field 2: Tentative Date Options -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="Tentatively till"
+                android:layout_marginTop="11dp"
+                android:text="This budget is tentatively till"
                 android:textColor="?attr/textMutedColor"
                 android:textSize="8sp" />
 
             <LinearLayout
-                android:id="@+id/introWalletDateFieldBox"
+                android:id="@+id/introWalletDateOptions"
                 android:layout_width="match_parent"
-                android:layout_height="36dp"
-                android:layout_marginTop="4dp"
-                android:background="?attr/inputBackground"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp">
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:orientation="horizontal">
 
-                <ImageView
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:layout_marginEnd="8dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_calendar_vector"
-                    android:tint="?attr/textPrimaryColor" />
+                <!-- Option 1: 25 Oct (7 Days) -->
+                <LinearLayout
+                    android:id="@+id/introWalletOption1"
+                    android:layout_width="0dp"
+                    android:layout_height="34dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/bg_intro_chip"
+                    android:gravity="center"
+                    android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/introWalletDateField"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:includeFontPadding="false"
-                    android:text="25 Oct (7 Days)"
-                    android:textColor="?attr/textPrimaryColor"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/introWalletOption1Title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="25 Oct"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textSize="9sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/introWalletOption1Sub"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="7 Days"
+                        android:textColor="?attr/textMutedColor"
+                        android:textSize="7sp" />
+                </LinearLayout>
+
+                <!-- Option 2: 1 Nov (14 Days) -->
+                <LinearLayout
+                    android:id="@+id/introWalletOption2"
+                    android:layout_width="0dp"
+                    android:layout_height="34dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/bg_intro_chip"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/introWalletOption2Title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="1 Nov"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textSize="9sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/introWalletOption2Sub"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="14 Days"
+                        android:textColor="?attr/textMutedColor"
+                        android:textSize="7sp" />
+                </LinearLayout>
+
+                <!-- Option 3: 17 Nov (30 Days) -->
+                <LinearLayout
+                    android:id="@+id/introWalletOption3"
+                    android:layout_width="0dp"
+                    android:layout_height="34dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_intro_chip"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/introWalletOption3Title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="17 Nov"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textSize="9sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/introWalletOption3Sub"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="30 Days"
+                        android:textColor="?attr/textMutedColor"
+                        android:textSize="7sp" />
+                </LinearLayout>
             </LinearLayout>
 
             <!-- Save Button -->
