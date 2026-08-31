@@ -324,6 +324,8 @@
             android:id="@+id/introWalletCursor"
             android:layout_width="20dp"
             android:layout_height="20dp"
+            android:elevation="30dp"
+            android:translationZ="30dp"
             android:alpha="0"
             android:contentDescription="@null"
             android:src="@drawable/ic_desktop_cursor" />
