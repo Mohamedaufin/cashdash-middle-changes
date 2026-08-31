@@ -418,7 +418,7 @@
                     android:textSize="8sp" />
             </LinearLayout>
 
-            <!-- ========= Payment Successful View ========= -->
+            <!-- ========= Beat 5: Success ========= -->
             <LinearLayout
                 android:id="@+id/introScanSuccess"
                 android:layout_width="match_parent"
@@ -429,35 +429,27 @@
                 android:alpha="0">
 
                 <FrameLayout
-                    android:layout_width="42dp"
-                    android:layout_height="42dp"
-                    android:background="@drawable/bg_intro_chip"
-                    android:backgroundTint="#1B5E20">
-
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_intro_cta"
+                    android:backgroundTint="#4CAF50">
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_check_green" />
+                        android:src="@drawable/ic_intro_check"
+                        android:tint="@android:color/white"
+                        android:contentDescription="@null" />
                 </FrameLayout>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="12dp"
                     android:text="Payment Successful"
                     android:textColor="?attr/textPrimaryColor"
-                    android:textSize="11sp"
+                    android:textSize="12sp"
                     android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="₹100 sent to Person X"
-                    android:textColor="?attr/textMutedColor"
-                    android:textSize="8sp" />
             </LinearLayout>
 
             <!-- ========= Desktop Mouse Cursor Pointer ========= -->

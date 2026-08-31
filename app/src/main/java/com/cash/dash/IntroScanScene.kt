@@ -197,6 +197,7 @@ class IntroScanScene @JvmOverloads constructor(
         // ── 2. Amount sheet slides UP (prefilled ₹100) ───────────────────────────
         val sheet1Start = 1800L
         schedule(sheet1Start) {
+            frame.animate().alpha(0f).setDuration(300).start()
             amountGroup.animate().translationY(0f)
                 .setDuration(400)
                 .setInterpolator(IntroTourActivity.EASE_OUT).start()
