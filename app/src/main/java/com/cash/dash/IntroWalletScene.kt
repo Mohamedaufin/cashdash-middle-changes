@@ -13,14 +13,13 @@ import java.text.NumberFormat
 import java.util.Locale
 
 /**
- * Page 1: Enter wallet balance and choose tentative date via calendar popup:
- * 1. Card appears: "Setup Your Wallet" / "Allocate what you want to spend"
- * 2. Cursor clicks into Amount box -> Types ₹2000
- * 3. Cursor clicks "Tentatively till" date field -> Mini Calendar pops open
- * 4. Cursor clicks date "25" -> 25 gets circular highlight
- * 5. Calendar closes, date box updates to "25 Oct, 2026 (7 Days)"
- * 6. Cursor clicks "Save Balance"
- * 7. Card dissolves, and Wallet Ring loads with "This money is tentatively till 25 Oct"!
+ * Page 1: Enter wallet balance and choose tentative date via unified calendar card:
+ * 1. Card appears with Amount box and embedded October Calendar
+ * 2. Types ₹2000 into wallet balance box quickly
+ * 3. Desktop cursor glides to Date 25 on the calendar and clicks it -> Day 25 highlights
+ * 4. Steady reading pause with cursor resting on the card
+ * 5. Cursor glides down from Date 25 to "Save Balance" and clicks it
+ * 6. Card dissolves, and Wallet Ring smoothly loads with "This money is tentatively till 25 Oct"!
  */
 class IntroWalletScene @JvmOverloads constructor(
     context: Context,
@@ -31,18 +30,16 @@ class IntroWalletScene @JvmOverloads constructor(
     private val canvas: View
     private val setupCard: View
     private val inputField: TextView
-    private val dateFieldBox: View
-    private val dateFieldText: TextView
-    private val saveBtn: View
 
-    private val calendarModal: View
     private val calDay25: FrameLayout
     private val calDay25Text: TextView
+    private val dateBadge: TextView
+    private val saveBtn: View
 
     private val cursor: View
 
     private val ringGroup: View
-    private val tentativeTop: TextView
+    private val tentativeTop: View
     private val ring: IntroWalletRingView
     private val amount: TextView
     private val label: TextView
@@ -63,15 +60,14 @@ class IntroWalletScene @JvmOverloads constructor(
         canvas = findViewById(R.id.introWalletCanvas)
         setupCard = findViewById(R.id.introWalletSetupCard)
         inputField = findViewById(R.id.introWalletInputField)
-        dateFieldBox = findViewById(R.id.introWalletDateFieldBox)
-        dateFieldText = findViewById(R.id.introWalletDateFieldText)
-        saveBtn = findViewById(R.id.introWalletSaveBtn)
 
-        calendarModal = findViewById(R.id.introWalletCalendarModal)
         calDay25 = findViewById(R.id.introWalletCalDay25)
         calDay25Text = findViewById(R.id.introWalletCalDay25Text)
+        dateBadge = findViewById(R.id.introWalletSelectedDateBadge)
+        saveBtn = findViewById(R.id.introWalletSaveBtn)
 
         cursor = findViewById(R.id.introWalletCursor)
+        cursor.bringToFront()
 
         ringGroup = findViewById(R.id.introWalletRingGroup)
         tentativeTop = findViewById(R.id.introWalletTentativeTop)
@@ -88,8 +84,8 @@ class IntroWalletScene @JvmOverloads constructor(
         ringAnimator?.cancel(); ringAnimator = null
 
         val all = listOf(
-            setupCard, inputField, dateFieldBox, saveBtn,
-            calendarModal, calDay25, cursor, ringGroup, tentativeTop, ring, amount, label
+            setupCard, inputField, calDay25, dateBadge, saveBtn,
+            cursor, ringGroup, tentativeTop, ring, amount, label
         )
         for (v in all) v.animate().cancel()
 
@@ -101,34 +97,26 @@ class IntroWalletScene @JvmOverloads constructor(
         setupCard.scaleY = 0.94f
         setupCard.translationY = 12f.dp
         inputField.text = "₹ "
-        inputField.scaleX = 1f
-        inputField.scaleY = 1f
 
-        // Date field in card
-        dateFieldText.text = "Select target date..."
-        dateFieldText.setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor))
-        dateFieldBox.scaleX = 1f
-        dateFieldBox.scaleY = 1f
-
-        // Calendar modal
-        calendarModal.alpha = 0f
-        calendarModal.scaleX = 0.88f
-        calendarModal.scaleY = 0.88f
-
-        // Day 25 reset
+        // Calendar Day 25 reset
         calDay25.background = null
         calDay25.scaleX = 1f
         calDay25.scaleY = 1f
         calDay25Text.setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
 
+        // Badge
+        dateBadge.text = "Tap a target date on calendar"
+        dateBadge.setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor))
+
         saveBtn.scaleX = 1f
         saveBtn.scaleY = 1f
 
         // Cursor
+        cursor.bringToFront()
         cursor.alpha = 0f
         cursor.scaleX = 1f
         cursor.scaleY = 1f
-        cursor.elevation = 40f.dp
+        cursor.translationZ = 30f.dp
 
         // Ring Group
         ringGroup.alpha = 0f
@@ -147,66 +135,15 @@ class IntroWalletScene @JvmOverloads constructor(
         }, delayMs)
     }
 
-    /**
-     * Glides the desktop cursor smoothly to [targetView] and performs a realistic click down.
-     */
-    private fun clickTarget(targetView: View, onTapped: () -> Unit) {
-        targetView.post {
-            val targetLoc = IntArray(2)
-            targetView.getLocationInWindow(targetLoc)
-            val parentLoc = IntArray(2)
-            canvas.getLocationInWindow(parentLoc)
+    private fun getTargetCenter(targetView: View): Pair<Float, Float> {
+        val targetLoc = IntArray(2)
+        targetView.getLocationInWindow(targetLoc)
+        val parentLoc = IntArray(2)
+        canvas.getLocationInWindow(parentLoc)
 
-            val targetTipX = (targetLoc[0] - parentLoc[0]) + (targetView.width * 0.45f)
-            val targetTipY = (targetLoc[1] - parentLoc[1]) + (targetView.height * 0.45f)
-
-            cursor.pivotX = 0f
-            cursor.pivotY = 0f
-            cursor.elevation = 40f.dp
-            cursor.bringToFront()
-
-            if (cursor.alpha < 0.1f) {
-                // First arrival: fade in and glide
-                cursor.translationX = targetTipX + 22f.dp
-                cursor.translationY = targetTipY + 22f.dp
-                cursor.scaleX = 1f
-                cursor.scaleY = 1f
-                cursor.alpha = 0f
-                cursor.animate()
-                    .alpha(1f)
-                    .translationX(targetTipX)
-                    .translationY(targetTipY)
-                    .setDuration(280)
-                    .setInterpolator(IntroTourActivity.EASE_OUT)
-                    .withEndAction {
-                        performClick(onTapped)
-                    }
-                    .start()
-            } else {
-                // Continuous glide across screen to next target
-                cursor.animate()
-                    .translationX(targetTipX)
-                    .translationY(targetTipY)
-                    .setDuration(300)
-                    .setInterpolator(IntroTourActivity.EASE_OUT)
-                    .withEndAction {
-                        performClick(onTapped)
-                    }
-                    .start()
-            }
-        }
-    }
-
-    private fun performClick(onTapped: () -> Unit) {
-        cursor.animate().scaleX(0.82f).scaleY(0.82f)
-            .setDuration(70)
-            .withEndAction {
-                onTapped()
-                cursor.animate().scaleX(1f).scaleY(1f)
-                    .setDuration(90)
-                    .start()
-            }
-            .start()
+        val targetTipX = (targetLoc[0] - parentLoc[0]) + (targetView.width * 0.5f)
+        val targetTipY = (targetLoc[1] - parentLoc[1]) + (targetView.height * 0.5f)
+        return Pair(targetTipX, targetTipY)
     }
 
     override fun playScene() {
@@ -220,23 +157,11 @@ class IntroWalletScene @JvmOverloads constructor(
             .setInterpolator(IntroTourActivity.EASE_OUT)
             .start()
 
-        // ── 2. Cursor clicks into Amount Field (500ms) ────────────────────────────
-        val amountClickStart = 500L
-        schedule(amountClickStart) {
-            clickTarget(inputField) {
-                inputField.animate().scaleX(1.06f).scaleY(1.06f).setDuration(80)
-                    .withEndAction {
-                        inputField.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
-                    }
-                    .start()
-            }
-        }
-
-        // ── 3. Digit typing (2 -> 20 -> 200 -> 2,000) ────────────────────────────
-        val typeStart = amountClickStart + 450L
+        // ── 2. Digit typing (2 -> 20 -> 200 -> 2,000) quick and snappy ───────────
+        val typeStart = 450L
         typeAnimator = ValueAnimator.ofFloat(0f, DIGITS.size.toFloat()).apply {
             startDelay = typeStart
-            duration = KEYPRESS_MS * DIGITS.size
+            duration = KEYPRESS_FAST_MS * DIGITS.size
             addUpdateListener { a ->
                 val n = (a.animatedValue as Float).toInt().coerceIn(0, DIGITS.size)
                 if (n == shownDigits) return@addUpdateListener
@@ -244,111 +169,128 @@ class IntroWalletScene @JvmOverloads constructor(
                 if (n == 0) return@addUpdateListener
                 inputField.text = context.getString(R.string.intro_tour_amount, money.format(DIGITS[n - 1]))
 
-                // Subtle tactile bounce on each digit typed
+                // Tactile pop on each digit typed
                 inputField.animate().cancel()
                 inputField.scaleX = 1.05f
                 inputField.scaleY = 1.05f
-                inputField.animate().scaleX(1f).scaleY(1f).setDuration(150)
+                inputField.animate().scaleX(1f).scaleY(1f).setDuration(120)
                     .setInterpolator(IntroTourActivity.EASE_OUT).start()
             }
             start()
         }
 
-        // ── 4. Cursor clicks Date Field -> Opens Calendar Modal ───────────────────
-        val dateClickStart = typeStart + (KEYPRESS_MS * DIGITS.size) + 400L
-        schedule(dateClickStart) {
-            clickTarget(dateFieldBox) {
-                dateFieldBox.animate().scaleX(0.97f).scaleY(0.97f).setDuration(70)
+        // ── 3. Cursor glides to Date 25 and clicks it down ───────────────────────
+        // typeStart (450) + (140 * 4 = 560) + pause (700) = 1710ms
+        val calDayClickStart = typeStart + (KEYPRESS_FAST_MS * DIGITS.size) + 700L
+        schedule(calDayClickStart) {
+            calDay25.post {
+                val (day25X, day25Y) = getTargetCenter(calDay25)
+
+                cursor.pivotX = 0f
+                cursor.pivotY = 0f
+                cursor.translationX = day25X + 24f.dp
+                cursor.translationY = day25Y + 24f.dp
+                cursor.scaleX = 1f
+                cursor.scaleY = 1f
+                cursor.alpha = 0f
+
+                // Cursor glides to Date 25
+                cursor.animate()
+                    .alpha(1f)
+                    .translationX(day25X)
+                    .translationY(day25Y)
+                    .setDuration(380)
+                    .setInterpolator(IntroTourActivity.EASE_OUT)
                     .withEndAction {
-                        dateFieldBox.animate().scaleX(1f).scaleY(1f).setDuration(70).start()
-                        // Open calendar modal
-                        calendarModal.animate()
-                            .alpha(1f)
-                            .scaleX(1f)
-                            .scaleY(1f)
-                            .setDuration(280)
-                            .setInterpolator(IntroTourActivity.EASE_OUT)
+                        // Click down on Day 25
+                        cursor.animate().scaleX(0.85f).scaleY(0.85f).setDuration(80)
+                            .withEndAction {
+                                calDay25.animate().scaleX(0.9f).scaleY(0.9f).setDuration(70)
+                                    .withEndAction {
+                                        calDay25.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
+
+                                        // Highlight Day 25 with circular primary badge
+                                        calDay25.setBackgroundResource(R.drawable.bg_intro_cta)
+                                        val primaryActionText = ThemeHelper.resolveColorAttr(context, R.attr.primaryActionText)
+                                        calDay25Text.setTextColor(primaryActionText)
+
+                                        // Update selection status badge
+                                        val textPrimary = ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor)
+                                        dateBadge.text = "Budget duration: 7 Days (till 25 Oct)"
+                                        dateBadge.setTextColor(textPrimary)
+                                    }
+                                    .start()
+
+                                cursor.animate().scaleX(1f).scaleY(1f).setDuration(90).start()
+                            }
                             .start()
                     }
                     .start()
             }
         }
 
-        // ── 5. Cursor chooses "25" in Calendar Modal ──────────────────────────────
-        val calDayClickStart = dateClickStart + 300 + 70 + 70 + 400L
-        schedule(calDayClickStart) {
-            clickTarget(calDay25) {
-                calDay25.animate().scaleX(0.9f).scaleY(0.9f).setDuration(70)
-                    .withEndAction {
-                        calDay25.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
-
-                        // Highlight Day 25 with circular primary badge
-                        calDay25.setBackgroundResource(R.drawable.bg_intro_cta)
-                        val primaryText = ThemeHelper.resolveColorAttr(context, R.attr.primaryActionText)
-                        calDay25Text.setTextColor(primaryText)
-
-                        // Close calendar modal smoothly after a clear viewing pause
-                        handler.postDelayed({
-                            calendarModal.animate()
-                                .alpha(0f)
-                                .scaleX(0.92f)
-                                .scaleY(0.92f)
-                                .setDuration(240)
-                                .setInterpolator(IntroTourActivity.EASE_IN)
-                                .withEndAction {
-                                    // Update Date Field Text in card
-                                    dateFieldText.text = "25 Oct, 2026 (7 Days)"
-                                    dateFieldText.setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-                                }
-                                .start()
-                        }, 350)
-                    }
-                    .start()
-            }
-        }
-
-        // ── 6. Cursor clicks "Save Balance" ──────────────────────────────────────
-        val saveClickStart = calDayClickStart + 300 + 70 + 80 + 350 + 240 + 450L
+        // ── 4. Cursor glides smoothly from Date 25 down to "Save Balance" ─────────
+        // calDayClickStart (1710) + glide (380) + click (170) + reading pause (1200) = ~3460ms
+        val saveClickStart = calDayClickStart + 380 + 170 + 1200L
         schedule(saveClickStart) {
-            clickTarget(saveBtn) {
-                saveBtn.animate().scaleX(0.94f).scaleY(0.94f).setDuration(80)
+            saveBtn.post {
+                val (saveX, saveY) = getTargetCenter(saveBtn)
+
+                // Cursor glides from Date 25 to Save Balance button
+                cursor.animate()
+                    .translationX(saveX)
+                    .translationY(saveY)
+                    .setDuration(360)
+                    .setInterpolator(IntroTourActivity.EASE_OUT)
                     .withEndAction {
-                        saveBtn.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
-
-                        // Cursor fades out after final save click
-                        cursor.animate().alpha(0f).setDuration(200).start()
-
-                        // Dissolve Setup Card
-                        setupCard.animate()
-                            .alpha(0f)
-                            .scaleX(0.92f)
-                            .scaleY(0.92f)
-                            .setDuration(280)
-                            .setInterpolator(IntroTourActivity.EASE_IN)
+                        // Click down on Save Balance
+                        cursor.animate().scaleX(0.85f).scaleY(0.85f).setDuration(80)
                             .withEndAction {
-                                // Bloom Wallet Ring Group
-                                ringGroup.animate()
-                                    .alpha(1f)
-                                    .scaleX(1f)
-                                    .scaleY(1f)
-                                    .setDuration(380)
-                                    .setInterpolator(IntroTourActivity.EASE_OUT)
+                                saveBtn.animate().scaleX(0.94f).scaleY(0.94f).setDuration(80)
+                                    .withEndAction {
+                                        saveBtn.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
+                                    }
                                     .start()
 
-                                // Top tentative date banner fades in
-                                tentativeTop.animate()
-                                    .alpha(1f)
-                                    .setDuration(400)
-                                    .setInterpolator(IntroTourActivity.EASE_OUT)
+                                cursor.animate().scaleX(1f).scaleY(1f).setDuration(90)
+                                    .withEndAction {
+                                        cursor.animate().alpha(0f).setDuration(180).start()
+                                    }
                                     .start()
 
-                                // Sweep Ring from 0 to 100% smoothly
-                                ringAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
-                                    duration = RING_DURATION_MS
-                                    interpolator = IntroTourActivity.EASE_OUT
-                                    addUpdateListener { a -> ring.progress = a.animatedValue as Float }
-                                    start()
-                                }
+                                // Dissolve Setup Card
+                                setupCard.animate()
+                                    .alpha(0f)
+                                    .scaleX(0.92f)
+                                    .scaleY(0.92f)
+                                    .setDuration(320)
+                                    .setInterpolator(IntroTourActivity.EASE_IN)
+                                    .withEndAction {
+                                        // Bloom Wallet Ring Group
+                                        ringGroup.animate()
+                                            .alpha(1f)
+                                            .scaleX(1f)
+                                            .scaleY(1f)
+                                            .setDuration(450)
+                                            .setInterpolator(IntroTourActivity.EASE_OUT)
+                                            .start()
+
+                                        // Top tentative date banner fades in
+                                        tentativeTop.animate()
+                                            .alpha(1f)
+                                            .setDuration(500)
+                                            .setInterpolator(IntroTourActivity.EASE_OUT)
+                                            .start()
+
+                                        // Sweep Ring from 0 to 100% smoothly over 2.0s
+                                        ringAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+                                            duration = RING_DURATION_MS
+                                            interpolator = IntroTourActivity.EASE_OUT
+                                            addUpdateListener { a -> ring.progress = a.animatedValue as Float }
+                                            start()
+                                        }
+                                    }
+                                    .start()
                             }
                             .start()
                     }
@@ -358,14 +300,14 @@ class IntroWalletScene @JvmOverloads constructor(
     }
 
     override fun sceneDurationMs(): Long {
-        return 9200L
+        return 11500L
     }
 
     private val Float.dp: Float get() = this * resources.displayMetrics.density
 
     private companion object {
-        const val KEYPRESS_MS = 300L
-        const val RING_DURATION_MS = 1500L
+        const val KEYPRESS_FAST_MS = 140L
+        const val RING_DURATION_MS = 2000L
         val DIGITS = intArrayOf(2, 20, 200, 2000)
     }
 }

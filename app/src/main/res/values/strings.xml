@@ -29,8 +29,8 @@
          NumberFormat rather than a hardcoded pattern. -->
     <string name="intro_tour_amount">₹%1$s</string>
 
-    <string name="intro_tour_one_title">Start with what you have</string>
-    <string name="intro_tour_one_body">Set your wallet balance once. Everything CashDash does is measured against that number.</string>
+    <string name="intro_tour_one_title">Set your balance &amp; timeline</string>
+    <string name="intro_tour_one_body">Enter your wallet balance and choose how long it should tentatively last — CashDash paces your spending till that date.</string>
 
     <string name="intro_tour_two_title">Categorize right before you pay</string>
     <string name="intro_tour_two_body">Assign every QR scan to an allocation on the spot — saving you the hassle of manual tracking later.</string>
