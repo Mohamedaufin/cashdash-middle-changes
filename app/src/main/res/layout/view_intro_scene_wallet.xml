@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Page 1: Enter wallet balance and choose tentative date setup flow:
+  Page 1: Enter wallet balance and choose tentative date via calendar popup:
   1. Card appears: "Setup Your Wallet" / "Allocate what you want to spend"
   2. Types ₹2000 into wallet balance box
-  3. Tentative date options appear (25 Oct / 1 Nov / 17 Nov)
-  4. Desktop cursor clicks to choose "25 Oct (7 Days)"
-  5. Desktop cursor clicks "Save Balance"
-  6. Card dissolves, and the Wallet Ring smoothly loads with:
-     "This money is tentatively till 25 Oct" at the top!
+  3. Cursor clicks the "Tentatively till" date field
+  4. Mini Calendar popup opens with October 2026 grid
+  5. Cursor clicks date "25" -> 25 gets circular highlight
+  6. Calendar closes, date box updates to "25 Oct, 2026"
+  7. Cursor clicks "Save Balance"
+  8. Card dissolves, and Wallet Ring loads with "This money is tentatively till 25 Oct"!
 -->
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
@@ -79,7 +80,7 @@
                     tools:text="₹2,000" />
             </FrameLayout>
 
-            <!-- Field 2: Tentative Date Options -->
+            <!-- Field 2: Date Field Box (Clickable to open calendar) -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -89,97 +90,32 @@
                 android:textSize="8sp" />
 
             <LinearLayout
-                android:id="@+id/introWalletDateOptions"
+                android:id="@+id/introWalletDateFieldBox"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
-                android:orientation="horizontal">
+                android:layout_height="36dp"
+                android:layout_marginTop="4dp"
+                android:background="?attr/inputBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp">
 
-                <!-- Option 1: 25 Oct (7 Days) -->
-                <LinearLayout
-                    android:id="@+id/introWalletOption1"
-                    android:layout_width="0dp"
-                    android:layout_height="34dp"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
-                    android:background="@drawable/bg_intro_chip"
-                    android:gravity="center"
-                    android:orientation="vertical">
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginEnd="8dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_calendar_vector"
+                    android:tint="?attr/textPrimaryColor" />
 
-                    <TextView
-                        android:id="@+id/introWalletOption1Title"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="25 Oct"
-                        android:textColor="?attr/textPrimaryColor"
-                        android:textSize="9sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/introWalletOption1Sub"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="7 Days"
-                        android:textColor="?attr/textMutedColor"
-                        android:textSize="7sp" />
-                </LinearLayout>
-
-                <!-- Option 2: 1 Nov (14 Days) -->
-                <LinearLayout
-                    android:id="@+id/introWalletOption2"
-                    android:layout_width="0dp"
-                    android:layout_height="34dp"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
-                    android:background="@drawable/bg_intro_chip"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/introWalletOption2Title"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="1 Nov"
-                        android:textColor="?attr/textPrimaryColor"
-                        android:textSize="9sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/introWalletOption2Sub"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="14 Days"
-                        android:textColor="?attr/textMutedColor"
-                        android:textSize="7sp" />
-                </LinearLayout>
-
-                <!-- Option 3: 17 Nov (30 Days) -->
-                <LinearLayout
-                    android:id="@+id/introWalletOption3"
-                    android:layout_width="0dp"
-                    android:layout_height="34dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_intro_chip"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/introWalletOption3Title"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="17 Nov"
-                        android:textColor="?attr/textPrimaryColor"
-                        android:textSize="9sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/introWalletOption3Sub"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="30 Days"
-                        android:textColor="?attr/textMutedColor"
-                        android:textSize="7sp" />
-                </LinearLayout>
+                <TextView
+                    android:id="@+id/introWalletDateFieldText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:includeFontPadding="false"
+                    android:text="Select target date..."
+                    android:textColor="?attr/textMutedColor"
+                    android:textSize="10sp" />
             </LinearLayout>
 
             <!-- Save Button -->
@@ -196,7 +132,132 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- ================= Beat 2: Wallet Ring Group ================= -->
+        <!-- ================= Beat 2: Calendar Popup Modal ================= -->
+        <LinearLayout
+            android:id="@+id/introWalletCalendarModal"
+            android:layout_width="230dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_intro_feature_card"
+            android:elevation="14dp"
+            android:orientation="vertical"
+            android:paddingStart="14dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="12dp"
+            android:alpha="0">
+
+            <!-- Month Title Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="October 2026"
+                    android:textColor="?attr/textPrimaryColor"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="&lt;   &gt;"
+                    android:textColor="?attr/textMutedColor"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Weekday Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="M" android:textColor="?attr/textMutedColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="T" android:textColor="?attr/textMutedColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="W" android:textColor="?attr/textMutedColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="T" android:textColor="?attr/textMutedColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="F" android:textColor="?attr/textMutedColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="S" android:textColor="?attr/textMutedColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="S" android:textColor="?attr/textMutedColor" android:textSize="8sp" />
+            </LinearLayout>
+
+            <!-- Dates Row 1 (12 - 18) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="24dp"
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="12" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="13" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="14" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="15" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="16" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="17" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="18" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+            </LinearLayout>
+
+            <!-- Dates Row 2 (19 - 25) with target 25 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="24dp"
+                android:layout_marginTop="2dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="19" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="20" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="21" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="22" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="23" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="24" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+
+                <!-- 25: Target Choice -->
+                <FrameLayout
+                    android:id="@+id/introWalletCalDay25"
+                    android:layout_width="0dp"
+                    android:layout_height="22dp"
+                    android:layout_weight="1">
+
+                    <TextView
+                        android:id="@+id/introWalletCalDay25Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="25"
+                        android:textColor="?attr/textPrimaryColor"
+                        android:textSize="9sp"
+                        android:textStyle="bold" />
+                </FrameLayout>
+            </LinearLayout>
+
+            <!-- Dates Row 3 (26 - 31) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="24dp"
+                android:layout_marginTop="2dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="26" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="27" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="28" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="29" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="30" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="31" android:textColor="?attr/textPrimaryColor" android:textSize="8sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="1" android:textColor="?attr/textMutedColor" android:textSize="8sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ================= Beat 3: Wallet Ring Group ================= -->
         <LinearLayout
             android:id="@+id/introWalletRingGroup"
             android:layout_width="match_parent"

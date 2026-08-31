@@ -2,7 +2,6 @@ package com.cash.dash
 
 import android.animation.ValueAnimator
 import android.content.Context
-import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
@@ -14,14 +13,15 @@ import java.text.NumberFormat
 import java.util.Locale
 
 /**
- * Page 1: Enter wallet balance and choose tentative date setup flow:
+ * Page 1: Enter wallet balance and choose tentative date via calendar popup:
  * 1. Card appears: "Setup Your Wallet" / "Allocate what you want to spend"
  * 2. Types ₹2000 into wallet balance box
- * 3. Tentative date options appear (25 Oct / 1 Nov / 17 Nov)
- * 4. Desktop cursor clicks to choose "25 Oct (7 Days)" -> Chip lights up as selected
- * 5. Desktop cursor clicks "Save Balance"
- * 6. Card dissolves, and the Wallet Ring smoothly loads with:
- *    "This money is tentatively till 25 Oct" at the top!
+ * 3. Cursor clicks the "Tentatively till" date field
+ * 4. Mini Calendar popup opens with October 2026 grid
+ * 5. Cursor clicks date "25" -> 25 gets circular highlight
+ * 6. Calendar closes, date box updates to "25 Oct, 2026"
+ * 7. Cursor clicks "Save Balance"
+ * 8. Card dissolves, and Wallet Ring loads with "This money is tentatively till 25 Oct"!
  */
 class IntroWalletScene @JvmOverloads constructor(
     context: Context,
@@ -32,15 +32,14 @@ class IntroWalletScene @JvmOverloads constructor(
     private val canvas: View
     private val setupCard: View
     private val inputField: TextView
-
-    private val option1: View
-    private val option1Title: TextView
-    private val option1Sub: TextView
-
-    private val option2: View
-    private val option3: View
-
+    private val dateFieldBox: View
+    private val dateFieldText: TextView
     private val saveBtn: View
+
+    private val calendarModal: View
+    private val calDay25: FrameLayout
+    private val calDay25Text: TextView
+
     private val cursor: View
 
     private val ringGroup: View
@@ -65,15 +64,14 @@ class IntroWalletScene @JvmOverloads constructor(
         canvas = findViewById(R.id.introWalletCanvas)
         setupCard = findViewById(R.id.introWalletSetupCard)
         inputField = findViewById(R.id.introWalletInputField)
-
-        option1 = findViewById(R.id.introWalletOption1)
-        option1Title = findViewById(R.id.introWalletOption1Title)
-        option1Sub = findViewById(R.id.introWalletOption1Sub)
-
-        option2 = findViewById(R.id.introWalletOption2)
-        option3 = findViewById(R.id.introWalletOption3)
-
+        dateFieldBox = findViewById(R.id.introWalletDateFieldBox)
+        dateFieldText = findViewById(R.id.introWalletDateFieldText)
         saveBtn = findViewById(R.id.introWalletSaveBtn)
+
+        calendarModal = findViewById(R.id.introWalletCalendarModal)
+        calDay25 = findViewById(R.id.introWalletCalDay25)
+        calDay25Text = findViewById(R.id.introWalletCalDay25Text)
+
         cursor = findViewById(R.id.introWalletCursor)
 
         ringGroup = findViewById(R.id.introWalletRingGroup)
@@ -91,8 +89,8 @@ class IntroWalletScene @JvmOverloads constructor(
         ringAnimator?.cancel(); ringAnimator = null
 
         val all = listOf(
-            setupCard, inputField, option1, option2, option3,
-            saveBtn, cursor, ringGroup, tentativeTop, ring, amount, label
+            setupCard, inputField, dateFieldBox, saveBtn,
+            calendarModal, calDay25, cursor, ringGroup, tentativeTop, ring, amount, label
         )
         for (v in all) v.animate().cancel()
 
@@ -105,18 +103,20 @@ class IntroWalletScene @JvmOverloads constructor(
         setupCard.translationY = 12f.dp
         inputField.text = "₹ "
 
-        // Reset option 1 selection styling
-        option1.setBackgroundResource(R.drawable.bg_intro_chip)
-        option1.backgroundTintList = null
-        option1.scaleX = 1f
-        option1.scaleY = 1f
-        option1Title.setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
-        option1Sub.setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor))
+        // Date field in card
+        dateFieldText.text = "Select target date..."
+        dateFieldText.setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textMutedColor))
 
-        option2.scaleX = 1f
-        option2.scaleY = 1f
-        option3.scaleX = 1f
-        option3.scaleY = 1f
+        // Calendar modal
+        calendarModal.alpha = 0f
+        calendarModal.scaleX = 0.88f
+        calendarModal.scaleY = 0.88f
+
+        // Day 25 reset
+        calDay25.background = null
+        calDay25.scaleX = 1f
+        calDay25.scaleY = 1f
+        calDay25Text.setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
 
         saveBtn.scaleX = 1f
         saveBtn.scaleY = 1f
@@ -178,7 +178,7 @@ class IntroWalletScene @JvmOverloads constructor(
                             cursor.animate().scaleX(1f).scaleY(1f)
                                 .setDuration(100)
                                 .withEndAction {
-                                    cursor.animate().alpha(0f).setDuration(200).start()
+                                    cursor.animate().alpha(0f).setDuration(180).start()
                                 }
                                 .start()
                         }
@@ -221,26 +221,56 @@ class IntroWalletScene @JvmOverloads constructor(
             start()
         }
 
-        // ── 3. Cursor chooses 1st date option (25 Oct / 7 Days) ──────────────────
+        // ── 3. Cursor clicks "Tentatively till" date field -> opens Calendar Modal ─
         val dateClickStart = typeStart + (KEYPRESS_MS * DIGITS.size) + 300L
         schedule(dateClickStart) {
-            simulateTap(option1) {
-                option1.animate().scaleX(0.95f).scaleY(0.95f).setDuration(70)
-                    .withEndAction {
-                        option1.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
+            simulateTap(dateFieldBox) {
+                // Open calendar modal
+                calendarModal.animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(260)
+                    .setInterpolator(IntroTourActivity.EASE_OUT)
+                    .start()
+            }
+        }
 
-                        // Highlight selected option
-                        option1.setBackgroundResource(R.drawable.bg_intro_cta)
+        // ── 4. Cursor chooses "25" in the Calendar Modal ─────────────────────────
+        val calDayClickStart = dateClickStart + 550L
+        schedule(calDayClickStart) {
+            simulateTap(calDay25) {
+                calDay25.animate().scaleX(0.9f).scaleY(0.9f).setDuration(70)
+                    .withEndAction {
+                        calDay25.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
+
+                        // Highlight Day 25 with circular primary badge
+                        calDay25.setBackgroundResource(R.drawable.bg_intro_cta)
                         val primaryText = ThemeHelper.resolveColorAttr(context, R.attr.primaryActionText)
-                        option1Title.setTextColor(primaryText)
-                        option1Sub.setTextColor(primaryText)
+                        calDay25Text.setTextColor(primaryText)
+
+                        // Close calendar modal smoothly after a brief glance
+                        handler.postDelayed({
+                            calendarModal.animate()
+                                .alpha(0f)
+                                .scaleX(0.92f)
+                                .scaleY(0.92f)
+                                .setDuration(220)
+                                .setInterpolator(IntroTourActivity.EASE_IN)
+                                .withEndAction {
+                                    // Update Date Field Text in card
+                                    dateFieldText.text = "25 Oct, 2026 (7 Days)"
+                                    dateFieldText.setTextColor(ThemeHelper.resolveColorAttr(context, R.attr.textPrimaryColor))
+                                }
+                                .start()
+                        }, 250)
                     }
                     .start()
             }
         }
 
-        // ── 4. Cursor clicks "Save Balance" ──────────────────────────────────────
-        val saveClickStart = dateClickStart + 600L
+        // ── 5. Cursor clicks "Save Balance" ──────────────────────────────────────
+        val saveClickStart = calDayClickStart + 900L
         schedule(saveClickStart) {
             simulateTap(saveBtn) {
                 saveBtn.animate().scaleX(0.94f).scaleY(0.94f).setDuration(80)
@@ -287,7 +317,7 @@ class IntroWalletScene @JvmOverloads constructor(
     }
 
     override fun sceneDurationMs(): Long {
-        return 7400L
+        return 7800L
     }
 
     private val Float.dp: Float get() = this * resources.displayMetrics.density
