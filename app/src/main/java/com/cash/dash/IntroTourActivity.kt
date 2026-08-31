@@ -56,7 +56,6 @@ class IntroTourActivity : ThemedActivity() {
     private lateinit var root: View
     private lateinit var pager: ViewPager2
     private lateinit var brand: View
-    private lateinit var eyebrow: TextView
     private lateinit var title: TextView
     private lateinit var body: TextView
     private lateinit var cta: View
@@ -95,7 +94,6 @@ class IntroTourActivity : ThemedActivity() {
         root = findViewById(R.id.introTourRoot)
         pager = findViewById(R.id.introTourPager)
         brand = findViewById(R.id.introTourBrand)
-        eyebrow = findViewById(R.id.introTourEyebrow)
         title = findViewById(R.id.introTourTitle)
         body = findViewById(R.id.introTourBody)
         cta = findViewById(R.id.introTourCta)
@@ -145,7 +143,7 @@ class IntroTourActivity : ThemedActivity() {
         navigated = false
         if (!introduced) {
             introduced = true
-            val chrome = mutableListOf(brand, eyebrow, title, body, dotsRow)
+            val chrome = mutableListOf(brand, title, body, dotsRow)
             if (ctaUnlocked) chrome += cta
             for (view in chrome) {
                 view.alpha = 0f
@@ -156,7 +154,7 @@ class IntroTourActivity : ThemedActivity() {
             // Everything the timeline animates has to be put back by hand. Pausing part way
             // through a transition leaves the copy at a fraction of its alpha, and replaying
             // the page does not touch it: the copy is only animated when the PAGE changes.
-            val chrome = mutableListOf(brand, eyebrow, title, body, dotsRow)
+            val chrome = mutableListOf(brand, title, body, dotsRow)
             if (ctaUnlocked) chrome += cta
             for (view in chrome) {
                 view.animate().cancel()
@@ -211,7 +209,7 @@ class IntroTourActivity : ThemedActivity() {
         if (animateCopy) {
             // The copy rises with the artwork rather than after it, so a page reads as one
             // thing arriving instead of two.
-            for (line in listOf(eyebrow, title, body)) {
+            for (line in listOf(title, body)) {
                 line.animate().cancel()
                 line.alpha = 0f
                 line.translationY = COPY_RISE_DP.dp
@@ -262,9 +260,8 @@ class IntroTourActivity : ThemedActivity() {
     // ---------------------------------------------------------------- chrome
 
     private fun applyCopy(index: Int) {
-        eyebrow.setText(COPY[index].first)
-        title.setText(COPY[index].second)
-        body.setText(COPY[index].third)
+        title.setText(COPY[index].first)
+        body.setText(COPY[index].second)
     }
 
     private fun highlightDot(index: Int) {
@@ -386,25 +383,21 @@ class IntroTourActivity : ThemedActivity() {
         private const val DOT_DP = 9f
         private const val ACTIVE_DOT_DP = 24f
 
-        /** Eyebrow, headline and body per page. */
+        /** Headline and body per page. */
         private val COPY = arrayOf(
-            Triple(
-                R.string.intro_tour_one_eyebrow,
+            Pair(
                 R.string.intro_tour_one_title,
                 R.string.intro_tour_one_body
             ),
-            Triple(
-                R.string.intro_tour_two_eyebrow,
+            Pair(
                 R.string.intro_tour_two_title,
                 R.string.intro_tour_two_body
             ),
-            Triple(
-                R.string.intro_tour_three_eyebrow,
+            Pair(
                 R.string.intro_tour_three_title,
                 R.string.intro_tour_three_body
             ),
-            Triple(
-                R.string.intro_tour_four_eyebrow,
+            Pair(
                 R.string.intro_tour_four_title,
                 R.string.intro_tour_four_body
             )

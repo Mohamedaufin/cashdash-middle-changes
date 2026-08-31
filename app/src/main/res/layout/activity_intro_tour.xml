@@ -43,30 +43,11 @@
         android:layout_width="0dp"
         android:layout_height="340dp"
         android:layout_marginTop="28dp"
-        android:layout_marginBottom="40dp"
-        app:layout_constraintBottom_toTopOf="@id/introTourEyebrow"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <!-- Numbered like a spec sheet. It gives each page an identity beyond its headline and
-         tells you where you are without counting dots. -->
-    <TextView
-        android:id="@+id/introTourEyebrow"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="36dp"
-        android:layout_marginBottom="12dp"
-        android:letterSpacing="0.20"
-        android:textAllCaps="true"
-        android:textColor="?attr/textMutedColor"
-        android:textSize="10sp"
-        android:textStyle="bold"
+        android:layout_marginBottom="36dp"
         app:layout_constraintBottom_toTopOf="@id/introTourTitle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        tools:text="01 — WALLET" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/introTourTitle"
